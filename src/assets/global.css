@@ -1,9 +1,15 @@
-:root{
-
+:root {
+    --header-background-color: #a5ddf0;
+    --header-color: #1f1f1f;
+    --header-nav-color: #4f4f4f;
+    --header-nav-color-hover: #383838;
 }
 
 :root .dark{
-
+    --header-background-color: rgb(0, 25, 26);
+    --header-color: #e5e5e5;
+    --header-nav-color: #e5e5e5;
+    --header-nav-color-hover: #e3e3e3;
 }
 
 * {
