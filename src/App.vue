@@ -1,8 +1,14 @@
 <template>
   <div id="app">
-    <HeaderNav :title="this.title"/>
-    <BodyPictureViewer/>
-    <BodyContentViewer />
+    <div id="desktop">
+      <HeaderNav :title="this.title"/>
+      <div>
+
+      </div>
+      <BodyPictureViewer/>
+      <BodyContentViewer />
+    </div>
+
   </div>
 </template>
 

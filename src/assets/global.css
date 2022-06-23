@@ -3,6 +3,10 @@
     --header-color: #1f1f1f;
     --header-nav-color: #4f4f4f;
     --header-nav-color-hover: #383838;
+    --header-drawer-icon-color: #4f4f4f;
+    --header-drawer-icon-color-hover: #383838;
+    --header-shade-color: #484848;
+    --header-lang-menu-bg-hover: #a6a6a6ff;
 }
 
 :root .dark{
@@ -10,10 +14,14 @@
     --header-color: #e5e5e5;
     --header-nav-color: #e5e5e5;
     --header-nav-color-hover: #e3e3e3;
+    --header-drawer-icon-color: #e5e5e5;
+    --header-drawer-icon-color-hover: #e3e3e3;
+    --header-shade-color: rgba(0, 59, 80, 0.35);
+    --header-lang-menu-bg-hover: #1e1e1e;
 }
 
 * {
-    font-family: Charter, Arial, "Noto Sans SC", sans-serif;
+    font-family:  sans-serif, Charter, Arial, "Noto Sans SC";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }

@@ -1,16 +1,33 @@
 <template>
-  <header class="">
-    <div class="header-flex">
+  <header>
+    <div class="header-flex" v-bind:class="{'after-scroll-bg': scrollPassed, 'before-scroll-bg': !scrollPassed}" data-app>
       <!-- LOGO PLACEHOLDER -->
       <h1><small><a href="/" class="header-nav-home">{{ title }}</a></small></h1>
       <span>
         <input type="button" @click.stop="drawer = !drawer" class="material-symbols-outlined header-nav" value="menu">
         <input type="button" @click="changeModeAnimation" v-if="darkMode" class="material-symbols-outlined header-nav style-option" value="dark_mode">
         <input type="button" @click="changeModeAnimation" v-if="!darkMode" class="material-symbols-outlined header-nav style-option" value="light_mode">
-        <input type="button" class="material-symbols-outlined header-nav" value="translate">
-        <v-navigation-drawer v-model="drawer" temporary right absolute>
-          <v-list nav dense>
+        <v-menu offset-y v-bind:dark="darkMode" buttom origin="center center" transition="slide-y-transition" content-class="lang-menu" close-on-click="close-on-click">
+          <template v-slot:activator="{ on, attrs }">
+            <input v-bind="attrs" v-on="on" type="button" class="material-symbols-outlined header-nav" value="translate">
+          </template>
+          <v-list>
+            <v-list-item
+            v-for="(lang, index) in languageList"
+            :key="index"
+            link
+            >
+              <v-list-item-title>{{ lang.title }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+
+        <v-navigation-drawer v-model="drawer" right app temporary link v-bind:dark="darkMode">
+          <v-list nav dense rounded>
             <v-list-item-group>
+              <v-list-item @click.stop="drawer = !drawer">
+                <input type="button" class="material-symbols-outlined drawer-close-icon" value="close">
+              </v-list-item>
               <v-list-item>
                 <v-list-item-title>{{ $t("headerNav.homePage") }}</v-list-item-title>
               </v-list-item>
@@ -33,7 +50,16 @@ export default {
   props: ["title"],
   data: () => ({
     darkMode: false,
-    drawer: false
+    drawer: false,
+    scrollPassed: false,
+    languageList: [
+      {
+        title: '简体中文'
+      },
+      {
+        title: "English"
+      }
+    ]
   }),
   mounted() {
     const darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
@@ -75,33 +101,42 @@ export default {
       let scrollOffset = window.scrollY
       let panHeaderHeight = document.getElementById("pan-header-picture").clientHeight
 
-      if (scrollOffset > panHeaderHeight) {
-        document.header.classList.add('after-scroll');
-      } else if (scrollOffset < panHeaderHeight) {
-        if (document.header.classList !== undefined) {
-          document.header.classList.remove('after-scroll');
-        }
+      if (scrollOffset > panHeaderHeight - 70) {
+        this.scrollPassed = true
+      } else if (scrollOffset < panHeaderHeight - 70) {
+        this.scrollPassed = false
       }
     }
   }
 }
 </script>
 
-<style>
+<style scoped>
+header .before-scroll-bg{
+  --header-color: #e5e5e5;
+  --header-nav-color: #e5e5e5;
+  --header-nav-color-hover: #c5c5c5;
+  --header-lang-menu-bg-hover: #a6a6a6ff;
+}
+
 header{
-  background-color: transparent;
   flex: 0 0 auto;
   z-index: 3;
   position: fixed;
+  transition: 225ms ease-out;
 }
 
-header.after-scroll{
+.after-scroll-bg{
+  transition: 225ms ease-out;
   background-color: var(--header-background-color);
+  box-shadow: 0 0 5px var(--header-shade-color);
+  color: #1f1f1f;
 }
 
 header .header-flex {
+  padding: 10px 20px;
+  height: 70px;
   width: 100%;
-  height: 100%;
   display: -webkit-flex; /* Safari */
   display: flex;
   flex-direction: row;
@@ -150,4 +185,14 @@ input.header-nav:hover {
   color: var(--header-nav-color-hover);
 }
 
+.drawer-close-icon {
+  float: right;
+  color: var(--header-drawer-icon-color);
+  transform: scale(125%, 125%);
+}
+
+.drawer-close-icon:hover{
+  transition: 225ms ease-out;
+  color: var(--header-drawer-icon-color-hover);
+}
 </style>
