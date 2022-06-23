@@ -1,0 +1,13 @@
+:root{
+
+}
+
+:root .dark{
+
+}
+
+* {
+    font-family: Charter, Arial, "Noto Sans SC", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
