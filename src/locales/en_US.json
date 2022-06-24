@@ -1,6 +1,10 @@
 {
   "headerNav": {
     "homePage": "Home Page",
-    "serverStatus": "Server Status"
+    "serverStatus": "Server Status",
+    "onlineMap": "Online Map",
+    "socialMedia": "Social Media",
+    "externalLink": "Jump to external link",
+    "twitter": "Twitter"
   }
 }

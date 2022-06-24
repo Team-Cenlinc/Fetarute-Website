@@ -1,6 +1,10 @@
 {
   "headerNav": {
     "homePage": "首页",
-    "serverStatus": "服务器状态"
+    "serverStatus": "服务器状态",
+    "onlineMap": "在线地图",
+    "socialMedia": "社交媒体",
+    "externalLink": "跳转至外部链接",
+    "twitter": "推特"
   }
 }

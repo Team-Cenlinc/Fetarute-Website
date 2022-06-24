@@ -8,6 +8,7 @@ const LOCALE_KEY = 'localeLanguage'
 
 const locales = {
   zh_cn: require('./zh_CN.json'),
+  ja_jp: require('./ja_JP.json'),
   en_us: require('./en_US.json'),
 }
 

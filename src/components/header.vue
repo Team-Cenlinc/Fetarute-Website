@@ -7,7 +7,7 @@
         <input type="button" @click.stop="drawer = !drawer" class="material-symbols-outlined header-nav" value="menu">
         <input type="button" @click="changeModeAnimation" v-if="darkMode" class="material-symbols-outlined header-nav style-option" value="dark_mode">
         <input type="button" @click="changeModeAnimation" v-if="!darkMode" class="material-symbols-outlined header-nav style-option" value="light_mode">
-        <v-menu offset-y v-bind:dark="darkMode" buttom origin="center center" transition="slide-y-transition" content-class="lang-menu" close-on-click="close-on-click">
+        <v-menu offset-y v-bind:dark="darkMode" buttom origin="center center" transition="slide-y-transition" content-class="lang-menu" close-on-click="close-on-click" open-on-hover>
           <template v-slot:activator="{ on, attrs }">
             <input v-bind="attrs" v-on="on" type="button" class="material-symbols-outlined header-nav" value="translate">
           </template>
@@ -17,7 +17,7 @@
             :key="index"
             link
             >
-              <v-list-item-title>{{ lang.title }}</v-list-item-title>
+              <v-list-item-title @click="modifyLanguage(lang.key)">{{ lang.title }}</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-menu>
@@ -34,6 +34,15 @@
               <v-list-item>
                 <v-list-item-title>{{ $t("headerNav.serverStatus") }}</v-list-item-title>
               </v-list-item>
+              <v-list-item>
+                <v-list-item-title>{{ $t("headerNav.onlineMap") }}</v-list-item-title>
+              </v-list-item>
+              <v-list-item :disabled="true">
+                <v-list-item-title>{{ $t("headerNav.socialMedia") }}</v-list-item-title>
+              </v-list-item>
+              <v-list-item link href="https://twitter.com/Fetarute" :title="$t('headerNav.externalLink')">
+                <v-list-item-title>{{ $t("headerNav.twitter") }}<span class="material-symbols-outlined">link</span></v-list-item-title>
+              </v-list-item>
             </v-list-item-group>
           </v-list>
         </v-navigation-drawer>
@@ -44,6 +53,7 @@
 
 <script>
 import anime from 'animejs/lib/anime.es.js';
+import i18n from "@/locales/i18n";
 
 export default {
   name: "headerNav",
@@ -54,10 +64,16 @@ export default {
     scrollPassed: false,
     languageList: [
       {
-        title: '简体中文'
+        title: '简体中文',
+        key: 'zh_cn'
       },
       {
-        title: "English"
+        title: "日本語",
+        key: 'ja_jp'
+      },
+      {
+        title: "English",
+        key: 'en_us'
       }
     ]
   }),
@@ -106,7 +122,14 @@ export default {
       } else if (scrollOffset < panHeaderHeight - 70) {
         this.scrollPassed = false
       }
+    },
+    modifyLanguage(lang_key) {
+      i18n.locale = lang_key
+      localStorage.setItem("localeLanguage", lang_key)
     }
+  },
+  beforeDestroy() {
+    window.removeEventListener("scroll", this.handleScroll);
   }
 }
 </script>
@@ -142,6 +165,7 @@ header .header-flex {
   flex-direction: row;
   justify-content: space-between;
   z-index: 3;
+  transition: 225ms ease-out;
   position: fixed;
 }
 

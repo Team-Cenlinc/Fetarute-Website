@@ -21,7 +21,7 @@
 }
 
 * {
-    font-family:  sans-serif, Charter, Arial, "Noto Sans SC";
+    font-family:  "Noto Sans SC", sans-serif, Charter, Arial, "Noto Sans JP";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
