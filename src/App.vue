@@ -1,13 +1,13 @@
 <template>
   <div id="app">
     <div id="desktop">
-      <HeaderNav :title="this.title"/>
+      <HeaderNav :title="this.title" @colorThemeChange="syncColorTheme"/>
       <div>
 
       </div>
       <BodyPictureViewer/>
       <BodyContentViewer />
-      <footer-viewer />
+      <FooterViewer ref="footer"/>
     </div>
 
   </div>
@@ -38,6 +38,10 @@ export default {
     onResize () {
       this.isMobile = window.innerWidth < 600
     },
+    syncColorTheme(colorThemeStatus) {
+      sessionStorage.setItem("darkModeOption", colorThemeStatus.toString())
+      this.$refs.footer.updateColorTheme(colorThemeStatus)
+    }
   }
 };
 </script>

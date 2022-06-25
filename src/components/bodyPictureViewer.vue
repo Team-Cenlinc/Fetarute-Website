@@ -1,6 +1,6 @@
 <template>
   <div class="picture-carousel" id="pan-header-picture">
-    <v-carousel hide-delimiters cycle interval=6000 :show-arrows="false" height="600">
+    <v-carousel hide-delimiters cycle interval=6000 :show-arrows="false" height="800">
       <v-carousel-item
           v-for="(item,i) in panHeaderImages"
           :key="i"

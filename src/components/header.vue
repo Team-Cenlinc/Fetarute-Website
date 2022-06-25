@@ -112,6 +112,7 @@ export default {
       } else {
         document.body.classList.remove('dark');
       }
+      this.$emit('colorThemeChange', this.darkMode)
     },
     handleScroll(){
       let scrollOffset = window.scrollY
