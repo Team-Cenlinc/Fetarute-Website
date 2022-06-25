@@ -117,9 +117,9 @@ export default {
       let scrollOffset = window.scrollY
       let panHeaderHeight = document.getElementById("pan-header-picture").clientHeight
 
-      if (scrollOffset > panHeaderHeight - 70) {
+      if (scrollOffset > panHeaderHeight - 120) {
         this.scrollPassed = true
-      } else if (scrollOffset < panHeaderHeight - 70) {
+      } else if (scrollOffset < panHeaderHeight - 120) {
         this.scrollPassed = false
       }
     },

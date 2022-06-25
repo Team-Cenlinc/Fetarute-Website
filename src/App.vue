@@ -7,6 +7,7 @@
       </div>
       <BodyPictureViewer/>
       <BodyContentViewer />
+      <footer-viewer />
     </div>
 
   </div>
@@ -16,10 +17,11 @@
 import HeaderNav from "@/components/header";
 import BodyPictureViewer from "@/components/bodyPictureViewer";
 import BodyContentViewer from "@/components/bodyContentViewer";
+import FooterViewer from "@/components/footer";
 
 export default {
   name: 'App',
-  components: {BodyContentViewer, HeaderNav, BodyPictureViewer},
+  components: {FooterViewer, BodyContentViewer, HeaderNav, BodyPictureViewer},
   data: () => ({
     title: "Fetarute",
     isMobile: false
