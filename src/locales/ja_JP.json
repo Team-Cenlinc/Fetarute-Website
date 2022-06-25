@@ -1,10 +1,18 @@
 {
   "headerNav": {
+    "chineseLangOnly": "このページは中国語だけです",
     "homePage": "ホームページ",
     "serverStatus": "サーバーステータス",
     "onlineMap": "オンライン地図",
+    "wikiLink": "Fetarute ウィキ",
     "socialMedia": "ソーシャルメディア",
-    "externalLink": "他のサイトへ",
-    "twitter": "ツイッター"
+    "externalLink": "別サイトへ",
+    "twitter": "ツイッター",
+    "toolBox": "ツールボックス"
+  },
+  "footer": {
+    "joinUs": "参加申請",
+    "followUs": "ソーシャルメディア",
+    "contactUs": "連絡先"
   }
 }

@@ -37,11 +37,20 @@
               <v-list-item>
                 <v-list-item-title>{{ $t("headerNav.onlineMap") }}</v-list-item-title>
               </v-list-item>
+              <v-list-item link href="https://www.fetarute.org/wiki/index.php/%E9%A6%96%E9%A1%B5" target="_blank" :title="$t('headerNav.chineseLangOnly')">
+                <v-list-item-title>{{ $t("headerNav.wikiLink") }}</v-list-item-title>
+              </v-list-item>
               <v-list-item :disabled="true">
                 <v-list-item-title>{{ $t("headerNav.socialMedia") }}</v-list-item-title>
               </v-list-item>
               <v-list-item link href="https://twitter.com/Fetarute" :title="$t('headerNav.externalLink')">
                 <v-list-item-title>{{ $t("headerNav.twitter") }}<span class="material-symbols-outlined">link</span></v-list-item-title>
+              </v-list-item>
+              <v-list-item :disabled="true">
+                <v-list-item-title>{{ $t("headerNav.toolBox") }}</v-list-item-title>
+              </v-list-item>
+              <v-list-item link href="https://team-cenlinc.github.io/FesGen/" target="_blank" :title="$t('headerNav.chineseLangOnly')">
+                <v-list-item-title>FesGen</v-list-item-title>
               </v-list-item>
             </v-list-item-group>
           </v-list>

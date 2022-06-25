@@ -1,10 +1,18 @@
 {
   "headerNav": {
+    "chineseLangOnly": "仅有中文页面",
     "homePage": "首页",
     "serverStatus": "服务器状态",
     "onlineMap": "在线地图",
+    "wikiLink": "Fetarute百科",
     "socialMedia": "社交媒体",
     "externalLink": "跳转至外部链接",
-    "twitter": "推特"
+    "twitter": "推特",
+    "toolBox": "工具箱"
+  },
+  "footer": {
+    "joinUs": "加入我们",
+    "followUs": "关注我们",
+    "contactUs": "联系我们"
   }
 }

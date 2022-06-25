@@ -33,9 +33,9 @@
     --footer-bg-color: #030303;
     --footer-shade-color: rgba(0, 59, 80, 0.35);
     --footer-text-color: #e3e2e2;
-    --footer-svg-color: #d9d9d9;
-    --footer-secondary-text-color: #4f4f4f;
-    --footer-shade-secondary: #e3e3e3;
+    --footer-svg-color: #4e4e4e;
+    --footer-secondary-text-color: #e3e3e3;
+    --footer-shade-secondary: #5e5e5e;
 }
 
 * {

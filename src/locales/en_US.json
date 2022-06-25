@@ -1,10 +1,18 @@
 {
   "headerNav": {
+    "chineseLangOnly": "Page only in Chinese Language",
     "homePage": "Home Page",
     "serverStatus": "Server Status",
     "onlineMap": "Online Map",
+    "wikiLink": "Fetarute Wiki",
     "socialMedia": "Social Media",
     "externalLink": "Jump to external link",
-    "twitter": "Twitter"
+    "twitter": "Twitter",
+    "toolBox": "Tool Box"
+  },
+  "footer": {
+    "joinUs": "Join Us",
+    "followUs": "Follow Us",
+    "contactUs": "Contact Us"
   }
 }
