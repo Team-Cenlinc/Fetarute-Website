@@ -8,6 +8,7 @@
     --header-shade-color: #484848;
     --header-lang-menu-bg-hover: #a6a6a6ff;
     --body-content-bg: #f3f3f3;
+    --body-nav-expand-text-color: #4f4f4f;
     --body-content-span-line-creative: #78daff;
     --body-content-span-text-color: #383838;
     --footer-bg-color: #dadada;
@@ -28,7 +29,8 @@
     --header-shade-color: rgba(0, 59, 80, 0.35);
     --header-lang-menu-bg-hover: #1e1e1e;
     --body-content-bg: #252525;
-    --body-content-span-line-creative: rgba(79, 143, 166, 0.9);
+    --body-nav-expand-text-color: #e5e5e5;
+    --body-content-span-line-creative: rgba(79, 143, 166, 1);
     --body-content-span-text-color: #e3e3e3;
     --footer-bg-color: #030303;
     --footer-shade-color: rgba(0, 59, 80, 0.35);

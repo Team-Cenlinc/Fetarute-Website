@@ -3,19 +3,19 @@
     <div class="footer-main-content">
       <div class="form">
         <div class="row">
-          <h5>{{ $t("footer.joinUs") }}</h5>
+          <h6>{{ $t("footer.joinUs") }}</h6>
           <div class="form-min-row">
             <p>QQ: 517248890</p>
           </div>
         </div>
         <div class="row">
-          <h5>{{ $t("footer.followUs") }}</h5>
+          <h6>{{ $t("footer.followUs") }}</h6>
           <div class="form-min-row">
             <p>Twitter: @Fetarute</p>
           </div>
         </div>
         <div class="row">
-          <h5>{{ $t("footer.contactUs") }}</h5>
+          <h6>{{ $t("footer.contactUs") }}</h6>
           <div class="form-min-row">
             <p>E-mail: inbox@fetarute.org</p>
           </div>
@@ -131,11 +131,11 @@ footer.footer-flex {
   font-size: 0.5rem;
 }
 
-.row h5 {
+.row h6 {
   width: fit-content;
-  height: 22px;
+  height: 15px;
   margin: 1.2rem 0 0.3rem 0.6rem;
-  border-bottom: 8px solid var(--body-content-span-line-creative);
+  border-bottom: 6px solid var(--body-content-span-line-creative);
 }
 
 </style>

@@ -10,6 +10,9 @@
     "twitter": "推特",
     "toolBox": "工具箱"
   },
+  "bodyContent": {
+    "promptScroll": "向 下 滚 动 以 探 索 ➡"
+  },
   "footer": {
     "joinUs": "加入我们",
     "followUs": "关注我们",

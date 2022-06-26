@@ -10,6 +10,9 @@
     "twitter": "Twitter",
     "toolBox": "Tool Box"
   },
+  "bodyContent": {
+    "promptScroll": "Scroll down to discover ➡"
+  },
   "footer": {
     "joinUs": "Join Us",
     "followUs": "Follow Us",

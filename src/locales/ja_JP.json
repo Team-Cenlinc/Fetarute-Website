@@ -10,6 +10,9 @@
     "twitter": "ツイッター",
     "toolBox": "ツールボックス"
   },
+  "bodyContent": {
+    "promptScroll": "続の先は もっと ある ➡"
+  },
   "footer": {
     "joinUs": "参加申請",
     "followUs": "ソーシャルメディア",
