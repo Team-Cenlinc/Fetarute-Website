@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <div id="desktop">
+    <div v-if="!isMobile" id="desktop">
       <HeaderNav :title="this.title" @colorThemeChange="syncColorTheme"/>
       <div>
 
@@ -9,7 +9,15 @@
       <BodyContentViewer />
       <FooterViewer ref="footer"/>
     </div>
+    <div v-if="isMobile" id="mobile">
+      <MobileHeader :title="this.title" @colorThemeChange="syncColorTheme"/>
+      <div>
 
+      </div>
+      <MobileBodyPictureViewer/>
+      <MobileBodyContentViewer/>
+      <MobileFooter ref="footer"/>
+    </div>
   </div>
 </template>
 
@@ -19,9 +27,17 @@ import BodyPictureViewer from "@/components/bodyPictureViewer";
 import BodyContentViewer from "@/components/bodyContentViewer";
 import FooterViewer from "@/components/footer";
 
+import MobileHeader from "@/components/mobile/mobileHeader";
+import MobileFooter from "@/components/mobile/mobileFooter";
+import MobileBodyPictureViewer from "@/components/mobile/mobileBodyPictureViewer";
+import MobileBodyContentViewer from "@/components/mobile/mobileBodyContentViewer";
+
 export default {
   name: 'App',
-  components: {FooterViewer, BodyContentViewer, HeaderNav, BodyPictureViewer},
+  components: {
+    MobileBodyContentViewer,
+    MobileBodyPictureViewer,
+    MobileFooter, FooterViewer, BodyContentViewer, HeaderNav, BodyPictureViewer, MobileHeader},
   data: () => ({
     title: "Fetarute",
     isMobile: false
