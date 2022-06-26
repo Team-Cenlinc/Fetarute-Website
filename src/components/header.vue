@@ -181,6 +181,8 @@ header .header-flex {
 
 header .header-nav-home {
   display: flex;
+  padding: 0 1em;
+  line-height: 50px;
   color: var(--header-nav-color);
   text-decoration: none;
   float: right;
