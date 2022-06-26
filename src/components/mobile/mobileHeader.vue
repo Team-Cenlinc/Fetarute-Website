@@ -175,13 +175,11 @@ header .header-flex {
   z-index: 3;
   transition: 225ms ease-out;
   position: fixed;
-  padding-left: -40px;
 }
 
 header .header-nav-home {
   display: flex;
-  padding: 0 0.8em;
-  margin-left: 20px;
+  padding: 0 0.6em;
   line-height: 50px;
   color: var(--header-nav-color);
   text-decoration: none;
@@ -191,7 +189,7 @@ header .header-nav-home {
 
 header .header-nav{
   display: block;
-  padding: 0 0.8rem;
+  padding: 0 1rem;
   line-height: 50px;
   color: var(--header-nav-color);
   text-decoration: none;
