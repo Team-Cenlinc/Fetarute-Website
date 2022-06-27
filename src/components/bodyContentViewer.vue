@@ -43,7 +43,7 @@ export default {
   background-color: var(--body-content-span-line-creative);
   transform: translateY(-575px);
   writing-mode: vertical-lr;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: bold;
   align-content: center;
   color: var(--body-nav-expand-text-color);

@@ -38,6 +38,7 @@
     --footer-svg-color: #4e4e4e;
     --footer-secondary-text-color: #e3e3e3;
     --footer-shade-secondary: #5e5e5e;
+    --body-picture-viewer-filter-parameter: grayscale(40%);
 }
 
 * {

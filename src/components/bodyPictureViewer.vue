@@ -33,6 +33,8 @@ export default {
 <style scoped>
 div.picture-carousel{
   z-index: -1;
+  background-color: var(--body-content-bg);
+  filter: var(--body-picture-viewer-filter-parameter);
 }
 
 </style>
