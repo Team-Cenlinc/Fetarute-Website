@@ -11,7 +11,8 @@
     "toolBox": "Tool Box"
   },
   "bodyContent": {
-    "promptScroll": "Scroll down to discover ➡"
+    "promptScroll": "Scroll down to discover ➡",
+    "creativeWorld": "Creative"
   },
   "footer": {
     "joinUs": "Join Us",
