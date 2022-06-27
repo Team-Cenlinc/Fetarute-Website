@@ -10,6 +10,8 @@
     --body-content-bg: #f3f3f3;
     --body-nav-expand-text-color: #4f4f4f;
     --body-content-span-line-creative: #78daff;
+    --body-span-line-syapole: #00cdda;
+    --body-span-line-southpark: #00cc59;
     --body-content-span-text-color: #383838;
     --footer-bg-color: #dadada;
     --footer-shade-color: #484848;
@@ -32,6 +34,8 @@
     --body-nav-expand-text-color: #e5e5e5;
     --body-content-span-line-creative: rgba(79, 143, 166, 1);
     --body-content-span-text-color: #e3e3e3;
+    --body-span-line-syapole: #005e67;
+    --body-span-line-southpark: #00652c;
     --footer-bg-color: #030303;
     --footer-shade-color: rgba(0, 59, 80, 0.35);
     --footer-text-color: #e3e2e2;

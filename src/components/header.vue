@@ -154,7 +154,7 @@ header .before-scroll-bg{
 
 header{
   flex: 0 0 auto;
-  z-index: 3;
+  z-index: 5;
   position: fixed;
   transition: 225ms ease-out;
 }
@@ -174,7 +174,6 @@ header .header-flex {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  z-index: 3;
   transition: 225ms ease-out;
   position: fixed;
 }
