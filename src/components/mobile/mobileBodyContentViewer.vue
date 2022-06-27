@@ -34,7 +34,8 @@
         <div id="content-station-2"></div>
       </div>
       <div id="content-container-2">
-
+        <h3 class="subtitle">01 - {{ $t("bodyContent.journeyBegin") }}</h3>
+        <p>占位符Desu</p>
       </div>
       <div id="line-cross-out-R-1"></div>
     </section>
@@ -51,6 +52,12 @@ export default {
 <style scoped>
 .content-viewer{
   background-color: var(--body-content-bg);
+}
+
+.down-navigator{
+  z-index: 2;
+  position: relative;
+  margin-bottom: -600px;
 }
 
 #rectangle-station{
@@ -92,7 +99,7 @@ export default {
   height: 16px;
   background-color: var(--body-content-span-line-creative);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
-  transform: skewY(3deg) translateY(-535px);
+  transform: skewY(3deg) translateY(65px);
   z-index: 3;
   position: relative;
 }
@@ -100,7 +107,7 @@ export default {
 .span-expand{
   height: 130px;
   background-color: var(--body-content-bg);
-  transform: skewY(3deg) translateY(-405px);
+  transform: skewY(3deg) translateY(195px);
   box-shadow: 0 -20px 20px 8px var(--body-content-bg);
   z-index: 2;
   position: relative;
@@ -112,7 +119,6 @@ export default {
   height: 300px;
   z-index: 2;
   position: relative;
-  margin-bottom: -300px;
 }
 
 #line-cross-in-L-1{
@@ -123,7 +129,7 @@ export default {
   border-top-left-radius: 90px;
   border-left: 16px solid var(--body-span-line-syapole);
   border-top: 16px solid var(--body-span-line-syapole);
-  transform: translateY(-850px); /*Section 1 Original Calc Point*/
+  transform: translateY(-220px);/*Section 1 Original Calc Point*/
 }
 
 #content-container-line-1{
@@ -131,7 +137,7 @@ export default {
   height: 100%;
   width: 16px;
   background-color: var(--body-span-line-syapole);
-  transform: translate(16px, -780px);
+  transform: translate(16px, -150px);
 }
 
 #content-station-1{
@@ -143,7 +149,7 @@ export default {
 
 #content-container-1{
   background-color: transparent;
-  transform: translateY(-650px);
+  transform: translateY(-20px);
   text-align: center;
   margin: 200px 0 0 32%;
 }
@@ -156,13 +162,13 @@ export default {
   border-bottom-left-radius: 90px;
   border-left: 16px solid var(--body-span-line-syapole);
   border-bottom: 16px solid var(--body-span-line-syapole);
-  transform: translate(86px, -530px); /*Section 1 Original Calc Point*/
+  transform: translate(86px, 100px); /*Section 1 Original Calc Point*/
 }
 
 #span-line{
   height: 16px;
   background-color: var(--body-span-line-southpark);
-  transform: skewY(-3deg) translateY(-500px);
+  transform: skewY(-5deg) translateY(-145px);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 2;
   position: relative;
@@ -182,31 +188,31 @@ export default {
   height: 70px;
   background-color: transparent;
   border-top-right-radius: 90px;
-  border-right: 16px solid var(--body-span-line-syapole);
-  border-top: 16px solid var(--body-span-line-syapole);
-  transform: translateY(-900px); /*Section 1 Original Calc Point*/
+  border-right: 16px solid var(--body-span-line-kitajuku);
+  border-top: 16px solid var(--body-span-line-kitajuku);
+  transform: translateY(-150px); /*Section 1 Original Calc Point*/
+
 }
 
 #content-container-line-2{
   float: left;
   height: 100%;
   width: 16px;
-  background-color: var(--body-span-line-syapole);
-  transform: translate(-16px, -830px);
+  background-color: var(--body-span-line-kitajuku);
+  transform: translate(-16px, -80px);
 }
 
 #content-station-2{
   height: 16px;
   width: 30px;
-  background-color: var(--body-span-line-syapole);
+  background-color: var(--body-span-line-kitajuku);
   transform: translate(10px, 12rem);
 }
 
 #content-container-2{
   background-color: transparent;
-  transform: translateY(-500px);
-  text-align: center;
-  margin: 300px 0 0 30%;
+  margin: -80px 0 0 22%;
+  line-height: 1rem;
 }
 
 #line-cross-out-R-1{
@@ -215,9 +221,9 @@ export default {
   height: 70px;
   background-color: transparent;
   border-bottom-right-radius: 90px;
-  border-right: 16px solid var(--body-span-line-syapole);
-  border-bottom: 16px solid var(--body-span-line-syapole);
-  transform: translate(-86px, -530px); /*Section 1 Original Calc Point*/
+  border-right: 16px solid var(--body-span-line-kitajuku);
+  border-bottom: 16px solid var(--body-span-line-kitajuku);
+  transform: translate(-86px, 180px); /*Section 2 Original Calc Point*/
 }
 
 /* Scooped Start */
@@ -227,5 +233,18 @@ h1.subtitle{
   font-size: 2rem;
   width: fit-content;
   height: 3rem;
+}
+
+h3.subtitle{
+  color: var(--body-content-span-text-color);
+  font-size: 1rem;
+  width: fit-content;
+  height: 1.3rem;
+  border-bottom: 0.5rem solid var(--body-span-line-kitajuku);
+}
+
+p{
+  color: var(--body-content-span-text-color);
+  font-size: 0.8rem;
 }
 </style>

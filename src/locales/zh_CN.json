@@ -12,7 +12,8 @@
   },
   "bodyContent": {
     "promptScroll": "向 下 滚 动 以 探 索 ➡",
-    "creativeWorld": "创造世界"
+    "creativeWorld": "创造世界",
+    "journeyBegin": "开始旅程：简介"
   },
   "footer": {
     "joinUs": "加入我们",

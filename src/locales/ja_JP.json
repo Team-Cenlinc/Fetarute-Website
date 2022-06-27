@@ -12,7 +12,8 @@
   },
   "bodyContent": {
     "promptScroll": "続の先は もっと ある ➡",
-    "creativeWorld": "創造世界"
+    "creativeWorld": "創造世界",
+    "journeyBegin": "旅の始まり：紹介"
   },
   "footer": {
     "joinUs": "参加申請",

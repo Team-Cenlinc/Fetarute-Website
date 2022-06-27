@@ -12,7 +12,8 @@
   },
   "bodyContent": {
     "promptScroll": "Scroll down to discover ➡",
-    "creativeWorld": "Creative"
+    "creativeWorld": "Creative",
+    "journeyBegin": "The Beginning of the Journey: Introduction"
   },
   "footer": {
     "joinUs": "Join Us",

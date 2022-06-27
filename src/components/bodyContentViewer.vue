@@ -36,7 +36,8 @@
         <div id="content-station-2"></div>
       </div>
       <div id="content-container-2">
-
+        <h3 class="subtitle">01 - {{ $t("bodyContent.journeyBegin") }}</h3>
+        <p>占位符Desu</p>
       </div>
       <div id="line-cross-out-R-1"></div>
     </section>
@@ -63,19 +64,19 @@ export default {
 #rectangle-station{
   height: 20px;
   width: 60px;
-  margin-left: 40px;
+  margin-left: 42px;
   background-color: var(--body-content-span-line-creative);
   transform: translateY(-575px);
 }
 
 #line-nav-expand{
   height: 450px;
-  width: 22px;
+  width: 25px;
   margin-left: 60px;
   background-color: var(--body-content-span-line-creative);
   transform: translateY(-575px);
   writing-mode: vertical-lr;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: bold;
   align-content: center;
   color: var(--body-nav-expand-text-color);
@@ -90,8 +91,8 @@ export default {
   margin-left: 60px;
   background-color: transparent;
   border-bottom-left-radius: 90px;
-  border-left: 22px solid var(--body-content-span-line-creative);
-  border-bottom: 22px solid var(--body-content-span-line-creative);
+  border-left: 25px solid var(--body-content-span-line-creative);
+  border-bottom: 25px solid var(--body-content-span-line-creative);
   transform: translateY(-575px);
 }
 
@@ -119,7 +120,7 @@ export default {
   height: 500px;
   z-index: 2;
   position: relative;
-  margin-bottom: -500px;
+  margin-bottom: -900px;
 }
 
 #line-cross-in-L-1{
@@ -169,7 +170,7 @@ export default {
 #span-line{
   height: 22px;
   background-color: var(--body-span-line-southpark);
-  transform: skewY(-3deg) translateY(-400px);
+  transform: skewY(-5deg);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 2;
   position: relative;
@@ -189,31 +190,31 @@ export default {
   height: 90px;
   background-color: transparent;
   border-top-right-radius: 90px;
-  border-right: 22px solid var(--body-span-line-syapole);
-  border-top: 22px solid var(--body-span-line-syapole);
-  transform: translateY(-800px); /*Section 1 Original Calc Point*/
+  border-right: 22px solid var(--body-span-line-kitajuku);
+  border-top: 22px solid var(--body-span-line-kitajuku);
+  transform: translateY(-600px); /*Section 1 Original Calc Point*/
 }
 
 #content-container-line-2{
   float: left;
   height: 100%;
   width: 22px;
-  background-color: var(--body-span-line-syapole);
-  transform: translate(-22px, -710px);
+  background-color: var(--body-span-line-kitajuku);
+  transform: translate(-22px, -510px);
 }
 
 #content-station-2{
   height: 20px;
   width: 50px;
-  background-color: var(--body-span-line-syapole);
+  background-color: var(--body-span-line-kitajuku);
   transform: translate(5px, 16.5rem);
 }
 
 #content-container-2{
   background-color: transparent;
-  transform: translateY(-500px);
-  text-align: center;
-  margin: 200px 0 0 30%;
+  transform: translateY(-100px);
+  margin: 200px 0 0 18%;
+  line-height: 1.8rem;
 }
 
 #line-cross-out-R-1{
@@ -222,9 +223,9 @@ export default {
   height: 90px;
   background-color: transparent;
   border-bottom-right-radius: 90px;
-  border-right: 22px solid var(--body-span-line-syapole);
-  border-bottom: 22px solid var(--body-span-line-syapole);
-  transform: translate(-112px, -210px); /*Section 1 Original Calc Point*/
+  border-right: 22px solid var(--body-span-line-kitajuku);
+  border-bottom: 22px solid var(--body-span-line-kitajuku);
+  transform: translate(-112px, -10px); /*Section 2 Original Calc Point*/
 }
 
 /* Scooped Start */
@@ -234,5 +235,18 @@ h1.subtitle{
   font-size: 4rem;
   width: fit-content;
   height: 5rem;
+}
+
+h3.subtitle{
+  color: var(--body-content-span-text-color);
+  font-size: 1.5rem;
+  width: fit-content;
+  height: 1.8rem;
+  border-bottom: 0.5rem solid var(--body-span-line-kitajuku);
+}
+
+p{
+  color: var(--body-content-span-text-color);
+  font-size: 1.2rem;
 }
 </style>
