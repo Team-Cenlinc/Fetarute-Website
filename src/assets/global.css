@@ -9,10 +9,10 @@
     --header-lang-menu-bg-hover: #a6a6a6ff;
     --body-content-bg: #f3f3f3;
     --body-nav-expand-text-color: #4f4f4f;
-    --body-content-span-line-creative: #78daff;
+    --body-content-span-line-creative: #89ceff;
     --body-span-line-syapole: #00cdda;
-    --body-span-line-southpark: #00cc59;
-    --body-span-line-kitajuku: #ff9a00;
+    --body-span-line-southpark: #3cde80;
+    --body-span-line-kitajuku: #ffae42;
     --body-content-span-text-color: #383838;
     --footer-bg-color: #dadada;
     --footer-shade-color: #484848;
@@ -33,7 +33,7 @@
     --header-lang-menu-bg-hover: #1e1e1e;
     --body-content-bg: #252525;
     --body-nav-expand-text-color: #e5e5e5;
-    --body-content-span-line-creative: rgba(79, 143, 166, 1);
+    --body-content-span-line-creative: rgb(78, 118, 159);
     --body-content-span-text-color: #e3e3e3;
     --body-span-line-syapole: #005e67;
     --body-span-line-southpark: #00652c;
