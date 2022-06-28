@@ -213,7 +213,7 @@ export default {
 #content-container-2{
   background-color: transparent;
   transform: translateY(-100px);
-  margin: 200px 0 0 18%;
+  margin: 200px 0 0 200px;
   line-height: 1.8rem;
 }
 

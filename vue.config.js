@@ -4,10 +4,6 @@ module.exports = defineConfig({
     'vuetify'
   ],
 
-  publicPath: process.env.NODE_ENV === 'production'
-      ? '/fetarute-website/'
-      : '/',
-
   pluginOptions: {
     i18n: {
       locale: undefined,
@@ -16,5 +12,11 @@ module.exports = defineConfig({
       enableInSFC: undefined,
       enableBridge: undefined
     }
+  },
+
+  publicPath: '',
+
+  css: {
+    sourceMap: true
   }
 })
