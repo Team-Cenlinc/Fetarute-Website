@@ -69,12 +69,12 @@ import anime from 'animejs/lib/anime.es.js';
 import i18n from "@/locales/i18n";
 
 export default {
-  name: "headerNav",
+  name: "headerViewerTools",
   props: ["title"],
   data: () => ({
     darkMode: false,
     drawer: false,
-    scrollPassed: false,
+    scrollPassed: true,
     languageList: [
       {
         title: '简体中文',
@@ -105,8 +105,6 @@ export default {
         this.darkMode = false
       }
     });
-
-    window.addEventListener("scroll", this.handleScroll)
   },
   methods:{
     changeModeAnimation () {
@@ -126,16 +124,6 @@ export default {
         document.body.classList.remove('dark');
       }
       this.$emit('colorThemeChange', this.darkMode)
-    },
-    handleScroll(){
-      let scrollOffset = window.scrollY
-      let panHeaderHeight = document.getElementById("pan-header-picture").clientHeight
-
-      if (scrollOffset > panHeaderHeight - 120) {
-        this.scrollPassed = true
-      } else if (scrollOffset < panHeaderHeight - 120) {
-        this.scrollPassed = false
-      }
     },
     modifyLanguage(lang_key) {
       i18n.locale = lang_key
@@ -166,7 +154,7 @@ header{
 .after-scroll-bg{
   transition: 225ms ease-out;
   background-color: var(--header-background-color);
-  box-shadow: 0 0 5px var(--header-shade-color);
+  box-shadow: 0 5px 10px var(--header-shade-color);
   color: #1f1f1f;
 }
 
@@ -236,5 +224,4 @@ input.header-nav:hover {
   color: var(--header-router-color-text);
   text-decoration: none;
 }
-
 </style>

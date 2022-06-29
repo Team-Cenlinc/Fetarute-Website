@@ -43,7 +43,7 @@
 
 <script>
 export default {
-  name: "footerViewer",
+  name: "footerViewerTools",
   data: () => ({
     darkMode: false
   }),

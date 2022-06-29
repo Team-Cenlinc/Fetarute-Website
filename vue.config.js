@@ -14,6 +14,8 @@ module.exports = defineConfig({
     }
   },
 
+  runtimeCompiler: true,
+
   publicPath: '',
 
   css: {

@@ -77,7 +77,6 @@ export default {
   writing-mode: vertical-lr;
   font-size: 0.5rem;
   font-weight: bold;
-  align-content: center;
   color: var(--body-nav-expand-text-color);
   text-align: start;
   font-family: "Noto Sans SC", sans-serif;

@@ -1,13 +1,19 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import ServerStatus from "@/views/serverStatus";
+import ServerStatus from "@/components/tools/status/status"
+import App from "@/App";
 
 Vue.use(VueRouter)
 
 const routes = [
   {
+    path: '/',
+    name: 'AppMain',
+    component: App
+  },
+    {
     path: '/tools/status',
-    name: 'Server Status',
+    name: 'ServerStatus',
     component: ServerStatus
   }
 ]

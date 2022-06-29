@@ -7,6 +7,9 @@
     --header-drawer-icon-color-hover: #383838;
     --header-shade-color: #484848;
     --header-lang-menu-bg-hover: #a6a6a6ff;
+
+    --header-router-color-text: #222323;
+
     --body-content-bg: #f3f3f3;
     --body-nav-expand-text-color: #4f4f4f;
     --body-content-span-line-creative: #89ceff;
@@ -31,6 +34,9 @@
     --header-drawer-icon-color-hover: #e3e3e3;
     --header-shade-color: rgba(0, 59, 80, 0.35);
     --header-lang-menu-bg-hover: #1e1e1e;
+
+    --header-router-color-text: #f5f5f5;
+
     --body-content-bg: #252525;
     --body-nav-expand-text-color: #e5e5e5;
     --body-content-span-line-creative: rgb(78, 118, 159);
@@ -45,6 +51,7 @@
     --footer-secondary-text-color: #e3e3e3;
     --footer-shade-secondary: #5e5e5e;
     --body-picture-viewer-filter-parameter: grayscale(40%);
+
 }
 
 * {
