@@ -85,7 +85,7 @@ footer.footer-flex {
 }
 
 #copyright-explanation{
-  transform: translate(3%, 50%);
+  transform: translate(2%, 50%);
   font-size: 0.4rem;
 }
 

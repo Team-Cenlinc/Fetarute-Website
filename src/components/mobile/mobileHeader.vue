@@ -2,7 +2,7 @@
   <header>
     <div class="header-flex" v-bind:class="{'after-scroll-bg': scrollPassed, 'before-scroll-bg': !scrollPassed}" data-app>
       <!-- LOGO PLACEHOLDER -->
-      <h2><small><a href="/public" class="header-nav-home">{{ title }}</a></small></h2>
+      <h2><small><a href="/" class="header-nav-home">{{ title }}</a></small></h2>
       <span>
         <input type="button" @click.stop="drawer = !drawer" class="material-symbols-outlined header-nav" value="menu">
         <input type="button" @click="changeModeAnimation" v-if="darkMode" class="material-symbols-outlined header-nav style-option" value="dark_mode">
@@ -29,10 +29,14 @@
                 <input type="button" class="material-symbols-outlined drawer-close-icon" value="close">
               </v-list-item>
               <v-list-item>
-                <v-list-item-title>{{ $t("headerNav.homePage") }}</v-list-item-title>
+                <router-link to="/">
+                  <v-list-item-title>{{ $t("headerNav.homePage") }}</v-list-item-title>
+                </router-link>
               </v-list-item>
               <v-list-item>
-                <v-list-item-title>{{ $t("headerNav.serverStatus") }}</v-list-item-title>
+                <router-link to="/tools/status">
+                  <v-list-item-title>{{ $t("headerNav.serverStatus") }}</v-list-item-title>
+                </router-link>
               </v-list-item>
               <v-list-item>
                 <v-list-item-title>{{ $t("headerNav.onlineMap") }}</v-list-item-title>
@@ -227,5 +231,10 @@ input.header-nav:hover {
 .drawer-close-icon:hover{
   transition: 225ms ease-out;
   color: var(--header-drawer-icon-color-hover);
+}
+
+.router-link-active{
+  color: var(--header-router-color-text);
+  text-decoration: none;
 }
 </style>

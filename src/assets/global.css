@@ -1,4 +1,7 @@
 :root {
+    --global-ok: #69d29a;
+    --global-alert: #ffde5a;
+    --global-danger: #ff5858;
     --header-background-color: rgba(168, 234, 255, 0.85);
     --header-color: #1f1f1f;
     --header-nav-color: #4f4f4f;
@@ -26,6 +29,9 @@
 }
 
 :root .dark{
+    --global-ok: #3e805b;
+    --global-alert: rgba(180, 154, 54, 1);
+    --global-danger: rgba(194, 55, 55, 1);
     --header-background-color: rgba(0, 7, 26, 0.75);
     --header-color: #e5e5e5;
     --header-nav-color: #e5e5e5;

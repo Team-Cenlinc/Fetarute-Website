@@ -15,6 +15,10 @@
     "creativeWorld": "Creative",
     "journeyBegin": "The Beginning of the Journey: Introduction"
   },
+  "status": {
+    "offline": "Offline",
+    "creativeName": "Fetarute: Creative - Modern"
+  },
   "footer": {
     "joinUs": "Join Us",
     "followUs": "Follow Us",

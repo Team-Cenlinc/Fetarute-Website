@@ -36,7 +36,7 @@
         <div id="content-station-2"></div>
       </div>
       <div id="content-container-2">
-        <h3 class="subtitle">01 - {{ $t("bodyContent.journeyBegin") }}</h3>
+        <h3 style="border-bottom: 0.5rem solid var(--body-span-line-kitajuku);" class="subtitle">01 - {{ $t("bodyContent.journeyBegin") }}</h3>
         <p>占位符Desu</p>
       </div>
       <div id="line-cross-out-R-1"></div>
@@ -242,7 +242,6 @@ h3.subtitle{
   font-size: 1.5rem;
   width: fit-content;
   height: 1.8rem;
-  border-bottom: 0.5rem solid var(--body-span-line-kitajuku);
 }
 
 p{

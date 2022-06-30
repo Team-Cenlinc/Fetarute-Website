@@ -2,8 +2,8 @@
   <header>
     <div class="header-flex" v-bind:class="{'after-scroll-bg': scrollPassed, 'before-scroll-bg': !scrollPassed}" data-app>
       <!-- LOGO PLACEHOLDER -->
-      <h1><small><a href="/" class="header-nav-home">{{ title }}</a></small></h1>
-      <div class="rev-zone">
+      <h2><small><a href="/" class="header-nav-home">{{ title }}</a></small></h2>
+      <span>
         <input type="button" @click.stop="drawer = !drawer" class="material-symbols-outlined header-nav" value="menu">
         <input type="button" @click="changeModeAnimation" v-if="darkMode" class="material-symbols-outlined header-nav style-option" value="dark_mode">
         <input type="button" @click="changeModeAnimation" v-if="!darkMode" class="material-symbols-outlined header-nav style-option" value="light_mode">
@@ -13,9 +13,9 @@
           </template>
           <v-list>
             <v-list-item
-            v-for="(lang, index) in languageList"
-            :key="index"
-            link
+                v-for="(lang, index) in languageList"
+                :key="index"
+                link
             >
               <v-list-item-title @click="modifyLanguage(lang.key)">{{ lang.title }}</v-list-item-title>
             </v-list-item>
@@ -59,7 +59,7 @@
             </v-list-item-group>
           </v-list>
         </v-navigation-drawer>
-      </div>
+      </span>
     </div>
   </header>
 </template>
@@ -69,12 +69,12 @@ import anime from 'animejs/lib/anime.es.js';
 import i18n from "@/locales/i18n";
 
 export default {
-  name: "headerNav",
+  name: "mobileHeaderViewer",
   props: ["title"],
   data: () => ({
     darkMode: false,
     drawer: false,
-    scrollPassed: false,
+    scrollPassed: true,
     languageList: [
       {
         title: '简体中文',
@@ -105,8 +105,6 @@ export default {
         this.darkMode = false
       }
     });
-
-    window.addEventListener("scroll", this.handleScroll)
   },
   methods:{
     changeModeAnimation () {
@@ -126,16 +124,6 @@ export default {
         document.body.classList.remove('dark');
       }
       this.$emit('colorThemeChange', this.darkMode)
-    },
-    handleScroll(){
-      let scrollOffset = window.scrollY
-      let panHeaderHeight = document.getElementById("pan-header-picture").clientHeight
-
-      if (scrollOffset > panHeaderHeight - 120) {
-        this.scrollPassed = true
-      } else if (scrollOffset < panHeaderHeight - 120) {
-        this.scrollPassed = false
-      }
     },
     modifyLanguage(lang_key) {
       i18n.locale = lang_key
@@ -157,8 +145,7 @@ header .before-scroll-bg{
 }
 
 header{
-  flex: 0 0 auto;
-  z-index: 5;
+  z-index: 3;
   position: fixed;
   transition: 225ms ease-out;
 }
@@ -171,20 +158,20 @@ header{
 }
 
 header .header-flex {
-  padding: 10px 20px;
-  height: 70px;
+  height: 50px;
   width: 100%;
   display: -webkit-flex; /* Safari */
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  z-index: 3;
   transition: 225ms ease-out;
   position: fixed;
 }
 
 header .header-nav-home {
   display: flex;
-  padding: 0 1em;
+  padding: 0 0.6em;
   line-height: 50px;
   color: var(--header-nav-color);
   text-decoration: none;
@@ -194,7 +181,7 @@ header .header-nav-home {
 
 header .header-nav{
   display: block;
-  padding: 0 1em;
+  padding: 0 1rem;
   line-height: 50px;
   color: var(--header-nav-color);
   text-decoration: none;
@@ -203,10 +190,11 @@ header .header-nav{
 }
 
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0,
-  'wght' 600,
-  'GRAD' 0,
-  'opsz' 48
+  font-variation-settings:
+      'FILL' 0,
+      'wght' 600,
+      'GRAD' 0,
+      'opsz' 48
 }
 
 input.header-nav{
@@ -215,6 +203,7 @@ input.header-nav{
   color: var(--header-nav-color);
   border-style: none;
   transition: 225ms ease-out;
+  transform: scale(70%, 70%)
 }
 
 input.header-nav:hover {
@@ -232,9 +221,8 @@ input.header-nav:hover {
   color: var(--header-drawer-icon-color-hover);
 }
 
-.router-link-active {
+.router-link-active{
   color: var(--header-router-color-text);
   text-decoration: none;
 }
-
 </style>
