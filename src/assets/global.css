@@ -65,3 +65,8 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
+
+.router-link-active{
+    color: var(--header-router-color-text);
+    text-decoration: none;
+}

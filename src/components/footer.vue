@@ -63,7 +63,6 @@ export default {
 
 footer{
   background-color: var(--footer-svg-color);
-  -webkit-text-size-adjust: 100%;
 }
 
 footer.footer-flex {

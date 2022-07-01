@@ -28,16 +28,16 @@
               <v-list-item @click.stop="drawer = !drawer">
                 <input type="button" class="material-symbols-outlined drawer-close-icon" value="close">
               </v-list-item>
-              <v-list-item>
-                <router-link to="/">
+              <router-link to="/">
+                <v-list-item>
                   <v-list-item-title>{{ $t("headerNav.homePage") }}</v-list-item-title>
-                </router-link>
-              </v-list-item>
-              <v-list-item>
-                <router-link to="/tools/status">
+                </v-list-item>
+              </router-link>
+              <router-link to="/tools/status">
+                <v-list-item>
                   <v-list-item-title>{{ $t("headerNav.serverStatus") }}</v-list-item-title>
-                </router-link>
-              </v-list-item>
+                </v-list-item>
+              </router-link>
               <v-list-item>
                 <v-list-item-title>{{ $t("headerNav.onlineMap") }}</v-list-item-title>
               </v-list-item>
@@ -105,6 +105,8 @@ export default {
         this.darkMode = false
       }
     });
+
+    this.changeColorTheme()
   },
   methods:{
     changeModeAnimation () {
