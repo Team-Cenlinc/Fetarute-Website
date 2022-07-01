@@ -80,8 +80,12 @@ export default {
     getServerStatus() {
       axios.default.get('https://mcapi.us/server/status?ip=creative.fetarute.org')
           .then(responseCreative => {
-            this.serverCreative.pingable = true;
-            this.parseResponseCreative(responseCreative);
+            if (responseCreative.data.online){
+              this.serverCreative.pingable = true;
+              this.parseResponseCreative(responseCreative);
+            } else {
+              this.serverCreative.pingable = false;
+            }
           })
           .catch(error => {
             this.serverCreative.pingable = false;
@@ -90,8 +94,12 @@ export default {
 
       axios.default.get('https://mcapi.us/server/status?ip=frp.fetarute.org&port=6000')
           .then(responseSurvival => {
-            this.serverSurvival.pingable = true;
-            this.parseResponseSurvival(responseSurvival);
+            if (responseSurvival.data.online){
+              this.serverSurvival.pingable = true;
+              this.parseResponseSurvival(responseSurvival);
+            } else {
+              this.serverSurvival.pingable = false;
+            }
           })
           .catch(error => {
             this.serverSurvival.pingable = false;
