@@ -16,6 +16,7 @@
     "journeyBegin": "The Beginning of the Journey: Introduction"
   },
   "status": {
+    "serverStatus": "Server Status",
     "offline": "Offline",
     "creativeName": "Fetarute: Creative - Modern",
     "survivalName": "Fetarute: Survival - Stone Age"

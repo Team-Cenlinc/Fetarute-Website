@@ -1,5 +1,17 @@
 <template>
   <div class="data-output">
+    <div>
+      <div class="status-line-deco">
+        <div id="status-line-left"></div>
+        <div id="status-station-1"></div>
+        <div id="status-title">
+          <h1>{{ $t('status.serverStatus') }}</h1>
+        </div>
+        <div id="turn-right"></div>
+        <div id="status-middle-line"></div>
+        <div id="status-station-2"></div>
+      </div>
+    </div>
     <div class="creative-server-status">
       <h6 v-bind:class=" {offline: !this.serverCreative.pingable, online: this.serverCreative.pingable} ">{{ $t("status.creativeName") }}</h6>
       <v-progress-circular
@@ -126,9 +138,9 @@ export default {
 </script>
 
 <style scoped>
-div{
-  height: 2000px;
+.data-output{
   background-color: var(--body-content-bg);
+  height: 1000px;
 }
 
 .creative-server-status{
@@ -137,8 +149,7 @@ div{
   float: left;
   display: flex;
   align-items: center;
-  padding: 15% 10% 5% 10%;
-  justify-content: space-between;
+  padding: 100px 100px 30px 100px;
 }
 
 .survival-server-status{
@@ -147,8 +158,7 @@ div{
   float: left;
   display: flex;
   align-items: center;
-  padding: 5% 10%;
-  justify-content: space-between;
+  padding: 100px 100px 30px 100px;
 }
 
 #online{
@@ -175,5 +185,67 @@ h6.offline{
   width: fit-content;
   height: 1.2rem;
   border-bottom: 0.25rem solid var(--global-danger);
+}
+
+/* Line Deco */
+
+#status-line-left{
+  float: left;
+  height: 700px;
+  width: 15px;
+  margin-left: 30px;
+  margin-bottom: -500px;
+  background-color: var(--body-span-line-syapole);
+  display: flex;
+  position: relative;
+}
+
+#status-station-1 {
+  height: 15px;
+  width: 30px;
+  background-color: var(--body-span-line-syapole);
+  transform: translate(40px, 12.5rem);
+}
+
+#status-title{
+  transform: translate(50px, 10rem);
+}
+
+#status-title h1 {
+  float: left;
+  color: var(--body-content-span-text-color);
+  font-size: 2rem;
+  width: fit-content;
+  height: 2.5rem;
+  border-bottom: 0.75rem solid var(--body-span-line-syapole);
+}
+
+#turn-right{
+  float: left;
+  width: 60px;
+  height: 60px;
+  background-color: transparent;
+  border-bottom-left-radius: 90px;
+  border-left: 15px solid var(--body-span-line-syapole);
+  border-bottom: 15px solid var(--body-span-line-syapole);
+  transform: translate(-175px, 685px);
+}
+
+#status-middle-line{
+  float: left;
+  height: 15px;
+  width: 50px;
+  transform: translate(-180px, 730px);
+  background-color: var(--body-span-line-syapole);
+  display: flex;
+  position: relative;
+}
+
+#status-station-2{
+  float: left;
+  height: 40px;
+  width: 15px;
+  background-color: var(--body-span-line-syapole);
+  transform: translate(-180px, 710px);
 }
 </style>

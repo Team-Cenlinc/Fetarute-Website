@@ -16,6 +16,7 @@
     "journeyBegin": "旅の始まり：紹介"
   },
   "status": {
+    "serverStatus": "サーバーステータス",
     "offline": "オフライン",
     "creativeName": "Fetarute: 創造 - モダン",
     "survivalName": "Fetarute: 生存 - 石器時代"

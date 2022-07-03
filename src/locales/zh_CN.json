@@ -16,6 +16,7 @@
     "journeyBegin": "开始旅程：简介"
   },
   "status": {
+    "serverStatus": "服务器状态",
     "offline": "离线",
     "creativeName": "Fetarute: 创造 - 现代",
     "survivalName": "Fetarute: 生存 - 石器时代"

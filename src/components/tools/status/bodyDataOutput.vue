@@ -1,10 +1,22 @@
 <template>
   <div class="data-output">
+    <div>
+      <div class="status-line-deco">
+        <div id="status-line-left"></div>
+        <div id="status-station-1"></div>
+        <div id="status-title">
+          <h1>{{ $t('status.serverStatus') }}</h1>
+        </div>
+        <div id="turn-right"></div>
+        <div id="status-middle-line"></div>
+        <div id="status-station-2"></div>
+      </div>
+    </div>
     <div class="creative-server-status">
       <h2 v-bind:class=" {offline: !this.serverCreative.pingable, online: this.serverCreative.pingable} ">{{ $t("status.creativeName") }}</h2>
       <v-progress-circular
-        :size="150"
-        :width="15"
+        :size="140"
+        :width="12"
         :rotate="270"
         :value="(this.serverCreative.serverOnlinePlayer / this.serverCreative.serverMaxCapacity) * 100"
         id="online"
@@ -13,8 +25,8 @@
         {{this.serverCreative.serverOnlinePlayer}}/{{this.serverCreative.serverMaxCapacity}}
       </v-progress-circular>
       <v-progress-circular
-          :size="150"
-          :width="15"
+          :size="140"
+          :width="12"
           :rotate="270"
           :value="100"
           id="offline"
@@ -27,8 +39,8 @@
     <div class="survival-server-status">
       <h2 v-bind:class=" {offline: !this.serverSurvival.pingable, online: this.serverSurvival.pingable} ">{{ $t("status.survivalName") }}</h2>
       <v-progress-circular
-          :size="150"
-          :width="15"
+          :size="140"
+          :width="12"
           :rotate="270"
           :value="(this.serverSurvival.serverOnlinePlayer / this.serverSurvival.serverMaxCapacity) * 100"
           id="online"
@@ -37,8 +49,8 @@
         {{this.serverSurvival.serverOnlinePlayer}}/{{this.serverSurvival.serverMaxCapacity}}
       </v-progress-circular>
       <v-progress-circular
-          :size="150"
-          :width="15"
+          :size="140"
+          :width="12"
           :rotate="270"
           :value="100"
           id="offline"
@@ -47,6 +59,7 @@
         {{ $t("status.offline") }}
       </v-progress-circular>
     </div>
+
     <div>
 
     </div>
@@ -67,7 +80,7 @@ export default {
     },
     serverSurvival: {
       pingable: false,
-      serverMaxCapacity: 50,
+      serverMaxCapacity: 20,
       serverOnlinePlayer: 0,
       onlinePlayers: []
     }
@@ -126,9 +139,9 @@ export default {
 </script>
 
 <style scoped>
-div{
-  height: 2000px;
+.data-output{
   background-color: var(--body-content-bg);
+  height: 1000px;
 }
 
 .creative-server-status{
@@ -137,7 +150,7 @@ div{
   float: left;
   display: flex;
   align-items: center;
-  padding: 15% 10% 5% 10%;
+  padding: 150px 10% 200px 10%;
   justify-content: space-between;
 }
 
@@ -147,7 +160,7 @@ div{
   float: left;
   display: flex;
   align-items: center;
-  padding: 5% 10%;
+  padding: 0 10% 20% 10%;
   justify-content: space-between;
 }
 
@@ -163,17 +176,79 @@ div{
 
 h2.online{
   color: var(--body-content-span-text-color);
-  font-size: 1.7rem;
+  font-size: 1.5rem;
   width: fit-content;
-  height: 2.3rem;
-  border-bottom: 0.75rem solid var(--global-ok);
+  height: 1.9rem;
+  border-bottom: 0.5rem solid var(--global-ok);
 }
 
 h2.offline{
   color: var(--body-content-span-text-color);
-  font-size: 1.7rem;
+  font-size: 1.5rem;
   width: fit-content;
-  height: 2.2rem;
-  border-bottom: 0.75rem solid var(--global-danger);
+  height: 1.9rem;
+  border-bottom: 0.5rem solid var(--global-danger);
+}
+
+/* Line Deco */
+
+#status-line-left{
+  float: left;
+  height: 700px;
+  width: 20px;
+  margin-left: 30px;
+  margin-bottom: -500px;
+  background-color: var(--body-span-line-syapole);
+  display: flex;
+  position: relative;
+}
+
+#status-station-1 {
+  height: 20px;
+  width: 30px;
+  background-color: var(--body-span-line-syapole);
+  transform: translate(50px, 12.5rem);
+}
+
+#status-title{
+  transform: translate(50px, 10rem);
+}
+
+#status-title h1 {
+  float: left;
+  color: var(--body-content-span-text-color);
+  font-size: 2.5rem;
+  width: fit-content;
+  height: 3.0rem;
+  border-bottom: 0.75rem solid var(--body-span-line-syapole);
+}
+
+#turn-right{
+  float: left;
+  width: 60px;
+  height: 60px;
+  background-color: transparent;
+  border-bottom-left-radius: 90px;
+  border-left: 20px solid var(--body-span-line-syapole);
+  border-bottom: 20px solid var(--body-span-line-syapole);
+  transform: translate(-220px, 680px);
+}
+
+#status-middle-line{
+  float: left;
+  height: 20px;
+  width: 250px;
+  transform: translate(-220px, 720px);
+  background-color: var(--body-span-line-syapole);
+  display: flex;
+  position: relative;
+}
+
+#status-station-2{
+  float: left;
+  height: 60px;
+  width: 20px;
+  background-color: var(--body-span-line-syapole);
+  transform: translate(-220px, 700px);
 }
 </style>
