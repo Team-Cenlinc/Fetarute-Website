@@ -19,7 +19,9 @@
     "serverStatus": "服务器状态",
     "offline": "离线",
     "creativeName": "Fetarute: 创造 - 现代",
-    "survivalName": "Fetarute: 生存 - 石器时代"
+    "survivalName": "Fetarute: 生存 - 石器时代",
+    "creativeMobileName": "Fetarute: 创造",
+    "survivalMobileName": "Fetarute: 生存"
   },
   "footer": {
     "joinUs": "加入我们",

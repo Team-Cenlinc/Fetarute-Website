@@ -19,7 +19,9 @@
     "serverStatus": "Server Status",
     "offline": "Offline",
     "creativeName": "Fetarute: Creative - Modern",
-    "survivalName": "Fetarute: Survival - Stone Age"
+    "survivalName": "Fetarute: Survival - Stone Age",
+    "creativeMobileName": "Fetarute: Creative",
+    "survivalMobileName": "Fetarute: Survival"
   },
   "footer": {
     "joinUs": "Join Us",

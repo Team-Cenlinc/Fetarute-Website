@@ -19,7 +19,9 @@
     "serverStatus": "サーバーステータス",
     "offline": "オフライン",
     "creativeName": "Fetarute: 創造 - モダン",
-    "survivalName": "Fetarute: 生存 - 石器時代"
+    "survivalName": "Fetarute: 生存 - 石器時代",
+    "creativeMobileName": "Fetarute: 創造",
+    "survivalMobileName": "Fetarute: 生存"
   },
   "footer": {
     "joinUs": "参加申請",
