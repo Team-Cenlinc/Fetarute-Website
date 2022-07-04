@@ -243,9 +243,9 @@ h6.offline{
 
 #status-station-2{
   float: left;
-  height: 40px;
+  height: 45px;
   width: 15px;
   background-color: var(--body-span-line-syapole);
-  transform: translate(-180px, 710px);
+  transform: translate(-180px, 715px);
 }
 </style>
