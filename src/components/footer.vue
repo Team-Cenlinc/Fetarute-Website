@@ -118,7 +118,7 @@ footer.footer-flex {
   display: flex;
   flex-direction: column;
   grid-template-columns: 1fr 1fr;
-  padding: 0 10px 0 10px;
+  padding: 0 0.8rem 0 0.8rem;
 }
 
 .form-min-row {

@@ -96,17 +96,22 @@ export default {
       document.body.classList.add('dark');
       this.darkMode = true
     }
+
+    let scheme = document.querySelector('meta[name="theme-color"]');
+
     darkMode && darkMode.addEventListener('change', e => {
       if (e.matches) {
         document.body.classList.add('dark');
+        scheme.setAttribute('content', '#00071abf');
         this.darkMode = true
       } else {
         document.body.classList.remove('dark');
+        scheme.setAttribute('content', '#a8eaffd9');
         this.darkMode = false
       }
+      this.changeColorTheme()
     });
 
-    this.changeColorTheme()
     window.addEventListener("scroll", this.handleScroll)
   },
   methods:{

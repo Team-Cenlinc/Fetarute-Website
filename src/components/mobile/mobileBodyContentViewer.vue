@@ -34,8 +34,11 @@
         <div id="content-station-2"></div>
       </div>
       <div id="content-container-2">
-        <h3 class="subtitle">01 - {{ $t("bodyContent.journeyBegin") }}</h3>
-        <p>占位符Desu</p>
+        <h3 style="border-bottom: 0.5rem solid var(--body-span-line-kitajuku);" class="subtitle">01 - {{ $t("bodyContent.journeyBegin") }}</h3>
+        <p>
+          <br>{{ $t("bodyContent.introFirstLine") }}
+          <br>{{ $t("bodyContent.introSecondLine") }}
+        </p>
       </div>
       <div id="line-cross-out-R-1"></div>
     </section>
@@ -205,13 +208,16 @@ export default {
   height: 16px;
   width: 30px;
   background-color: var(--body-span-line-kitajuku);
-  transform: translate(10px, 12rem);
+  transform: translate(10px, 10rem);
 }
 
 #content-container-2{
+  height: 40px;
   background-color: transparent;
-  margin: -80px 0 0 120px;
+  margin: -60px 0 0 120px;
+  transform: translate(-10px, -10px);
   line-height: 1rem;
+  padding-right: 3rem;
 }
 
 #line-cross-out-R-1{
@@ -236,10 +242,9 @@ h1.subtitle{
 
 h3.subtitle{
   color: var(--body-content-span-text-color);
-  font-size: 1rem;
+  font-size: 0.9rem;
   width: fit-content;
-  height: 1.3rem;
-  border-bottom: 0.5rem solid var(--body-span-line-kitajuku);
+  height: fit-content;
 }
 
 p{

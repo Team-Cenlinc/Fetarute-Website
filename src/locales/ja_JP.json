@@ -11,9 +11,11 @@
     "toolBox": "ツールボックス"
   },
   "bodyContent": {
-    "promptScroll": "続の先は もっと ある ➡",
+    "promptScroll": "続の先はもっとある",
     "creativeWorld": "創造世界",
-    "journeyBegin": "旅の始まり：紹介"
+    "journeyBegin": "旅の始まり：紹介",
+    "introFirstLine": "創造世界は、2017年「Fetarute」か建てるよりずっと当サーバーの理念の中心です。例えば、都会と町をマイクラの中に建ててと鉄道の建設は創造世界の一部です。",
+    "introSecondLine": "年々の経験の集めと建てて、当サーバーの建物の真似技術か上てった。"
   },
   "status": {
     "serverStatus": "サーバーステータス",

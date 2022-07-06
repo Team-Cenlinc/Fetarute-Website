@@ -158,7 +158,7 @@ header .before-scroll-bg{
 }
 
 header{
-  z-index: 3;
+  z-index: 6;
   position: fixed;
   transition: 225ms ease-out;
 }
