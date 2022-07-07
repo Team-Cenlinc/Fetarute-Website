@@ -36,21 +36,65 @@
         <div id="content-station-2"></div>
       </div>
       <div id="content-container-2">
-        <h3 style="border-bottom: 0.5rem solid var(--body-span-line-kitajuku);" class="subtitle">01 - {{ $t("bodyContent.journeyBegin") }}</h3>
-        <p>
-          <br>{{ $t("bodyContent.introFirstLine") }}
-          <br>{{ $t("bodyContent.introSecondLine") }}
-        </p>
+
+            <h3 style="border-bottom: 0.5rem solid var(--body-span-line-kitajuku);" class="subtitle">01 - {{ $t("bodyContent.journeyBegin") }}</h3>
+            <p>
+              <br>{{ $t("bodyContent.introFirstLine") }}
+              <br>{{ $t("bodyContent.introSecondLine") }}
+            </p>
       </div>
+      <span>
+        <v-img
+            v-if="!isSmallScreen"
+            id="content-sec2-pic"
+            src="../assets/content/Cesynlinc-Optimal.png"
+            lazy-src="../assets/content/lazy/Cesynlinc-Optimal-modified.png"
+            max-width="30%"
+            max-height="300px"
+        >
+          <template v-slot:placeholder>
+              <v-progress-circular
+                  indeterminate
+                  color="grey lighten-2"
+              ></v-progress-circular>
+          </template>
+        </v-img>
+      </span>
       <div id="line-cross-out-R-1"></div>
     </section>
+
+    <div class="content-span-body">
+      <div id="span-line-sec2"></div>
+    </div>
 
   </div>
 </template>
 
 <script>
+import Cesynlinc from "../assets/content/Cesynlinc-Optimal.png"
+import Syapole from "../assets/content/Syapole-20th-North-Optimal.png"
+import Southpark from "../assets/content/Southpark-Optimal.png"
+import Central from "../assets/content/Morning-Central-Optimal.png"
+
 export default {
-  name: "bodyContentViewer"
+  name: "bodyContentViewer",
+  data: () => ({
+    isSmallScreen: false,
+    contentImages: [
+      {
+        src: Cesynlinc
+      },
+      {
+        src: Syapole
+      },
+      {
+        src: Southpark
+      },
+      {
+        src: Central
+      }
+    ]
+  }),
 }
 </script>
 
@@ -69,7 +113,7 @@ export default {
   width: 60px;
   margin-left: 42px;
   background-color: var(--body-content-span-line-creative);
-  transform: translateY(-575px);
+  transform: translateY(-595px);
 }
 
 #line-nav-expand{
@@ -77,7 +121,7 @@ export default {
   width: 25px;
   margin-left: 60px;
   background-color: var(--body-content-span-line-creative);
-  transform: translateY(-575px);
+  transform: translateY(-595px);
   writing-mode: vertical-lr;
   font-size: 0.8rem;
   font-weight: bold;
@@ -96,22 +140,22 @@ export default {
   border-bottom-left-radius: 90px;
   border-left: 25px solid var(--body-content-span-line-creative);
   border-bottom: 25px solid var(--body-content-span-line-creative);
-  transform: translateY(-575px);
+  transform: translateY(-595px);
 }
 
 .span-railway-line{
   height: 22px;
   background-color: var(--body-content-span-line-creative);
-  transform: skewY(3deg) translateY(-700px);
+  transform: skewY(3deg) translateY(-720px);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 3;
   position: relative;
 }
 
 .span-expand{
-  height: 130px;
+  height: 150px;
   background-color: var(--body-content-bg);
-  transform: skewY(3deg) translateY(-580px);
+  transform: skewY(3deg) translateY(-600px);
   box-shadow: 0 -20px 20px 5px var(--body-content-bg);
   z-index: 2;
   position: relative;
@@ -124,6 +168,7 @@ export default {
   z-index: 2;
   position: relative;
   margin-bottom: -900px;
+  transform: translateY(-1000px);
 }
 
 #line-cross-in-L-1{
@@ -134,7 +179,7 @@ export default {
   border-top-left-radius: 90px;
   border-left: 22px solid var(--body-span-line-syapole);
   border-top: 22px solid var(--body-span-line-syapole);
-  transform: translateY(-1000px); /*Section 1 Original Calc Point*/
+  transform: translateY(5px);
 }
 
 #content-container-line-1{
@@ -142,7 +187,7 @@ export default {
   height: 100%;
   width: 22px;
   background-color: var(--body-span-line-syapole);
-  transform: translate(22px, -910px);
+  transform: translate(22px, 90px);
 }
 
 #content-station-1{
@@ -154,7 +199,7 @@ export default {
 
 #content-container-1{
   background-color: transparent;
-  transform: translateY(-700px);
+  transform: translateY(300px);
   text-align: center;
   margin: 200px 0 0 32%;
 }
@@ -167,13 +212,13 @@ export default {
   border-bottom-left-radius: 90px;
   border-left: 22px solid var(--body-span-line-syapole);
   border-bottom: 22px solid var(--body-span-line-syapole);
-  transform: translate(112px, -500px); /*Section 1 Original Calc Point*/
+  transform: translate(112px, 500px); /*Section 1 Original Calc Point*/
 }
 
 #span-line{
   height: 22px;
   background-color: var(--body-span-line-southpark);
-  transform: skewY(-5deg);
+  transform: skewY(-5deg) translateY(-50px);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 2;
   position: relative;
@@ -185,6 +230,7 @@ export default {
   height: 500px;
   z-index: 1;
   position: relative;
+  transform: translateY(-600px)
 }
 
 #line-cross-in-R-1{
@@ -194,8 +240,7 @@ export default {
   background-color: transparent;
   border-top-right-radius: 90px;
   border-right: 22px solid var(--body-span-line-kitajuku);
-  border-top: 22px solid var(--body-span-line-kitajuku);
-  transform: translateY(-600px); /*Section 1 Original Calc Point*/
+  border-top: 22px solid var(--body-span-line-kitajuku); /*Section 1 Original Calc Point*/
 }
 
 #content-container-line-2{
@@ -203,7 +248,7 @@ export default {
   height: 100%;
   width: 22px;
   background-color: var(--body-span-line-kitajuku);
-  transform: translate(-22px, -510px);
+  transform: translate(-22px, 90px);
 }
 
 #content-station-2{
@@ -214,16 +259,22 @@ export default {
 }
 
 #content-container-2{
-  max-width: 500px;
+  max-width: 50%;
   height: 200px;
   background-color: transparent;
-  transform: translateY(-100px);
+  transform: translateY(500px);
   margin: 220px 0 0 145px;
   line-height: 1.8rem;
 }
 
 #content-container-2 p{
   padding-right: 50px;
+}
+
+#content-sec2-pic {
+  float: right;
+  transform: translate(80px, 275px);
+  box-shadow: 10px 20px var(--body-span-line-southpark);
 }
 
 #line-cross-out-R-1{
@@ -234,7 +285,16 @@ export default {
   border-bottom-right-radius: 90px;
   border-right: 22px solid var(--body-span-line-kitajuku);
   border-bottom: 22px solid var(--body-span-line-kitajuku);
-  transform: translate(-112px, -10px); /*Section 2 Original Calc Point*/
+  transform: translate(-112px, 590px); /*Section 2 Original Calc Point*/
+}
+
+#span-line-sec2{
+  height: 22px;
+  background-color: var(--body-span-line-hokuriku);
+  transform: skewY(2deg) translateY(-250px);
+  box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
+  z-index: 2;
+  position: relative;
 }
 
 /* Scooped Start */
@@ -253,8 +313,13 @@ h3.subtitle{
   height: 1.8rem;
 }
 
+v-progress-circular{
+  alignment: center;
+  justify-self: center;
+}
+
 p{
   color: var(--body-content-span-text-color);
-  font-size: 1.1rem;
+  font-size: 1.2rem;
 }
 </style>

@@ -6,7 +6,7 @@
 
       </div>
       <BodyPictureViewer/>
-      <BodyContentViewer />
+      <BodyContentViewer ref="content"/>
       <FooterViewer ref="footer"/>
     </div>
     <div v-if="isMobile" id="mobile">
@@ -15,7 +15,7 @@
 
       </div>
       <MobileBodyPictureViewer/>
-      <MobileBodyContentViewer/>
+      <MobileBodyContentViewer ref="content"/>
       <MobileFooter ref="footer"/>
     </div>
   </div>
@@ -40,7 +40,8 @@ export default {
     MobileFooter, FooterViewer, BodyContentViewer, HeaderNav, BodyPictureViewer, MobileHeader},
   data: () => ({
     title: "Fetarute",
-    isMobile: false
+    isMobile: false,
+    isSmallScreen: false,
   }),
   beforeDestroy () {
     if (typeof window === 'undefined') return
@@ -53,6 +54,13 @@ export default {
   methods: {
     onResize () {
       this.isMobile = window.innerWidth < 600
+      if (window.innerWidth < 1100){
+        this.isSmallScreen = true
+        this.$refs.content.isSmallScreen = true
+      } else {
+        this.isSmallScreen = false
+        this.$refs.content.isSmallScreen = false
+      }
     },
     syncColorTheme(colorThemeStatus) {
       sessionStorage.setItem("darkModeOption", colorThemeStatus.toString())

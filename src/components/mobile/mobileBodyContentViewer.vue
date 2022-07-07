@@ -43,12 +43,38 @@
       <div id="line-cross-out-R-1"></div>
     </section>
 
+    <div class="content-span-body">
+      <div id="span-line-sec2"></div>
+    </div>
+
   </div>
 </template>
 
 <script>
+import Cesynlinc from "../../assets/content/Cesynlinc-Optimal.png"
+import Syapole from "../../assets/content/Syapole-20th-North-Optimal.png"
+import Southpark from "../../assets/content/Southpark-Optimal.png"
+import Central from "../../assets/content/Morning-Central-Optimal.png"
+
 export default {
-  name: "mobileBodyContentViewer"
+  name: "mobileBodyContentViewer",
+  data: () => ({
+    isSmallScreen: false,
+    contentImages: [
+      {
+        src: Cesynlinc
+      },
+      {
+        src: Syapole
+      },
+      {
+        src: Southpark
+      },
+      {
+        src: Central
+      }
+    ]
+  }),
 }
 </script>
 
@@ -229,6 +255,15 @@ export default {
   border-right: 16px solid var(--body-span-line-kitajuku);
   border-bottom: 16px solid var(--body-span-line-kitajuku);
   transform: translate(-86px, 180px); /*Section 2 Original Calc Point*/
+}
+
+#span-line-sec2{
+  height: 16px;
+  background-color: var(--body-span-line-hokuriku);
+  transform: skewY(2deg) translateY(-75px);
+  box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
+  z-index: 2;
+  position: relative;
 }
 
 /* Scooped Start */
