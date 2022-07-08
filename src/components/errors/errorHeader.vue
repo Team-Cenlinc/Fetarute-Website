@@ -2,8 +2,8 @@
   <header>
     <div class="header-flex" v-bind:class="{'after-scroll-bg': scrollPassed, 'before-scroll-bg': !scrollPassed}" data-app>
       <!-- LOGO PLACEHOLDER -->
-      <h2><small><a href="/#/" class="header-nav-home">{{ title }}</a></small></h2>
-      <span>
+      <h1><small><a href="/#/" class="header-nav-home">{{ title }}</a></small></h1>
+      <div class="rev-zone">
         <input type="button" @click.stop="drawer = !drawer" class="material-symbols-outlined header-nav" value="menu">
         <input type="button" @click="changeModeAnimation" v-if="darkMode" class="material-symbols-outlined header-nav style-option" value="dark_mode">
         <input type="button" @click="changeModeAnimation" v-if="!darkMode" class="material-symbols-outlined header-nav style-option" value="light_mode">
@@ -59,7 +59,7 @@
             </v-list-item-group>
           </v-list>
         </v-navigation-drawer>
-      </span>
+      </div>
     </div>
   </header>
 </template>
@@ -69,7 +69,7 @@ import anime from 'animejs/lib/anime.es.js';
 import i18n from "@/locales/i18n";
 
 export default {
-  name: "mobileHeaderViewer",
+  name: "errorHeader",
   props: ["title"],
   data: () => ({
     darkMode: false,
@@ -147,7 +147,8 @@ header .before-scroll-bg{
 }
 
 header{
-  z-index: 3;
+  flex: 0 0 auto;
+  z-index: 5;
   position: fixed;
   transition: 225ms ease-out;
 }
@@ -155,25 +156,25 @@ header{
 .after-scroll-bg{
   transition: 225ms ease-out;
   background-color: var(--header-background-color);
-  box-shadow: 0 0 5px var(--header-shade-color);
+  box-shadow: 0 5px 10px var(--header-shade-color);
   color: #1f1f1f;
 }
 
 header .header-flex {
-  height: 50px;
+  padding: 10px 20px;
+  height: 70px;
   width: 100%;
   display: -webkit-flex; /* Safari */
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  z-index: 3;
   transition: 225ms ease-out;
   position: fixed;
 }
 
 header .header-nav-home {
   display: flex;
-  padding: 0 0.6em;
+  padding: 0 1em;
   line-height: 50px;
   color: var(--header-nav-color);
   text-decoration: none;
@@ -183,7 +184,7 @@ header .header-nav-home {
 
 header .header-nav{
   display: block;
-  padding: 0 1rem;
+  padding: 0 1em;
   line-height: 50px;
   color: var(--header-nav-color);
   text-decoration: none;
@@ -192,11 +193,10 @@ header .header-nav{
 }
 
 .material-symbols-outlined {
-  font-variation-settings:
-      'FILL' 0,
-      'wght' 600,
-      'GRAD' 0,
-      'opsz' 48
+  font-variation-settings: 'FILL' 0,
+  'wght' 600,
+  'GRAD' 0,
+  'opsz' 48
 }
 
 input.header-nav{
@@ -205,7 +205,6 @@ input.header-nav{
   color: var(--header-nav-color);
   border-style: none;
   transition: 225ms ease-out;
-  transform: scale(70%, 70%)
 }
 
 input.header-nav:hover {

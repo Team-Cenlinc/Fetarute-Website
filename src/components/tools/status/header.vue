@@ -2,7 +2,7 @@
   <header>
     <div class="header-flex" v-bind:class="{'after-scroll-bg': scrollPassed, 'before-scroll-bg': !scrollPassed}" data-app>
       <!-- LOGO PLACEHOLDER -->
-      <h1><small><a href="/" class="header-nav-home">{{ title }}</a></small></h1>
+      <h1><small><a href="/#/" class="header-nav-home">{{ title }}</a></small></h1>
       <div class="rev-zone">
         <input type="button" @click.stop="drawer = !drawer" class="material-symbols-outlined header-nav" value="menu">
         <input type="button" @click="changeModeAnimation" v-if="darkMode" class="material-symbols-outlined header-nav style-option" value="dark_mode">

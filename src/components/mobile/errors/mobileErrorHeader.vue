@@ -69,7 +69,7 @@ import anime from 'animejs/lib/anime.es.js';
 import i18n from "@/locales/i18n";
 
 export default {
-  name: "mobileHeaderViewer",
+  name: "mobileErrorHeader",
   props: ["title"],
   data: () => ({
     darkMode: false,

@@ -25,6 +25,9 @@
     "creativeMobileName": "Fetarute: 创造",
     "survivalMobileName": "Fetarute: 生存"
   },
+  "error":{
+    "notFoundText": "页面未找到"
+  },
   "footer": {
     "joinUs": "加入我们",
     "followUs": "关注我们",

@@ -25,6 +25,9 @@
     "creativeMobileName": "Fetarute: Creative",
     "survivalMobileName": "Fetarute: Survival"
   },
+  "error":{
+    "notFoundText": "The page you are looking for is not found."
+  },
   "footer": {
     "joinUs": "Join Us",
     "followUs": "Follow Us",

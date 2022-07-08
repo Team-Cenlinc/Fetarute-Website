@@ -15,7 +15,7 @@
     <div class="creative-server-status">
       <h6 v-bind:class=" {offline: !this.serverCreative.pingable, online: this.serverCreative.pingable} ">{{ $t("status.creativeMobileName") }} </h6>
       <v-progress-circular
-          :size="100"
+          :size="90"
           :width="10"
           :rotate="270"
           :value="(this.serverCreative.serverOnlinePlayer / this.serverCreative.serverMaxCapacity) * 100"
@@ -25,7 +25,7 @@
         {{this.serverCreative.serverOnlinePlayer}}/{{this.serverCreative.serverMaxCapacity}}
       </v-progress-circular>
       <v-progress-circular
-          :size="100"
+          :size="90"
           :width="10"
           :rotate="270"
           :value="100"
@@ -39,7 +39,7 @@
     <div class="survival-server-status">
       <h6 v-bind:class=" {offline: !this.serverSurvival.pingable, online: this.serverSurvival.pingable} ">{{ $t("status.survivalMobileName") }} </h6>
       <v-progress-circular
-          :size="100"
+          :size="90"
           :width="10"
           :rotate="270"
           :value="(this.serverSurvival.serverOnlinePlayer / this.serverSurvival.serverMaxCapacity) * 100"
@@ -49,7 +49,7 @@
         {{this.serverSurvival.serverOnlinePlayer}}/{{this.serverSurvival.serverMaxCapacity}}
       </v-progress-circular>
       <v-progress-circular
-          :size="100"
+          :size="90"
           :width="10"
           :rotate="270"
           :value="100"

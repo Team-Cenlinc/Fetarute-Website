@@ -2,7 +2,7 @@
   <header>
     <div class="header-flex" v-bind:class="{'after-scroll-bg': scrollPassed, 'before-scroll-bg': !scrollPassed}" data-app>
       <!-- LOGO PLACEHOLDER -->
-      <h2><small><a href="/" class="header-nav-home">{{ title }}</a></small></h2>
+      <h2><small><a href="/#/" class="header-nav-home">{{ title }}</a></small></h2>
       <span>
         <input type="button" @click.stop="drawer = !drawer" class="material-symbols-outlined header-nav" value="menu">
         <input type="button" @click="changeModeAnimation" v-if="darkMode" class="material-symbols-outlined header-nav style-option" value="dark_mode">
@@ -96,17 +96,22 @@ export default {
       document.body.classList.add('dark');
       this.darkMode = true
     }
+
+    let scheme = document.querySelector('meta[name="theme-color"]');
+
     darkMode && darkMode.addEventListener('change', e => {
       if (e.matches) {
         document.body.classList.add('dark');
+        scheme.setAttribute('content', '#00071abf');
         this.darkMode = true
       } else {
         document.body.classList.remove('dark');
+        scheme.setAttribute('content', '#a8eaffd9');
         this.darkMode = false
       }
+      this.changeColorTheme()
     });
 
-    this.changeColorTheme()
     window.addEventListener("scroll", this.handleScroll)
   },
   methods:{

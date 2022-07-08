@@ -25,6 +25,9 @@
     "creativeMobileName": "Fetarute: 創造",
     "survivalMobileName": "Fetarute: 生存"
   },
+  "error":{
+    "notFoundText": "ページが見つかりませんでした"
+  },
   "footer": {
     "joinUs": "参加申請",
     "followUs": "ソーシャルメディア",

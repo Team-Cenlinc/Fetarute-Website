@@ -10,7 +10,6 @@
     --header-drawer-icon-color-hover: #383838;
     --header-shade-color: #484848;
     --header-lang-menu-bg-hover: #a6a6a6ff;
-
     --header-router-color-text: #222323;
 
     --body-content-bg: #f3f3f3;
@@ -21,6 +20,10 @@
     --body-span-line-kitajuku: #ffae42;
     --body-span-line-hokuriku: #beb6ff;
     --body-content-span-text-color: #383838;
+
+    --error-span-line: #606060;
+    --error-link-hover-color: #1e1e1e;
+
     --footer-bg-color: #dadada;
     --footer-shade-color: #484848;
     --footer-text-color: #2f2f2f;
@@ -41,7 +44,6 @@
     --header-drawer-icon-color-hover: #e3e3e3;
     --header-shade-color: rgba(0, 59, 80, 0.35);
     --header-lang-menu-bg-hover: #1e1e1e;
-
     --header-router-color-text: #f5f5f5;
 
     --body-content-bg: #252525;
@@ -52,6 +54,10 @@
     --body-span-line-southpark: #00652c;
     --body-span-line-kitajuku: #8d5800;
     --body-span-line-hokuriku: #716bc2;
+
+    --error-span-line: #8d8d8d;
+    --error-link-hover-color: #e3e3e3;
+
     --footer-bg-color: #030303;
     --footer-shade-color: rgba(0, 59, 80, 0.35);
     --footer-text-color: #e3e2e2;
