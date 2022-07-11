@@ -21,7 +21,7 @@
         <div id="content-station-1"></div>
       </div>
       <div id="content-container-1">
-        <h1 style="border-bottom: 2rem solid var(--body-span-line-syapole);" class="subtitle">{{ $t("bodyContent.creativeWorld") }}</h1>
+        <h1 style="border-bottom: 1.75rem solid var(--body-span-line-syapole);" class="subtitle">{{ $t("bodyContent.creativeWorld") }}</h1>
       </div>
       <div id="line-cross-out-L-1"></div>
     </section>
@@ -67,6 +67,22 @@
       <div id="span-line-sec2"></div>
     </div>
 
+    <div class="span-container-sec2-BL">
+      <h1 style="border-bottom: 1.75rem solid var(--body-span-line-chikai);" class="subtitle" id="gallery">{{ $t("bodyContent.gallery") }}</h1>
+      <v-carousel cycle interval=6000 :show-arrows="false" delimiter-icon="mdi-minus" id="span-sec2-BL-carousel">
+        <v-carousel-item
+            v-for="(item,i) in contentImagesSec2"
+            :key="i"
+            :src="item.src"
+        >
+        </v-carousel-item>
+      </v-carousel>
+    </div>
+
+    <div class="content-span-body">
+      <div id="span-line-sec3-UP"></div>
+    </div>
+
   </div>
 </template>
 
@@ -80,7 +96,7 @@ export default {
   name: "bodyContentViewer",
   data: () => ({
     isSmallScreen: false,
-    contentImages: [
+    contentImagesSec2: [
       {
         src: Cesynlinc
       },
@@ -296,6 +312,41 @@ export default {
   z-index: 2;
   position: relative;
 }
+
+/* Span Sec.2 Below(BL) Start */
+
+.span-container-sec2-BL{
+  height: 900px;
+}
+
+#span-sec2-BL-carousel{
+  width: 60%;
+  height: 30%;
+  margin: 0 auto;
+  alignment: center;
+}
+
+#gallery{
+  transform: translateY(-100px);
+  margin: 0 auto;
+}
+
+.span-container-sec2-BL{
+  z-index: 3;
+  position: relative;
+}
+
+#span-line-sec3-UP{
+  height: 22px;
+  background-color: var(--body-span-line-chikai);
+  transform: skewY(-5deg) translateY(-150px);
+  box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
+  z-index: 2;
+  position: relative;
+}
+
+/* Section 3 Start */
+
 
 /* Scooped Start */
 

@@ -15,7 +15,8 @@
     "creativeWorld": "创造世界",
     "journeyBegin": "开始旅程：简介",
     "introFirstLine": "创造世界是Fetarute服务器自2017年创立以来的主打玩法，以城市建设为核心，并以其他方面扩充城市核心, 例如：铁路建设，城市生存等等。",
-    "introSecondLine": "经过多年以来的提高与建设，Fetarute服务器的建筑质量也得以提高。"
+    "introSecondLine": "经过多年以来的提高与建设，Fetarute服务器的建筑质量也得以提高。",
+    "gallery": "画廊"
   },
   "status": {
     "serverStatus": "服务器状态",
