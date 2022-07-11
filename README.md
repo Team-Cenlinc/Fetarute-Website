@@ -2,7 +2,7 @@
 
 ![GitHub deployments](https://img.shields.io/github/deployments/Team-Cenlinc/Fetarute-Website/github-pages?label=Environment%20Deployment&logo=Github&style=for-the-badge)
 
-![Discord](https://img.shields.io/discord/612247443752353803?style=for-the-badge)
+![Discord](https://img.shields.io/discord/612247443752353803?style=for-the-badge&logo=discord)
 
 ![Lines of code](https://img.shields.io/tokei/lines/github/Team-Cenlinc/Fetarute-Website?style=for-the-badge)
 
