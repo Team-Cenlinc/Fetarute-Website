@@ -8,7 +8,9 @@
     "socialMedia": "Social Media",
     "externalLink": "Jump to external link",
     "twitter": "Twitter",
-    "toolBox": "Tool Box"
+    "toolBox": "Tool Box",
+    "onlineMapCreative": "Creative Server",
+    "onlineMapSurvival": "Survival Server"
   },
   "bodyContent": {
     "promptScroll": "Scroll down to discover",

@@ -8,7 +8,9 @@
     "socialMedia": "ソーシャルメディア",
     "externalLink": "別サイトへ",
     "twitter": "ツイッター",
-    "toolBox": "ツールボックス"
+    "toolBox": "ツールボックス",
+    "onlineMapCreative": "創造サーバー",
+    "onlineMapSurvival": "サバイバルサーバー"
   },
   "bodyContent": {
     "promptScroll": "続の先はもっとある",

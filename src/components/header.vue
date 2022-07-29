@@ -38,11 +38,17 @@
                   <v-list-item-title>{{ $t("headerNav.serverStatus") }}</v-list-item-title>
                 </v-list-item>
               </router-link>
-              <v-list-item>
-                <v-list-item-title>{{ $t("headerNav.onlineMap") }}</v-list-item-title>
-              </v-list-item>
               <v-list-item link href="https://www.fetarute.org/wiki/index.php/%E9%A6%96%E9%A1%B5" target="_blank" :title="$t('headerNav.chineseLangOnly')">
                 <v-list-item-title>{{ $t("headerNav.wikiLink") }}</v-list-item-title>
+              </v-list-item>
+              <v-list-item :disabled="true">
+                <v-list-item-title>{{ $t("headerNav.onlineMap") }}</v-list-item-title>
+              </v-list-item>
+              <v-list-item link href="https://www.fetarute.org/map/creative/" target="_blank">
+                <v-list-item-title>{{ $t("headerNav.onlineMapCreative") }}</v-list-item-title>
+              </v-list-item>
+              <v-list-item link href="https://www.fetarute.org/map/survival/" target="_blank">
+                <v-list-item-title>{{ $t("headerNav.onlineMapSurvival") }}</v-list-item-title>
               </v-list-item>
               <v-list-item :disabled="true">
                 <v-list-item-title>{{ $t("headerNav.socialMedia") }}</v-list-item-title>

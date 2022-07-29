@@ -8,7 +8,9 @@
     "socialMedia": "社交媒体",
     "externalLink": "跳转至外部链接",
     "twitter": "推特",
-    "toolBox": "工具箱"
+    "toolBox": "工具箱",
+    "onlineMapCreative": "创造服",
+    "onlineMapSurvival": "生存服"
   },
   "bodyContent": {
     "promptScroll": "向 下 滚 动 以 探 索",
