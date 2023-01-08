@@ -28,12 +28,12 @@
               <v-list-item @click.stop="drawer = !drawer">
                 <input type="button" class="material-symbols-outlined drawer-close-icon" value="close">
               </v-list-item>
-              <router-link to="/">
+              <router-link to="/" active-class="router-link-active">
                 <v-list-item>
                   <v-list-item-title>{{ $t("headerNav.homePage") }}</v-list-item-title>
                 </v-list-item>
               </router-link>
-              <router-link to="/tools/status">
+              <router-link to="/tools/status" active-class="router-link-active">
                 <v-list-item>
                   <v-list-item-title>{{ $t("headerNav.serverStatus") }}</v-list-item-title>
                 </v-list-item>
