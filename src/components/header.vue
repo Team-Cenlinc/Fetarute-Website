@@ -44,10 +44,10 @@
               <v-list-item :disabled="true">
                 <v-list-item-title>{{ $t("headerNav.onlineMap") }}</v-list-item-title>
               </v-list-item>
-              <v-list-item link href="https://www.fetarute.org/map/creative/" target="_blank">
+              <v-list-item link href="https://map.creative.fetarute.org" target="_blank">
                 <v-list-item-title>{{ $t("headerNav.onlineMapCreative") }}</v-list-item-title>
               </v-list-item>
-              <v-list-item link href="https://www.fetarute.org/map/survival/" target="_blank">
+              <v-list-item link href="https://map.survival.fetarute.org" target="_blank">
                 <v-list-item-title>{{ $t("headerNav.onlineMapSurvival") }}</v-list-item-title>
               </v-list-item>
               <v-list-item :disabled="true">
