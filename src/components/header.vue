@@ -62,6 +62,9 @@
               <v-list-item link href="https://team-cenlinc.github.io/FesGen/" target="_blank" :title="$t('headerNav.chineseLangOnly')">
                 <v-list-item-title>FesGen</v-list-item-title>
               </v-list-item>
+              <v-list-item link href="https://www.fetarute.org/fta/" target="_blank" :title="$t('headerNav.chineseLangOnly')">
+                <v-list-item-title>MyFTA-Web</v-list-item-title>
+              </v-list-item>
             </v-list-item-group>
           </v-list>
         </v-navigation-drawer>

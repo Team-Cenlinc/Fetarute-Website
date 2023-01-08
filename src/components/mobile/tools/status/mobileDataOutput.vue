@@ -73,13 +73,13 @@ export default {
   data: () => ({
     serverCreative: {
       pingable: false,
-      serverMaxCapacity: 50,
+      serverMaxCapacity: 20,
       serverOnlinePlayer: 0,
       onlinePlayers: []
     },
     serverSurvival: {
       pingable: false,
-      serverMaxCapacity: 50,
+      serverMaxCapacity: 20,
       serverOnlinePlayer: 0,
       onlinePlayers: []
     }
