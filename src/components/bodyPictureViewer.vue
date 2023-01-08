@@ -14,6 +14,8 @@
 <script>
 import KJH from "../assets/pictures/pan-header/KJH-Optimal.png"
 import KJH02 from "../assets/pictures/pan-header/KJH02-Optimal.png"
+import Pacherik from "../assets/pictures/pan-header/Pacherik-Causeway.png"
+import SyapoleSta from "../assets/pictures/pan-header/Syapole-Sta.png"
 
 export default {
   name: "bodyPictureViewer",
@@ -24,6 +26,12 @@ export default {
       },
       {
         src: KJH02
+      },
+      {
+        src: Pacherik
+      },
+      {
+        src: SyapoleSta
       }
     ]
   }),
