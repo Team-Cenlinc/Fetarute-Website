@@ -13,9 +13,9 @@
           </template>
           <v-list>
             <v-list-item
-            v-for="(lang, index) in languageList"
-            :key="index"
-            link
+                v-for="(lang, index) in languageList"
+                :key="index"
+                link
             >
               <v-list-item-title @click="modifyLanguage(lang.key)">{{ lang.title }}</v-list-item-title>
             </v-list-item>
@@ -28,21 +28,27 @@
               <v-list-item @click.stop="drawer = !drawer">
                 <input type="button" class="material-symbols-outlined drawer-close-icon" value="close">
               </v-list-item>
-              <router-link to="/">
+              <router-link to="/" active-class="router-link-active">
                 <v-list-item>
                   <v-list-item-title>{{ $t("headerNav.homePage") }}</v-list-item-title>
                 </v-list-item>
               </router-link>
-              <router-link to="/tools/status">
+              <router-link to="/tools/status" active-class="router-link-active">
                 <v-list-item>
                   <v-list-item-title>{{ $t("headerNav.serverStatus") }}</v-list-item-title>
                 </v-list-item>
               </router-link>
-              <v-list-item>
-                <v-list-item-title>{{ $t("headerNav.onlineMap") }}</v-list-item-title>
-              </v-list-item>
               <v-list-item link href="https://www.fetarute.org/wiki/index.php/%E9%A6%96%E9%A1%B5" target="_blank" :title="$t('headerNav.chineseLangOnly')">
                 <v-list-item-title>{{ $t("headerNav.wikiLink") }}</v-list-item-title>
+              </v-list-item>
+              <v-list-item :disabled="true">
+                <v-list-item-title>{{ $t("headerNav.onlineMap") }}</v-list-item-title>
+              </v-list-item>
+              <v-list-item link href="https://map.creative.fetarute.org" target="_blank">
+                <v-list-item-title>{{ $t("headerNav.onlineMapCreative") }}</v-list-item-title>
+              </v-list-item>
+              <v-list-item link href="https://map.survival.fetarute.org" target="_blank">
+                <v-list-item-title>{{ $t("headerNav.onlineMapSurvival") }}</v-list-item-title>
               </v-list-item>
               <v-list-item :disabled="true">
                 <v-list-item-title>{{ $t("headerNav.socialMedia") }}</v-list-item-title>
@@ -55,6 +61,9 @@
               </v-list-item>
               <v-list-item link href="https://team-cenlinc.github.io/FesGen/" target="_blank" :title="$t('headerNav.chineseLangOnly')">
                 <v-list-item-title>FesGen</v-list-item-title>
+              </v-list-item>
+              <v-list-item link href="https://www.fetarute.org/fta/" target="_blank" :title="$t('headerNav.chineseLangOnly')">
+                <v-list-item-title>MyFTA-Web</v-list-item-title>
               </v-list-item>
             </v-list-item-group>
           </v-list>
