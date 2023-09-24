@@ -3,6 +3,7 @@
     "chineseLangOnly": "仅有中文页面",
     "homePage": "首页",
     "serverStatus": "服务器状态",
+    "serverPlayerCount": "服务器玩家计",
     "onlineMap": "在线地图",
     "wikiLink": "Fetarute百科",
     "socialMedia": "社交媒体",
@@ -10,7 +11,8 @@
     "twitter": "推特",
     "toolBox": "工具箱",
     "onlineMapCreative": "创造服",
-    "onlineMapSurvival": "生存服"
+    "onlineMapSurvival": "生存服",
+    "onlineMapLobby": "大厅服"
   },
   "bodyContent": {
     "promptScroll": "向 下 滚 动 以 探 索",

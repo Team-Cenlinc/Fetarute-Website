@@ -150,7 +150,7 @@ export default {
   float: left;
   display: flex;
   align-items: center;
-  padding: 150px 10% 200px 10%;
+  padding: 10rem 10% 13rem 10%;
   justify-content: space-between;
 }
 
@@ -194,24 +194,24 @@ h2.offline{
 
 #status-line-left{
   float: left;
-  height: 700px;
-  width: 20px;
-  margin-left: 30px;
-  margin-bottom: -500px;
+  height: 40rem;
+  width: 1.5rem;
+  margin-left: 2rem;
+  margin-bottom: -30rem;
   background-color: var(--body-span-line-syapole);
   display: flex;
   position: relative;
 }
 
 #status-station-1 {
-  height: 20px;
-  width: 30px;
+  height: 1.5rem;
+  width: 3rem;
   background-color: var(--body-span-line-syapole);
-  transform: translate(50px, 12.5rem);
+  transform: translate(2.5rem, 12.5rem);
 }
 
 #status-title{
-  transform: translate(50px, 10rem);
+  transform: translate(3rem, 10rem);
 }
 
 #status-title h1 {
@@ -225,30 +225,30 @@ h2.offline{
 
 #turn-right{
   float: left;
-  width: 60px;
-  height: 60px;
+  width: 6rem;
+  height: 6rem;
   background-color: transparent;
-  border-bottom-left-radius: 90px;
-  border-left: 20px solid var(--body-span-line-syapole);
-  border-bottom: 20px solid var(--body-span-line-syapole);
-  transform: translate(-220px, 680px);
+  border-bottom-left-radius: 7rem;
+  border-left: 1.5rem solid var(--body-span-line-syapole);
+  border-bottom: 1.5rem solid var(--body-span-line-syapole);
+  transform: translate(2rem, 38rem);
+  position: fixed;
 }
 
 #status-middle-line{
-  float: left;
-  height: 20px;
-  width: 250px;
-  transform: translate(-220px, 720px);
+  float: none;
+  height: 1.5rem;
+  width: 7rem;
+  transform: translate(8rem, 42.5rem);
   background-color: var(--body-span-line-syapole);
-  display: flex;
-  position: relative;
+  position: absolute;
 }
 
 #status-station-2{
-  float: left;
-  height: 60px;
-  width: 20px;
+  float: none;
+  height: 4rem;
+  width: 1.5rem;
   background-color: var(--body-span-line-syapole);
-  transform: translate(-220px, 700px);
+  transform: translate(15rem, 41.25rem);
 }
 </style>

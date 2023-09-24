@@ -3,6 +3,7 @@
     "chineseLangOnly": "このページは中国語だけです",
     "homePage": "ホームページ",
     "serverStatus": "サーバーステータス",
+    "serverPlayerCount": "サーバープレイヤーズ",
     "onlineMap": "オンライン地図",
     "wikiLink": "Fetarute ウィキ",
     "socialMedia": "ソーシャルメディア",
@@ -10,7 +11,8 @@
     "twitter": "ツイッター",
     "toolBox": "ツールボックス",
     "onlineMapCreative": "創造サーバー",
-    "onlineMapSurvival": "サバイバルサーバー"
+    "onlineMapSurvival": "サバイバルサーバー",
+    "onlineMapLobby": "ロビーサーバー"
   },
   "bodyContent": {
     "promptScroll": "続の先はもっとある",

@@ -14,6 +14,8 @@
 <script>
 import KJH from "../../assets/pictures/pan-header/KJH-Optimal.png"
 import KJH02 from "../../assets/pictures/pan-header/KJH02-Optimal.png"
+import Monorail from "../../assets/pictures/pan-header/Monorail-Optimal.png"
+import OldPTK from "../../assets/pictures/pan-header/Old-Pyutocor-Optimal.png"
 
 export default {
   name: "mobileBodyPictureViewer",
@@ -24,6 +26,12 @@ export default {
       },
       {
         src: KJH02
+      },
+      {
+        src: Monorail
+      },
+      {
+        src: OldPTK
       }
     ]
   }),

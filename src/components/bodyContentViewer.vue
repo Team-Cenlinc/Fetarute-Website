@@ -50,7 +50,7 @@
             src="../assets/content/Cesynlinc-Optimal.png"
             lazy-src="../assets/content/lazy/Cesynlinc-Optimal-modified.png"
             max-width="30%"
-            max-height="300px"
+            max-height="100%"
         >
           <template v-slot:placeholder>
               <v-progress-circular
@@ -69,14 +69,24 @@
 
     <div class="span-container-sec2-BL">
       <h1 style="border-bottom: 1.75rem solid var(--body-span-line-chikai);" class="subtitle" id="gallery">{{ $t("bodyContent.gallery") }}</h1>
-      <v-carousel cycle interval=6000 :show-arrows="false" delimiter-icon="mdi-minus" id="span-sec2-BL-carousel">
-        <v-carousel-item
-            v-for="(item,i) in contentImagesSec2"
-            :key="i"
-            :src="item.src"
-        >
-        </v-carousel-item>
-      </v-carousel>
+      <v-window>
+        <v-window-item>
+          <v-carousel cycle interval=6000 :show-arrows="false" delimiter-icon="mdi-minus" id="span-sec2-BL-carousel">
+            <v-carousel-item
+                v-for="(item,i) in contentImagesSec2"
+                :key="i"
+                :src="item.src"
+            >
+              <template v-slot:placeholder>
+                <v-progress-circular
+                    indeterminate
+                    color="grey lighten-2"
+                ></v-progress-circular>
+              </template>
+            </v-carousel-item>
+          </v-carousel>
+        </v-window-item>
+      </v-window>
     </div>
 
     <div class="content-span-body">
@@ -125,53 +135,53 @@ export default {
 }
 
 #rectangle-station{
-  height: 20px;
-  width: 60px;
-  margin-left: 42px;
+  height: 1.5rem;
+  width: 3.75rem;
+  margin-left: 2.65rem;
   background-color: var(--body-content-span-line-creative);
-  transform: translateY(-595px);
+  transform: translateY(-37rem);
 }
 
 #line-nav-expand{
-  height: 450px;
-  width: 25px;
-  margin-left: 60px;
+  height: 28.25rem;
+  width: 1.5rem;
+  margin-left: 3.75rem;
   background-color: var(--body-content-span-line-creative);
-  transform: translateY(-595px);
+  transform: translateY(-37rem);
   writing-mode: vertical-lr;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   font-weight: bold;
-  align-content: center;
+  align-content: space-evenly;
   color: var(--body-nav-expand-text-color);
   text-align: start;
   font-family: "Noto Sans SC", sans-serif;
-  text-space: 0.5rem;
+  text-space: 1.5rem;
 }
 
 #line-nav-expand-merge-1{
-  width:100px;
-  height:70px;
-  margin-left: 60px;
+  width:6.25rem;
+  height:4rem;
+  margin-left: 3.75rem;
   background-color: transparent;
-  border-bottom-left-radius: 90px;
-  border-left: 25px solid var(--body-content-span-line-creative);
-  border-bottom: 25px solid var(--body-content-span-line-creative);
-  transform: translateY(-595px);
+  border-bottom-left-radius: 5.7rem;
+  border-left: 1.5rem solid var(--body-content-span-line-creative);
+  border-bottom: 1.5rem solid var(--body-content-span-line-creative);
+  transform: translateY(-37rem);
 }
 
 .span-railway-line{
-  height: 22px;
+  height: 1.375rem;
   background-color: var(--body-content-span-line-creative);
-  transform: skewY(3deg) translateY(-720px);
+  transform: skewY(3deg) translateY(-45rem);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 3;
   position: relative;
 }
 
 .span-expand{
-  height: 150px;
+  height: 10rem;
   background-color: var(--body-content-bg);
-  transform: skewY(3deg) translateY(-600px);
+  transform: skewY(3deg) translateY(-37.5rem);
   box-shadow: 0 -20px 20px 5px var(--body-content-bg);
   z-index: 2;
   position: relative;
@@ -180,7 +190,7 @@ export default {
 /* Section 1 Start */
 
 .content-container-section-1{
-  height: 500px;
+  height: 32rem;
   z-index: 2;
   position: relative;
   margin-bottom: -900px;
@@ -189,52 +199,52 @@ export default {
 
 #line-cross-in-L-1{
   float: right;
-  width: 90px;
-  height: 90px;
+  width: 5rem;
+  height: 5rem;
   background-color: transparent;
-  border-top-left-radius: 90px;
-  border-left: 22px solid var(--body-span-line-syapole);
-  border-top: 22px solid var(--body-span-line-syapole);
-  transform: translateY(5px);
+  border-top-left-radius: 5rem;
+  border-left: 1.375rem solid var(--body-span-line-syapole);
+  border-top: 1.375rem solid var(--body-span-line-syapole);
+  transform: translateY(0);
 }
 
 #content-container-line-1{
   float: right;
   height: 100%;
-  width: 22px;
+  width: 1.375rem;
   background-color: var(--body-span-line-syapole);
-  transform: translate(22px, 90px);
+  transform: translate(1.375rem, 5rem);
 }
 
 #content-station-1{
-  height: 20px;
-  width: 50px;
+  height: 1.5rem;
+  width: 3rem;
   background-color: var(--body-span-line-syapole);
-  transform: translate(-30px, 16.5rem);
+  transform: translate(-2rem, 16.5rem);
 }
 
 #content-container-1{
   background-color: transparent;
-  transform: translateY(300px);
+  transform: translateY(18.75rem);
   text-align: center;
   margin: 200px 0 0 32%;
 }
 
 #line-cross-out-L-1{
   float: right;
-  width: 90px;
-  height: 90px;
+  width: 5rem;
+  height: 5rem;
   background-color: transparent;
-  border-bottom-left-radius: 90px;
-  border-left: 22px solid var(--body-span-line-syapole);
-  border-bottom: 22px solid var(--body-span-line-syapole);
-  transform: translate(112px, 500px); /*Section 1 Original Calc Point*/
+  border-bottom-left-radius: 5rem;
+  border-left: 1.375rem solid var(--body-span-line-syapole);
+  border-bottom: 1.375rem solid var(--body-span-line-syapole);
+  transform: translate(6.375rem, 32rem); /*Section 1 Original Calc Point*/
 }
 
 #span-line{
-  height: 22px;
+  height: 1.375rem;
   background-color: var(--body-span-line-southpark);
-  transform: skewY(-5deg) translateY(-50px);
+  transform: skewY(-5deg) translateY(-3.125rem);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 2;
   position: relative;
@@ -243,7 +253,7 @@ export default {
 /* Section 2 Start */
 
 .content-container-section-2{
-  height: 500px;
+  height: 32rem;
   z-index: 1;
   position: relative;
   transform: translateY(-600px)
@@ -251,63 +261,64 @@ export default {
 
 #line-cross-in-R-1{
   float: left;
-  width: 90px;
-  height: 90px;
+  width: 5rem;
+  height: 5rem;
   background-color: transparent;
-  border-top-right-radius: 90px;
-  border-right: 22px solid var(--body-span-line-kitajuku);
-  border-top: 22px solid var(--body-span-line-kitajuku); /*Section 1 Original Calc Point*/
+  border-top-right-radius: 5rem;
+  border-right: 1.375rem solid var(--body-span-line-kitajuku);
+  border-top: 1.375rem solid var(--body-span-line-kitajuku);
+  transform: translateY(0); /*Section 2 Original Calc Point*/
 }
 
 #content-container-line-2{
   float: left;
-  height: 100%;
-  width: 22px;
+  height: 110%;
+  width: 1.375rem;
   background-color: var(--body-span-line-kitajuku);
-  transform: translate(-22px, 90px);
+  transform: translate(-1.375rem, 5rem);
 }
 
 #content-station-2{
-  height: 20px;
-  width: 50px;
+  height: 1.5rem;
+  width: 3rem;
   background-color: var(--body-span-line-kitajuku);
-  transform: translate(5px, 16.5rem);
+  transform: translate(0.665rem, 16.5rem);
 }
 
 #content-container-2{
   max-width: 50%;
-  height: 200px;
+  height: 12.5rem;
   background-color: transparent;
-  transform: translateY(500px);
-  margin: 220px 0 0 145px;
+  transform: translateY(31.25rem);
+  margin: 13.75rem 0 0 9rem;
   line-height: 1.8rem;
 }
 
 #content-container-2 p{
-  padding-right: 50px;
+  padding-right: 3.2rem;
 }
 
 #content-sec2-pic {
   float: right;
-  transform: translate(80px, 275px);
-  box-shadow: 10px 20px var(--body-span-line-southpark);
+  transform: translate(5rem, 17rem);
+  box-shadow: 1rem 1.5rem var(--body-span-line-southpark);
 }
 
 #line-cross-out-R-1{
   float: left;
-  width: 90px;
-  height: 90px;
+  width: 5rem;
+  height: 5rem;
   background-color: transparent;
-  border-bottom-right-radius: 90px;
-  border-right: 22px solid var(--body-span-line-kitajuku);
-  border-bottom: 22px solid var(--body-span-line-kitajuku);
-  transform: translate(-112px, 590px); /*Section 2 Original Calc Point*/
+  border-bottom-right-radius: 5rem;
+  border-right: 1.375rem solid var(--body-span-line-kitajuku);
+  border-bottom: 1.375rem solid var(--body-span-line-kitajuku);
+  transform: translate(-6.375rem, 38rem); /*Section 2 Original Calc Point*/
 }
 
 #span-line-sec2{
-  height: 22px;
+  height: 1.375rem;
   background-color: var(--body-span-line-hokuriku);
-  transform: skewY(2deg) translateY(-250px);
+  transform: skewY(2deg) translateY(-15.625rem);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 2;
   position: relative;
@@ -316,7 +327,7 @@ export default {
 /* Span Sec.2 Below(BL) Start */
 
 .span-container-sec2-BL{
-  height: 900px;
+  height: 57rem;
 }
 
 #span-sec2-BL-carousel{
@@ -327,7 +338,7 @@ export default {
 }
 
 #gallery{
-  transform: translateY(-100px);
+  transform: translateY(-6.5rem);
   margin: 0 auto;
 }
 
@@ -337,9 +348,9 @@ export default {
 }
 
 #span-line-sec3-UP{
-  height: 22px;
+  height: 1.375rem;
   background-color: var(--body-span-line-chikai);
-  transform: skewY(-5deg) translateY(-150px);
+  transform: skewY(-5deg) translateY(-10rem);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 2;
   position: relative;

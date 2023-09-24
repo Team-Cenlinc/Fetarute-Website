@@ -35,9 +35,12 @@
               </router-link>
               <router-link to="/tools/status" active-class="router-link-active">
                 <v-list-item>
-                  <v-list-item-title>{{ $t("headerNav.serverStatus") }}</v-list-item-title>
+                  <v-list-item-title>{{ $t("headerNav.serverPlayerCount") }}</v-list-item-title>
                 </v-list-item>
               </router-link>
+              <v-list-item link href="https://status.fetarute.info/status/all" target="_blank" :title="$t('headerNav.chineseLangOnly')">
+                <v-list-item-title>{{ $t("headerNav.serverStatus") }}</v-list-item-title>
+              </v-list-item>
               <v-list-item link href="https://www.fetarute.org/wiki/index.php/%E9%A6%96%E9%A1%B5" target="_blank" :title="$t('headerNav.chineseLangOnly')">
                 <v-list-item-title>{{ $t("headerNav.wikiLink") }}</v-list-item-title>
               </v-list-item>
@@ -49,6 +52,9 @@
               </v-list-item>
               <v-list-item link href="https://map.survival.fetarute.org" target="_blank">
                 <v-list-item-title>{{ $t("headerNav.onlineMapSurvival") }}</v-list-item-title>
+              </v-list-item>
+              <v-list-item link href="https://map.lobby.fetarute.org" target="_blank">
+                <v-list-item-title>{{ $t("headerNav.onlineMapLobby") }}</v-list-item-title>
               </v-list-item>
               <v-list-item :disabled="true">
                 <v-list-item-title>{{ $t("headerNav.socialMedia") }}</v-list-item-title>
@@ -62,8 +68,8 @@
               <v-list-item link href="https://team-cenlinc.github.io/FesGen/" target="_blank" :title="$t('headerNav.chineseLangOnly')">
                 <v-list-item-title>FesGen</v-list-item-title>
               </v-list-item>
-              <v-list-item link href="https://www.fetarute.org/fta/" target="_blank" :title="$t('headerNav.chineseLangOnly')">
-                <v-list-item-title>MyFTA-Web</v-list-item-title>
+              <v-list-item link href="https://map.survival.fetarute.org/#Towny;mapday;-543,64,750;3" target="_blank" :title="$t('headerNav.chineseLangOnly')">
+                <v-list-item-title>SURnorth MyFTA-Web</v-list-item-title>
               </v-list-item>
             </v-list-item-group>
           </v-list>
@@ -183,12 +189,12 @@ header{
 .after-scroll-bg{
   transition: 225ms ease-out;
   background-color: var(--header-background-color);
-  box-shadow: 0 0 5px var(--header-shade-color);
+  box-shadow: 0.1rem 0.1rem 0.4rem var(--header-shade-color);
   color: #1f1f1f;
 }
 
 header .header-flex {
-  padding: 10px 20px;
+  padding: 0.625rem 1.25rem;
   height: 70px;
   width: 100%;
   display: -webkit-flex; /* Safari */
@@ -202,7 +208,7 @@ header .header-flex {
 header .header-nav-home {
   display: flex;
   padding: 0 1em;
-  line-height: 50px;
+  line-height: 3.125rem;
   color: var(--header-nav-color);
   text-decoration: none;
   float: right;
@@ -212,7 +218,7 @@ header .header-nav-home {
 header .header-nav{
   display: block;
   padding: 0 1em;
-  line-height: 50px;
+  line-height: 3.125rem;
   color: var(--header-nav-color);
   text-decoration: none;
   transition: 225ms ease-out;

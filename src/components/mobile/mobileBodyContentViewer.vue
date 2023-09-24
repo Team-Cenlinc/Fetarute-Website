@@ -102,23 +102,23 @@ export default {
 .down-navigator{
   z-index: 2;
   position: relative;
-  margin-bottom: -600px;
+  margin-bottom: -37.5rem;
 }
 
 #rectangle-station{
-  height: 16px;
-  width: 40px;
-  margin-left: 18px;
+  height: 1rem;
+  width: 2.5rem;
+  margin-left: 1.325rem;
   background-color: var(--body-content-span-line-creative);
-  transform: translateY(-400px);
+  transform: translateY(-25rem);
 }
 
 #line-nav-expand{
-  height: 330px;
-  width: 16px;
-  margin-left: 30px;
+  height: 20rem;
+  width: 1rem;
+  margin-left: 2rem;
   background-color: var(--body-content-span-line-creative);
-  transform: translateY(-400px);
+  transform: translateY(-25rem);
   writing-mode: vertical-lr;
   font-size: 0.5rem;
   font-weight: bold;
@@ -129,18 +129,18 @@ export default {
 }
 
 #line-nav-expand-merge{
-  width:50px;
-  height:35px;
-  margin-left: 30px;
+  width:3.125rem;
+  height:3rem;
+  margin-left: 2rem;
   background-color: transparent;
-  border-bottom-left-radius: 90px;
-  border-left: 16px solid var(--body-content-span-line-creative);
-  border-bottom: 16px solid var(--body-content-span-line-creative);
-  transform: translateY(-400px);
+  border-bottom-left-radius: 5.7rem;
+  border-left: 1rem solid var(--body-content-span-line-creative);
+  border-bottom: 1rem solid var(--body-content-span-line-creative);
+  transform: translateY(-25rem);
 }
 
 .span-railway-line{
-  height: 16px;
+  height: 1rem;
   background-color: var(--body-content-span-line-creative);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   transform: skewY(3deg) translateY(65px);
@@ -149,9 +149,9 @@ export default {
 }
 
 .span-expand{
-  height: 130px;
+  height: 8rem;
   background-color: var(--body-content-bg);
-  transform: skewY(3deg) translateY(195px);
+  transform: skewY(3deg) translateY(12rem);
   box-shadow: 0 -20px 20px 8px var(--body-content-bg);
   z-index: 2;
   position: relative;
@@ -160,59 +160,59 @@ export default {
 /* Section 1 Start */
 
 .content-container-section-1{
-  height: 300px;
+  height: 18rem;
   z-index: 2;
   position: relative;
 }
 
 #line-cross-in-L-1{
   float: right;
-  width: 70px;
-  height: 70px;
+  width: 4rem;
+  height: 4rem;
   background-color: transparent;
-  border-top-left-radius: 90px;
-  border-left: 16px solid var(--body-span-line-syapole);
-  border-top: 16px solid var(--body-span-line-syapole);
-  transform: translateY(-220px);/*Section 1 Original Calc Point*/
+  border-top-left-radius: 5rem;
+  border-left: 1rem solid var(--body-span-line-syapole);
+  border-top: 1rem solid var(--body-span-line-syapole);
+  transform: translateY(-13.75rem);/*Section 1 Original Calc Point*/
 }
 
 #content-container-line-1{
   float: right;
   height: 100%;
-  width: 16px;
+  width: 1rem;
   background-color: var(--body-span-line-syapole);
-  transform: translate(16px, -150px);
+  transform: translate(1rem, -10rem);
 }
 
 #content-station-1{
-  height: 16px;
-  width: 30px;
+  height: 1rem;
+  width: 2rem;
   background-color: var(--body-span-line-syapole);
-  transform: translate(-30px, 10rem);
+  transform: translate(-1.5rem, 10rem);
 }
 
 #content-container-1{
   background-color: transparent;
-  transform: translateY(-20px);
+  transform: translateY(-1rem);
   text-align: center;
   margin: 200px 0 0 32%;
 }
 
 #line-cross-out-L-1{
   float: right;
-  width: 70px;
-  height: 70px;
+  width: 4rem;
+  height: 4rem;
   background-color: transparent;
-  border-bottom-left-radius: 90px;
-  border-left: 16px solid var(--body-span-line-syapole);
-  border-bottom: 16px solid var(--body-span-line-syapole);
-  transform: translate(86px, 100px); /*Section 1 Original Calc Point*/
+  border-bottom-left-radius: 5rem;
+  border-left: 1rem solid var(--body-span-line-syapole);
+  border-bottom: 1rem solid var(--body-span-line-syapole);
+  transform: translate(5rem, 6rem); /*Section 1 Original Calc Point*/
 }
 
 #span-line{
-  height: 16px;
+  height: 1rem;
   background-color: var(--body-span-line-southpark);
-  transform: skewY(-5deg) translateY(-145px);
+  transform: skewY(-5deg) translateY(-9rem);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 2;
   position: relative;
@@ -221,62 +221,62 @@ export default {
 /* Section 2 Start */
 
 .content-container-section-2{
-  height: 300px;
+  height: 18rem;
   z-index: 1;
   position: relative;
 }
 
 #line-cross-in-R-1{
   float: left;
-  width: 70px;
-  height: 70px;
+  width: 4rem;
+  height: 4rem;
   background-color: transparent;
-  border-top-right-radius: 90px;
-  border-right: 16px solid var(--body-span-line-kitajuku);
-  border-top: 16px solid var(--body-span-line-kitajuku);
-  transform: translateY(-150px); /*Section 1 Original Calc Point*/
+  border-top-right-radius: 5rem;
+  border-right: 1rem solid var(--body-span-line-kitajuku);
+  border-top: 1rem solid var(--body-span-line-kitajuku);
+  transform: translateY(-10rem); /*Section 2 Original Calc Point*/
 
 }
 
 #content-container-line-2{
   float: left;
   height: 100%;
-  width: 16px;
+  width: 1rem;
   background-color: var(--body-span-line-kitajuku);
-  transform: translate(-16px, -80px);
+  transform: translate(-1rem, -6rem);
 }
 
 #content-station-2{
-  height: 16px;
-  width: 30px;
+  height: 1rem;
+  width: 2rem;
   background-color: var(--body-span-line-kitajuku);
-  transform: translate(10px, 10rem);
+  transform: translate(0.5rem, 10rem);
 }
 
 #content-container-2{
-  height: 40px;
+  height: 2.5rem;
   background-color: transparent;
   margin: -60px 0 0 120px;
-  transform: translate(-10px, -10px);
+  transform: translate(-1rem, 0);
   line-height: 1rem;
   padding-right: 3rem;
 }
 
 #line-cross-out-R-1{
   float: left;
-  width: 70px;
-  height: 70px;
+  width: 4rem;
+  height: 4rem;
   background-color: transparent;
-  border-bottom-right-radius: 90px;
-  border-right: 16px solid var(--body-span-line-kitajuku);
-  border-bottom: 16px solid var(--body-span-line-kitajuku);
-  transform: translate(-86px, 180px); /*Section 2 Original Calc Point*/
+  border-bottom-right-radius: 5rem;
+  border-right: 1rem solid var(--body-span-line-kitajuku);
+  border-bottom: 1rem solid var(--body-span-line-kitajuku);
+  transform: translate(-5rem, 9.325rem); /*Section 2 Original Calc Point*/
 }
 
 #span-line-sec2{
-  height: 16px;
+  height: 1rem;
   background-color: var(--body-span-line-hokuriku);
-  transform: skewY(2deg) translateY(-75px);
+  transform: skewY(2deg) translateY(-5rem);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 2;
   position: relative;
@@ -285,7 +285,7 @@ export default {
 /* Span Sec.2 Below(BL) Start */
 
 .span-container-sec2-BL{
-  height: 600px;
+  height: 37.5rem;
 }
 
 #span-sec2-BL-carousel{
@@ -297,7 +297,7 @@ export default {
 
 #gallery{
   margin: 0 auto;
-  transform: translateY(-50px);
+  transform: translateY(-3.5rem);
 }
 
 .span-container-sec2-BL{
@@ -306,9 +306,9 @@ export default {
 }
 
 #span-line-sec3-UP{
-  height: 22px;
+  height: 1rem;
   background-color: var(--body-span-line-chikai);
-  transform: skewY(-5deg) translateY(-75px);
+  transform: skewY(-5deg) translateY(-5rem);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 2;
   position: relative;

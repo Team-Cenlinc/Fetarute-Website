@@ -80,3 +80,7 @@
     color: var(--header-router-color-text);
     text-decoration: none;
 }
+
+body{
+    margin: 0;
+}

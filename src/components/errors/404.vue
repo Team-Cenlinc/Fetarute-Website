@@ -17,7 +17,7 @@
         <p><strong style="border-bottom: 1rem solid var(--body-span-line-syapole);">传送门</strong></p>
         <div class="link-forward">
           <p><br><a class="portal-link" href="/#/">{{ $t("headerNav.homePage") }}</a></p>
-          <p><br><a class="portal-link" href="/#/tools/status">{{ $t("headerNav.serverStatus") }}</a></p>
+          <p><br><a class="portal-link" href="/#/tools/status">{{ $t("headerNav.serverPlayerCount") }}</a></p>
           <p><br><a class="portal-link" href="https://twitter.com/Fetarute">{{ $t("headerNav.twitter") }}</a></p>
           <p><br><a class="portal-link" href="https://www.fetarute.org/wiki/index.php/%E9%A6%96%E9%A1%B5">{{ $t("headerNav.wikiLink") }}</a></p>
           <p><br><a class="portal-link" href="https://team-cenlinc.github.io/FesGen/">FesGen</a></p>
@@ -59,7 +59,7 @@ div.not-found-page{
 
 #present-body{
   width: 100%;
-  height: 22px;
+  height: 1.325rem;
   background-color: var(--error-span-line);
   box-shadow: 0 5px var(--body-content-bg);
   z-index: 2;
@@ -67,24 +67,24 @@ div.not-found-page{
 }
 
 #present-station{
-  width: 22px;
-  height: 35px;
+  width: 1.325rem;
+  height: 2rem;
   background-color: var(--body-content-bg);
   border: 3px dashed var(--error-span-line);
   margin: 0 auto;
-  transform: translateY(-55px);
+  transform: translateY(-3rem);
 }
 
 #turn-portal{
   float: right;
-  width: 90px;
-  height: 90px;
-  margin-right: 60px;
+  width: 5rem;
+  height: 5rem;
+  margin-right: 4rem;
   background-color: transparent;
-  border-top-right-radius: 90px;
-  transform: translateY(-55px);
-  border-right: 22px solid var(--error-span-line);
-  border-top: 22px solid var(--error-span-line);
+  border-top-right-radius: 5rem;
+  transform: translateY(-3.225rem);
+  border-right: 1.325rem solid var(--error-span-line);
+  border-top: 1.325rem solid var(--error-span-line);
 }
 
 .text-show strong{
@@ -101,7 +101,7 @@ div.not-found-page{
 }
 
 .link-forward{
-  transform: translate(-20px, 100px);
+  transform: translate(-1.5rem, 6rem);
   position: absolute;
   text-align: right;
 }
@@ -144,26 +144,26 @@ div.not-found-page{
 
 .content-container strong{
   float: right;
-  transform: translateY(50px);
+  transform: translateY(3rem);
   color: var(--body-content-span-text-color);
   font-size: 2rem;
   width: fit-content;
 }
 
 #side-line{
-  transform: translate(246px, 28px);
-  height: 660px;
-  width: 22px;
+  transform: translate(15rem, 1.5rem);
+  height: 40rem;
+  width: 1.325rem;
   float: right;
-  margin-right: 60px;
+  margin-right: 4rem;
   background-image: linear-gradient(to bottom, var(--error-span-line), var(--body-content-span-line-creative));
 }
 
 #side-station-terminal{
   float: right;
-  transform: translate(284px, 688px);
-  width: 60px;
-  height: 22px;
+  transform: translate(17.5rem, 41.5rem);
+  width: 4rem;
+  height: 1.325rem;
   background-color: var(--body-content-span-line-creative);
 }
 

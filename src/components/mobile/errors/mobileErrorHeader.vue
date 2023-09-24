@@ -28,21 +28,33 @@
               <v-list-item @click.stop="drawer = !drawer">
                 <input type="button" class="material-symbols-outlined drawer-close-icon" value="close">
               </v-list-item>
-              <router-link to="/">
+              <router-link to="/" active-class="router-link-active">
                 <v-list-item>
                   <v-list-item-title>{{ $t("headerNav.homePage") }}</v-list-item-title>
                 </v-list-item>
               </router-link>
-              <router-link to="/tools/status">
+              <router-link to="/tools/status" active-class="router-link-active">
                 <v-list-item>
-                  <v-list-item-title>{{ $t("headerNav.serverStatus") }}</v-list-item-title>
+                  <v-list-item-title>{{ $t("headerNav.serverPlayerCount") }}</v-list-item-title>
                 </v-list-item>
               </router-link>
-              <v-list-item>
-                <v-list-item-title>{{ $t("headerNav.onlineMap") }}</v-list-item-title>
+              <v-list-item link href="https://status.fetarute.info/status/all" target="_blank" :title="$t('headerNav.chineseLangOnly')">
+                <v-list-item-title>{{ $t("headerNav.serverStatus") }}</v-list-item-title>
               </v-list-item>
               <v-list-item link href="https://www.fetarute.org/wiki/index.php/%E9%A6%96%E9%A1%B5" target="_blank" :title="$t('headerNav.chineseLangOnly')">
                 <v-list-item-title>{{ $t("headerNav.wikiLink") }}</v-list-item-title>
+              </v-list-item>
+              <v-list-item :disabled="true">
+                <v-list-item-title>{{ $t("headerNav.onlineMap") }}</v-list-item-title>
+              </v-list-item>
+              <v-list-item link href="https://map.creative.fetarute.org" target="_blank">
+                <v-list-item-title>{{ $t("headerNav.onlineMapCreative") }}</v-list-item-title>
+              </v-list-item>
+              <v-list-item link href="https://map.survival.fetarute.org" target="_blank">
+                <v-list-item-title>{{ $t("headerNav.onlineMapSurvival") }}</v-list-item-title>
+              </v-list-item>
+              <v-list-item link href="https://map.lobby.fetarute.org" target="_blank">
+                <v-list-item-title>{{ $t("headerNav.onlineMapLobby") }}</v-list-item-title>
               </v-list-item>
               <v-list-item :disabled="true">
                 <v-list-item-title>{{ $t("headerNav.socialMedia") }}</v-list-item-title>
@@ -55,6 +67,9 @@
               </v-list-item>
               <v-list-item link href="https://team-cenlinc.github.io/FesGen/" target="_blank" :title="$t('headerNav.chineseLangOnly')">
                 <v-list-item-title>FesGen</v-list-item-title>
+              </v-list-item>
+              <v-list-item link href="https://map.survival.fetarute.org/#Towny;mapday;-543,64,750;3" target="_blank" :title="$t('headerNav.chineseLangOnly')">
+                <v-list-item-title>SURnorth MyFTA-Web</v-list-item-title>
               </v-list-item>
             </v-list-item-group>
           </v-list>

@@ -145,20 +145,20 @@ export default {
 
 .creative-server-status{
   height: 10%;
-  width: 100%;
+  width: 120%;
   float: left;
   display: flex;
   align-items: center;
-  padding: 100px 100px 30px 100px;
+  padding: 7rem 7rem 2rem 7rem;
 }
 
 .survival-server-status{
   height: 10%;
-  width: 100%;
+  width: 120%;
   float: left;
   display: flex;
   align-items: center;
-  padding: 100px 100px 30px 100px;
+  padding: 7rem 7rem 2rem 7rem;
 }
 
 #online{
@@ -191,24 +191,24 @@ h6.offline{
 
 #status-line-left{
   float: left;
-  height: 700px;
-  width: 15px;
-  margin-left: 30px;
-  margin-bottom: -500px;
+  height: 40rem;
+  width: 1rem;
+  margin-left: 2rem;
+  margin-bottom: -30rem;
   background-color: var(--body-span-line-syapole);
   display: flex;
   position: relative;
 }
 
 #status-station-1 {
-  height: 15px;
-  width: 30px;
+  height: 1rem;
+  width: 2rem;
   background-color: var(--body-span-line-syapole);
-  transform: translate(40px, 12.5rem);
+  transform: translate(2.5rem, 12.5rem);
 }
 
 #status-title{
-  transform: translate(50px, 10rem);
+  transform: translate(3rem, 10rem);
 }
 
 #status-title h1 {
@@ -221,31 +221,31 @@ h6.offline{
 }
 
 #turn-right{
-  float: left;
-  width: 60px;
-  height: 60px;
+  float: none;
+  width: 4rem;
+  height: 4rem;
   background-color: transparent;
-  border-bottom-left-radius: 90px;
-  border-left: 15px solid var(--body-span-line-syapole);
-  border-bottom: 15px solid var(--body-span-line-syapole);
-  transform: translate(-175px, 685px);
+  border-bottom-left-radius: 5rem;
+  border-left: 1rem solid var(--body-span-line-syapole);
+  border-bottom: 1rem solid var(--body-span-line-syapole);
+  transform: translate(2rem, 39rem);
+  position: fixed;
 }
 
 #status-middle-line{
-  float: left;
-  height: 15px;
-  width: 50px;
-  transform: translate(-180px, 730px);
+  float: none;
+  height: 1rem;
+  width: 4rem;
+  transform: translate(6rem, 42rem);
   background-color: var(--body-span-line-syapole);
-  display: flex;
-  position: relative;
+  position: absolute;
 }
 
 #status-station-2{
-  float: left;
-  height: 45px;
-  width: 15px;
+  float: none;
+  height: 3rem;
+  width: 1rem;
   background-color: var(--body-span-line-syapole);
-  transform: translate(-180px, 715px);
+  transform: translate(10rem, 41rem);
 }
 </style>

@@ -3,6 +3,7 @@
     "chineseLangOnly": "Page only in Chinese Language",
     "homePage": "Home Page",
     "serverStatus": "Server Status",
+    "serverPlayerCount": "Server Player Counts",
     "onlineMap": "Online Map",
     "wikiLink": "Fetarute Wiki",
     "socialMedia": "Social Media",
@@ -10,7 +11,8 @@
     "twitter": "Twitter",
     "toolBox": "Tool Box",
     "onlineMapCreative": "Creative Server",
-    "onlineMapSurvival": "Survival Server"
+    "onlineMapSurvival": "Survival Server",
+    "onlineMapLobby": "Lobby Server"
   },
   "bodyContent": {
     "promptScroll": "Scroll down to discover",
