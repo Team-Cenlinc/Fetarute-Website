@@ -312,13 +312,13 @@ export default {
   border-bottom-right-radius: 5rem;
   border-right: 1.375rem solid var(--body-span-line-kitajuku);
   border-bottom: 1.375rem solid var(--body-span-line-kitajuku);
-  transform: translate(-6.375rem, 38rem); /*Section 2 Original Calc Point*/
+  transform: translate(-6.375rem, 40rem); /*Section 2 Original Calc Point*/
 }
 
 #span-line-sec2{
   height: 1.375rem;
   background-color: var(--body-span-line-hokuriku);
-  transform: skewY(2deg) translateY(-15.625rem);
+  transform: skewY(2deg) translateY(-16.625rem);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 2;
   position: relative;
