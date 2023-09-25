@@ -229,7 +229,7 @@ h6.offline{
   border-left: 1rem solid var(--body-span-line-syapole);
   border-bottom: 1rem solid var(--body-span-line-syapole);
   transform: translate(2rem, 39rem);
-  position: fixed;
+  position: absolute;
 }
 
 #status-middle-line{

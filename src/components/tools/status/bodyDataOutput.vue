@@ -232,7 +232,7 @@ h2.offline{
   border-left: 1.5rem solid var(--body-span-line-syapole);
   border-bottom: 1.5rem solid var(--body-span-line-syapole);
   transform: translate(2rem, 38rem);
-  position: fixed;
+  position: absolute;
 }
 
 #status-middle-line{
