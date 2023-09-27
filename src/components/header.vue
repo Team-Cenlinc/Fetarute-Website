@@ -1,7 +1,6 @@
 <template>
   <header>
     <div class="header-flex" v-bind:class="{'after-scroll-bg': scrollPassed, 'before-scroll-bg': !scrollPassed}" data-app>
-      <!-- LOGO PLACEHOLDER -->
       <h1><small><router-link to="/#/"><a class="header-nav-home">{{ title }}</a></router-link></small></h1>
       <div class="rev-zone">
         <input type="button" @click.stop="drawer = !drawer" class="material-symbols-outlined header-nav" value="menu">
@@ -255,7 +254,7 @@ input.header-nav:hover {
   color: var(--header-drawer-icon-color-hover);
 }
 
-.router-link-active {
+#router-link-active {
   color: var(--header-router-color-text);
   text-decoration: none;
 }

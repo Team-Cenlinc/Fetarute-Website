@@ -7,6 +7,7 @@
       </div>
       <BodyPictureViewer/>
       <BodyContentViewer ref="content"/>
+      <BodyContentViewerCreative ref="contentC"/>
       <FooterViewer ref="footer"/>
     </div>
     <div v-if="isMobile" id="mobile">
@@ -16,6 +17,7 @@
       </div>
       <MobileBodyPictureViewer/>
       <MobileBodyContentViewer ref="content"/>
+      <MobileBodyContentViewerCreative ref="contentC"/>
       <MobileFooter ref="footer"/>
     </div>
   </div>
@@ -25,19 +27,23 @@
 import HeaderNav from "@/components/header";
 import BodyPictureViewer from "@/components/bodyPictureViewer";
 import BodyContentViewer from "@/components/bodyContentViewer";
+import BodyContentViewerCreative from "@/components/bodyContentViewerCreative.vue";
 import FooterViewer from "@/components/footer";
 
 import MobileHeader from "@/components/mobile/mobileHeader";
 import MobileFooter from "@/components/mobile/mobileFooter";
 import MobileBodyPictureViewer from "@/components/mobile/mobileBodyPictureViewer";
 import MobileBodyContentViewer from "@/components/mobile/mobileBodyContentViewer";
+import MobileBodyContentViewerCreative from "@/components/mobile/mobileBodyContentViewerCreative.vue";
+
 
 export default {
   name: 'App',
   components: {
     MobileBodyContentViewer,
     MobileBodyPictureViewer,
-    MobileFooter, FooterViewer, BodyContentViewer, HeaderNav, BodyPictureViewer, MobileHeader},
+    MobileBodyContentViewerCreative,
+    MobileFooter, FooterViewer, BodyContentViewer, BodyContentViewerCreative, HeaderNav, BodyPictureViewer, MobileHeader},
   data: () => ({
     title: "Fetarute",
     isMobile: false,
@@ -57,9 +63,11 @@ export default {
       if (window.innerWidth < 1100){
         this.isSmallScreen = true
         this.$refs.content.isSmallScreen = true
+        this.$refs.contentC.isSmallScreen = true
       } else {
         this.isSmallScreen = false
         this.$refs.content.isSmallScreen = false
+        this.$refs.contentC.isSmallScreen = false
       }
     },
     syncColorTheme(colorThemeStatus) {

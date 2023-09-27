@@ -16,10 +16,15 @@
   },
   "bodyContent": {
     "promptScroll": "向 下 滚 动 以 探 索",
-    "creativeWorld": "创造世界",
+    "general": "概览",
     "journeyBegin": "开始旅程：简介",
-    "introFirstLine": "创造世界是Fetarute服务器自2017年创立以来的主打玩法，以城市建设为核心，并以其他方面扩充城市核心, 例如：铁路建设，城市生存等等。",
-    "introSecondLine": "经过多年以来的提高与建设，Fetarute服务器的建筑质量也得以提高。",
+    "introFirstLine": "欢迎来到Fetarute！这是一个以轨道交通为主题的多元纯净小型服务器。",
+    "introSecondLine": "该服成立于2017年，致力于打造更好的轨交城建服务器。",
+
+    "creativeWorld": "创造世界",
+    "creativeBegin": "探索创造力",
+    "introFirstLineCreative": "创造是Fetarute的传统玩法，7年来我们积累了丰富的创造经验，我们期待由方块堆砌的城市能显现出社区丰富的创造力，彰显轨交世界的末来新模样。",
+    "introSecondLineCreative": "我们欢迎各种各样的建筑艺术家，不论你擅长什么，这里都有你的一片天地！",
     "gallery": "画廊"
   },
   "status": {

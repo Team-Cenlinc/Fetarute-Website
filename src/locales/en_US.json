@@ -16,10 +16,15 @@
   },
   "bodyContent": {
     "promptScroll": "Scroll down to discover",
+    "general": "Overview",
+    "journeyBegin": "Begin the trip: Summary",
+    "introFirstLine": "Welcome to Fetarute！A vanilla Minecraft server featuring City Constructions and Transportation。",
+    "introSecondLine": "Established in 2017, and looking for being better!",
+
     "creativeWorld": "Creative",
-    "journeyBegin": "The Beginning of the Journey: Introduction",
-    "introFirstLine": "The Creative World had already been a core of Fetarute since it established back in January 2017, with the theme of city construction, combine with railways.",
-    "introSecondLine": "With these years of enhancing and expanding, the quality and environment both increased compare to the time when established.",
+    "creativeBegin": "Discovering the Creativity",
+    "introFirstLineCreative": "The Creating is the tradition playing pattern in Fetarute. We expecting the cities made up by blocks express the community-driven creativity and illustrate the future ideas.",
+    "introSecondLineCreative": "We warmly welcome any artists! No matter what you are good at, here's always place for you.",
     "gallery": "Gallery"
   },
   "status": {
