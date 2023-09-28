@@ -24,7 +24,13 @@
     "creativeWorld": "Creative",
     "creativeBegin": "Discovering the Creativity",
     "introFirstLineCreative": "The Creating is the tradition playing pattern in Fetarute. We expecting the cities made up by blocks express the community-driven creativity and illustrate the future ideas.",
-    "introSecondLineCreative": "We warmly welcome any artists! No matter what you are good at, here's always place for you.",
+    "introSecondLineCreative": "We looking forward to have collaborative individuals and warmly welcome any artists! No matter what you are good at, here's always place for you.",
+
+    "survivalWorld": "Survival",
+    "survivalBegin": "Railroad Journeys",
+    "introFirstLineSurvival": "Survival is a new world for Fetarute after a revolution in server pattern. Fabulous mechanics, towns and exotic things are newly added.",
+    "introSecondLineSurvival": "With a cross-server railway system, the ancient time and the modern time are woven and blended...",
+
     "gallery": "Gallery"
   },
   "status": {

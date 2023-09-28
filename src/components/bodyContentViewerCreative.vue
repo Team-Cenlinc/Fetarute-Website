@@ -175,7 +175,7 @@ export default {
   max-width: 50%;
   height: 12.5rem;
   background-color: transparent;
-  transform: translateY(28rem);
+  transform: translateY(30rem);
   margin: 13.75rem 0 0 9rem;
   line-height: 1.8rem;
 }

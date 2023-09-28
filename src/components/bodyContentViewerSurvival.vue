@@ -7,7 +7,7 @@
         <div id="content-station-1"></div>
       </div>
       <div id="content-container-1">
-        <h1 style="border-bottom: 1.75rem solid var(--body-span-line-chikai);" class="subtitle">{{ $t("bodyContent.survivalWorld") }}</h1>
+        <h1 style="border-bottom: 1.75rem solid var(--body-span-line-hokuriku);" class="subtitle">{{ $t("bodyContent.survivalWorld") }}</h1>
       </div>
       <div id="line-cross-out-L-1"></div>
     </section>
@@ -23,7 +23,7 @@
       </div>
       <div id="content-container-2">
 
-            <h3 style="border-bottom: 0.5rem solid var(--body-span-line-hokuriku);" class="subtitle">03 - {{ $t("bodyContent.survivalBegin") }}<span class="material-symbols-outlined">home</span></h3>
+            <h3 style="border-bottom: 0.5rem solid var(--body-span-line-syapole);" class="subtitle">03 - {{ $t("bodyContent.survivalBegin") }}<span class="material-symbols-outlined">home</span></h3>
             <p>
               <br>{{ $t("bodyContent.introFirstLineSurvival") }}
               <br>{{ $t("bodyContent.introSecondLineSurvival") }}
@@ -88,8 +88,8 @@ export default {
   height: 5rem;
   background-color: transparent;
   border-top-left-radius: 5rem;
-  border-left: 1.375rem solid var(--body-span-line-chikai);
-  border-top: 1.375rem solid var(--body-span-line-chikai);
+  border-left: 1.375rem solid var(--body-span-line-hokuriku);
+  border-top: 1.375rem solid var(--body-span-line-hokuriku);
   transform: translateY(0);
 }
 
@@ -97,14 +97,14 @@ export default {
   float: right;
   height: 100%;
   width: 1.375rem;
-  background-color: var(--body-span-line-chikai);
+  background-color: var(--body-span-line-hokuriku);
   transform: translate(1.375rem, 5rem);
 }
 
 #content-station-1{
   height: 1.5rem;
   width: 3rem;
-  background-color: var(--body-span-line-chikai);
+  background-color: var(--body-span-line-hokuriku);
   transform: translate(-2rem, 16.5rem);
 }
 
@@ -121,14 +121,14 @@ export default {
   height: 5rem;
   background-color: transparent;
   border-bottom-left-radius: 5rem;
-  border-left: 1.375rem solid var(--body-span-line-chikai);
-  border-bottom: 1.375rem solid var(--body-span-line-chikai);
+  border-left: 1.375rem solid var(--body-span-line-hokuriku);
+  border-bottom: 1.375rem solid var(--body-span-line-hokuriku);
   transform: translate(6.375rem, 32rem); /*Section 1 Original Calc Point*/
 }
 
 #span-line{
   height: 1.375rem;
-  background-color: var(--body-span-line-kitajuku);
+  background-color: var(--body-span-line-southpark);
   transform: skewY(-5deg) translateY(23.5rem);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 2;
@@ -151,8 +151,8 @@ export default {
   height: 5rem;
   background-color: transparent;
   border-top-right-radius: 5rem;
-  border-right: 1.375rem solid var(--body-span-line-southpark);
-  border-top: 1.375rem solid var(--body-span-line-southpark);
+  border-right: 1.375rem solid var(--body-span-line-pyutocor);
+  border-top: 1.375rem solid var(--body-span-line-pyutocor);
   transform: translateY(0); /*Section 2 Original Calc Point*/
 }
 
@@ -160,14 +160,14 @@ export default {
   float: left;
   height: 110%;
   width: 1.375rem;
-  background-color: var(--body-span-line-southpark);
+  background-color: var(--body-span-line-pyutocor);
   transform: translate(-1.375rem, 5rem);
 }
 
 #content-station-2{
   height: 1.5rem;
   width: 3rem;
-  background-color: var(--body-span-line-southpark);
+  background-color: var(--body-span-line-pyutocor);
   transform: translate(0.665rem, 16.5rem);
 }
 
@@ -187,7 +187,7 @@ export default {
 #content-sec2-pic {
   float: right;
   transform: translate(5rem, 17rem);
-  box-shadow: 1rem 1.5rem var(--body-span-line-syapole);
+  box-shadow: 1rem 1.5rem var(--body-span-line-chikai);
 }
 
 #line-cross-out-R-1{
@@ -196,14 +196,14 @@ export default {
   height: 5rem;
   background-color: transparent;
   border-bottom-right-radius: 5rem;
-  border-right: 1.375rem solid var(--body-span-line-southpark);
-  border-bottom: 1.375rem solid var(--body-span-line-southpark);
+  border-right: 1.375rem solid var(--body-span-line-pyutocor);
+  border-bottom: 1.375rem solid var(--body-span-line-pyutocor);
   transform: translate(-6.375rem, 40rem); /*Section 2 Original Calc Point*/
 }
 
 #span-line-sec2{
   height: 1.375rem;
-  background-color: var(--body-span-line-pyutocor);
+  background-color: var(--body-span-line-duka);
   transform: skewY(2deg) translateY(10.5rem);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 2;
