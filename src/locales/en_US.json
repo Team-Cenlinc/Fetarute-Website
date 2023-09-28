@@ -1,0 +1,46 @@
+{
+  "headerNav": {
+    "chineseLangOnly": "Page only in Chinese Language",
+    "homePage": "Home Page",
+    "serverStatus": "Server Status",
+    "serverPlayerCount": "Server Player Counts",
+    "onlineMap": "Online Map",
+    "wikiLink": "Fetarute Wiki",
+    "socialMedia": "Social Media",
+    "externalLink": "Jump to external link",
+    "twitter": "Twitter",
+    "toolBox": "Tool Box",
+    "onlineMapCreative": "Creative Server",
+    "onlineMapSurvival": "Survival Server",
+    "onlineMapLobby": "Lobby Server"
+  },
+  "bodyContent": {
+    "promptScroll": "Scroll down to discover",
+    "general": "Overview",
+    "journeyBegin": "Begin the trip: Summary",
+    "introFirstLine": "Welcome to Fetarute！A vanilla Minecraft server featuring City Constructions and Transportation。",
+    "introSecondLine": "Established in 2017, and looking for being better!",
+
+    "creativeWorld": "Creative",
+    "creativeBegin": "Discovering the Creativity",
+    "introFirstLineCreative": "The Creating is the tradition playing pattern in Fetarute. We expecting the cities made up by blocks express the community-driven creativity and illustrate the future ideas.",
+    "introSecondLineCreative": "We warmly welcome any artists! No matter what you are good at, here's always place for you.",
+    "gallery": "Gallery"
+  },
+  "status": {
+    "serverStatus": "Server Status",
+    "offline": "Offline",
+    "creativeName": "Fetarute: Creative - Modern",
+    "survivalName": "Fetarute: Survival - Stone Age",
+    "creativeMobileName": "Fetarute: Creative",
+    "survivalMobileName": "Fetarute: Survival"
+  },
+  "error":{
+    "notFoundText": "The page you are looking for is not found."
+  },
+  "footer": {
+    "joinUs": "Join Us",
+    "followUs": "Follow Us",
+    "contactUs": "Contact Us"
+  }
+}
