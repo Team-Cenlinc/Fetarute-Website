@@ -50,7 +50,6 @@ export default {
 <style scoped>
 .content-viewer{
   background-color: var(--body-content-bg);
-  background: var(--body-content-bg);
   height: 40rem;
 }
 /* Section 1 Start */
@@ -61,6 +60,12 @@ export default {
   position: relative;
   background-color: var(--body-content-bg);
   transform: translateY(5rem);
+
+  background-image: url('../../assets/background/abstract-small.webp');
+  background-blend-mode: soft-light;
+  background-position: center;
+  background-origin: content-box;
+  background-size: cover;
 }
 
 #line-cross-in-L-1{
@@ -124,6 +129,12 @@ export default {
   position: relative;
   background-color: var(--body-content-bg);
   transform: translateY(5rem);
+
+  background-image: url('../../assets/background/abstract-small-2.webp');
+  background-blend-mode: soft-light;
+  background-position: center;
+  background-origin: content-box;
+  background-size: cover;
 }
 
 #line-cross-in-R-1{

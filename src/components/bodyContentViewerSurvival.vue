@@ -70,6 +70,10 @@ export default {
 .content-viewer{
   background-color: var(--body-content-bg);
   height: 50rem;
+  background-image: url('../assets/background/abstract-small.webp');
+  background-blend-mode: soft-light;
+  background-position: center;
+  background-origin: content-box;
 }
 
 /* Section 1 Start */
@@ -142,7 +146,11 @@ export default {
   z-index: 0;
   position: relative;
   background-color: var(--body-content-bg);
-  transform: translateY(-10rem)
+  transform: translateY(-10rem);
+  background-image: url('../assets/background/abstract-small-2.webp');
+  background-blend-mode: soft-light;
+  background-position: center;
+  background-origin: content-box;
 }
 
 #line-cross-in-R-1{

@@ -83,6 +83,11 @@ export default {
 <style scoped>
 .content-viewer{
   background-color: var(--body-content-bg);
+
+  background-image: url('../assets/background/abstract.webp');
+  background-blend-mode: soft-light;
+  background-position: center;
+  background-origin: content-box;
 }
 
 .down-navigator{

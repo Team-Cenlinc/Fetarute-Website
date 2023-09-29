@@ -1,6 +1,5 @@
 <template>
   <div class="content-viewer">
-
     <section class="content-container-section-1">
       <div id="line-cross-in-L-1"></div>
       <div id="content-container-line-1">
@@ -70,6 +69,10 @@ export default {
 .content-viewer{
   background-color: var(--body-content-bg);
   height: 50rem;
+  background-image: url('../assets/background/abstract-small.webp');
+  background-blend-mode: soft-light;
+  background-position: center;
+  background-origin: content-box;
 }
 
 /* Section 1 Start */
@@ -142,7 +145,11 @@ export default {
   z-index: 0;
   position: relative;
   background-color: var(--body-content-bg);
-  transform: translateY(-10rem)
+  transform: translateY(-10rem);
+  background-image: url('../assets/background/abstract-small-2.webp');
+  background-blend-mode: soft-light;
+  background-position: center;
+  background-origin: content-box;
 }
 
 #line-cross-in-R-1{

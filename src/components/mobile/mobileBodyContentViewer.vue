@@ -63,6 +63,12 @@ export default {
 .content-viewer{
   background-color: var(--body-content-bg);
   height: 42.5rem;
+
+  background-image: url('../../assets/background/abstract.webp');
+  background-blend-mode: soft-light;
+  background-position: center;
+  background-origin: content-box;
+  background-size: cover;
 }
 
 .down-navigator{
