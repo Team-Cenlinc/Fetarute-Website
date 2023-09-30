@@ -44,6 +44,12 @@ export default {
 div.not-found-page{
   background-color: var(--body-content-bg);
   height: 800px;
+
+  background-image: url('../../../assets/background/abstract.webp');
+  background-blend-mode: soft-light;
+  background-position: center;
+  background-origin: content-box;
+  background-size: cover;
 }
 
 .status-declaration{

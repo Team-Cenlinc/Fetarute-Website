@@ -141,6 +141,12 @@ export default {
 .data-output{
   background-color: var(--body-content-bg);
   height: 1000px;
+
+  background-image: url('../../../../assets/background/abstract.webp');
+  background-blend-mode: soft-light;
+  background-position: center;
+  background-origin: content-box;
+  background-size: cover;
 }
 
 .creative-server-status{

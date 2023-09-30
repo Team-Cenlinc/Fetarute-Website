@@ -35,7 +35,7 @@
             src="../assets/content/Cesynlinc-Optimal.webp"
             lazy-src="../assets/content/lazy/Cesynlinc-Optimal-modified.webp"
             max-width="30%"
-            max-height="100%"
+            max-height="50%"
         >
           <template v-slot:placeholder>
               <v-progress-circular
@@ -73,6 +73,7 @@ export default {
   background-blend-mode: soft-light;
   background-position: center;
   background-origin: content-box;
+  background-repeat: repeat-x;
 }
 
 /* Section 1 Start */
@@ -150,6 +151,7 @@ export default {
   background-blend-mode: soft-light;
   background-position: center;
   background-origin: content-box;
+  background-repeat: repeat-x;
 }
 
 #line-cross-in-R-1{

@@ -146,6 +146,7 @@ export default {
   background-blend-mode: soft-light;
   background-position: center;
   background-origin: content-box;
+  background-repeat: repeat-x;
 }
 
 .creative-server-status{
