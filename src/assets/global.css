@@ -13,6 +13,7 @@
     --header-router-color-text: #222323;
 
     --body-content-bg: #f3f3f3;
+    --body-content-bg-gray: #eaeaea;
     --body-nav-expand-text-color: #4f4f4f;
     --body-content-span-line-creative: #89ceff;
     --body-span-line-syapole: #00cdda;
@@ -52,6 +53,7 @@
     --header-router-color-text: #f5f5f5;
 
     --body-content-bg: #252525;
+    --body-content-bg-gray: #212121;
     --body-nav-expand-text-color: #e5e5e5;
     --body-content-span-line-creative: rgb(78, 118, 159);
     --body-content-span-text-color: #e3e3e3;
