@@ -19,6 +19,7 @@ import OldPTK from "../assets/pictures/pan-header/Old-Pyutocor-Optimal.webp"
 import RRCrossing from "../assets/pictures/pan-header/RR-Crossing.webp"
 import PyutocorOffices from "../assets/pictures/pan-header/Pyutocor-Offices.webp"
 import SyapoleSta from "../assets/pictures/pan-header/Syapole-Sta.webp"
+import PyutocorPort from "../assets/pictures/pan-header/Pyutocor-Port.webp"
 
 export default {
   name: "bodyPictureViewer",
@@ -44,6 +45,9 @@ export default {
       },
       {
         src: SyapoleSta
+      },
+      {
+        src: PyutocorPort
       }
     ]
   }),

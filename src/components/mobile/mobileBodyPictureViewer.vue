@@ -16,6 +16,10 @@ import KJH from "../../assets/pictures/pan-header/KJH-Optimal.webp"
 import KJH02 from "../../assets/pictures/pan-header/KJH02-Optimal.webp"
 import Monorail from "../../assets/pictures/pan-header/Monorail-Optimal.webp"
 import OldPTK from "../../assets/pictures/pan-header/Old-Pyutocor-Optimal.webp"
+import RRCrossing from "../../assets/pictures/pan-header/RR-Crossing.webp"
+import PyutocorOffices from "../../assets/pictures/pan-header/Pyutocor-Offices.webp"
+import SyapoleSta from "../../assets/pictures/pan-header/Syapole-Sta.webp"
+import PyutocorPort from "../../assets/pictures/pan-header/Pyutocor-Port.webp"
 
 export default {
   name: "mobileBodyPictureViewer",
@@ -32,6 +36,18 @@ export default {
       },
       {
         src: OldPTK
+      },
+      {
+        src: RRCrossing
+      },
+      {
+        src: PyutocorOffices
+      },
+      {
+        src: SyapoleSta
+      },
+      {
+        src: PyutocorPort
       }
     ]
   }),
