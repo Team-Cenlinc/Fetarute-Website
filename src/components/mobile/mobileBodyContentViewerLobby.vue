@@ -7,7 +7,7 @@
         <div id="content-station-1"></div>
       </div>
       <div id="content-container-1">
-        <h1 style="border-bottom: 1rem solid var(--body-span-line-hokuriku);" class="subtitle">{{ $t("bodyContent.survivalWorld") }}</h1>
+        <h1 style="border-bottom: 1rem solid var(--body-span-line-kitajuku);" class="subtitle">{{ $t("bodyContent.lobbyWorld") }}</h1>
       </div>
       <div id="line-cross-out-L-1"></div>
     </section>
@@ -22,10 +22,10 @@
         <div id="content-station-2"></div>
       </div>
       <div id="content-container-2">
-        <h3 style="border-bottom: 0.5rem solid var(--body-span-line-syapole);" class="subtitle">03 - {{ $t("bodyContent.survivalBegin") }}<span class="material-symbols-outlined">home</span></h3>
+        <h3 style="border-bottom: 0.5rem solid var(--body-span-line-pyutocor);" class="subtitle">04 - {{ $t("bodyContent.lobbyBegin") }}<span class="material-symbols-outlined">hub</span></h3>
         <p>
-          <br>{{ $t("bodyContent.introFirstLineSurvival") }}
-          <br>{{ $t("bodyContent.introSecondLineSurvival") }}
+          <br>{{ $t("bodyContent.introFirstLineLobby") }}
+          <br>{{ $t("bodyContent.introSecondLineLobby") }}
         </p>
       </div>
       <div id="line-cross-out-R-1"></div>
@@ -40,7 +40,7 @@
 
 <script>
 export default {
-  name: "mobileBodyContentViewerSurvival",
+  name: "mobileBodyContentViewerLobby",
   data: () => ({
     isSmallScreen: false,
   }),
@@ -75,8 +75,8 @@ export default {
   height: 4rem;
   background-color: transparent;
   border-top-left-radius: 5rem;
-  border-left: 1rem solid var(--body-span-line-hokuriku);
-  border-top: 1rem solid var(--body-span-line-hokuriku);
+  border-left: 1rem solid var(--body-span-line-duka);
+  border-top: 1rem solid var(--body-span-line-duka);
   transform: translateY(-13.75rem);/*Section 1 Original Calc Point*/
 }
 
@@ -84,14 +84,14 @@ export default {
   float: right;
   height: 100%;
   width: 1rem;
-  background-color: var(--body-span-line-hokuriku);
+  background-color: var(--body-span-line-duka);
   transform: translate(1rem, -10rem);
 }
 
 #content-station-1{
   height: 1rem;
   width: 2rem;
-  background-color: var(--body-span-line-hokuriku);
+  background-color: var(--body-span-line-duka);
   transform: translate(-1.5rem, 10rem);
 }
 
@@ -108,14 +108,14 @@ export default {
   height: 4rem;
   background-color: transparent;
   border-bottom-left-radius: 5rem;
-  border-left: 1rem solid var(--body-span-line-hokuriku);
-  border-bottom: 1rem solid var(--body-span-line-hokuriku);
+  border-left: 1rem solid var(--body-span-line-duka);
+  border-bottom: 1rem solid var(--body-span-line-duka);
   transform: translate(5rem, 5rem); /*Section 1 Original Calc Point*/
 }
 
 #span-line{
   height: 1rem;
-  background-color: var(--body-span-line-southpark);
+  background-color: var(--body-span-line-coston);
   transform: skewY(-5deg) translateY(-5rem);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 2;
@@ -144,8 +144,8 @@ export default {
   height: 4rem;
   background-color: transparent;
   border-top-right-radius: 5rem;
-  border-right: 1rem solid var(--body-span-line-pyutocor);
-  border-top: 1rem solid var(--body-span-line-pyutocor);
+  border-right: 1rem solid var(--body-span-line-syapole);
+  border-top: 1rem solid var(--body-span-line-syapole);
   transform: translateY(-10rem); /*Section 2 Original Calc Point*/
 
 }
@@ -154,14 +154,14 @@ export default {
   float: left;
   height: 100%;
   width: 1rem;
-  background-color: var(--body-span-line-pyutocor);
+  background-color: var(--body-span-line-syapole);
   transform: translate(-1rem, -6rem);
 }
 
 #content-station-2{
   height: 1rem;
   width: 2rem;
-  background-color: var(--body-span-line-pyutocor);
+  background-color: var(--body-span-line-syapole);
   transform: translate(0.5rem, 10rem);
 }
 
@@ -180,14 +180,14 @@ export default {
   height: 4rem;
   background-color: transparent;
   border-bottom-right-radius: 5rem;
-  border-right: 1rem solid var(--body-span-line-pyutocor);
-  border-bottom: 1rem solid var(--body-span-line-pyutocor);
+  border-right: 1rem solid var(--body-span-line-syapole);
+  border-bottom: 1rem solid var(--body-span-line-syapole);
   transform: translate(-5rem, 9.325rem); /*Section 2 Original Calc Point*/
 }
 
 #span-line-sec2{
   height: 1rem;
-  background-color: var(--body-span-line-kitajuku);
+  background-color: var(--body-span-line-chikai);
   transform: skewY(2deg) translateY(0);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 2;

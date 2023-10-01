@@ -9,6 +9,7 @@
       <BodyContentViewer ref="content"/>
       <BodyContentViewerCreative ref="contentC"/>
       <BodyContentViewerSurvival ref="contentS"/>
+      <BodyContentViewerLobby ref="contentL"/>
       <FooterViewer ref="footer"/>
     </div>
     <div v-if="isMobile" id="mobile">
@@ -20,6 +21,7 @@
       <MobileBodyContentViewer ref="content"/>
       <MobileBodyContentViewerCreative ref="contentC"/>
       <MobileBodyContentViewerSurvival ref="contentS"/>
+      <MobileBodyContentViewerLobby ref="contentL"/>
       <MobileFooter ref="footer"/>
     </div>
   </div>
@@ -31,6 +33,7 @@ import BodyPictureViewer from "@/components/bodyPictureViewer";
 import BodyContentViewer from "@/components/bodyContentViewer";
 import BodyContentViewerCreative from "@/components/bodyContentViewerCreative.vue";
 import BodyContentViewerSurvival from "@/components/bodyContentViewerSurvival.vue";
+import BodyContentViewerLobby from "@/components/bodyContentViewerLobby.vue";
 import FooterViewer from "@/components/footer";
 
 import MobileHeader from "@/components/mobile/mobileHeader";
@@ -39,6 +42,7 @@ import MobileBodyPictureViewer from "@/components/mobile/mobileBodyPictureViewer
 import MobileBodyContentViewer from "@/components/mobile/mobileBodyContentViewer";
 import MobileBodyContentViewerCreative from "@/components/mobile/mobileBodyContentViewerCreative.vue";
 import MobileBodyContentViewerSurvival from "@/components/mobile/mobileBodyContentViewerSurvival.vue";
+import MobileBodyContentViewerLobby from "@/components/mobile/mobileBodyContentViewerLobby.vue";
 
 export default {
   name: 'App',
@@ -47,7 +51,8 @@ export default {
     MobileBodyPictureViewer,
     MobileBodyContentViewerCreative,
     MobileBodyContentViewerSurvival,
-    MobileFooter, FooterViewer, BodyContentViewer, BodyContentViewerCreative, BodyContentViewerSurvival, HeaderNav, BodyPictureViewer, MobileHeader},
+    MobileBodyContentViewerLobby,
+    MobileFooter, FooterViewer, BodyContentViewer, BodyContentViewerCreative, BodyContentViewerSurvival, BodyContentViewerLobby, HeaderNav, BodyPictureViewer, MobileHeader},
   data: () => ({
     title: "Fetarute",
     isMobile: false,
@@ -63,17 +68,19 @@ export default {
   },
   methods: {
     onResize () {
-      this.isMobile = window.innerWidth < 600
+      this.isMobile = window.innerWidth < 750
       if (window.innerWidth < 1100){
         this.isSmallScreen = true
         this.$refs.content.isSmallScreen = true
         this.$refs.contentC.isSmallScreen = true
         this.$refs.contentS.isSmallScreen = true
+        this.$refs.contentL.isSmallScreen = true
       } else {
         this.isSmallScreen = false
         this.$refs.content.isSmallScreen = false
         this.$refs.contentC.isSmallScreen = false
         this.$refs.contentS.isSmallScreen = false
+        this.$refs.contentL.isSmallScreen = false
       }
     },
     syncColorTheme(colorThemeStatus) {
