@@ -68,7 +68,7 @@ export default {
   },
   methods: {
     onResize () {
-      this.isMobile = window.innerWidth < 750
+      this.isMobile = window.innerWidth < 700
       if (window.innerWidth < 1100){
         this.isSmallScreen = true
         this.$refs.content.isSmallScreen = true

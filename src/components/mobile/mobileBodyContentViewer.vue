@@ -65,7 +65,6 @@ export default {
   height: 42.5rem;
 
   background-image: url('../../assets/background/abstract.webp');
-  background-blend-mode: soft-light;
   background-position: center;
   background-origin: content-box;
   background-size: cover;

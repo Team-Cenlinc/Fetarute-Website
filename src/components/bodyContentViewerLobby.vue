@@ -71,7 +71,6 @@ export default {
   background-color: var(--body-content-bg);
   height: 50rem;
   background-image: url('../assets/background/abstract-small.webp');
-  background-blend-mode: soft-light;
   background-position: center;
   background-origin: content-box;
   background-repeat: repeat-x;
@@ -149,7 +148,6 @@ export default {
   background-color: var(--body-content-bg);
   transform: translateY(-10rem);
   background-image: url('../assets/background/abstract-small-2.webp');
-  background-blend-mode: soft-light;
   background-position: center;
   background-origin: content-box;
   background-repeat: repeat-x;

@@ -62,7 +62,6 @@ export default {
   transform: translateY(5rem);
 
   background-image: url('../../assets/background/abstract-small.webp');
-  background-blend-mode: soft-light;
   background-position: center;
   background-origin: content-box;
   background-size: cover;
@@ -131,7 +130,6 @@ export default {
   transform: translateY(5rem);
 
   background-image: url('../../assets/background/abstract-small-2.webp');
-  background-blend-mode: soft-light;
   background-position: center;
   background-origin: content-box;
   background-size: cover;
