@@ -68,6 +68,7 @@ export default {
   background-position: center;
   background-origin: content-box;
   background-size: cover;
+  background-repeat: repeat-x;
 }
 
 .down-navigator{

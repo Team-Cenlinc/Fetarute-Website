@@ -65,6 +65,7 @@ export default {
   background-position: center;
   background-origin: content-box;
   background-size: cover;
+  background-repeat: repeat-x;
 }
 
 #line-cross-in-L-1{
@@ -133,6 +134,7 @@ export default {
   background-position: center;
   background-origin: content-box;
   background-size: cover;
+  background-repeat: repeat-x;
 }
 
 #line-cross-in-R-1{

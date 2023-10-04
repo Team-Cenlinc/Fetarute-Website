@@ -44,6 +44,8 @@ import MobileBodyContentViewerCreative from "@/components/mobile/mobileBodyConte
 import MobileBodyContentViewerSurvival from "@/components/mobile/mobileBodyContentViewerSurvival.vue";
 import MobileBodyContentViewerLobby from "@/components/mobile/mobileBodyContentViewerLobby.vue";
 
+import lax from 'lax.js'
+
 export default {
   name: 'App',
   components: {
@@ -65,6 +67,11 @@ export default {
   mounted () {
     this.onResize()
     window.addEventListener('resize', this.onResize, { passive: true })
+
+    lax.init();
+    lax.addDriver("scrollY", function () {
+      return window.scrollY;
+    });
   },
   methods: {
     onResize () {
