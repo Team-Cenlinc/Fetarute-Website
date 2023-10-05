@@ -13,6 +13,7 @@
       <div class="span-railway-line"></div>
     </div>
 
+    <div class="content-container-section-1-wrapper">
     <section class="content-container-section-1">
       <div id="line-cross-in-L-1"></div>
       <div id="content-container-line-1">
@@ -23,6 +24,7 @@
       </div>
       <div id="line-cross-out-L-1"></div>
     </section>
+    </div>
 
     <div class="content-span-body">
       <div id="span-line"></div>
@@ -133,6 +135,11 @@ export default {
 
 .content-container-section-1{
   height: 18rem;
+  z-index: 2;
+  position: relative;
+}
+
+.content-container-section-1-wrapper{
   z-index: 2;
   position: relative;
 }

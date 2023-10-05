@@ -1,21 +1,27 @@
 <template>
   <div class="content-viewer">
-    <section class="content-container-section-1">
-      <div id="line-cross-in-L-1"></div>
-      <div id="content-container-line-1">
-        <div id="content-station-1"></div>
-      </div>
-      <div id="content-container-1">
-        <h1 style="border-bottom: 1.75rem solid var(--body-span-line-chikai);" class="subtitle">{{ $t("bodyContent.creativeWorld") }}</h1>
-      </div>
-      <div id="line-cross-out-L-1"></div>
-    </section>
+
+
+    <div class="content-container-section-1-wrapper">
+      <section class="content-container-section-1">
+        <div id="line-cross-in-L-1"></div>
+        <div id="content-container-line-1">
+          <div id="content-station-1"></div>
+        </div>
+        <div id="content-container-1">
+          <h1 style="border-bottom: 1.75rem solid var(--body-span-line-chikai);" class="subtitle">{{ $t("bodyContent.creativeWorld") }}</h1>
+        </div>
+        <div id="line-cross-out-L-1"></div>
+      </section>
+    </div>
 
     <div class="content-span-body">
       <div id="span-line"></div>
     </div>
 
+    <div class="content-container-section-2-wrapper">
     <section class="content-container-section-2">
+
       <div id="line-cross-in-R-1"></div>
       <div id="content-container-line-2">
         <div id="content-station-2"></div>
@@ -28,7 +34,7 @@
               <br>{{ $t("bodyContent.introSecondLineCreative") }}
             </p>
       </div>
-      <span>
+      <span class="content-image">
         <v-img
             v-if="!isSmallScreen"
             id="content-sec2-pic"
@@ -46,7 +52,9 @@
         </v-img>
       </span>
       <div id="line-cross-out-R-1"></div>
-    </section>
+
+    </section></div>
+
 
     <div class="content-span-body">
       <div id="span-line-sec2"></div>
@@ -83,6 +91,11 @@ export default {
   position: relative;
   margin-bottom: -900px;
   transform: translateY(-35rem);
+}
+
+.content-container-section-1-wrapper{
+  z-index: 1;
+  position: relative;
 }
 
 #line-cross-in-L-1{
@@ -167,6 +180,7 @@ export default {
   float: left;
   height: 110%;
   width: 1.375rem;
+  z-index: 2;
   background-color: var(--body-span-line-southpark);
   transform: translate(-1.375rem, 5rem);
 }

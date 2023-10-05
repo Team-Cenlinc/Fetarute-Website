@@ -72,7 +72,48 @@ export default {
     lax.addDriver("scrollY", function () {
       return window.scrollY;
     });
+
+    lax.addElements(
+        '.content-image',
+        {
+          scrollY: {
+            opacity: [
+              ["elInY", "elCenterY", "elOutY"],
+              [0,1,1],
+            ],
+          },
+        },
+        []
+    )
+
+    lax.addElements(
+        '.content-container-section-1-wrapper',
+        {
+          scrollY: {
+            translateX: [
+              ["elInY", "elCenterY", "elOutY"],
+              [100, 0, 0],
+            ],
+          },
+        },
+        []
+    )
+
+    lax.addElements(
+        '.content-container-section-2-wrapper',
+        {
+          scrollY: {
+            translateX: [
+              ["elInY", "elCenterY", "elOutY"],
+              [-100, 0, 0],
+            ],
+          },
+        },
+        []
+    )
+
   },
+
   methods: {
     onResize () {
       this.isMobile = window.innerWidth < 700
@@ -97,3 +138,11 @@ export default {
   }
 };
 </script>
+
+<style>
+#app{
+  background-color: var(--body-content-bg);
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+</style>

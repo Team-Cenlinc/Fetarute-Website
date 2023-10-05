@@ -15,6 +15,7 @@
       </div>
     </section>
 
+    <div class="content-container-section-1-wrapper">
     <section class="content-container-section-1">
       <div id="line-cross-in-L-1"></div>
       <div id="content-container-line-1">
@@ -25,11 +26,13 @@
       </div>
       <div id="line-cross-out-L-1"></div>
     </section>
+    </div>
 
     <div class="content-span-body">
       <div id="span-line"></div>
     </div>
 
+    <div class="content-container-section-2-wrapper">
     <section class="content-container-section-2">
       <div id="line-cross-in-R-1"></div>
       <div id="content-container-line-2">
@@ -43,7 +46,7 @@
               <br>{{ $t("bodyContent.introSecondLine") }}
             </p>
       </div>
-      <span>
+      <span class="content-image">
         <v-img
             v-if="!isSmallScreen"
             id="content-sec2-pic"
@@ -62,11 +65,11 @@
       </span>
       <div id="line-cross-out-R-1"></div>
     </section>
+    </div>
 
     <div class="content-span-body">
       <div id="span-line-sec2"></div>
     </div>
-
   </div>
 </template>
 
@@ -156,6 +159,11 @@ export default {
   position: relative;
   margin-bottom: -900px;
   transform: translateY(-1000px);
+}
+
+.content-container-section-1-wrapper{
+  position: relative;
+  z-index: 2;
 }
 
 #line-cross-in-L-1{
