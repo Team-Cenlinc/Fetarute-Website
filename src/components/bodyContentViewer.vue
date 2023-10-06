@@ -80,6 +80,9 @@ export default {
   data: () => ({
     isSmallScreen: false,
   }),
+  mounted() {
+    this.$parent.loadLax()
+  }
 }
 </script>
 
@@ -226,6 +229,11 @@ export default {
   z-index: 1;
   position: relative;
   transform: translateY(-600px)
+}
+
+.content-container-section-2-wrapper{
+  position: relative;
+  z-index: 1;
 }
 
 #line-cross-in-R-1{

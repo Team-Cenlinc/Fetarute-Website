@@ -63,6 +63,7 @@ export default {
   beforeDestroy () {
     if (typeof window === 'undefined') return
     window.removeEventListener('resize', this.onResize)
+    lax.destroy()
   },
   mounted () {
     this.onResize()
@@ -73,47 +74,9 @@ export default {
       return window.scrollY;
     });
 
-    lax.addElements(
-        '.content-image',
-        {
-          scrollY: {
-            opacity: [
-              ["elInY", "elCenterY", "elOutY"],
-              [0,1,1],
-            ],
-          },
-        },
-        []
-    )
-
-    lax.addElements(
-        '.content-container-section-1-wrapper',
-        {
-          scrollY: {
-            translateX: [
-              ["elInY", "elCenterY", "elOutY"],
-              [100, 0, 0],
-            ],
-          },
-        },
-        []
-    )
-
-    lax.addElements(
-        '.content-container-section-2-wrapper',
-        {
-          scrollY: {
-            translateX: [
-              ["elInY", "elCenterY", "elOutY"],
-              [-100, 0, 0],
-            ],
-          },
-        },
-        []
-    )
+    this.loadLax()
 
   },
-
   methods: {
     onResize () {
       this.isMobile = window.innerWidth < 700
@@ -134,6 +97,47 @@ export default {
     syncColorTheme(colorThemeStatus) {
       sessionStorage.setItem("darkModeOption", colorThemeStatus.toString())
       this.$refs.footer.updateColorTheme(colorThemeStatus)
+    },
+    loadLax(){
+      console.log("Lax Loaded")
+      lax.addElements(
+          '.content-image',
+          {
+            scrollY: {
+              opacity: [
+                ["elInY", "elCenterY", "elOutY"],
+                [0,1,1],
+              ],
+            },
+          },
+          []
+      )
+
+      lax.addElements(
+          '.content-container-section-1-wrapper',
+          {
+            scrollY: {
+              translateX: [
+                ["elInY", "elCenterY", "elOutY"],
+                [100, 0, 0],
+              ],
+            },
+          },
+          []
+      )
+
+      lax.addElements(
+          '.content-container-section-2-wrapper',
+          {
+            scrollY: {
+              translateX: [
+                ["elInY", "elCenterY", "elOutY"],
+                [-100, 0, 0],
+              ],
+            },
+          },
+          []
+      )
     }
   }
 };

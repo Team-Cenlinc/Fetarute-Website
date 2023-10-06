@@ -1,6 +1,8 @@
 <template>
   <div class="content-viewer">
 
+
+    <div class="content-container-section-1-wrapper">
     <section class="content-container-section-1">
       <div id="line-cross-in-L-1"></div>
       <div id="content-container-line-1">
@@ -11,11 +13,14 @@
       </div>
       <div id="line-cross-out-L-1"></div>
     </section>
+    </div>
 
     <div class="content-span-body">
       <div id="span-line"></div>
     </div>
 
+
+    <div class="content-container-section-2-wrapper">
     <section class="content-container-section-2">
       <div id="line-cross-in-R-1"></div>
       <div id="content-container-line-2">
@@ -30,6 +35,7 @@
       </div>
       <div id="line-cross-out-R-1"></div>
     </section>
+    </div>
 
     <div class="content-span-body">
       <div id="span-line-sec2"></div>
@@ -67,6 +73,11 @@ export default {
   background-origin: content-box;
   background-size: cover;
   background-repeat: repeat-x;
+}
+
+.content-container-section-1-wrapper{
+  z-index: 0;
+  position: relative;
 }
 
 #line-cross-in-L-1{
@@ -136,6 +147,11 @@ export default {
   background-origin: content-box;
   background-size: cover;
   background-repeat: repeat-x;
+}
+
+.content-container-section-2-wrapper{
+  z-index: 0;
+  position: relative;
 }
 
 #line-cross-in-R-1{

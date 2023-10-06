@@ -30,6 +30,7 @@
       <div id="span-line"></div>
     </div>
 
+    <div class="content-container-section-2-wrapper">
     <section class="content-container-section-2">
       <div id="line-cross-in-R-1"></div>
       <div id="content-container-line-2">
@@ -44,6 +45,7 @@
       </div>
       <div id="line-cross-out-R-1"></div>
     </section>
+    </div>
 
     <div class="content-span-body">
       <div id="span-line-sec2"></div>
@@ -58,6 +60,9 @@ export default {
   data: () => ({
     isSmallScreen: false,
   }),
+  mounted() {
+    this.$parent.loadLax()
+  }
 }
 </script>
 
@@ -201,6 +206,11 @@ export default {
 
 .content-container-section-2{
   height: 18rem;
+  z-index: 1;
+  position: relative;
+}
+
+.content-container-section-2-wrapper{
   z-index: 1;
   position: relative;
 }

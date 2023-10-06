@@ -162,6 +162,11 @@ export default {
   background-repeat: repeat-x;
 }
 
+.content-container-section-2-wrapper{
+  z-index: 0;
+  position: relative;
+}
+
 #line-cross-in-R-1{
   float: left;
   width: 5rem;
