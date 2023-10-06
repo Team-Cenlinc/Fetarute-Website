@@ -99,14 +99,16 @@ export default {
       this.$refs.footer.updateColorTheme(colorThemeStatus)
     },
     loadLax(){
-      console.log("Lax Loaded")
+
+      // General Effects
+
       lax.addElements(
           '.content-image',
           {
             scrollY: {
               opacity: [
                 ["elInY", "elCenterY", "elOutY"],
-                [0,1,1],
+                [0,0.85,1],
               ],
             },
           },
@@ -138,6 +140,27 @@ export default {
           },
           []
       )
+
+      // Mobile Specialized
+
+      lax.addElements(
+          '.content-image-mobile',
+          {
+            scrollY: {
+              // moving from bottom to up
+              translateY: [
+                ["elInY", "elCenterY", "elOutY"],
+                [0, -100, -200],
+              ],
+              opacity: [
+                ["elInY", "elCenterY", "elOutY"],
+                [0,1,1],
+              ],
+            },
+          },
+          []
+      )
+
     }
   }
 };

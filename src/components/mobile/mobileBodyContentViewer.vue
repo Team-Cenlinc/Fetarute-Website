@@ -26,23 +26,42 @@
     </section>
     </div>
 
+    <div class="content-image-mobile">
+    <span>
+        <v-img
+            id="content-sec2-pic"
+            src="../../assets/content/Morning-Central-Optimal.webp"
+            lazy-src="../../assets/content/lazy/Morning-Central-Modified.webp"
+            max-width="25%"
+            max-height="35%"
+        >
+          <template v-slot:placeholder>
+              <v-progress-circular
+                  indeterminate
+                  color="grey lighten-2"
+              ></v-progress-circular>
+          </template>
+        </v-img>
+      </span>
+    </div>
+
     <div class="content-span-body">
       <div id="span-line"></div>
     </div>
 
     <div class="content-container-section-2-wrapper">
-    <section class="content-container-section-2">
-      <div id="line-cross-in-R-1"></div>
-      <div id="content-container-line-2">
-        <div id="content-station-2"></div>
-      </div>
-      <div id="content-container-2">
-        <h3 style="border-bottom: 0.5rem solid var(--body-span-line-kitajuku);" class="subtitle">01 - {{ $t("bodyContent.journeyBegin") }}<span class="material-symbols-outlined">train</span></h3>
-        <p>
-          <br>{{ $t("bodyContent.introFirstLine") }}
-          <br>{{ $t("bodyContent.introSecondLine") }}
-        </p>
-      </div>
+      <section class="content-container-section-2">
+        <div id="line-cross-in-R-1"></div>
+        <div id="content-container-line-2">
+          <div id="content-station-2"></div>
+        </div>
+        <div id="content-container-2">
+          <h3 style="border-bottom: 0.5rem solid var(--body-span-line-kitajuku);" class="subtitle">01 - {{ $t("bodyContent.journeyBegin") }}<span class="material-symbols-outlined">train</span></h3>
+            <p>
+            <br>{{ $t("bodyContent.introFirstLine") }}
+            <br>{{ $t("bodyContent.introSecondLine") }}
+            </p>
+        </div>
       <div id="line-cross-out-R-1"></div>
     </section>
     </div>
@@ -69,7 +88,7 @@ export default {
 <style scoped>
 .content-viewer{
   background-color: var(--body-content-bg);
-  height: 42.5rem;
+  height: 41.5rem;
 
   background-image: url('../../assets/background/abstract.webp');
   background-position: center;
@@ -223,7 +242,7 @@ export default {
   border-top-right-radius: 5rem;
   border-right: 1rem solid var(--body-span-line-kitajuku);
   border-top: 1rem solid var(--body-span-line-kitajuku);
-  transform: translateY(-10rem); /*Section 2 Original Calc Point*/
+  transform: translateY(-11rem); /*Section 2 Original Calc Point*/
 
 }
 
@@ -232,14 +251,14 @@ export default {
   height: 100%;
   width: 1rem;
   background-color: var(--body-span-line-kitajuku);
-  transform: translate(-1rem, -6rem);
+  transform: translate(-1rem, -7rem);
 }
 
 #content-station-2{
   height: 1rem;
   width: 2rem;
   background-color: var(--body-span-line-kitajuku);
-  transform: translate(0.5rem, 10rem);
+  transform: translate(0.5rem, 8rem);
 }
 
 #content-container-2{
@@ -251,6 +270,13 @@ export default {
   padding-right: 3rem;
 }
 
+#content-sec2-pic {
+  float: right;
+  transform: translate(-22.5rem, -11rem);
+  box-shadow: 0.5rem 0.75rem var(--body-span-line-southpark);
+  padding: -10rem;
+}
+
 #line-cross-out-R-1{
   float: left;
   width: 4rem;
@@ -259,7 +285,7 @@ export default {
   border-bottom-right-radius: 5rem;
   border-right: 1rem solid var(--body-span-line-kitajuku);
   border-bottom: 1rem solid var(--body-span-line-kitajuku);
-  transform: translate(-5rem, 9.325rem); /*Section 2 Original Calc Point*/
+  transform: translate(-5rem, 10rem); /*Section 2 Original Calc Point*/
 }
 
 #span-line-sec2{

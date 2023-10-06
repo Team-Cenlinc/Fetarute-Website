@@ -35,6 +35,25 @@
     </section>
     </div>
 
+    <div class="content-image-mobile">
+    <span>
+        <v-img
+            id="content-sec2-pic"
+            src="../../assets/content/Cesynlinc-Optimal.webp"
+            lazy-src="../../assets/content/lazy/Cesynlinc-Optimal-modified.webp"
+            max-width="25%"
+            max-height="35%"
+        >
+          <template v-slot:placeholder>
+              <v-progress-circular
+                  indeterminate
+                  color="grey lighten-2"
+              ></v-progress-circular>
+          </template>
+        </v-img>
+      </span>
+    </div>
+
     <div class="content-span-body">
       <div id="span-line-sec2"></div>
     </div>
@@ -185,6 +204,12 @@ export default {
   transform: translate(-1rem, 0);
   line-height: 1rem;
   padding-right: 3rem;
+}
+
+#content-sec2-pic {
+  float: right;
+  transform: translate(-5rem, -12.5rem);
+  box-shadow: 0.5rem 0.75rem var(--body-span-line-syapole);
 }
 
 #line-cross-out-R-1{
