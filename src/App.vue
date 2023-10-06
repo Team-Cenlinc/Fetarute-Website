@@ -72,7 +72,7 @@ export default {
     lax.init();
     lax.addDriver("scrollY", function () {
       return window.scrollY;
-    });
+    },{ inertiaEnabled: true });
 
     this.loadLax()
 
