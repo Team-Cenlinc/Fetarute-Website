@@ -254,7 +254,7 @@ h3.subtitle{
 }
 
 v-progress-circular{
-  alignment: center;
+  align-self: center;
   justify-self: center;
 }
 

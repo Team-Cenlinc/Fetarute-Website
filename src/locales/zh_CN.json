@@ -36,7 +36,30 @@
     "introFirstLineLobby": "门户世界为创造世界和生存分区的中转枢纽站，是全服的中心枢纽",
     "introSecondLineLobby": "撕裂的空岛，高耸入云的大厦，您可以站在岛屿上探寻我们辉煌的过去，您也可以在此上稍作休息，与志同道合的朋友们玩耍，您也可以从这里再次出发，选择你的旅途的目的地……",
 
+    "memberConclusion": "结语",
+    "introFirstLineConclusion": "Fetarute一直致力于成为更好的服务器。我们欢迎您在这片神奇的世界里随意探索，创造，娱乐……请您不要忘记铁路旅途带给你的欢乐。",
+    "introSecondLineConclusion": "我们更期望您的加入会给这个虚拟世界带来更多欢笑，无论最后结果何方，Fetarute管理组诚挚地祝福您，祝您旅途愉快。",
+
+    "memberJoin": "加入我们",
+    "introFirstLineJoin": "由于Fetarute服务器的一些特殊性质并确保服务器和平运行，本服务器实行审核制控制玩家流入。",
+    "introSecondLineJoin": "如果您对我们服务器感到兴趣，欢迎您加入我们的门户QQ群聊！您也可以关注我们的Twitter来获取最新资讯。",
+
+    "memberThanks" : "致谢",
+    "introFirstLineThanks": "我们的管理团队与技术团队设计制作了本网站，Fetarute内部资源包，Fetarute内部插件，等等。\n我们的建筑团队创造出了许多令人振奋的建筑，与轨道交通交相呼应，构造出美丽的天际线。",
+    "introSecondLineThanks": "另外，他们为服务器的发展，运行与维护付出了巨大的努力，在此我感谢他们的贡献。",
+
+    "memberPortal": "传送门",
+    "introFirstLinePortal": "Fetarute的发展与其他服务器密不可分，您可以使用以下链接跳转至Fetarute的友服官方页面。",
+
     "gallery": "画廊"
+  },
+  "admins": {
+    "thomasxiao": "Thomasxiao - Fetarute副服主",
+    "acatine": "Acatine - Fetarute服主"
+  },
+  "friendlyServers": {
+    "hydCraft": "氢气工艺 - WIKI页面",
+    "nebulaeCraft": "星云工艺 - WIKI页面"
   },
   "status": {
     "serverStatus": "服务器状态",

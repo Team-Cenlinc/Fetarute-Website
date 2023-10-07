@@ -36,7 +36,30 @@
     "introFirstLineLobby": "As the special location of the junction between the Creative World and Survival World, the Lobby World becomes the most important hub.",
     "introSecondLineLobby": "The lacerated floating islands, the sky-high skyscrapers, where we stand on the memories of the past, and look forward to the future.",
 
+    "memberConclusion": "Closing Rearks",
+    "introFirstLineConclusion": "We aim to be a better Minecraft Server... We warmly welcome your arrival, to discover, to build, to make friends, to make memories, to make Fetarute a better place.",
+    "introSecondLineConclusion": "We looking forward to see you in Fetarute! No matter the destination of our journey, we, Fetarute Administrative Team, hope you have a joyful time.",
+
+    "memberJoin": "Join Us",
+    "introFirstLineJoin": "Due to the speciality of Fetarute, we have to make sure our internal environment is always nice for more, hence any players willing to join us must apply via an online form.",
+    "introSecondLineJoin": "If you are interested in us, you are welcome to join our Discord Server！You may also follow our Twitter account for further information。",
+
+    "memberThanks" : "Thanks",
+    "introFirstLineThanks": "Our Administrative and Technology Team designed and made this website, Fetarute Internal Texture Packs, Internal Plugins, etc.\nOur Building Team created fabulous and vivid cities, with the collaboration with the transportation system, they created a wonderful skyline.",
+    "introSecondLineThanks": "In addition, their dedication is necessary for our development, operation and maintenance. Here I appreciate their efforts and contributions.",
+
+    "memberPortal": "Portal",
+    "introFirstLinePortal": "The development of Fetarute is inseparable from other peer servers. Using the link below to visit their official sites for further information.",
+
     "gallery": "Gallery"
+  },
+  "admins": {
+    "thomasxiao": "Thomasxiao - Vice President of Fetarute",
+    "acatine": "Acatine - President of Fetarute"
+  },
+  "friendlyServers": {
+    "hydCraft": "HydCraft - WIKI Site",
+    "nebulaeCraft": "NebulaeCraft - WIKI Site"
   },
   "status": {
     "serverStatus": "Server Status",

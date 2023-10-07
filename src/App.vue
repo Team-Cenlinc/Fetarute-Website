@@ -10,6 +10,10 @@
       <BodyContentViewerCreative ref="contentC"/>
       <BodyContentViewerSurvival ref="contentS"/>
       <BodyContentViewerLobby ref="contentL"/>
+      <BodyContentViewerConclusion ref="contentCon"/>
+      <BodyContentViewerJoin ref="contentJ"/>
+      <BodyContentViewerThanks ref="contentT"/>
+      <BodyContentViewerPortal ref="contentP"/>
       <FooterViewer ref="footer"/>
     </div>
     <div v-if="isMobile" id="mobile">
@@ -34,6 +38,10 @@ import BodyContentViewer from "@/components/bodyContentViewer";
 import BodyContentViewerCreative from "@/components/bodyContentViewerCreative.vue";
 import BodyContentViewerSurvival from "@/components/bodyContentViewerSurvival.vue";
 import BodyContentViewerLobby from "@/components/bodyContentViewerLobby.vue";
+import BodyContentViewerConclusion from "@/components/bodyContentViewerConclusion.vue";
+import BodyContentViewerJoin from "@/components/bodyContentViewerJoin.vue";
+import BodyContentViewerThanks from "@/components/bodyContentViewerThanks.vue";
+import BodyContentViewerPortal from "@/components/bodyContentViewerPortal.vue";
 import FooterViewer from "@/components/footer";
 
 import MobileHeader from "@/components/mobile/mobileHeader";
@@ -49,12 +57,26 @@ import lax from 'lax.js'
 export default {
   name: 'App',
   components: {
+    MobileHeader,
     MobileBodyContentViewer,
     MobileBodyPictureViewer,
     MobileBodyContentViewerCreative,
     MobileBodyContentViewerSurvival,
     MobileBodyContentViewerLobby,
-    MobileFooter, FooterViewer, BodyContentViewer, BodyContentViewerCreative, BodyContentViewerSurvival, BodyContentViewerLobby, HeaderNav, BodyPictureViewer, MobileHeader},
+    MobileFooter,
+
+    HeaderNav,
+    BodyPictureViewer,
+    BodyContentViewer,
+    BodyContentViewerCreative,
+    BodyContentViewerSurvival,
+    BodyContentViewerLobby,
+    BodyContentViewerConclusion,
+    BodyContentViewerJoin,
+    BodyContentViewerThanks,
+    BodyContentViewerPortal,
+    FooterViewer
+    },
   data: () => ({
     title: "Fetarute",
     isMobile: false,
@@ -79,19 +101,27 @@ export default {
   },
   methods: {
     onResize () {
-      this.isMobile = window.innerWidth < 700
+      this.isMobile = window.innerWidth < 745
       if (window.innerWidth < 1100){
         this.isSmallScreen = true
         this.$refs.content.isSmallScreen = true
         this.$refs.contentC.isSmallScreen = true
         this.$refs.contentS.isSmallScreen = true
         this.$refs.contentL.isSmallScreen = true
+        this.$refs.contentCon.isSmallScreen = true
+        this.$refs.contentJ.isSmallScreen = true
+        this.$refs.contentT.isSmallScreen = true
+        this.$refs.contentP.isSmallScreen = true
       } else {
         this.isSmallScreen = false
         this.$refs.content.isSmallScreen = false
         this.$refs.contentC.isSmallScreen = false
         this.$refs.contentS.isSmallScreen = false
         this.$refs.contentL.isSmallScreen = false
+        this.$refs.contentCon.isSmallScreen = false
+        this.$refs.contentJ.isSmallScreen = false
+        this.$refs.contentT.isSmallScreen = false
+        this.$refs.contentP.isSmallScreen = false
       }
     },
     syncColorTheme(colorThemeStatus) {

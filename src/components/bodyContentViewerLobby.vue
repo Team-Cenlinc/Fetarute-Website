@@ -213,6 +213,7 @@ export default {
 }
 
 #line-cross-out-R-1{
+  z-index: 3;
   float: left;
   width: 5rem;
   height: 5rem;
@@ -226,7 +227,7 @@ export default {
 #span-line-sec2{
   height: 1.375rem;
   background-color: var(--body-span-line-chikai);
-  transform: skewY(2deg) translateY(10.5rem);
+  transform: translateY(10.5rem);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 2;
   position: relative;
@@ -250,7 +251,7 @@ h3.subtitle{
 }
 
 v-progress-circular{
-  alignment: center;
+  align-self: center;
   justify-self: center;
 }
 

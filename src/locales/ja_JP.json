@@ -17,26 +17,49 @@
   "bodyContent": {
     "promptScroll": "続の先はもっとある",
     "general": "概览",
-    "journeyBegin": "ja_JP translation is IN PROGRESS... Sorry!",
-    "introFirstLine": "欢迎来到Fetarute！这是一个以轨道交通为主题的多元纯净小型服务器。",
-    "introSecondLine": "该服成立于2017年，致力于打造更好的轨交城建服务器。",
+    "journeyBegin": "旅の始まり：紹介",
+    "introFirstLine": "フェタルト (Fetarute) へようこそ！ここは2017年に設立され、より良い鉄道建設・街づくりサーバーを作ることを目指しているMOD無しのマイクラサーバーです。",
+    "introSecondLine": "それを中心に、様々な遊び方があります。私たちのサーバーは、主に3つのレジオン：クリエイティブ・ロビー・サバイバルに分けています。",
 
-    "creativeWorld": "创造世界",
-    "creativeBegin": "探索创造力",
-    "introFirstLineCreative": "创造是Fetarute的传统玩法，7年来我们积累了丰富的创造经验，我们期待由方块堆砌的城市能显现出社区丰富的创造力，彰显轨交世界的末来新模样。",
-    "introSecondLineCreative": "我们欢迎各种各样的建筑艺术家，不论你擅长什么，这里都有你的一片天地！",
+    "creativeWorld": "クリエイティブ",
+    "creativeBegin": "クリエイティブ フーション",
+    "introFirstLineCreative": "クリエイティブはここの伝統的な遊び方なのです。７年の間、私たちは自由に建設することで、素敵な街と鉄道システムを作り出して、豊かな経験を積み重ねました。",
+    "introSecondLineCreative": "今はあなた、そしてみんなの手を組んで、未来の、夢の中にある素晴らしき世界を、マイクラで作ることを期待しています。",
 
-    "survivalWorld": "生存世界",
-    "survivalBegin": "铁路纪行",
-    "introFirstLineSurvival": "生存是Fetarute转型后引入的模式，丰富多彩的机制，城镇世界以及许多新奇古怪的东西。",
-    "introSecondLineSurvival": "铁路穿越时空联络其他服务器，古老的过去与现代的世界交织互映...",
+    "survivalWorld": "サバイバル",
+    "survivalBegin": "鉄道紀行",
+    "introFirstLineSurvival": "人類はいつまでも生きることを求めている。鉄道がこの大陸で、「世界の命脈」、「知恵の結晶」などと呼ばれている。人はそれを頼って生きてきた。だがここに、誰も知らない歴史か物語が存在している。",
+    "introSecondLineSurvival": "この謎だらけの世界で、自らの手で資源を探って生き抜きましょう。もちろん、あなたは他のプレイヤーと一緒に、町を作ることもできます。",
 
-    "lobbyWorld": "门户世界",
-    "lobbyBegin": "新未来，新征程",
-    "introFirstLineLobby": "门户世界为创造世界和生存分区的中转枢纽站，是全服的中心枢纽",
-    "introSecondLineLobby": "撕裂的空岛，高耸入云的大厦，我们站在过去的怀念上，向未来展望。",
+    "lobbyWorld": "ロビー",
+    "lobbyBegin": "新しいな未来，新しいな旅",
+    "introFirstLineLobby": "ロビー世界はサーバーのセンターです。裂かれているような空中の島々に、雲に入っている高いビルなどが存在しています。",
+    "introSecondLineLobby": "その島々で、あなたは過去の栄光を探したり、簡単に休憩したりすることができます。あるいは、ここでもう一度、旅路の目的地を選び、出発しましょうか。",
 
-    "gallery": "ギャラリー"
+    "memberConclusion": "カーテンスピーチ",
+    "introFirstLineConclusion": "フェタルトがずっと、より良いサーバーになるため、努力しています。このファンタジックな世界で、あなたの探索・創造・娯楽を歓迎しています。あなたの加入で、もっと喜びをこのバーチャルワールドにもたらすことを、私たちはいつも期待しています。",
+    "introSecondLineConclusion": "最後に、あなたの旅にいい思い出があるように、心から祝福しています。",
+
+    "memberJoin": "Sorry",
+    "introFirstLineJoin": "ja_JP Translation Under Construction!",
+    "introSecondLineJoin": "如果您对我们服务器感到兴趣，欢迎您加入我们的门户QQ群聊！您也可以关注我们的Twitter来获取最新资讯。",
+
+    "memberThanks" : "致谢",
+    "introFirstLineThanks": "我们的管理团队与技术团队设计制作了本网站，Fetarute内部资源包，Fetarute内部插件，等等。\n我们的建筑团队创造出了许多令人振奋的建筑，与轨道交通交相呼应，构造出美丽的天际线。",
+    "introSecondLineThanks": "另外，他们为服务器的发展，运行与维护付出了巨大的努力，在此我感谢他们的贡献。",
+
+    "memberPortal": "传送门",
+    "introFirstLinePortal": "Fetarute的发展与其他服务器密不可分，您可以使用以下链接跳转至Fetarute的友服官方页面。",
+
+    "gallery": "画廊"
+  },
+  "admins": {
+    "thomasxiao": "Thomasxiao - Fetarute副服主",
+    "acatine": "Acatine - Fetarute服主"
+  },
+  "friendlyServers": {
+    "hydCraft": "氢气工艺 - WIKI页面",
+    "nebulaeCraft": "星云工艺 - WIKI页面"
   },
   "status": {
     "serverStatus": "サーバーステータス",
