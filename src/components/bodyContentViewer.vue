@@ -146,10 +146,9 @@ export default {
 }
 
 .span-expand{
-  height: 10rem;
+  height: 7rem;
   background-color: var(--body-content-bg);
   transform: skewY(3deg) translateY(-37.5rem);
-  box-shadow: 0 -20px 20px 5px var(--body-content-bg);
   z-index: 2;
   position: relative;
 }

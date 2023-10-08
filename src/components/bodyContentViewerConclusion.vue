@@ -19,7 +19,7 @@
               size="3rem">
             <img
                 alt="Avatar"
-                src="../assets/avatar/Thomasxyx-Avatar.jpg"
+                src="../assets/avatar/Thomasxyx-Avatar.webp"
             >
             </v-avatar>
             {{ $t("admins.thomasxiao") }}

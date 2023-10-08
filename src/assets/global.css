@@ -2,13 +2,13 @@
     --global-ok: #69d29a;
     --global-alert: #ffde5a;
     --global-danger: #ff5858;
-    --header-background-color: rgba(168, 234, 255, 0.85);
+    --header-background-color: rgb(168, 234, 255);
     --header-color: #1f1f1f;
     --header-nav-color: #4f4f4f;
     --header-nav-color-hover: #383838;
     --header-drawer-icon-color: #4f4f4f;
     --header-drawer-icon-color-hover: #383838;
-    --header-shade-color: #484848;
+    --header-shade-color: #a2a2a2;
     --header-lang-menu-bg-hover: #a6a6a6ff;
     --header-router-color-text: #222323;
 
@@ -42,7 +42,7 @@
     --global-ok: #3e805b;
     --global-alert: rgba(180, 154, 54, 1);
     --global-danger: rgba(194, 55, 55, 1);
-    --header-background-color: rgba(0, 7, 26, 0.75);
+    --header-background-color: rgb(0, 7, 26);
     --header-color: #e5e5e5;
     --header-nav-color: #e5e5e5;
     --header-nav-color-hover: #e3e3e3;

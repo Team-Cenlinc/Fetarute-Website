@@ -1,7 +1,27 @@
 <template>
   <header>
     <div class="header-flex" v-bind:class="{'after-scroll-bg': scrollPassed, 'before-scroll-bg': !scrollPassed}" data-app>
-      <h1><small><router-link to="/#/"><a class="header-nav-home">{{ title }}</a></router-link></small></h1>
+      <h1><small><router-link to="/#/"><a href="/#/" class="header-nav-home">
+        <v-avatar
+            v-if="darkMode||!scrollPassed"
+            tile
+            size="3rem">
+          <img
+              alt="Avatar"
+              src="../assets/avatar/Sealer-Dark.webp"
+          >
+        </v-avatar>
+        <v-avatar
+            v-if="!darkMode&&scrollPassed"
+            tile
+            size="3rem">
+          <img
+              alt="Avatar"
+              src="../assets/avatar/Sealer-Light.webp"
+          >
+        </v-avatar>
+      </a>
+      </router-link></small></h1>
       <div class="rev-zone">
         <input type="button" @click.stop="drawer = !drawer" class="material-symbols-outlined header-nav" value="menu">
         <input type="button" @click="changeModeAnimation" v-if="darkMode" class="material-symbols-outlined header-nav style-option" value="dark_mode">
@@ -188,7 +208,7 @@ header{
 .after-scroll-bg{
   transition: 225ms ease-out;
   background-color: var(--header-background-color);
-  box-shadow: 0.1rem 0.1rem 0.4rem var(--header-shade-color);
+  box-shadow: 0.1rem 0.1rem 1rem var(--header-shade-color);
   color: #1f1f1f;
 }
 

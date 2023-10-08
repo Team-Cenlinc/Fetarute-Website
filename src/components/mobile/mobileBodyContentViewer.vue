@@ -140,7 +140,6 @@ export default {
 .span-railway-line{
   height: 1rem;
   background-color: var(--body-content-span-line-creative);
-  box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   transform: skewY(3deg) translateY(65px);
   z-index: 3;
   position: relative;
@@ -150,7 +149,6 @@ export default {
   height: 8rem;
   background-color: var(--body-content-bg);
   transform: skewY(3deg) translateY(12rem);
-  box-shadow: 0 -20px 20px 8px var(--body-content-bg);
   z-index: 2;
   position: relative;
 }

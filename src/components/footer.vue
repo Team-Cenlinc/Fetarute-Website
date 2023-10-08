@@ -36,7 +36,7 @@
       </svg>
     </div>
     <div class=footer-secondary-content>
-      <p id="copyright-explanation">All Rights Reserved © Fetarute 2016-2023   |   Update 2023.10b06<br>Powered with ❤️ by Fetarute Community & Team Cenlinc</p>
+      <p id="copyright-explanation">All Rights Reserved © Fetarute 2016-2023   |   Update 2023.10b08<br>Powered with ❤️ by Fetarute Community & Team Cenlinc</p>
     </div>
   </footer>
 </template>

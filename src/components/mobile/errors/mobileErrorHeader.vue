@@ -1,8 +1,30 @@
 <template>
   <header>
     <div class="header-flex" v-bind:class="{'after-scroll-bg': scrollPassed, 'before-scroll-bg': !scrollPassed}" data-app>
-      <!-- LOGO PLACEHOLDER -->
-      <h2><small><a href="/#/" class="header-nav-home">{{ title }}</a></small></h2>
+      <h2>
+        <small>
+          <a href="/#/" class="header-nav-home">
+            <v-avatar
+                v-if="darkMode||!scrollPassed"
+                tile
+                size="2rem">
+              <img
+                  alt="Avatar"
+                  src="../../../assets/avatar/Sealer-Dark.webp"
+              >
+            </v-avatar>
+            <v-avatar
+                v-if="!darkMode&&scrollPassed"
+                tile
+                size="2rem">
+              <img
+                  alt="Avatar"
+                  src="../../../assets/avatar/Sealer-Light.webp"
+              >
+            </v-avatar>
+          </a>
+        </small>
+      </h2>
       <span>
         <input type="button" @click.stop="drawer = !drawer" class="material-symbols-outlined header-nav" value="menu">
         <input type="button" @click="changeModeAnimation" v-if="darkMode" class="material-symbols-outlined header-nav style-option" value="dark_mode">
@@ -167,10 +189,14 @@ header{
   transition: 225ms ease-out;
 }
 
+a.header-nav-home{
+  transform: translate(1rem, 0.5rem);
+}
+
 .after-scroll-bg{
   transition: 225ms ease-out;
   background-color: var(--header-background-color);
-  box-shadow: 0 0 5px var(--header-shade-color);
+  box-shadow: 0 0 1rem var(--header-shade-color);
   color: #1f1f1f;
 }
 

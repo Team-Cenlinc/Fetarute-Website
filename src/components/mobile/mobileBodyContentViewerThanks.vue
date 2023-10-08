@@ -20,7 +20,7 @@
         >
           <img
               alt="Avatar"
-              src="../../assets/avatar/Acatine-Avatar.png"
+              src="../../assets/avatar/Acatine-Avatar.webp"
           >
         </v-avatar>
           {{ $t("admins.acatine") }}
