@@ -148,8 +148,8 @@ h1.subtitle{
   width: fit-content;
   height: 3rem;
   align-self: start;
-  margin-left: 15%;
-  transform: translateY(-2rem);
+  margin-left: 20%;
+  transform: translateY(-3rem);
 }
 
 h3.subtitle{
@@ -168,7 +168,7 @@ p{
   max-width: 90%;
   color: var(--body-content-span-text-color);
   font-size: 0.8rem;
-  transform: translateY(0rem);
+  transform: translateY(-1rem);
 }
 
 /* Portal Sec. Start */

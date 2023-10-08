@@ -144,8 +144,8 @@ h1.subtitle{
   width: max-content;
   height: 3rem;
   align-self: self-start;
-  transform: translateY(-2rem);
-  margin-left: 15%;
+  transform: translateY(-3rem);
+  margin-left: 20%;
 }
 
 h3.subtitle{
@@ -164,7 +164,7 @@ p{
   max-width: 90%;
   color: var(--body-content-span-text-color);
   font-size: 0.8rem;
-  transform: translateY(0rem);
+  transform: translateY(-1rem);
 }
 
 /* Button Start */
@@ -202,7 +202,7 @@ a{
   transition: 200ms ease-out;
   color: var(--header-color);
   background-color: var(--body-content-bg-gray);
-  transform: translateX(2rem);
+  transform: translateX(3rem);
 }
 .button-link-alter:hover{
   background-color: var(--body-span-line-syapole);
@@ -219,7 +219,7 @@ a{
   transition: 200ms ease-out;
   color: var(--header-color);
   background-color: var(--body-content-bg-gray);
-  transform: translateX(4rem);
+  transform: translateX(6rem);
 }
 .button-link-discord:hover{
   background-color: var(--body-span-line-chikai);

@@ -147,7 +147,7 @@ h1.subtitle{
   width: fit-content;
   height: 3rem;
   align-self: center;
-  transform: translateY(0rem);
+  transform: translateY(-1rem);
 }
 
 h3.subtitle{
@@ -166,6 +166,6 @@ p{
   max-width: 80%;
   color: var(--body-content-span-text-color);
   font-size: 0.8rem;
-  transform: translateY(2rem);
+  transform: translateY(1rem);
 }
 </style>
