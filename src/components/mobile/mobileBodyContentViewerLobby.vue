@@ -227,7 +227,7 @@ export default {
 #span-line-sec2{
   height: 1rem;
   background-color: var(--body-span-line-chikai);
-  transform: skewY(2deg) translateY(0);
+  transform: translateY(0);
   box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 2;
   position: relative;

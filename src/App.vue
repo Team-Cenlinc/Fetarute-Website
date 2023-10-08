@@ -26,6 +26,10 @@
       <MobileBodyContentViewerCreative ref="contentC"/>
       <MobileBodyContentViewerSurvival ref="contentS"/>
       <MobileBodyContentViewerLobby ref="contentL"/>
+      <MobileBodyContentViewerConclusion ref="contentCon"/>
+      <MobileBodyContentViewerJoin ref="contentJ"/>
+      <MobileBodyContentViewerThanks ref="contentT"/>
+      <MobileBodyContentViewerPortal ref="contentP"/>
       <MobileFooter ref="footer"/>
     </div>
   </div>
@@ -51,6 +55,10 @@ import MobileBodyContentViewer from "@/components/mobile/mobileBodyContentViewer
 import MobileBodyContentViewerCreative from "@/components/mobile/mobileBodyContentViewerCreative.vue";
 import MobileBodyContentViewerSurvival from "@/components/mobile/mobileBodyContentViewerSurvival.vue";
 import MobileBodyContentViewerLobby from "@/components/mobile/mobileBodyContentViewerLobby.vue";
+import MobileBodyContentViewerConclusion from "@/components/mobile/mobileBodyContentViewerConclusion.vue";
+import MobileBodyContentViewerJoin from "@/components/mobile/mobileBodyContentViewerJoin.vue";
+import MobileBodyContentViewerThanks from "@/components/mobile/mobileBodyContentViewerThanks.vue";
+import MobileBodyContentViewerPortal from "@/components/mobile/mobileBodyContentViewerPortal.vue";
 
 import lax from 'lax.js'
 
@@ -63,6 +71,10 @@ export default {
     MobileBodyContentViewerCreative,
     MobileBodyContentViewerSurvival,
     MobileBodyContentViewerLobby,
+    MobileBodyContentViewerConclusion,
+    MobileBodyContentViewerJoin,
+    MobileBodyContentViewerThanks,
+    MobileBodyContentViewerPortal,
     MobileFooter,
 
     HeaderNav,
