@@ -1,7 +1,7 @@
 <template>
   <header>
     <div class="header-flex" v-bind:class="{'after-scroll-bg': scrollPassed, 'before-scroll-bg': !scrollPassed}" data-app>
-      <h1><small><router-link to="/#/"><a href="/#/" class="header-nav-home">
+      <h1><small><a href="/#/" class="header-nav-home">
         <v-avatar
             v-if="darkMode||!scrollPassed"
             tile
@@ -21,7 +21,7 @@
           >
         </v-avatar>
       </a>
-      </router-link></small></h1>
+      </small></h1>
       <div class="rev-zone">
         <input type="button" @click.stop="drawer = !drawer" class="material-symbols-outlined header-nav" value="menu">
         <input type="button" @click="changeModeAnimation" v-if="darkMode" class="material-symbols-outlined header-nav style-option" value="dark_mode">
