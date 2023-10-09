@@ -17,8 +17,25 @@
               <div class="portal">
                 <div class="content-container">
                   <div class="link-forward">
-                    <p><br><a class="portal-link" href="https://wiki.hydcraft.cn/%E9%A6%96%E9%A1%B5">{{ $t("friendlyServers.hydCraft") }}</a></p>
-                    <p><br><a class="portal-link" href="https://wiki.knebulae.com/wiki/%E9%A6%96%E9%A1%B5">{{ $t("friendlyServers.nebulaeCraft") }}</a></p>
+                    <p><br><a class="portal-link" href="https://wiki.hydcraft.cn/%E9%A6%96%E9%A1%B5">
+                      <v-avatar
+                        rounded="0"
+                        tile
+                        size="3rem">
+                      <img
+                          alt="Avatar"
+                          src="../assets/external-logos/HydCraft.webp"
+                      >
+                    </v-avatar>{{ $t("friendlyServers.hydCraft") }}</a></p>
+                    <p><br><a class="portal-link" href="https://wiki.knebulae.com/wiki/%E9%A6%96%E9%A1%B5">
+                      <v-avatar
+                          :tile="true"
+                          size="3rem">
+                        <img
+                            alt="Avatar"
+                            src="../assets/external-logos/NebulaeCraft.webp"
+                        >
+                      </v-avatar>{{ $t("friendlyServers.nebulaeCraft") }}</a></p>
                   </div>
                 </div>
               </div>

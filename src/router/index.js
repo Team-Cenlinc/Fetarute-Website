@@ -17,6 +17,11 @@ const routes = [
     component: () => import(/* webpackChunkName: "ServerStatus" */ '@/components/tools/status/status')
   },
   {
+    path: '/downloads',
+    name: 'Downloads',
+    component: () => import(/* webpackChunkName: "Downloads" */ '@/components/downloads/downloads')
+  },
+  {
     path: '*',
     name: 'Error',
     component: () => import(/* webpackChunkName: "Error" */ '@/components/errors/Error'),

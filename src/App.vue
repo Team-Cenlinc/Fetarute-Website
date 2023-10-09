@@ -115,7 +115,6 @@ export default {
     },{ inertiaEnabled: true });
 
     this.loadLax()
-
   },
   methods: {
     onResize () {
