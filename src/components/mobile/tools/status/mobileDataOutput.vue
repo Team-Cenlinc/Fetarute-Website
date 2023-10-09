@@ -21,6 +21,7 @@
           :value="(this.serverCreative.serverOnlinePlayer / this.serverCreative.serverMaxCapacity) * 100"
           id="online"
           v-if="this.serverCreative.pingable"
+          aria-label="Server Player Count"
       >
         {{this.serverCreative.serverOnlinePlayer}}/{{this.serverCreative.serverMaxCapacity}}
       </v-progress-circular>
@@ -31,6 +32,7 @@
           :value="100"
           id="offline"
           v-if="!this.serverCreative.pingable"
+          aria-label="Server Player Count"
       >
         {{ $t("status.offline") }}
       </v-progress-circular>
@@ -45,6 +47,7 @@
           :value="(this.serverSurvival.serverOnlinePlayer / this.serverSurvival.serverMaxCapacity) * 100"
           id="online"
           v-if="this.serverSurvival.pingable"
+          aria-label="Server Player Count"
       >
         {{this.serverSurvival.serverOnlinePlayer}}/{{this.serverSurvival.serverMaxCapacity}}
       </v-progress-circular>
@@ -55,6 +58,7 @@
           :value="100"
           id="offline"
           v-if="!this.serverSurvival.pingable"
+          aria-label="Server Player Count"
       >
         {{ $t("status.offline") }}
       </v-progress-circular>

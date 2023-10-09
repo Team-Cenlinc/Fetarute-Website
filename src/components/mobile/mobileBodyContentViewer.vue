@@ -39,6 +39,7 @@
               <v-progress-circular
                   indeterminate
                   color="grey lighten-2"
+                  aria-label="Loading Picture"
               ></v-progress-circular>
           </template>
         </v-img>
@@ -141,6 +142,7 @@ export default {
   height: 1rem;
   background-color: var(--body-content-span-line-creative);
   transform: skewY(3deg) translateY(65px);
+  box-shadow: 0 5px var(--body-content-bg), 0 -5px var(--body-content-bg);
   z-index: 3;
   position: relative;
 }

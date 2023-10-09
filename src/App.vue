@@ -14,6 +14,7 @@
       <BodyContentViewerJoin ref="contentJ"/>
       <BodyContentViewerThanks ref="contentT"/>
       <BodyContentViewerPortal ref="contentP"/>
+      <BodyGalleryViewer/>
       <FooterViewer ref="footer"/>
     </div>
     <div v-if="isMobile" id="mobile">
@@ -30,6 +31,7 @@
       <MobileBodyContentViewerJoin ref="contentJ"/>
       <MobileBodyContentViewerThanks ref="contentT"/>
       <MobileBodyContentViewerPortal ref="contentP"/>
+      <MobileBodyGalleryViewer/>
       <MobileFooter ref="footer"/>
     </div>
   </div>
@@ -46,6 +48,7 @@ import BodyContentViewerConclusion from "@/components/bodyContentViewerConclusio
 import BodyContentViewerJoin from "@/components/bodyContentViewerJoin.vue";
 import BodyContentViewerThanks from "@/components/bodyContentViewerThanks.vue";
 import BodyContentViewerPortal from "@/components/bodyContentViewerPortal.vue";
+import BodyGalleryViewer from "@/components/bodyGalleryViewer.vue";
 import FooterViewer from "@/components/footer";
 
 import MobileHeader from "@/components/mobile/mobileHeader";
@@ -59,6 +62,7 @@ import MobileBodyContentViewerConclusion from "@/components/mobile/mobileBodyCon
 import MobileBodyContentViewerJoin from "@/components/mobile/mobileBodyContentViewerJoin.vue";
 import MobileBodyContentViewerThanks from "@/components/mobile/mobileBodyContentViewerThanks.vue";
 import MobileBodyContentViewerPortal from "@/components/mobile/mobileBodyContentViewerPortal.vue";
+import MobileBodyGalleryViewer from "@/components/mobile/mobileBodyGalleryViewer.vue";
 
 import lax from 'lax.js'
 
@@ -75,6 +79,7 @@ export default {
     MobileBodyContentViewerJoin,
     MobileBodyContentViewerThanks,
     MobileBodyContentViewerPortal,
+    MobileBodyGalleryViewer,
     MobileFooter,
 
     HeaderNav,
@@ -87,6 +92,7 @@ export default {
     BodyContentViewerJoin,
     BodyContentViewerThanks,
     BodyContentViewerPortal,
+    BodyGalleryViewer,
     FooterViewer
     },
   data: () => ({

@@ -5,19 +5,29 @@
         <div class="row">
           <h3>{{ $t("footer.joinUs") }}</h3>
           <div class="form-min-row">
-            <p>QQ: 517248890</p>
+            <a class="teleport-nav-icons" href="https://qm.qq.com/cgi-bin/qm/qr?k=edb-q-Uwu4U04CNvJ6U_eQWeUzZTAXrp&jump_from=webapi&authKey=AEeHlCj4nU2ttBdi75gCrVS6VNR71p+ZUOh9If8HW7wVbe61PUcRFT+X8lR2D5eP" target="_blank">
+              <svg viewBox="0 0 2094.5 2477.7" width="30" height="30" xmlns="http://www.w3.org/2000/svg">
+                <path d="m1831.6 1032.9c2.3-31.5 4.5-65.3 4.5-96.8 0-517.6-353.3-936.1-789.8-936.1s-789.8 418.5-789.8 936.1c0 33.8 2.3 67.5 4.5 101.3-132.8 265.5-330.8 825.8-236.3 994.6 11.3 20.3 126-90 218.3-265.5 2.3 195.8 101.3 373.5 261 497.3-130.5 22.5-249.8 105.8-240.8 148.5 15.8 72 335.3 87.8 726.8 31.5 2.3 0 4.5 0 9-2.3 15.8 0 31.5 2.3 47.3 2.3s31.5 0 47.3-2.3c2.3 0 4.5 0 9 2.3 393.8 56.3 711.1 40.5 726.8-31.5 9-42.8-110.3-126-240.8-148.5 159.8-123.8 258.8-303.8 261-501.8 90 180 209.3 292.5 220.5 270 94.6-168.8-108-735.9-238.5-999.1z"/>
+              </svg>
+            </a>
           </div>
         </div>
         <div class="row">
           <h3>{{ $t("footer.followUs") }}</h3>
           <div class="form-min-row">
-            <p>Twitter: @Fetarute</p>
+            <a class="teleport-nav-icons" href="https://twitter.com/Fetarute" target="_blank">
+              <svg viewBox="0 0 1200 1227" width="30" height="30" xmlns="http://www.w3.org/2000/svg">
+                <path d="M714.163 519.284L1160.89 0H1055.03L667.137 450.887L357.328 0H0L468.492 681.821L0 1226.37H105.866L515.491 750.218L842.672 1226.37H1200L714.137 519.284H714.163ZM569.165 687.828L521.697 619.934L144.011 79.6944H306.615L611.412 515.685L658.88 583.579L1055.08 1150.3H892.476L569.165 687.854V687.828Z"/>
+              </svg>
+            </a>
           </div>
         </div>
         <div class="row">
           <h3>{{ $t("footer.contactUs") }}</h3>
           <div class="form-min-row">
-            <p>E-mail: inbox@fetarute.org</p>
+            <a href="mailto: inbox@fetarute.org">
+              <span class="material-symbols-outlined">mail</span>
+            </a>
           </div>
         </div>
       </div>
@@ -136,6 +146,35 @@ footer.footer-flex {
   height: 27px;
   margin: 20px 0 10px 10px;
   border-bottom: 8px solid var(--body-content-span-line-creative);
+}
+
+/* Footer Logos */
+
+a{
+  text-decoration: none;
+}
+
+.teleport-nav-icons{
+  transition: 200ms ease-out;
+  fill: var(--footer-text-color);
+  transform: translate(0rem, -0.5rem);
+}
+
+.teleport-nav-icons:hover{
+  fill: var(--footer-transition-color)
+}
+
+/* Icon */
+
+.material-symbols-outlined{
+  font-size: 2.5rem;
+  transition: 200ms ease-out;
+  transform: translate(0rem, -0.7rem);
+  color: var(--footer-text-color);
+}
+
+.material-symbols-outlined:hover{
+  color: var(--footer-transition-color)
 }
 
 </style>

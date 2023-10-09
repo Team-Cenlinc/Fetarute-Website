@@ -1,8 +1,5 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import ServerStatus from "@/components/tools/status/status"
-import App from "@/App";
-import Error from "@/components/errors/Error";
 
 Vue.use(VueRouter)
 
@@ -10,17 +7,19 @@ const routes = [
   {
     path: '/',
     name: 'AppMain',
-    component: App
+    // component: App
+    // lazy-loaded when the route is visited.
+    component: () => import(/* webpackChunkName: "AppMain" */ '@/App')
   },
     {
     path: '/tools/status',
     name: 'ServerStatus',
-    component: ServerStatus
+    component: () => import(/* webpackChunkName: "ServerStatus" */ '@/components/tools/status/status')
   },
   {
     path: '*',
     name: 'Error',
-    component: Error,
+    component: () => import(/* webpackChunkName: "Error" */ '@/components/errors/Error'),
     props: route => ({ code: route.query.code })
   }
 ]
