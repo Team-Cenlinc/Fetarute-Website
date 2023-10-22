@@ -39,8 +39,8 @@
     <span>
         <v-img
             id="content-sec2-pic"
-            src="../../assets/content/Waterside-Line.webp"
-            lazy-src="../../assets/content/lazy/Waterside-Line-Lazy.webp"
+            src="../../assets/content/Lobby-Monorail.webp"
+            lazy-src="../../assets/content/lazy/Lobby-Monorail-Lazy.webp"
             max-width="25%"
             max-height="35%"
         >

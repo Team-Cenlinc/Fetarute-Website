@@ -24,6 +24,7 @@ import RRCrossing from "../assets/pictures/pan-header/RR-Crossing.webp"
 import PyutocorOffices from "../assets/pictures/pan-header/Pyutocor-Offices.webp"
 import SyapoleSta from "../assets/pictures/pan-header/Syapole-Sta.webp"
 import PyutocorPort from "../assets/pictures/pan-header/Pyutocor-Port.webp"
+import LobbySubstation from "../assets/pictures/pan-header/Lobby-Substation.webp"
 import PyutocorSkylineDusk from "../assets/pictures/pan-header/Pyutocor-Skyline-Dusk.webp"
 import NorthernlandSURnorth from "../assets/pictures/pan-header/Northernland-SURnorth.webp"
 
@@ -60,6 +61,9 @@ export default {
       },
       {
         src: NorthernlandSURnorth
+      },
+      {
+        src: LobbySubstation
       }
     ]
   }),

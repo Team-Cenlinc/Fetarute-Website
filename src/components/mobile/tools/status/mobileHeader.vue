@@ -72,7 +72,7 @@
               <v-list-item link href="https://map.creative.fetarute.org" target="_blank">
                 <v-list-item-title>{{ $t("headerNav.onlineMapCreative") }}</v-list-item-title>
               </v-list-item>
-              <v-list-item link href="https://map.survival.fetarute.org" target="_blank">
+              <v-list-item link href="https://map.survival.fetarute.org/#Towny" target="_blank">
                 <v-list-item-title>{{ $t("headerNav.onlineMapSurvival") }}</v-list-item-title>
               </v-list-item>
               <v-list-item link href="https://map.lobby.fetarute.org" target="_blank">
@@ -264,7 +264,7 @@ input.header-nav:hover {
   color: var(--header-drawer-icon-color-hover);
 }
 
-.router-link-active{
+.router-link-active {
   color: var(--header-router-color-text);
   text-decoration: none;
 }

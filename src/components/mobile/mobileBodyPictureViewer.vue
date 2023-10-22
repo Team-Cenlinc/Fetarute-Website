@@ -20,6 +20,7 @@ import RRCrossing from "../../assets/pictures/pan-header/RR-Crossing.webp"
 import PyutocorOffices from "../../assets/pictures/pan-header/Pyutocor-Offices.webp"
 import SyapoleSta from "../../assets/pictures/pan-header/Syapole-Sta.webp"
 import PyutocorPort from "../../assets/pictures/pan-header/Pyutocor-Port.webp"
+import LobbyGreens from "../../assets/pictures/pan-header/Lobby-Greens.webp"
 
 export default {
   name: "mobileBodyPictureViewer",
@@ -48,6 +49,9 @@ export default {
       },
       {
         src: PyutocorPort
+      },
+      {
+        src: LobbyGreens
       }
     ]
   }),
