@@ -7,7 +7,7 @@
             <v-avatar
                 v-if="darkMode||!scrollPassed"
                 tile
-                size="2rem">
+                size="8rem">
               <img
                   alt="Avatar"
                   src="../../../assets/avatar/Sealer-Dark.webp"
@@ -16,7 +16,7 @@
             <v-avatar
                 v-if="!darkMode&&scrollPassed"
                 tile
-                size="2rem">
+                size="8rem">
               <img
                   alt="Avatar"
                   src="../../../assets/avatar/Sealer-Light.webp"
@@ -214,8 +214,8 @@ header .header-flex {
 
 header .header-nav-home {
   display: flex;
-  padding: 0 0.6em;
   line-height: 50px;
+  margin-top: -3rem;
   color: var(--header-nav-color);
   text-decoration: none;
   float: right;
