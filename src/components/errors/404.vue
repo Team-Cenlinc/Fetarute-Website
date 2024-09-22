@@ -14,7 +14,7 @@
 
     <section class="portal">
       <div class="content-container">
-        <p><strong style="border-bottom: 1rem solid var(--body-span-line-syapole);">传送门</strong></p>
+        <p><strong style="border-bottom: 1rem solid var(--body-span-line-syapole);">{{ $t("headerNav.portal") }}</strong></p>
         <div class="link-forward">
           <p><br><a class="portal-link" href="/#/">{{ $t("headerNav.homePage") }}</a></p>
           <p><br><a class="portal-link" href="/#/tools/status">{{ $t("headerNav.serverPlayerCount") }}</a></p>
@@ -80,14 +80,14 @@ div.not-found-page{
 }
 
 #turn-portal{
-  float: right;
+  float: left;
   width: 5rem;
   height: 5rem;
-  margin-right: 4rem;
+  margin-left: 4rem;
   background-color: transparent;
-  border-top-right-radius: 5rem;
+  border-top-left-radius: 5rem;
   transform: translateY(-3.225rem);
-  border-right: 1.325rem solid var(--error-span-line);
+  border-left: 1.325rem solid var(--error-span-line);
   border-top: 1.325rem solid var(--error-span-line);
 }
 
@@ -101,13 +101,14 @@ div.not-found-page{
 /* Portal Sec. Start */
 
 .content-container{
-  float: right;
+  float: left;
 }
 
 .link-forward{
-  transform: translate(-1.5rem, 6rem);
+  transform: translate(0.5rem, 6rem);
   position: absolute;
-  text-align: right;
+  display: grid;
+  text-align: left;
 }
 
 .portal-link{
@@ -147,7 +148,7 @@ div.not-found-page{
 }
 
 .content-container strong{
-  float: right;
+  float: left;
   transform: translateY(3rem);
   color: var(--body-content-span-text-color);
   font-size: 2rem;
@@ -155,17 +156,17 @@ div.not-found-page{
 }
 
 #side-line{
-  transform: translate(15rem, 1.5rem);
-  height: 40rem;
+  transform: translate(0rem, 1.5rem);
+  height: 30rem;
   width: 1.325rem;
-  float: right;
-  margin-right: 4rem;
+  position: absolute;
+  margin-left: 4rem;
   background-image: linear-gradient(to bottom, var(--error-span-line), var(--body-content-span-line-creative));
 }
 
 #side-station-terminal{
-  float: right;
-  transform: translate(17.5rem, 41.5rem);
+  position: absolute;
+  transform: translate(2.5rem, 31.5rem);
   width: 4rem;
   height: 1.325rem;
   background-color: var(--body-content-span-line-creative);

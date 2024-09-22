@@ -14,7 +14,7 @@
 
     <section class="portal">
       <div class="content-container">
-        <p><strong style="border-bottom: 1rem solid var(--body-span-line-syapole);">传送门</strong></p>
+        <p><strong style="border-bottom: 1rem solid var(--body-span-line-syapole);">{{ $t("headerNav.portal") }}</strong></p>
         <div class="link-forward">
           <p><br><a class="portal-link" href="/#/">{{ $t("headerNav.homePage") }}</a></p>
           <p><br><a class="portal-link" href="/#/tools/status">{{ $t("headerNav.serverPlayerCount") }}</a></p>
@@ -81,14 +81,14 @@ div.not-found-page{
 }
 
 #turn-portal{
-  float: right;
+  float: left;
   width: 5rem;
   height: 5rem;
-  margin-right: 2rem;
+  margin-left: 2rem;
   background-color: transparent;
-  border-top-right-radius: 5rem;
+  border-top-left-radius: 5rem;
   transform: translateY(-3rem);
-  border-right: 1rem solid var(--error-span-line);
+  border-left: 1rem solid var(--error-span-line);
   border-top: 1rem solid var(--error-span-line);
 }
 
@@ -102,13 +102,14 @@ div.not-found-page{
 /* Portal Sec. Start */
 
 .content-container{
-  float: right;
+  float: left;
 }
 
 .link-forward{
-  transform: translate(-1.5rem, 6rem);
+  transform: translate(-1rem, 6rem);
   position: absolute;
-  text-align: right;
+  display:grid;
+  text-align: left;
 }
 
 .portal-link{
@@ -148,25 +149,25 @@ div.not-found-page{
 }
 
 .content-container strong{
-  float: right;
-  transform: translateY(3rem);
+  float: left;
+  transform: translate(-1rem ,3rem);
   color: var(--body-content-span-text-color);
   font-size: 1.5rem;
   width: fit-content;
 }
 
 #side-line{
-  transform: translate(11.375rem, 2rem);
+  transform: translate(2rem, 2rem);
   height: 25rem;
   width: 1rem;
-  float: right;
-  margin-right: 30px;
+  position: absolute;
+  margin-right: 2.5rem;
   background-image: linear-gradient(to bottom, var(--error-span-line), var(--body-content-span-line-creative));
 }
 
 #side-station-terminal{
-  float: right;
-  transform: translate(13rem, 27rem);
+  position: absolute;
+  transform: translate(1.25rem, 27rem);
   width: 2.5rem;
   height: 1rem;
   background-color: var(--body-content-span-line-creative);
