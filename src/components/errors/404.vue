@@ -19,7 +19,7 @@
           <p><br><a class="portal-link" href="/#/">{{ $t("headerNav.homePage") }}</a></p>
           <p><br><a class="portal-link" href="/#/tools/status">{{ $t("headerNav.serverPlayerCount") }}</a></p>
           <p><br><a class="portal-link" href="https://twitter.com/Fetarute">{{ $t("headerNav.twitter") }}</a></p>
-          <p><br><a class="portal-link" href="https://www.fetarute.org/wiki/index.php/%E9%A6%96%E9%A1%B5">{{ $t("headerNav.wikiLink") }}</a></p>
+          <p><br><a class="portal-link" href="https://utils.fetarute.org/wiki/index.php/%E9%A6%96%E9%A1%B5">{{ $t("headerNav.wikiLink") }}</a></p>
           <p><br><a class="portal-link" href="https://team-cenlinc.github.io/FesGen/">FesGen</a></p>
         </div>
       </div>
