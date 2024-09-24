@@ -17,7 +17,8 @@
     "vue-i18n": "^8.26.3",
     "vue-router": "^3.5.1",
     "vuetify": "^2.6.16",
-    "webpack": "^5.73.0"
+    "webpack": "^5.73.0",
+    "modern-normalize": "^3.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.18.6",

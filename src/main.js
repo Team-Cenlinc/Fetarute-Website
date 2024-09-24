@@ -3,6 +3,7 @@ import router from './router'
 import i18n from './locales/i18n'
 import vuetify from './plugins/vuetify'
 import './assets/global.css'
+import 'modern-normalize/modern-normalize.css';
 
 new Vue({
   router,
