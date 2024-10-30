@@ -117,7 +117,7 @@ export default {
     this.loadLax()
 
     // onMount DarkMode Query
-    let darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    let darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)').matches;
     this.syncColorTheme(darkModeMediaQuery)
   },
   methods: {

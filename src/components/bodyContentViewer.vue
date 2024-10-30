@@ -123,7 +123,6 @@ export default {
   color: var(--body-nav-expand-text-color);
   text-align: start;
   font-family: "Noto Sans SC", sans-serif;
-  text-space: 1.5rem;
 }
 
 #line-nav-expand-merge-1{
