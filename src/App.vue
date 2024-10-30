@@ -115,6 +115,10 @@ export default {
     },{ inertiaEnabled: true });
 
     this.loadLax()
+
+    // onMount DarkMode Query
+    let darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    this.syncColorTheme(darkModeMediaQuery)
   },
   methods: {
     onResize () {

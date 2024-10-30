@@ -128,7 +128,7 @@ export default {
 
 #line-nav-expand-merge-1{
   width:6.25rem;
-  height:4rem;
+  height:5rem;
   margin-left: 3.75rem;
   background-color: transparent;
   border-bottom-left-radius: 5.7rem;
@@ -227,7 +227,6 @@ export default {
 .content-container-section-2{
   height: 32rem;
   z-index: 1;
-  position: relative;
   transform: translateY(-600px)
 }
 
