@@ -60,7 +60,7 @@
               <v-list-item link href="https://status.fetarute.info/status/all" target="_blank" :title="$t('headerNav.chineseLangOnly')">
                 <v-list-item-title>{{ $t("headerNav.serverStatus") }}</v-list-item-title>
               </v-list-item>
-              <v-list-item link href="https://utils.fetarute.org/wiki/index.php/%E9%A6%96%E9%A1%B5" target="_blank" :title="$t('headerNav.chineseLangOnly')">
+              <v-list-item link href="https://wiki.fetarute.org" target="_blank" :title="$t('headerNav.chineseLangOnly')">
                 <v-list-item-title>{{ $t("headerNav.wikiLink") }}</v-list-item-title>
               </v-list-item>
               <v-list-item :disabled="true">
