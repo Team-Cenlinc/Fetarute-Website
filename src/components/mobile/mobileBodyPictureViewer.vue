@@ -12,50 +12,30 @@
 </template>
 
 <script>
-import KJH from "../../assets/pictures/pan-header/KJH-Optimal.webp"
-import KJH02 from "../../assets/pictures/pan-header/KJH02-Optimal.webp"
-import Monorail from "../../assets/pictures/pan-header/Monorail-Optimal.webp"
-import OldPTK from "../../assets/pictures/pan-header/Old-Pyutocor-Optimal.webp"
-import RRCrossing from "../../assets/pictures/pan-header/RR-Crossing.webp"
-import PyutocorOffices from "../../assets/pictures/pan-header/Pyutocor-Offices.webp"
-import SyapoleSta from "../../assets/pictures/pan-header/Syapole-Sta.webp"
-import PyutocorPort from "../../assets/pictures/pan-header/Pyutocor-Port.webp"
-import LobbyGreens from "../../assets/pictures/pan-header/Lobby-Greens.webp"
-
 export default {
   name: "mobileBodyPictureViewer",
-  data: () => ({
-    panHeaderImages: [
-      {
-        src: KJH
-      },
-      {
-        src: KJH02
-      },
-      {
-        src: Monorail
-      },
-      {
-        src: OldPTK
-      },
-      {
-        src: RRCrossing
-      },
-      {
-        src: PyutocorOffices
-      },
-      {
-        src: SyapoleSta
-      },
-      {
-        src: PyutocorPort
-      },
-      {
-        src: LobbyGreens
-      }
-    ]
-  }),
-}
+  data() {
+    return {
+      panHeaderImages: this.importAllImages()
+    };
+  },
+  methods: {
+    importAllImages() {
+      const images = [];
+      const context = require.context(
+          "../../assets/pictures/pan-header", // 修改为当前相对路径
+          false,                              // 不递归子文件夹
+          /\.(png|jpe?g|webp)$/i              // 匹配图片文件类型
+      );
+
+      context.keys().forEach((key) => {
+        images.push({ src: context(key) });
+      });
+
+      return images;
+    }
+  }
+};
 </script>
 
 <style scoped>

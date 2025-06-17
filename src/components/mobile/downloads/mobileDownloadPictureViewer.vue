@@ -12,29 +12,29 @@
 </template>
 
 <script>
-import KJH from "../../../assets/pictures/pan-header/KJH-Optimal.webp"
-import Monorail from "../../../assets/pictures/pan-header/Monorail-Optimal.webp"
-import RRCrossing from "../../../assets/pictures/pan-header/RR-Crossing.webp"
-import SyapoleSta from "../../../assets/pictures/pan-header/Syapole-Sta.webp"
-
 export default {
   name: "mobileBodyPictureViewer",
-  data: () => ({
-    panHeaderImages: [
-      {
-        src: KJH
-      },
-      {
-        src: Monorail
-      },
-      {
-        src: RRCrossing
-      },
-      {
-        src: SyapoleSta
-      }
-    ]
-  }),
+  data() {
+    return {
+      panHeaderImages: this.importAllImages()
+    };
+  },
+  methods: {
+    importAllImages() {
+      const images = [];
+      const context = require.context(
+          "../../../assets/pictures/pan-header", // 修改为当前相对路径
+          false,                              // 不递归子文件夹
+          /\.(png|jpe?g|webp)$/i              // 匹配图片文件类型
+      );
+
+      context.keys().forEach((key) => {
+        images.push({ src: context(key) });
+      });
+
+      return images;
+    }
+  }
 }
 </script>
 
