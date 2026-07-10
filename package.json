@@ -1,0 +1,29 @@
+{
+  "name": "fetarute-website",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@11.13.0",
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=11 <12"
+  },
+  "scripts": {
+    "dev": "ASTRO_TELEMETRY_DISABLED=1 astro dev",
+    "build": "ASTRO_TELEMETRY_DISABLED=1 astro build",
+    "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
+    "sync": "ASTRO_TELEMETRY_DISABLED=1 astro sync",
+    "typecheck": "ASTRO_TELEMETRY_DISABLED=1 astro check",
+    "format": "NODE_OPTIONS=--experimental-strip-types prettier --write .",
+    "format:check": "NODE_OPTIONS=--experimental-strip-types prettier --check .",
+    "check": "npm run format:check && npm run typecheck && npm run build"
+  },
+  "dependencies": {
+    "astro": "^7.0.7"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "prettier": "^3.9.5",
+    "typescript": "^6.0.3"
+  }
+}

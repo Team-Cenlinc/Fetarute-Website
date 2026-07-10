@@ -1,0 +1,34 @@
+---
+import SiteHeader from "@/components/SiteHeader.astro";
+import "@/styles/global.css";
+import { siteInfo } from "@/data/site";
+
+/**
+ * 基础页面布局属性。
+ * 所有页面都通过这里统一设置 title 和 description，避免 metadata 分散维护。
+ */
+export interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = siteInfo.name, description = siteInfo.description } = Astro.props;
+const pageTitle = title === siteInfo.name ? title : `${title} | ${siteInfo.name}`;
+---
+
+<!doctype html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <SiteHeader />
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>

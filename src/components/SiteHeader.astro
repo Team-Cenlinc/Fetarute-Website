@@ -1,0 +1,20 @@
+---
+import { primaryNavItems, siteInfo } from "@/data/site";
+---
+
+<header class="site-header" aria-label="站点顶部导航">
+  <a class="brand" href="/" aria-label={`${siteInfo.name} 首页`}>
+    <span class="brand-mark" aria-hidden="true">F</span>
+    <span>{siteInfo.name}</span>
+  </a>
+
+  <nav class="nav-links" aria-label="主导航">
+    {
+      primaryNavItems.map((item) => (
+        <a href={item.href} class="nav-link">
+          {item.label}
+        </a>
+      ))
+    }
+  </nav>
+</header>
