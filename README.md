@@ -26,6 +26,7 @@ git diff --check
 ## 目录结构
 
 ```text
+public/                 浏览器图标、Web App Manifest 等需原样发布的品牌文件
 src/
   components/        可复用 Astro 组件
   content/           公告、指南等内容

@@ -10,10 +10,30 @@ import { siteInfo } from "@/data/site";
 export interface Props {
   title?: string;
   description?: string;
+  /** 页面专属分享图片；未提供时使用站点级品牌图标。 */
+  image?: string;
 }
 
-const { title = siteInfo.name, description = siteInfo.description } = Astro.props;
+const {
+  title = siteInfo.name,
+  description = siteInfo.description,
+  image = siteInfo.socialImage,
+} = Astro.props;
 const pageTitle = title === siteInfo.name ? title : `${title} | ${siteInfo.name}`;
+const canonicalUrl = new URL(Astro.url.pathname, siteInfo.url);
+const socialImageUrl = new URL(image, siteInfo.url);
+
+/**
+ * 搜索引擎使用的 WebSite 结构化数据。
+ * 与页面 metadata 共用站点数据，避免搜索结果中的名称和网址出现分叉。
+ */
+const websiteStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: siteInfo.name,
+  url: siteInfo.url,
+  description: siteInfo.description,
+};
 ---
 
 <!doctype html>
@@ -23,7 +43,53 @@ const pageTitle = title === siteInfo.name ? title : `${title} | ${siteInfo.name}
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
+    <meta name="application-name" content={siteInfo.name} />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#f4f7ef" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
+
+    <link rel="canonical" href={canonicalUrl} />
+    <link
+      rel="icon"
+      type="image/png"
+      href="/favicon-96x96.png"
+      sizes="96x96"
+      media="(prefers-color-scheme: light)"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="/favicon-dark-96x96.png"
+      sizes="96x96"
+      media="(prefers-color-scheme: dark)"
+    />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:site_name" content={siteInfo.name} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={socialImageUrl} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content={`${siteInfo.name} 品牌图标`} />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImageUrl} />
+    <meta name="twitter:image:alt" content={`${siteInfo.name} 品牌图标`} />
+
     <title>{pageTitle}</title>
+    <script
+      type="application/ld+json"
+      is:inline
+      set:html={JSON.stringify(websiteStructuredData)}
+    ></script>
   </head>
   <body>
     <SiteHeader />

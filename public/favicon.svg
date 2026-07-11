@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 144">
+  <style>
+    .background {
+      fill: #333;
+    }
+
+    .foreground,
+    .accent {
+      fill: none;
+      stroke-miterlimit: 10;
+      stroke-width: 12px;
+    }
+
+    .foreground {
+      stroke: #fff;
+    }
+
+    .accent {
+      stroke: #00a99d;
+    }
+
+    .light-only {
+      display: inline;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .background {
+        fill: #e6e6e6;
+      }
+
+      .foreground {
+        stroke: #1a1a1a;
+      }
+
+      .light-only {
+        display: none;
+      }
+    }
+  </style>
+  <path
+    class="background"
+    d="M144 72c0 54-18 72-72 72-45 0-72-27-72-72C0 18 18 0 72 0c45 0 72 27 72 72Z"
+  />
+  <path class="foreground" d="M61.94 27C44.47 27 27 27 27 56.12v52.41" />
+  <path class="accent" d="M56.12 61.94H38.65" />
+  <path class="foreground" d="M102.71 73.59H79.42" />
+  <path class="foreground" d="M73.59 79.41c0 17.47 5.82 23.29 29.12 23.29" />
+  <path class="foreground" d="M102.71 50.29c-23.29 0-29.12 5.82-29.12 17.47" />
+  <path class="foreground light-only" d="M126 102.71h-11.65" />
+</svg>

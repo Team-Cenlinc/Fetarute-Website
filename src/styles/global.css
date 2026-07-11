@@ -79,14 +79,10 @@ main {
 }
 
 .brand-mark {
-  display: grid;
+  display: block;
   width: 34px;
   height: 34px;
-  place-items: center;
   border-radius: 10px;
-  background: var(--color-accent);
-  color: white;
-  font-weight: 900;
 }
 
 .nav-links {

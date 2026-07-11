@@ -7,6 +7,10 @@ export interface SiteInfo {
   name: string;
   /** 默认 SEO 描述；页面没有专门描述时使用它。 */
   description: string;
+  /** 官网正式地址；canonical、社交卡片和结构化数据都从这里生成绝对 URL。 */
+  url: string;
+  /** 默认社交分享图片；页面没有专属封面时使用品牌图标。 */
+  socialImage: string;
   /** Minecraft 服务器地址；未正式公开前保持占位。 */
   serverAddress: string;
 }
@@ -27,6 +31,8 @@ export interface PrimaryNavItem {
 export const siteInfo: SiteInfo = {
   name: "Fetarute",
   description: "Fetarute 是一个正在建设中的 Minecraft 服务器官网。",
+  url: "https://www.fetarute.org",
+  socialImage: "/web-app-manifest-512x512.png",
   serverAddress: "play.fetarute.example",
 };
 
