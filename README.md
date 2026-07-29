@@ -23,11 +23,25 @@ npm run check
 git diff --check
 ```
 
+字体子集化：
+
+```sh
+npm run font:extract
+npm run font:subset
+npm run build:with-fonts
+```
+
+完整字体源文件放在 `fonts-source/`，生成的 woff2 放在 `src/assets/fonts/`。普通 `npm run build`
+不依赖完整字体；具体放置与更新步骤见 [`docs/font-subset.md`](docs/font-subset.md)。
+
 ## 目录结构
 
 ```text
 public/                 浏览器图标、Web App Manifest 等需原样发布的品牌文件
+fonts-source/           完整字体源文件，仅用于本地生成子集，不直接发布
+scripts/font-subset/    Node-only 字符抽取与 woff2 子集生成脚本
 src/
+  assets/fonts/       生成的浏览器 woff2 字体子集
   components/        可复用 Astro 组件
   content/           公告、指南等内容
   data/              站点级静态数据

@@ -1,0 +1,6 @@
+Fetarute Display
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+abcdefghijklmnopqrstuvwxyz
+0123456789
+.
+，。！？：；（）【】《》、“”‘’·…%/+-_~@#&*

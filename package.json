@@ -16,6 +16,14 @@
     "typecheck": "ASTRO_TELEMETRY_DISABLED=1 astro check",
     "format": "NODE_OPTIONS=--experimental-strip-types prettier --write .",
     "format:check": "NODE_OPTIONS=--experimental-strip-types prettier --check .",
+    "font:extract": "NODE_OPTIONS=--experimental-strip-types node scripts/font-subset/extract-cjk.ts",
+    "font:subset:sc": "NODE_OPTIONS=--experimental-strip-types node scripts/font-subset/build-subsets.ts sc",
+    "font:subset:tc": "NODE_OPTIONS=--experimental-strip-types node scripts/font-subset/build-subsets.ts tc",
+    "font:subset:jp": "NODE_OPTIONS=--experimental-strip-types node scripts/font-subset/build-subsets.ts jp",
+    "font:subset:display": "NODE_OPTIONS=--experimental-strip-types node scripts/font-subset/build-subsets.ts display",
+    "font:subset:display-italic": "NODE_OPTIONS=--experimental-strip-types node scripts/font-subset/build-subsets.ts display-italic",
+    "font:subset": "npm run font:extract && NODE_OPTIONS=--experimental-strip-types node scripts/font-subset/build-subsets.ts",
+    "build:with-fonts": "npm run font:subset && npm run build",
     "check": "npm run format:check && npm run typecheck && npm run build"
   },
   "dependencies": {
@@ -23,7 +31,9 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
+    "@types/node": "^25.9.1",
     "prettier": "^3.9.5",
+    "subset-font": "^2.5.0",
     "typescript": "^6.0.3"
   }
 }

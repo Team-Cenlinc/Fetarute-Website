@@ -1,4 +1,8 @@
 :root {
+  /* 英文、数字与导视符号优先使用 Noto Sans Display；未覆盖的 CJK 字符继续落到简中面孔。 */
+  --font-fetarute-ui: var(--font-fetarute-display), var(--font-fetarute-sans-sc);
+  /* 英文斜体强调使用独立 Display Italic，并沿用当前简中面孔补齐中文混排。 */
+  --font-fetarute-italic: var(--font-fetarute-display-italic), var(--font-fetarute-sans-sc);
   /* 品牌基础色：先用冷绿和墨黑建立 Minecraft 服务器的自然/矿石方向。 */
   --color-background: #f4f7ef;
   --color-surface: #ffffff;
@@ -11,16 +15,21 @@
   --shadow-soft: 0 18px 50px rgba(22, 32, 22, 0.12);
   /* 面板圆角统一控制首页卡片和后续内容模块，保持早期视觉骨架一致。 */
   --radius-panel: 16px;
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font-fetarute-ui);
   color: var(--color-text);
   background: var(--color-background);
+}
+
+/* 繁中内容沿用当地字形，避免简繁字形与当地阅读习惯不一致。 */
+:lang(zh-Hant) {
+  --font-fetarute-ui: var(--font-fetarute-display), var(--font-fetarute-sans-tc);
+  --font-fetarute-italic: var(--font-fetarute-display-italic), var(--font-fetarute-sans-tc);
+}
+
+/* 日文内容使用日文 Noto Sans，保留假名与标点的正确比例。 */
+:lang(ja) {
+  --font-fetarute-ui: var(--font-fetarute-display), var(--font-fetarute-sans-jp);
+  --font-fetarute-italic: var(--font-fetarute-display-italic), var(--font-fetarute-sans-jp);
 }
 
 * {
@@ -34,6 +43,7 @@ html {
 body {
   margin: 0;
   min-width: 320px;
+  font-family: var(--font-fetarute-ui);
 }
 
 a {
