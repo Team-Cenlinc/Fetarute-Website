@@ -1,5 +1,5 @@
 ---
-import { primaryNavItems, siteInfo } from "@/data/site";
+import { primaryNavItems, siteInfo, wayfindingPrototype } from "@/data/site";
 ---
 
 <header class="site-header" aria-label="站点顶部导航">
@@ -12,8 +12,15 @@ import { primaryNavItems, siteInfo } from "@/data/site";
       alt=""
       aria-hidden="true"
     />
-    <span>{siteInfo.name}</span>
+    <span class="brand-copy">
+      <strong>{siteInfo.name}</strong>
+      <small>{wayfindingPrototype.routeName}</small>
+    </span>
   </a>
+
+  <span class="route-code" aria-label={`${wayfindingPrototype.routeName} 线路代号`}>
+    {wayfindingPrototype.routeCode}
+  </span>
 
   <nav class="nav-links" aria-label="主导航">
     {

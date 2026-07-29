@@ -1,6 +1,7 @@
 ---
 import { Font } from "astro:assets";
 import SiteHeader from "@/components/SiteHeader.astro";
+import LaunchSequence from "@/components/LaunchSequence.astro";
 import "@/styles/global.css";
 import { siteInfo } from "@/data/site";
 
@@ -13,12 +14,15 @@ export interface Props {
   description?: string;
   /** 页面专属分享图片；未提供时使用站点级品牌图标。 */
   image?: string;
+  /** 首页启用的导视启动层；其他页面保持直接可读。 */
+  showLaunchSequence?: boolean;
 }
 
 const {
   title = siteInfo.name,
   description = siteInfo.description,
   image = siteInfo.socialImage,
+  showLaunchSequence = false,
 } = Astro.props;
 const pageTitle = title === siteInfo.name ? title : `${title} | ${siteInfo.name}`;
 const canonicalUrl = new URL(Astro.url.pathname, siteInfo.url);
@@ -91,6 +95,32 @@ const websiteStructuredData = {
     <Font cssVariable="--font-fetarute-sans-jp" />
     <Font cssVariable="--font-fetarute-display-italic" />
     <title>{pageTitle}</title>
+    {
+      showLaunchSequence && (
+        <script is:inline>
+          (() => {
+            // 此标记只在当前 tab 会话中生效：刷新或站内返回不重复播放，关闭 tab 后可再次进入启动序列。
+            const launchSessionKey = "fetarute.launch.seen";
+
+            try {
+              const hasSeenLaunch = window.sessionStorage.getItem(launchSessionKey) === "true";
+              const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+              if (hasSeenLaunch || prefersReducedMotion) {
+                document.documentElement.dataset.launchSkipped = "true";
+                window.sessionStorage.setItem(launchSessionKey, "true");
+              } else {
+                window.sessionStorage.setItem(launchSessionKey, "true");
+                document.documentElement.dataset.launching = "true";
+              }
+            } catch {
+              // 无法访问会话存储时优先保留可用的启动体验，不让存储策略阻断首页内容。
+              document.documentElement.dataset.launching = "true";
+            }
+          })();
+        </script>
+      )
+    }
     <script
       type="application/ld+json"
       is:inline
@@ -98,6 +128,7 @@ const websiteStructuredData = {
     ></script>
   </head>
   <body>
+    {showLaunchSequence && <LaunchSequence />}
     <SiteHeader />
     <main>
       <slot />

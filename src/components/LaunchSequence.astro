@@ -1,0 +1,67 @@
+---
+import { Picture } from "astro:assets";
+import pyutocorDuskScene from "@/assets/pages/home/pyutocor-dusk.png";
+import { siteInfo, wayfindingPrototype } from "@/data/site";
+---
+
+<section class="launch-sequence" aria-label={`${siteInfo.name} 启动画面`}>
+  <Picture
+    class="launch-sequence__scene"
+    src={pyutocorDuskScene}
+    formats={["avif"]}
+    fallbackFormat="webp"
+    alt=""
+    aria-hidden="true"
+  />
+  <div class="launch-sequence__wash" aria-hidden="true"></div>
+  <div class="launch-sequence__stops" aria-hidden="true">
+    {
+      wayfindingPrototype.launchStops.map((stop, index) => (
+        <p class="launch-stop" style={`--launch-stop-index: ${index}`}>
+          <span>{stop.name}</span>
+          <small>{stop.latinName}</small>
+        </p>
+      ))
+    }
+  </div>
+  <button class="launch-sequence__skip" type="button">跳过启动动画</button>
+</section>
+
+<script>
+  const launchSequence = document.querySelector<HTMLElement>(".launch-sequence");
+  const siteHeader = document.querySelector<HTMLElement>(".site-header");
+
+  /** 与 global.css 的页眉入场过渡时长保持一致，避免视觉未出现时恢复键盘焦点。 */
+  const headerRevealDuration = 440;
+
+  if (document.documentElement.dataset.launchSkipped === "true") {
+    launchSequence?.remove();
+  } else {
+    siteHeader?.setAttribute("inert", "");
+
+    const skipButton = launchSequence?.querySelector<HTMLButtonElement>(".launch-sequence__skip");
+    let hasFinished = false;
+
+    /**
+     * 先移除启动状态让页眉淡入，再等待同样时长恢复 inert，确保键盘与辅助技术状态和视觉状态一致。
+     * 会话级的播放判断已在布局头部完成，这里只负责当前一次序列的离场。
+     */
+    const finishLaunch = () => {
+      if (!launchSequence || hasFinished) return;
+
+      hasFinished = true;
+      launchSequence.dataset.state = "leaving";
+
+      window.setTimeout(() => {
+        document.documentElement.removeAttribute("data-launching");
+        launchSequence.remove();
+        window.setTimeout(() => {
+          siteHeader?.removeAttribute("inert");
+        }, headerRevealDuration);
+      }, headerRevealDuration);
+    };
+
+    window.setTimeout(finishLaunch, 1540);
+    skipButton?.addEventListener("click", finishLaunch, { once: true });
+  }
+</script>

@@ -41,7 +41,10 @@ public/                 浏览器图标、Web App Manifest 等需原样发布的
 fonts-source/           完整字体源文件，仅用于本地生成子集，不直接发布
 scripts/font-subset/    Node-only 字符抽取与 woff2 子集生成脚本
 src/
-  assets/fonts/       生成的浏览器 woff2 字体子集
+  assets/
+    fonts/            生成的浏览器 woff2 字体子集
+    pages/
+      home/           首页场景图等按页面归类的源图片；构建时生成 AVIF/WebP
   components/        可复用 Astro 组件
   content/           公告、指南等内容
   data/              站点级静态数据

@@ -1,20 +1,31 @@
 ---
 import { getCollection } from "astro:content";
+import { Picture } from "astro:assets";
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { siteInfo } from "@/data/site";
+import { siteInfo, wayfindingPrototype } from "@/data/site";
+import pyutocorDuskScene from "@/assets/pages/home/pyutocor-dusk.png";
 
 const newsItems = (await getCollection("news"))
   .sort((left, right) => Number(right.data.publishedAt) - Number(left.data.publishedAt))
   .slice(0, 3);
 ---
 
-<BaseLayout title={siteInfo.name} description={siteInfo.description}>
+<BaseLayout title={siteInfo.name} description={siteInfo.description} showLaunchSequence>
   <section class="hero-section" id="home" aria-labelledby="hero-title">
+    <Picture
+      class="hero-scene"
+      src={pyutocorDuskScene}
+      formats={["avif"]}
+      fallbackFormat="webp"
+      alt={`${siteInfo.name} 的暮色铁路城市景观`}
+      loading="eager"
+      fetchpriority="high"
+    />
     <div class="hero-copy">
-      <p class="server-kicker">Minecraft Server Website</p>
-      <h1 id="hero-title">Fetarute 服务器官网正在建设</h1>
+      <p class="server-kicker">{wayfindingPrototype.routeName}</p>
+      <h1 id="hero-title">下一站，{siteInfo.name}。</h1>
       <p class="hero-description">
-        这里会成为 Fetarute 的公开入口：服务器介绍、加入指南、规则、公告和活动记录会先从静态内容开始沉淀。
+        从站台出发，探索这条仍在铺设中的路线。
       </p>
       <div class="hero-actions" aria-label="主要操作">
         <a class="button button-primary" href="#join">查看加入方式</a>
