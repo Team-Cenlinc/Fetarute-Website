@@ -5,6 +5,7 @@ import {
   railwayLineByCode,
   railwayStationById,
 } from "@/data/railway";
+import fetaruteLogo from "@/assets/fetarute-branding/fetarute-logo.svg?raw";
 import { getRailwayLineCssVariableName, getRailwayLineTextColor } from "@/data/palette";
 import { siteInfo, wayfindingPrototype } from "@/data/site";
 
@@ -28,8 +29,12 @@ function formatWayfindingPrimaryName(name: string): string {
 
 /** 各站闪现的间隔，与 global.css 中启动帧的节奏共同定义总播放时长。 */
 const launchStopInterval = 370;
-/** 最终站在列车驶离后保留的时长；它也是全屏启动层的收束锚点。 */
-const finalStopDuration = 820;
+/** 最终站牌的稳定阅读时长；其后才进入品牌定格，不让 Logo 与站名争夺注意力。 */
+const finalStopDuration = 620;
+/** 末段线路色带驶离的时间；保留既有的干净速度，不让色带拖慢品牌收束。 */
+const finalBrandTraverseDuration = 420;
+/** 品牌定格的总时长；Logo 落位后仍独自停留一段时间，形成可识别的终点。 */
+const finalBrandDuration = 760;
 
 /**
  * 按真实线路站序构造启动站牌。
@@ -62,8 +67,9 @@ const launchStops = getRailwayLineStops(launchLine.code).map((lineStop) => {
   };
 });
 
-/** 由当前线路内的站数推导最迟离场点，数据增减时不会让兜底计时变长。 */
-const launchSequenceDuration = (launchStops.length - 1) * launchStopInterval + finalStopDuration;
+/** 由当前线路内的站数推导最迟离场点，包含最终站牌和品牌定格，数据增减时不会让兜底计时变长。 */
+const launchSequenceDuration =
+  (launchStops.length - 1) * launchStopInterval + finalStopDuration + finalBrandDuration;
 ---
 
 <section
@@ -71,6 +77,7 @@ const launchSequenceDuration = (launchStops.length - 1) * launchStopInterval + f
   aria-label={`${siteInfo.name} 启动画面`}
   data-motion-duration={launchSequenceDuration}
   data-stop-interval={launchStopInterval}
+  style={`--launch-final-stop-duration: ${finalStopDuration}ms; --launch-brand-traverse-duration: ${finalBrandTraverseDuration}ms; --launch-brand-duration: ${finalBrandDuration}ms`}
 >
   <div class="launch-sequence__stops" aria-hidden="true">
     <div class="launch-sequence__track">
@@ -129,6 +136,9 @@ const launchSequenceDuration = (launchStops.length - 1) * launchStopInterval + f
     <div class="launch-sequence__train-track" aria-hidden="true">
       <span class="launch-sequence__train"></span>
     </div>
+    <!-- 终帧时长通过 section 的运行时 motion token 传给 CSS，避免脚本兜底、末站、色带和品牌动画各自漂移。 -->
+    <!-- 内联 SVG 才能继承 palette 的 --color-text，在浅深外观下保持同一份品牌几何。 -->
+    <div class="launch-sequence__brand" aria-hidden="true" set:html={fetaruteLogo}></div>
   </div>
   <button class="launch-sequence__skip" type="button" aria-label="跳过启动动画">
     <span aria-hidden="true">点击任意处跳过动画</span>
@@ -141,6 +151,7 @@ const launchSequenceDuration = (launchStops.length - 1) * launchStopInterval + f
   const mainContent = document.querySelector<HTMLElement>("main");
   const launchStopsContainer = launchSequence?.querySelector<HTMLElement>(".launch-sequence__stops");
   const trainTrack = launchStopsContainer?.querySelector<HTMLElement>(".launch-sequence__train-track");
+  const brandMark = launchSequence?.querySelector<HTMLElement>(".launch-sequence__brand");
   const trackStatesByKey = new Map(
     Array.from(launchSequence?.querySelectorAll<HTMLElement>(".launch-track-state") ?? []).map(
       (trackState) => [trackState.dataset.launchTrackKey, trackState] as const,
@@ -151,8 +162,10 @@ const launchSequenceDuration = (launchStops.length - 1) * launchStopInterval + f
   const launchExitDuration = 360;
   /** 与 global.css 的页眉入场过渡时长保持一致，避免视觉未出现时恢复键盘焦点。 */
   const headerRevealDuration = 440;
-  /** CSS 动画事件不可用时仍按真实序列长度离场，避免兜底计时额外延长启动体验。 */
-  const launchMotionDuration = Number(launchSequence?.dataset.motionDuration ?? "1930");
+  /** CSS 动画事件不可用时仍按真实序列长度离场；保留余量避免兜底与正常品牌定格完成事件竞争。 */
+  const launchMotionDuration = Number(launchSequence?.dataset.motionDuration ?? "2490");
+  /** 正常路径由品牌 Logo 的 animationend 收束，兜底只负责动画事件被浏览器跳过的异常情形。 */
+  const launchFallbackGraceDuration = 600;
   /** 站牌之间的行进间隔来自组件数据，脚本重排后仍与 CSS 总时长保持一致。 */
   const launchStopInterval = Number(launchSequence?.dataset.stopInterval ?? "370");
 
@@ -231,18 +244,41 @@ const launchSequenceDuration = (launchStops.length - 1) * launchStopInterval + f
       }, launchExitDuration);
     };
 
-    /** 只响应最终 article 自身的完成事件，忽略其子元素冒泡的色带与文字动画结束事件。 */
-    const finishAfterFinalStop = (event: AnimationEvent) => {
-      if (!finalStop || event.target !== finalStop || event.animationName !== "launch-final-stop-frame") {
+    /** 品牌定格完成后才离场，让最后看到的画面是稳定的 Fetarute 标志而不是尚未结束的色带。 */
+    const finishAfterBrand = (event: AnimationEvent) => {
+      if (
+        !brandMark ||
+        event.target !== brandMark ||
+        event.animationName !== "launch-brand-arrive"
+      ) {
         return;
       }
 
-      finalStop.removeEventListener("animationend", finishAfterFinalStop);
+      brandMark.removeEventListener("animationend", finishAfterBrand);
       finishLaunch();
     };
 
-    finalStop?.addEventListener("animationend", finishAfterFinalStop);
-    fallbackTimeoutId = window.setTimeout(finishLaunch, launchMotionDuration);
+    /** 只响应最终 article 自身的完成事件，随后让末段色带沿列车方向驶离并进入品牌定格。 */
+    const beginBrandFinale = (event: AnimationEvent) => {
+      if (
+        !launchSequence ||
+        !finalStop ||
+        event.target !== finalStop ||
+        event.animationName !== "launch-final-stop-frame"
+      ) {
+        return;
+      }
+
+      finalStop.removeEventListener("animationend", beginBrandFinale);
+      launchSequence.dataset.state = "branding";
+    };
+
+    brandMark?.addEventListener("animationend", finishAfterBrand);
+    finalStop?.addEventListener("animationend", beginBrandFinale);
+    fallbackTimeoutId = window.setTimeout(
+      finishLaunch,
+      launchMotionDuration + launchFallbackGraceDuration,
+    );
     // 启动层本身是整块跳过热区；按钮只保留键盘与辅助技术可发现的明确操作入口。
     launchSequence?.addEventListener("click", finishLaunch, { once: true });
   }

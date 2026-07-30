@@ -483,6 +483,12 @@ html[data-launching] .launch-sequence {
   opacity: 0;
 }
 
+/* 离场时让定格完成的品牌保持最终姿态，整块启动层才会连同 Logo 平滑淡出至首页。 */
+.launch-sequence[data-state="leaving"] .launch-sequence__brand {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .launch-sequence__stops {
   position: relative;
   width: 100%;
@@ -540,6 +546,34 @@ html[data-launching] .launch-sequence {
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-background) 38%, transparent);
   transform: translateX(calc(-100% - 16px));
   will-change: transform;
+}
+
+/* 品牌定格使用与页面主文字相同的中性色：浅色界面为深标，深色界面为浅标，不为 SVG 复制主题 hex。 */
+.launch-sequence__brand {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding-inline: clamp(20px, 6vw, 112px);
+  color: var(--color-text);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.launch-sequence__brand svg {
+  display: block;
+  width: min(82vw, 630px);
+  max-width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* 宽桌面端稍微放大横向字标，令品牌定格足以承接整屏留白；中小屏继续沿用更克制的基础尺寸。 */
+@media (min-width: 1200px) {
+  .launch-sequence__brand svg {
+    width: min(58vw, 700px);
+  }
 }
 
 .launch-stop {
@@ -746,32 +780,59 @@ html[data-launching] .launch-sequence {
     animation: launch-train-traverse 1880ms var(--motion-launch-traverse) 60ms both;
   }
 
-  .launch-stop[data-launch-final="true"],
-  .launch-stop[data-launch-final="true"] .launch-stop__primary,
-  .launch-stop[data-launch-final="true"] .launch-stop__secondary,
-  .launch-stop[data-launch-final="true"] .launch-stop__route-code,
-  .launch-track-state[data-launch-final="true"] {
-    animation-duration: 820ms;
+  .launch-sequence[data-ready="true"] .launch-stop[data-launch-final="true"],
+  .launch-sequence[data-ready="true"] .launch-stop[data-launch-final="true"] .launch-stop__primary,
+  .launch-sequence[data-ready="true"]
+    .launch-stop[data-launch-final="true"]
+    .launch-stop__secondary,
+  .launch-sequence[data-ready="true"]
+    .launch-stop[data-launch-final="true"]
+    .launch-stop__route-code,
+  .launch-sequence[data-ready="true"] .launch-track-state[data-launch-final="true"] {
+    animation-duration: var(--launch-final-stop-duration);
   }
 
-  .launch-stop[data-launch-final="true"] {
+  .launch-sequence[data-ready="true"] .launch-stop[data-launch-final="true"] {
     animation-name: launch-final-stop-frame;
   }
 
-  .launch-stop[data-launch-final="true"] .launch-stop__primary {
+  .launch-sequence[data-ready="true"] .launch-stop[data-launch-final="true"] .launch-stop__primary {
     animation-name: launch-final-stop-primary;
   }
 
-  .launch-stop[data-launch-final="true"] .launch-stop__secondary {
+  .launch-sequence[data-ready="true"]
+    .launch-stop[data-launch-final="true"]
+    .launch-stop__secondary {
     animation-name: launch-final-stop-secondary;
   }
 
-  .launch-track-state[data-launch-final="true"] {
+  .launch-sequence[data-ready="true"] .launch-track-state[data-launch-final="true"] {
     animation-name: launch-final-track-state;
   }
 
-  .launch-stop[data-launch-final="true"] .launch-stop__route-code {
+  .launch-sequence[data-ready="true"]
+    .launch-stop[data-launch-final="true"]
+    .launch-stop__route-code {
     animation-name: launch-final-stop-code;
+  }
+
+  /* 最终站读完后，本站牌淡出、最后一段色带向列车方向驶离，画面只留下中心 Logo。 */
+  .launch-sequence[data-ready="true"][data-state="branding"]
+    .launch-stop[data-launch-final="true"] {
+    animation: launch-final-stop-depart 220ms var(--motion-launch-exit) both;
+    will-change: transform, opacity;
+  }
+
+  .launch-sequence[data-ready="true"][data-state="branding"]
+    .launch-track-state[data-launch-final="true"] {
+    animation: launch-final-track-depart var(--launch-brand-traverse-duration)
+      var(--motion-launch-traverse) both;
+    will-change: transform;
+  }
+
+  .launch-sequence[data-ready="true"][data-state="branding"] .launch-sequence__brand {
+    animation: launch-brand-arrive var(--launch-brand-duration) var(--motion-launch-enter) both;
+    will-change: transform, opacity;
   }
 }
 
@@ -840,6 +901,40 @@ html[data-launching] .launch-sequence {
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes launch-final-stop-depart {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-0.8dvh);
+  }
+}
+
+@keyframes launch-final-track-depart {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(100%);
+  }
+}
+
+@keyframes launch-brand-arrive {
+  0% {
+    opacity: 0;
+    transform: translateY(1.2dvh);
+  }
+  20%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -1055,5 +1150,9 @@ html[data-launching] .launch-sequence {
     right: 16px;
     bottom: 16px;
     min-height: 44px;
+  }
+
+  .launch-sequence__brand svg {
+    width: min(84vw, 630px);
   }
 }
