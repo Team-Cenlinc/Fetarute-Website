@@ -1,3 +1,5 @@
+import type { RailwayLine } from "@/data/railway";
+
 /**
  * 官网基础信息的单一数据源。
  * 页面 metadata、页眉品牌文案和首页首屏都从这里读取，避免后续改名时散落硬编码。
@@ -25,27 +27,16 @@ export interface PrimaryNavItem {
 }
 
 /**
- * 导视原型使用的一条站名记录。
- * 当前名称只用于建立启动节奏和中英文字重关系，世界观与正式线路确认后在这里整体替换。
- */
-export interface WayfindingStop {
-  /** 站牌主文字，优先用中文维持首屏的本地阅读节奏。 */
-  name: string;
-  /** 站牌副文字，为导视提供紧凑的拉丁文字层级。 */
-  latinName: string;
-}
-
-/**
- * 启动动画和页眉共用的导视原型数据。
- * 集中维护可让后续导入真实线路、站名与配色时不必改动页面或组件结构。
+ * 页眉与启动动画共用的导视展示配置。
+ * 标题保留官网级定位；启动线路只存稳定代码，真实站名、站序和颜色始终从铁路数据模型读取。
  */
 export interface WayfindingPrototype {
   /** 页眉左侧的线路代号，作为视觉定位点而非服务器实时状态。 */
   routeCode: string;
   /** 页眉中展示的线路名称。 */
   routeName: string;
-  /** 启动阶段依次闪现的站名。 */
-  launchStops: readonly WayfindingStop[];
+  /** 启动序列依线路内站序播放的正式线路代码。 */
+  launchLineCode: RailwayLine["code"];
 }
 
 /**
@@ -72,24 +63,11 @@ export const primaryNavItems: PrimaryNavItem[] = [
 ];
 
 /**
- * 首轮导视视觉的可替换内容。
- * 这些是版式原型，不代表已确定的服务器地名或实际铁路线路。
+ * 首页首轮导视展示配置。
+ * 蒲塘桥场景位于大都会线，因而启动序列以 MT 已确认的线路站序播放，避免继续使用虚构站名。
  */
 export const wayfindingPrototype: WayfindingPrototype = {
   routeCode: "FT",
   routeName: "FETARUTE LINE",
-  launchStops: [
-    { name: "起点", latinName: "ORIGIN" },
-    { name: "北港", latinName: "NORTH PIER" },
-    { name: "云杉", latinName: "SPRUCE" },
-    { name: "石桥", latinName: "STONE BRIDGE" },
-    { name: "回声谷", latinName: "ECHO VALLEY" },
-    { name: "信号所", latinName: "SIGNAL BOX" },
-    { name: "河岸", latinName: "RIVERBANK" },
-    { name: "远山", latinName: "DISTANT RIDGE" },
-    { name: "灯塔", latinName: "LANTERN" },
-    { name: "终端", latinName: "TERMINAL" },
-    { name: "钟楼", latinName: "CLOCKTOWER" },
-    { name: "Fetarute", latinName: "NEXT STOP" },
-  ],
+  launchLineCode: "MT",
 };

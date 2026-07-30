@@ -1,7 +1,41 @@
 ---
 import { Picture } from "astro:assets";
 import pyutocorDuskScene from "@/assets/pages/home/pyutocor-dusk.png";
+import {
+  getRailwayLineStops,
+  railwayLineByCode,
+  railwayStationById,
+} from "@/data/railway";
+import { getRailwayLineCssVariableName } from "@/data/palette";
 import { siteInfo, wayfindingPrototype } from "@/data/site";
+
+/**
+ * 启动动画使用首屏配置指定的真实线路。
+ * 线路、车站或站序缺失会在静态构建时中止，避免发布后退回虚构站名或无颜色的导视动画。
+ */
+const launchLine = railwayLineByCode.get(wayfindingPrototype.launchLineCode);
+
+if (!launchLine) {
+  throw new Error(`启动动画引用了未录入的线路 ${wayfindingPrototype.launchLineCode}。`);
+}
+
+/**
+ * 按真实线路站序构造启动站牌。
+ * 每一项同时保留站名、站码和 CSS 线路色 token，使动画不复制任何名称、站序或 Hex 值。
+ */
+const launchStops = getRailwayLineStops(launchLine.code).map((lineStop) => {
+  const station = railwayStationById.get(lineStop.stationId);
+
+  if (!station) {
+    throw new Error(`启动动画无法解析车站 ${lineStop.stationId}。`);
+  }
+
+  return {
+    station,
+    stationIndex: lineStop.stationIndex,
+    lineCssVariable: getRailwayLineCssVariableName(launchLine.code),
+  };
+});
 ---
 
 <section class="launch-sequence" aria-label={`${siteInfo.name} 启动画面`}>
@@ -16,10 +50,15 @@ import { siteInfo, wayfindingPrototype } from "@/data/site";
   <div class="launch-sequence__wash" aria-hidden="true"></div>
   <div class="launch-sequence__stops" aria-hidden="true">
     {
-      wayfindingPrototype.launchStops.map((stop, index) => (
-        <p class="launch-stop" style={`--launch-stop-index: ${index}`}>
-          <span>{stop.name}</span>
-          <small>{stop.latinName}</small>
+      launchStops.map((stop, index) => (
+        <p
+          class="launch-stop"
+          style={`--launch-stop-index: ${index}; --launch-stop-line: var(${stop.lineCssVariable})`}
+        >
+          <span>{stop.station.primaryName}</span>
+          <small>
+            {`${launchLine.code}-${String(stop.stationIndex).padStart(2, "0")} · ${stop.station.stationCode ?? stop.station.secondaryName}`}
+          </small>
         </p>
       ))
     }

@@ -3,6 +3,11 @@ import { Font } from "astro:assets";
 import SiteHeader from "@/components/SiteHeader.astro";
 import LaunchSequence from "@/components/LaunchSequence.astro";
 import "@/styles/global.css";
+import {
+  getInterfacePaletteCssVariables,
+  getRailwayLineCssVariables,
+  interfacePalette,
+} from "@/data/palette";
 import { siteInfo } from "@/data/site";
 
 /**
@@ -29,6 +34,23 @@ const canonicalUrl = new URL(Astro.url.pathname, siteInfo.url);
 const socialImageUrl = new URL(image, siteInfo.url);
 
 /**
+ * 在静态 HTML 的根节点写入界面中性色与线路色。
+ * 浅深色媒体条件只替换无彩基础材料，线路 token 始终来自铁路领域模型以保证导视色跨主题一致。
+ */
+const paletteCss = `
+:root {
+${getInterfacePaletteCssVariables(interfacePalette.light)}
+${getRailwayLineCssVariables()}
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+${getInterfacePaletteCssVariables(interfacePalette.dark)}
+  }
+}
+`;
+
+/**
  * 搜索引擎使用的 WebSite 结构化数据。
  * 与页面 metadata 共用站点数据，避免搜索结果中的名称和网址出现分叉。
  */
@@ -50,8 +72,8 @@ const websiteStructuredData = {
     <meta name="generator" content={Astro.generator} />
     <meta name="application-name" content={siteInfo.name} />
     <meta name="robots" content="index, follow, max-image-preview:large" />
-    <meta name="theme-color" content="#f4f7ef" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content={interfacePalette.light.canvas} media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content={interfacePalette.dark.canvas} media="(prefers-color-scheme: dark)" />
 
     <link rel="canonical" href={canonicalUrl} />
     <link
@@ -94,6 +116,7 @@ const websiteStructuredData = {
     <Font cssVariable="--font-fetarute-sans-tc" />
     <Font cssVariable="--font-fetarute-sans-jp" />
     <Font cssVariable="--font-fetarute-display-italic" />
+    <style is:global set:html={paletteCss}></style>
     <title>{pageTitle}</title>
     {
       showLaunchSequence && (

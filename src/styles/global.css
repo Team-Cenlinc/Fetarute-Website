@@ -3,53 +3,38 @@
   --font-fetarute-ui: var(--font-fetarute-display), var(--font-fetarute-sans-sc);
   /* 英文斜体强调使用独立 Display Italic，并沿用当前简中面孔补齐中文混排。 */
   --font-fetarute-italic: var(--font-fetarute-display-italic), var(--font-fetarute-sans-sc);
-  /* 页面底色以站牌纸张感为基准，为导视信息保留高对比的留白。 */
-  --color-background: #e9ece7;
-  /* 浮动导视牌的实体表面色，避免半透明层压在另一个半透明层上。 */
-  --color-surface: #f8f9f5;
-  /* 主文字使用接近煤黑的冷灰，维持长文本的阅读稳定性。 */
-  --color-text: #17211e;
-  /* 次级文字的低对比层级，用于说明和英文线路名。 */
-  --color-muted: #53615c;
-  /* 导视组件的细分隔色，模拟金属边框但不使用生硬灰线。 */
-  --color-border: rgba(23, 33, 30, 0.17);
-  /* 全站唯一强调色，借由线路色建立可快速识别的方向关系。 */
-  --color-accent: #007b57;
-  /* 强调色的深阶，保证浅色界面中的文字和焦点环仍有足够对比。 */
-  --color-accent-strong: #00563e;
-  /* 浮动导视牌的环境阴影，零垂直偏移使其像悬浮材质而非下坠卡片。 */
-  --shadow-floating: 0 0 42px -18px rgba(12, 22, 18, 0.42);
-  /* 站台场景上的遮罩，保障文案覆盖在实景上时仍保持可读。 */
-  --hero-scrim: rgba(5, 12, 10, 0.52);
+  /* 页面底色来自可导出的冷中性 palette，不能借用任何线路色。 */
+  --color-background: var(--palette-canvas);
+  /* 普通导视牌使用实体表面色，避免半透明层压在另一个半透明层上。 */
+  --color-surface: var(--palette-surface);
+  /* 启动站牌与悬停状态使用比普通表面更高一层的冷中性色。 */
+  --color-surface-raised: var(--palette-surface-raised);
+  /* 主文字与结构轮廓使用高对比无彩色，维持长文本的阅读稳定性。 */
+  --color-text: var(--palette-text);
+  /* 次级文字使用低对比无彩色，保留说明与线路英文名的层级。 */
+  --color-muted: var(--palette-muted);
+  /* 导视组件的细分隔色只表达材料边界，不承载线路方向。 */
+  --color-border: var(--palette-border);
+  /* 全站操作控制使用无彩 action 色，避免误占用某一条线路的识别颜色。 */
+  --color-action: var(--palette-action);
+  /* action 色上的文字和图标由 palette 保证跨主题可读。 */
+  --color-action-text: var(--palette-action-text);
+  /* 图片尚未加载时，首屏场景保持深冷灰而不是带色的品牌底。 */
+  --color-scene-fallback: var(--palette-scene-fallback);
+  /* 首屏实景上的高亮文字与焦点环使用专用浅中性色。 */
+  --color-on-hero: var(--palette-on-hero);
+  /* 浮动导视牌的环境阴影由 palette 随外观模式同步。 */
+  --shadow-floating: var(--palette-floating-shadow);
+  /* 站台场景遮罩使用中性黑灰，保障文案覆盖在实景上时仍可读。 */
+  --hero-scrim: var(--palette-hero-scrim);
+  /* 启动动画站牌以独立阴影维持快速切换时的层级辨识。 */
+  --shadow-launch: var(--palette-launch-shadow);
   /* 方正小圆角用于导视牌和内容模块，避免页面同时出现多套形状语言。 */
   --radius-panel: 10px;
   font-family: var(--font-fetarute-ui);
   color: var(--color-text);
   background: var(--color-background);
   color-scheme: light dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* 暗色底保留站台夜景的深度，同时避免纯黑造成扁平空洞。 */
-    --color-background: #0b1210;
-    /* 暗色导视牌比背景稍亮，给导航提供清晰的实体边界。 */
-    --color-surface: #141e1a;
-    /* 暗色主文字采用微暖白，降低夜间界面的炫光感。 */
-    --color-text: #eef3ed;
-    /* 暗色次级文字保持足够亮度，避免小字号线路信息沉入背景。 */
-    --color-muted: #b4c0ba;
-    /* 暗色导视牌使用半透亮边，模拟反射而不是默认灰色边框。 */
-    --color-border: rgba(231, 244, 236, 0.22);
-    /* 暗色模式仍保留同一条线路色，保持跨主题的品牌识别。 */
-    --color-accent: #41bd8a;
-    /* 深阶强调色在浅色表面或焦点状态中保持稳定对比。 */
-    --color-accent-strong: #7ce0b0;
-    /* 暗色悬浮牌用更大范围的低亮扩散来区分层级。 */
-    --shadow-floating: 0 0 58px -20px rgba(0, 0, 0, 0.76);
-    /* 夜景上的遮罩略加强，保证首屏文字可在明亮站灯前阅读。 */
-    --hero-scrim: rgba(2, 7, 5, 0.66);
-  }
 }
 
 /* 繁中内容沿用当地字形，避免简繁字形与当地阅读习惯不一致。 */
@@ -115,7 +100,7 @@ main {
   background: color-mix(in srgb, var(--color-surface) 92%, transparent);
   box-shadow:
     var(--shadow-floating),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    inset 0 1px 0 color-mix(in srgb, var(--color-on-hero) 45%, transparent);
   backdrop-filter: blur(22px) saturate(130%);
   -webkit-backdrop-filter: blur(22px) saturate(130%);
   transition:
@@ -186,8 +171,8 @@ html[data-launching] .site-header {
   align-self: stretch;
   place-items: center;
   border-inline: 1px solid var(--color-border);
-  background: var(--color-accent);
-  color: #ffffff;
+  background: var(--color-action);
+  color: var(--color-action-text);
   font-size: 17px;
   font-weight: 900;
   letter-spacing: -0.06em;
@@ -221,7 +206,7 @@ html[data-launching] .site-header {
   bottom: 6px;
   left: 13px;
   height: 2px;
-  background: var(--color-accent);
+  background: var(--color-action);
   content: "";
   transform: scaleX(0);
   transform-origin: left;
@@ -230,8 +215,8 @@ html[data-launching] .site-header {
 
 .nav-link:hover,
 .nav-link:focus-visible {
-  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
-  color: var(--color-accent-strong);
+  background: color-mix(in srgb, var(--color-action) 10%, transparent);
+  color: var(--color-text);
   outline: none;
 }
 
@@ -258,7 +243,7 @@ html[data-launching] .site-header {
   isolation: isolate;
   overflow: hidden;
   border-radius: var(--radius-panel);
-  background: #101a18;
+  background: var(--color-scene-fallback);
   padding: clamp(28px, 5vw, 68px);
 }
 
@@ -285,17 +270,24 @@ html[data-launching] .site-header {
 
 .hero-copy {
   max-width: 620px;
-  color: #ffffff;
+  color: var(--color-on-hero);
 }
 
 .server-kicker,
 .section-label {
   margin: 0 0 13px;
-  color: var(--color-accent);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+.server-kicker {
+  color: var(--color-on-hero);
+}
+
+.section-label {
+  color: var(--color-action);
 }
 
 h1,
@@ -328,7 +320,7 @@ h3 {
 .hero-description {
   max-width: 440px;
   margin-bottom: 28px;
-  color: rgba(255, 255, 255, 0.86);
+  color: color-mix(in srgb, var(--color-on-hero) 86%, transparent);
   font-size: clamp(17px, 2vw, 20px);
   line-height: 1.6;
 }
@@ -359,27 +351,27 @@ h3 {
 }
 
 .button-primary {
-  background: var(--color-accent);
-  color: #ffffff;
+  background: var(--color-action);
+  color: var(--color-action-text);
 }
 
 .button-primary:hover,
 .button-primary:focus-visible {
-  background: var(--color-accent-strong);
-  outline: 2px solid #ffffff;
+  background: color-mix(in srgb, var(--color-action) 84%, var(--color-background));
+  outline: 2px solid var(--color-on-hero);
   outline-offset: 3px;
 }
 
 .button-secondary {
-  border-color: rgba(255, 255, 255, 0.55);
-  background: rgba(7, 16, 13, 0.34);
-  color: #ffffff;
+  border-color: color-mix(in srgb, var(--color-on-hero) 55%, transparent);
+  background: color-mix(in srgb, var(--color-scene-fallback) 34%, transparent);
+  color: var(--color-on-hero);
 }
 
 .button-secondary:hover,
 .button-secondary:focus-visible {
-  background: rgba(255, 255, 255, 0.16);
-  outline: 2px solid #ffffff;
+  background: color-mix(in srgb, var(--color-on-hero) 16%, transparent);
+  outline: 2px solid var(--color-on-hero);
   outline-offset: 3px;
 }
 
@@ -460,7 +452,7 @@ h3 {
 }
 
 .news-list time {
-  color: var(--color-accent-strong);
+  color: var(--color-action);
   font-size: 14px;
   font-weight: 900;
 }
@@ -472,7 +464,7 @@ h3 {
   display: none;
   isolation: isolate;
   overflow: hidden;
-  background: #f4f5ef;
+  background: var(--color-background);
 }
 
 html[data-launching] .launch-sequence {
@@ -496,7 +488,7 @@ html[data-launching] .launch-sequence {
 
 .launch-sequence__wash {
   z-index: -1;
-  background: #f4f5ef;
+  background: var(--color-background);
 }
 
 .launch-sequence__stops {
@@ -513,11 +505,19 @@ html[data-launching] .launch-sequence {
   align-items: stretch;
   margin: 0;
   overflow: hidden;
-  border: 7px solid #17211e;
-  background: #f6f7f3;
-  box-shadow: 0 16px 45px rgba(10, 20, 16, 0.16);
-  color: #17211e;
+  border: 7px solid var(--color-text);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-launch);
+  color: var(--color-text);
   opacity: 0;
+}
+
+.launch-stop::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 7px;
+  background: var(--launch-stop-line);
+  content: "";
 }
 
 .launch-stop span {
@@ -534,9 +534,9 @@ html[data-launching] .launch-sequence {
   display: grid;
   min-width: min(34vw, 220px);
   align-items: center;
-  border-left: 7px solid #17211e;
-  background: var(--color-accent);
-  color: #ffffff;
+  border-left: 7px solid var(--color-text);
+  background: var(--color-action);
+  color: var(--color-action-text);
   font-size: clamp(9px, 1.5vw, 13px);
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -547,10 +547,10 @@ html[data-launching] .launch-sequence {
   position: absolute;
   right: 24px;
   bottom: 22px;
-  border: 1px solid rgba(23, 33, 30, 0.35);
+  border: 1px solid color-mix(in srgb, var(--color-text) 35%, transparent);
   border-radius: 4px;
-  background: rgba(246, 247, 243, 0.88);
-  color: #17211e;
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  color: var(--color-text);
   font: inherit;
   font-size: 13px;
   font-weight: 800;
@@ -562,31 +562,13 @@ html[data-launching] .launch-sequence {
 
 .launch-sequence__skip:hover,
 .launch-sequence__skip:focus-visible {
-  background: #ffffff;
-  outline: 2px solid var(--color-accent);
+  background: var(--color-surface-raised);
+  outline: 2px solid var(--color-action);
   outline-offset: 3px;
 }
 
 .launch-sequence__skip:active {
   transform: scale(0.97);
-}
-
-@media (prefers-color-scheme: dark) {
-  .launch-sequence,
-  .launch-sequence__wash {
-    background: #090d0c;
-  }
-
-  .launch-sequence__skip {
-    border-color: rgba(255, 255, 255, 0.28);
-    background: rgba(18, 28, 24, 0.88);
-    color: #f3f7f2;
-  }
-
-  .launch-sequence__skip:hover,
-  .launch-sequence__skip:focus-visible {
-    background: #202c27;
-  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
