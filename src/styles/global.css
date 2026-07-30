@@ -29,6 +29,12 @@
   --hero-scrim: var(--palette-hero-scrim);
   /* 启动动画站牌以独立阴影维持快速切换时的层级辨识。 */
   --shadow-launch: var(--palette-launch-shadow);
+  /* 全屏站牌以快速起势、稳定停留收束信息，避免首屏快闪牺牲名称和线路码的辨识。 */
+  --motion-launch-enter: cubic-bezier(0.23, 1, 0.32, 1);
+  /* 线路色带横跨视口时采用对称运动，明确表达它是路线而不是一条装饰边线。 */
+  --motion-launch-traverse: cubic-bezier(0.77, 0, 0.175, 1);
+  /* 启动层退出保持干净且可中断，跳过动画时从当前画面平滑放行首页。 */
+  --motion-launch-exit: cubic-bezier(0.23, 1, 0.32, 1);
   /* 方正小圆角用于导视牌和内容模块，避免页面同时出现多套形状语言。 */
   --radius-panel: 10px;
   font-family: var(--font-fetarute-ui);
@@ -150,8 +156,7 @@ html[data-launching] .site-header {
 .brand-copy small,
 .route-code,
 .server-kicker,
-.section-label,
-.launch-stop small {
+.section-label {
   font-family: "SFMono-Regular", "Cascadia Mono", "Noto Sans Mono CJK SC", monospace;
 }
 
@@ -463,182 +468,453 @@ h3 {
   inset: 0;
   display: none;
   isolation: isolate;
-  overflow: hidden;
+  overflow: clip;
   background: var(--color-background);
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity 360ms var(--motion-launch-exit);
 }
 
 html[data-launching] .launch-sequence {
   display: grid;
-  place-items: center;
 }
 
-.launch-sequence__scene,
-.launch-sequence__wash {
-  position: absolute;
-  z-index: -2;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.launch-sequence__scene {
-  object-fit: cover;
+.launch-sequence[data-state="leaving"] {
   opacity: 0;
-}
-
-.launch-sequence__wash {
-  z-index: -1;
-  background: var(--color-background);
 }
 
 .launch-sequence__stops {
   position: relative;
-  width: min(680px, calc(100% - 48px));
-  min-height: 118px;
+  width: 100%;
+  min-height: 100dvh;
+}
+
+/* 常驻轨道与进度列车共享站牌网格，使路线色始终存在、列车始终有轨可走。 */
+.launch-sequence__track,
+.launch-sequence__train-track {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) clamp(48px, 5.75vh, 62px) clamp(230px, 34dvh, 400px);
+  overflow: clip;
+  pointer-events: none;
+}
+
+.launch-sequence__track {
+  z-index: 0;
+}
+
+.launch-sequence__train-track {
+  z-index: 2;
+}
+
+/* 每个状态对应一座站的线路色；新状态覆盖旧状态，轨道在换色时不会出现空白帧。 */
+.launch-track-state {
+  z-index: var(--launch-track-layer, 0);
+  grid-row: 2;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(var(--launch-route-count), minmax(0, 1fr));
+  opacity: 0;
+}
+
+.launch-track-state[data-launch-track-initial="true"] {
+  opacity: 1;
+}
+
+.launch-track-segment {
+  display: block;
+  background: var(--launch-route-color);
+}
+
+/* 列车使用当前背景上的主文字色；深浅外观下都作为清晰的导视前景，而非新增一条无语义颜色。 */
+.launch-sequence__train {
+  grid-row: 2;
+  align-self: center;
+  width: clamp(6.5rem, 14vw, 13.5rem);
+  height: calc(100% + 12px);
+  background:
+    linear-gradient(var(--color-background) 0 0) 32% center / 1rem 30% no-repeat,
+    linear-gradient(var(--color-background) 0 0) 61% center / 1rem 30% no-repeat,
+    var(--color-text);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-background) 38%, transparent);
+  transform: translateX(calc(-100% - 16px));
+  will-change: transform;
 }
 
 .launch-stop {
   position: absolute;
+  z-index: 1;
   inset: 0;
   display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: stretch;
+  grid-template-rows: minmax(0, 1fr) clamp(48px, 5.75vh, 62px) clamp(230px, 34dvh, 400px);
   margin: 0;
-  overflow: hidden;
-  border: 7px solid var(--color-text);
-  background: var(--color-surface-raised);
-  box-shadow: var(--shadow-launch);
+  overflow: clip;
+  background: transparent;
   color: var(--color-text);
   opacity: 0;
 }
 
-.launch-stop::before {
-  position: absolute;
-  inset: 0 0 auto;
-  height: 7px;
-  background: var(--launch-stop-line);
-  content: "";
+.launch-stop__copy {
+  grid-row: 1;
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: end;
+  min-width: 0;
+  padding-bottom: clamp(22px, 4.3vh, 46px);
+  padding-inline: clamp(20px, 6vw, 112px);
 }
 
-.launch-stop span {
-  display: grid;
-  align-items: center;
-  padding: 15px clamp(16px, 4vw, 34px);
-  font-size: clamp(34px, 7vw, 62px);
+.launch-stop__primary,
+.launch-stop__secondary,
+.launch-stop__route-code {
+  font-family: var(--font-fetarute-display), var(--font-fetarute-sans-sc);
+  font-optical-sizing: auto;
+}
+
+.launch-stop__primary {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: clamp(5.4rem, 18.75vw, 22.5rem);
   font-weight: 850;
-  letter-spacing: -0.06em;
-  line-height: 1;
+  letter-spacing: -0.075em;
+  line-height: 0.94;
+  text-align: center;
+  text-overflow: clip;
+  white-space: nowrap;
 }
 
-.launch-stop small {
+.launch-stop[data-primary-name-length="5"] .launch-stop__primary,
+.launch-stop[data-primary-name-length="6"] .launch-stop__primary {
+  font-size: clamp(4.6rem, 15.5vw, 18.6rem);
+}
+
+.launch-stop[data-primary-name-length="3"] .launch-stop__primary,
+.launch-stop[data-primary-name-length="4"] .launch-stop__primary {
+  font-size: clamp(5rem, 16.75vw, 20rem);
+}
+
+.launch-stop__secondary {
+  max-width: 100%;
+  margin-top: clamp(10px, 1.65vw, 32px);
+  color: var(--color-text);
+  font-size: clamp(1.8rem, 6.67vw, 8rem);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* 长英文站名缩小一个信息层级而不是被裁切，保持中英文名称仍可作为同一站的双语确认。 */
+.launch-stop[data-secondary-name-length="15"] .launch-stop__secondary,
+.launch-stop[data-secondary-name-length="16"] .launch-stop__secondary,
+.launch-stop[data-secondary-name-length="17"] .launch-stop__secondary,
+.launch-stop[data-secondary-name-length="18"] .launch-stop__secondary,
+.launch-stop[data-secondary-name-length="19"] .launch-stop__secondary,
+.launch-stop[data-secondary-name-length="20"] .launch-stop__secondary,
+.launch-stop[data-secondary-name-length="21"] .launch-stop__secondary,
+.launch-stop[data-secondary-name-length="22"] .launch-stop__secondary,
+.launch-stop[data-secondary-name-length="23"] .launch-stop__secondary,
+.launch-stop[data-secondary-name-length="24"] .launch-stop__secondary {
+  font-size: clamp(1.55rem, 4.9vw, 5.9rem);
+  letter-spacing: -0.045em;
+}
+
+.launch-stop__route-codes {
+  grid-row: 3;
   display: grid;
-  min-width: min(34vw, 220px);
+  grid-template-columns: repeat(var(--launch-route-count), minmax(0, 1fr));
+  align-items: start;
+  padding-top: clamp(28px, 5.3vh, 57px);
+}
+
+.launch-stop__route-code {
+  position: relative;
+  display: inline-grid;
+  width: clamp(9rem, 11.93vw, 14.3rem);
+  min-height: clamp(4.25rem, 8.06vh, 5.44rem);
+  justify-self: center;
+  grid-auto-columns: max-content;
+  grid-auto-flow: column;
+  /* 线路前缀、连接符与站序在色块内共享几何中心；Noto Sans Display 的基线偏高，不能用 baseline 对齐。 */
   align-items: center;
-  border-left: 7px solid var(--color-text);
-  background: var(--color-action);
-  color: var(--color-action-text);
-  font-size: clamp(9px, 1.5vw, 13px);
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  padding-inline: clamp(12px, 3vw, 24px);
+  justify-content: center;
+  column-gap: 0.03em;
+  background: var(--launch-route-color);
+  color: var(--launch-route-ink, var(--color-scene-fallback));
+  font-family: var(--font-fetarute-display), var(--font-fetarute-sans-sc);
+  font-size: clamp(2.3rem, 3.34vw, 4rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 1;
+  /* 微量下沉抵消 Display 字形较高的视觉重心，使 DS-04 看起来位于色块正中。 */
+  padding-top: 0.07em;
+}
+
+/* 路线代码拆分排版：线路前缀、连接符与站序各自稳定，避免紧缩字距吞掉 DS-04 的结构。 */
+.launch-stop__route-code-line,
+.launch-stop__route-code-index {
+  display: block;
+}
+
+.launch-stop__route-code-separator {
+  display: block;
+  font-weight: 500;
+  letter-spacing: 0;
+  opacity: 0.74;
+  transform: translateY(-0.02em);
+}
+
+/* 细连接线把满宽色带与对应编号锁在同一列，换乘站不会退化成两块彼此无关的彩色装饰。 */
+.launch-stop__route-code::before {
+  position: absolute;
+  z-index: -1;
+  top: calc(-1 * clamp(28px, 5.3vh, 57px));
+  left: 50%;
+  width: 2px;
+  height: clamp(28px, 5.3vh, 57px);
+  background: var(--launch-route-color);
+  content: "";
+  transform: translateX(-50%);
 }
 
 .launch-sequence__skip {
   position: absolute;
   right: 24px;
   bottom: 22px;
-  border: 1px solid color-mix(in srgb, var(--color-text) 35%, transparent);
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
-  color: var(--color-text);
+  border: 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--color-text) 58%, transparent);
+  cursor: inherit;
   font: inherit;
-  font-size: 13px;
-  font-weight: 800;
-  padding: 10px 13px;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.035em;
+  line-height: 1.4;
+  padding: 0;
   transition:
-    background-color 180ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+    color 180ms var(--motion-launch-enter),
+    opacity 180ms var(--motion-launch-enter);
 }
 
 .launch-sequence__skip:hover,
 .launch-sequence__skip:focus-visible {
-  background: var(--color-surface-raised);
+  color: var(--color-text);
   outline: 2px solid var(--color-action);
   outline-offset: 3px;
 }
 
 .launch-sequence__skip:active {
-  transform: scale(0.97);
+  opacity: 0.68;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .launch-sequence__scene {
-    animation: launch-scene-in 560ms cubic-bezier(0.22, 1, 0.36, 1) 960ms both;
+  .launch-sequence[data-ready="true"] .launch-stop {
+    animation: launch-stop-frame 500ms var(--motion-launch-enter) var(--launch-stop-delay) both;
+    will-change: opacity;
   }
 
-  .launch-sequence__wash {
-    animation: launch-wash-out 520ms cubic-bezier(0.22, 1, 0.36, 1) 1010ms both;
+  .launch-sequence[data-ready="true"] .launch-stop__primary {
+    animation: launch-stop-primary 430ms var(--motion-launch-enter)
+      calc(var(--launch-stop-delay) + 70ms) both;
+    will-change: transform, opacity;
   }
 
-  .launch-stop {
-    animation: launch-stop-flash 260ms cubic-bezier(0.22, 1, 0.36, 1)
-      calc(var(--launch-stop-index) * 86ms) both;
+  .launch-sequence[data-ready="true"] .launch-track-state {
+    animation: launch-track-state 500ms var(--motion-launch-traverse) var(--launch-stop-delay)
+      forwards;
+    will-change: opacity;
   }
 
-  .launch-sequence[data-state="leaving"] {
-    animation: launch-overlay-out 440ms cubic-bezier(0.55, 0, 1, 0.45) both;
+  .launch-sequence[data-ready="true"] .launch-stop__route-code {
+    animation: launch-stop-code 400ms var(--motion-launch-enter)
+      calc(var(--launch-stop-delay) + var(--launch-route-delay) + 50ms) both;
+    will-change: transform, opacity;
+  }
+
+  .launch-sequence[data-ready="true"] .launch-stop__secondary {
+    animation: launch-stop-secondary 380ms var(--motion-launch-enter)
+      calc(var(--launch-stop-delay) + 100ms) both;
+    will-change: transform, opacity;
+  }
+
+  .launch-sequence[data-ready="true"] .launch-sequence__train {
+    animation: launch-train-traverse 1880ms var(--motion-launch-traverse) 60ms both;
+  }
+
+  .launch-stop[data-launch-final="true"],
+  .launch-stop[data-launch-final="true"] .launch-stop__primary,
+  .launch-stop[data-launch-final="true"] .launch-stop__secondary,
+  .launch-stop[data-launch-final="true"] .launch-stop__route-code,
+  .launch-track-state[data-launch-final="true"] {
+    animation-duration: 820ms;
+  }
+
+  .launch-stop[data-launch-final="true"] {
+    animation-name: launch-final-stop-frame;
+  }
+
+  .launch-stop[data-launch-final="true"] .launch-stop__primary {
+    animation-name: launch-final-stop-primary;
+  }
+
+  .launch-stop[data-launch-final="true"] .launch-stop__secondary {
+    animation-name: launch-final-stop-secondary;
+  }
+
+  .launch-track-state[data-launch-final="true"] {
+    animation-name: launch-final-track-state;
+  }
+
+  .launch-stop[data-launch-final="true"] .launch-stop__route-code {
+    animation-name: launch-final-stop-code;
   }
 }
 
-@keyframes launch-stop-flash {
+@keyframes launch-stop-frame {
   0% {
     opacity: 0;
-    transform: translateY(8px) scale(0.985);
+    transform: translateY(1dvh);
   }
-  18%,
-  64% {
+  14%,
+  82% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-1dvh);
+  }
+}
+
+@keyframes launch-train-traverse {
+  0% {
+    transform: translateX(calc(-100% - 16px));
+  }
+  88% {
+    transform: translateX(calc(100vw - 12px));
+  }
+  100% {
+    transform: translateX(calc(100vw + 16px));
+  }
+}
+
+@keyframes launch-stop-primary {
+  0% {
+    opacity: 0;
+    transform: translateY(2.5dvh) scale(0.99);
+  }
+  20%,
+  86% {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translateY(-7px) scale(1.01);
+    transform: translateY(-0.7dvh) scale(1.002);
   }
 }
 
-@keyframes launch-scene-in {
-  from {
+@keyframes launch-final-stop-frame {
+  0% {
     opacity: 0;
-    transform: scale(1.035);
+    transform: translateY(1dvh);
   }
-  to {
-    opacity: 0.96;
-    transform: scale(1);
+  14%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes launch-wash-out {
-  from {
+@keyframes launch-final-stop-primary {
+  0% {
+    opacity: 0;
+    transform: translateY(2.5dvh) scale(0.99);
+  }
+  20%,
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes launch-stop-secondary {
+  0% {
+    opacity: 0;
+    transform: translateY(1.2dvh);
+  }
+  22%,
+  86% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-0.5dvh);
+  }
+}
+
+@keyframes launch-final-stop-secondary {
+  0% {
+    opacity: 0;
+    transform: translateY(1.2dvh);
+  }
+  22%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes launch-track-state {
+  0% {
     opacity: 1;
   }
-  to {
-    opacity: 0.1;
-  }
-}
-
-@keyframes launch-overlay-out {
-  from {
+  82% {
     opacity: 1;
   }
-  to {
+  100% {
     opacity: 0;
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .launch-sequence[data-state="leaving"] {
+@keyframes launch-final-track-state {
+  0%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes launch-stop-code {
+  0% {
     opacity: 0;
-    transition: opacity 120ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateY(-0.75rem);
+  }
+  24%,
+  84% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-0.3rem);
+  }
+}
+
+@keyframes launch-final-stop-code {
+  0% {
+    opacity: 0;
+    transform: translateY(-0.75rem);
+  }
+  24%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -722,23 +998,62 @@ html[data-launching] .launch-sequence {
     grid-template-columns: 1fr;
   }
 
-  .launch-sequence__stops {
-    min-height: 96px;
+  .launch-stop,
+  .launch-sequence__track,
+  .launch-sequence__train-track {
+    grid-template-rows: minmax(0, 1fr) 48px clamp(320px, 45dvh, 420px);
   }
 
-  .launch-stop {
-    border-width: 5px;
+  .launch-stop__copy {
+    padding-inline: 20px;
+    padding-bottom: clamp(18px, 3.6vh, 30px);
   }
 
-  .launch-stop small {
-    min-width: 37%;
-    border-left-width: 5px;
-    font-size: 9px;
-    letter-spacing: 0.07em;
+  .launch-stop__primary {
+    font-size: clamp(6.25rem, 40vw, 11rem);
+  }
+
+  .launch-stop[data-primary-name-length="3"] .launch-stop__primary,
+  .launch-stop[data-primary-name-length="4"] .launch-stop__primary {
+    font-size: clamp(4.75rem, 30vw, 9rem);
+  }
+
+  .launch-stop[data-primary-name-length="5"] .launch-stop__primary,
+  .launch-stop[data-primary-name-length="6"] .launch-stop__primary {
+    font-size: clamp(3.5rem, 16vw, 7.25rem);
+  }
+
+  .launch-stop__secondary {
+    margin-top: clamp(8px, 2.5vw, 14px);
+    font-size: clamp(1.65rem, 9vw, 3rem);
+  }
+
+  .launch-stop[data-secondary-name-length="15"] .launch-stop__secondary,
+  .launch-stop[data-secondary-name-length="16"] .launch-stop__secondary,
+  .launch-stop[data-secondary-name-length="17"] .launch-stop__secondary,
+  .launch-stop[data-secondary-name-length="18"] .launch-stop__secondary,
+  .launch-stop[data-secondary-name-length="19"] .launch-stop__secondary,
+  .launch-stop[data-secondary-name-length="20"] .launch-stop__secondary,
+  .launch-stop[data-secondary-name-length="21"] .launch-stop__secondary,
+  .launch-stop[data-secondary-name-length="22"] .launch-stop__secondary,
+  .launch-stop[data-secondary-name-length="23"] .launch-stop__secondary,
+  .launch-stop[data-secondary-name-length="24"] .launch-stop__secondary {
+    font-size: clamp(1.35rem, 7.5vw, 2.4rem);
+  }
+
+  .launch-stop__route-codes {
+    padding-top: clamp(24px, 4vh, 32px);
+  }
+
+  .launch-stop__route-code {
+    width: min(100%, 9.5rem);
+    min-height: 3.75rem;
+    font-size: clamp(1.6rem, 8vw, 2.2rem);
   }
 
   .launch-sequence__skip {
     right: 16px;
     bottom: 16px;
+    min-height: 44px;
   }
 }

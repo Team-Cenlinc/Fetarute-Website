@@ -1,12 +1,11 @@
 ---
-import { Picture } from "astro:assets";
-import pyutocorDuskScene from "@/assets/pages/home/pyutocor-dusk.png";
 import {
   getRailwayLineStops,
+  getRailwayStationLineServices,
   railwayLineByCode,
   railwayStationById,
 } from "@/data/railway";
-import { getRailwayLineCssVariableName } from "@/data/palette";
+import { getRailwayLineCssVariableName, getRailwayLineTextColor } from "@/data/palette";
 import { siteInfo, wayfindingPrototype } from "@/data/site";
 
 /**
@@ -20,8 +19,21 @@ if (!launchLine) {
 }
 
 /**
+ * 为导视牌中的中文间隔号增加呼吸空间，而不改变铁路数据中的规范站名。
+ * 站名仍以 railway.ts 的原始值参与关联、长度分档和未来搜索；这里只处理视觉排版。
+ */
+function formatWayfindingPrimaryName(name: string): string {
+  return name.replaceAll("·", " · ");
+}
+
+/** 各站闪现的间隔，与 global.css 中启动帧的节奏共同定义总播放时长。 */
+const launchStopInterval = 370;
+/** 最终站在列车驶离后保留的时长；它也是全屏启动层的收束锚点。 */
+const finalStopDuration = 820;
+
+/**
  * 按真实线路站序构造启动站牌。
- * 每一项同时保留站名、站码和 CSS 线路色 token，使动画不复制任何名称、站序或 Hex 值。
+ * 候选站来自首屏线路，客户端会在播放前随机重排；每一帧仍读取本站全部服务线路，确保换乘站能同时展示正确的色带和线路站序。
  */
 const launchStops = getRailwayLineStops(launchLine.code).map((lineStop) => {
   const station = railwayStationById.get(lineStop.stationId);
@@ -30,65 +42,183 @@ const launchStops = getRailwayLineStops(launchLine.code).map((lineStop) => {
     throw new Error(`启动动画无法解析车站 ${lineStop.stationId}。`);
   }
 
+  const lineServices = getRailwayStationLineServices(station.id);
+
+  if (lineServices.length === 0) {
+    throw new Error(`启动动画无法解析车站 ${station.id} 的线路服务。`);
+  }
+
   return {
     station,
-    stationIndex: lineStop.stationIndex,
-    lineCssVariable: getRailwayLineCssVariableName(launchLine.code),
+    primaryNameLength: Array.from(station.primaryName).length,
+    secondaryNameLength: Array.from(station.secondaryName).length,
+    lineServices: lineServices.map((service, serviceIndex) => ({
+      lineCode: service.line.code,
+      stationIndexLabel: String(service.stationIndex).padStart(2, "0"),
+      lineCssVariable: getRailwayLineCssVariableName(service.line.code),
+      lineInk: getRailwayLineTextColor(service.line.color),
+      sequenceDelay: serviceIndex * 72,
+    })),
   };
 });
+
+/** 由当前线路内的站数推导最迟离场点，数据增减时不会让兜底计时变长。 */
+const launchSequenceDuration = (launchStops.length - 1) * launchStopInterval + finalStopDuration;
 ---
 
-<section class="launch-sequence" aria-label={`${siteInfo.name} 启动画面`}>
-  <Picture
-    class="launch-sequence__scene"
-    src={pyutocorDuskScene}
-    formats={["avif"]}
-    fallbackFormat="webp"
-    alt=""
-    aria-hidden="true"
-  />
-  <div class="launch-sequence__wash" aria-hidden="true"></div>
+<section
+  class="launch-sequence"
+  aria-label={`${siteInfo.name} 启动画面`}
+  data-motion-duration={launchSequenceDuration}
+  data-stop-interval={launchStopInterval}
+>
   <div class="launch-sequence__stops" aria-hidden="true">
+    <div class="launch-sequence__track">
+      {
+        launchStops.map((stop, index) => (
+          <div
+            class="launch-track-state"
+            data-launch-track-key={stop.station.id}
+            data-launch-track-initial={index === 0 ? "true" : undefined}
+            style={`--launch-route-count: ${stop.lineServices.length}`}
+          >
+            {
+              stop.lineServices.map((service) => (
+                <span
+                  class="launch-track-segment"
+                  style={`--launch-route-color: var(${service.lineCssVariable})`}
+                ></span>
+              ))
+            }
+          </div>
+        ))
+      }
+    </div>
     {
       launchStops.map((stop, index) => (
-        <p
+        <article
           class="launch-stop"
-          style={`--launch-stop-index: ${index}; --launch-stop-line: var(${stop.lineCssVariable})`}
+          data-launch-track-key={stop.station.id}
+          data-primary-name-length={stop.primaryNameLength}
+          data-secondary-name-length={stop.secondaryNameLength}
+          style={`--launch-stop-delay: ${index * launchStopInterval}ms; --launch-route-count: ${stop.lineServices.length}`}
         >
-          <span>{stop.station.primaryName}</span>
-          <small>
-            {`${launchLine.code}-${String(stop.stationIndex).padStart(2, "0")} · ${stop.station.stationCode ?? stop.station.secondaryName}`}
-          </small>
-        </p>
+          <div class="launch-stop__copy">
+            <span class="launch-stop__primary">
+              {formatWayfindingPrimaryName(stop.station.primaryName)}
+            </span>
+            <span class="launch-stop__secondary">{stop.station.secondaryName}</span>
+          </div>
+          <div class="launch-stop__route-codes">
+            {
+              stop.lineServices.map((service) => (
+                <span
+                  class="launch-stop__route-code"
+                  style={`--launch-route-color: var(${service.lineCssVariable}); --launch-route-ink: ${service.lineInk}; --launch-route-delay: ${service.sequenceDelay}ms`}
+                >
+                  <span class="launch-stop__route-code-line">{service.lineCode}</span>
+                  <span class="launch-stop__route-code-separator" aria-hidden="true">-</span>
+                  <span class="launch-stop__route-code-index">{service.stationIndexLabel}</span>
+                </span>
+              ))
+            }
+          </div>
+        </article>
       ))
     }
+    <div class="launch-sequence__train-track" aria-hidden="true">
+      <span class="launch-sequence__train"></span>
+    </div>
   </div>
-  <button class="launch-sequence__skip" type="button">跳过启动动画</button>
+  <button class="launch-sequence__skip" type="button" aria-label="跳过启动动画">
+    <span aria-hidden="true">点击任意处跳过动画</span>
+  </button>
 </section>
 
 <script>
   const launchSequence = document.querySelector<HTMLElement>(".launch-sequence");
   const siteHeader = document.querySelector<HTMLElement>(".site-header");
+  const mainContent = document.querySelector<HTMLElement>("main");
+  const launchStopsContainer = launchSequence?.querySelector<HTMLElement>(".launch-sequence__stops");
+  const trainTrack = launchStopsContainer?.querySelector<HTMLElement>(".launch-sequence__train-track");
+  const trackStatesByKey = new Map(
+    Array.from(launchSequence?.querySelectorAll<HTMLElement>(".launch-track-state") ?? []).map(
+      (trackState) => [trackState.dataset.launchTrackKey, trackState] as const,
+    ),
+  );
 
+  /** 与 global.css 的启动层离场过渡时长保持一致，确保移除节点前完整淡出当前导视帧。 */
+  const launchExitDuration = 360;
   /** 与 global.css 的页眉入场过渡时长保持一致，避免视觉未出现时恢复键盘焦点。 */
   const headerRevealDuration = 440;
+  /** CSS 动画事件不可用时仍按真实序列长度离场，避免兜底计时额外延长启动体验。 */
+  const launchMotionDuration = Number(launchSequence?.dataset.motionDuration ?? "1930");
+  /** 站牌之间的行进间隔来自组件数据，脚本重排后仍与 CSS 总时长保持一致。 */
+  const launchStopInterval = Number(launchSequence?.dataset.stopInterval ?? "370");
+
+  /**
+   * 用 Fisher-Yates 打乱启动站牌，保留每次播放的全部已录入车站但不把它伪装成地理线路方向。
+   * 这是感知节奏的随机化，不承担路由或运营数据含义，因此无需可复现的随机种子。
+   */
+  const shuffleLaunchStops = (stops: HTMLElement[]): HTMLElement[] => {
+    const shuffledStops = [...stops];
+
+    for (let index = shuffledStops.length - 1; index > 0; index -= 1) {
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [shuffledStops[index], shuffledStops[randomIndex]] = [
+        shuffledStops[randomIndex],
+        shuffledStops[index],
+      ];
+    }
+
+    return shuffledStops;
+  };
 
   if (document.documentElement.dataset.launchSkipped === "true") {
     launchSequence?.remove();
   } else {
-    siteHeader?.setAttribute("inert", "");
+    const shuffledStops = shuffleLaunchStops(
+      Array.from(launchSequence?.querySelectorAll<HTMLElement>(".launch-stop") ?? []),
+    );
+    const finalStop = shuffledStops.at(-1);
 
-    const skipButton = launchSequence?.querySelector<HTMLButtonElement>(".launch-sequence__skip");
+    shuffledStops.forEach((stop, index) => {
+      const trackState = trackStatesByKey.get(stop.dataset.launchTrackKey);
+
+      stop.removeAttribute("data-launch-final");
+      stop.style.setProperty("--launch-stop-delay", `${index * launchStopInterval}ms`);
+      launchStopsContainer?.insertBefore(stop, trainTrack ?? null);
+
+      trackState?.removeAttribute("data-launch-final");
+      trackState?.removeAttribute("data-launch-track-initial");
+      trackState?.style.setProperty("--launch-stop-delay", `${index * launchStopInterval}ms`);
+      trackState?.style.setProperty("--launch-track-layer", String(index + 1));
+      if (index === 0) {
+        trackState?.setAttribute("data-launch-track-initial", "true");
+      }
+    });
+    finalStop?.setAttribute("data-launch-final", "true");
+    trackStatesByKey.get(finalStop?.dataset.launchTrackKey)?.setAttribute("data-launch-final", "true");
+    // 完成随机重排后才开放 CSS 动画，避免首帧以数据录入顺序闪现。
+    launchSequence?.setAttribute("data-ready", "true");
+
+    siteHeader?.setAttribute("inert", "");
+    mainContent?.setAttribute("inert", "");
+
+    let fallbackTimeoutId: number | undefined;
     let hasFinished = false;
 
     /**
-     * 先移除启动状态让页眉淡入，再等待同样时长恢复 inert，确保键盘与辅助技术状态和视觉状态一致。
-     * 会话级的播放判断已在布局头部完成，这里只负责当前一次序列的离场。
+     * 最终站牌完成后直接淡出至首页；跳过时也从当前画面离场，避免完整序列从第一帧重播。
+     * 会话级的播放判断已在布局头部完成，这里只负责当前一次序列的离场与焦点边界恢复。
      */
     const finishLaunch = () => {
       if (!launchSequence || hasFinished) return;
 
       hasFinished = true;
+      if (fallbackTimeoutId !== undefined) {
+        window.clearTimeout(fallbackTimeoutId);
+      }
       launchSequence.dataset.state = "leaving";
 
       window.setTimeout(() => {
@@ -96,11 +226,24 @@ const launchStops = getRailwayLineStops(launchLine.code).map((lineStop) => {
         launchSequence.remove();
         window.setTimeout(() => {
           siteHeader?.removeAttribute("inert");
+          mainContent?.removeAttribute("inert");
         }, headerRevealDuration);
-      }, headerRevealDuration);
+      }, launchExitDuration);
     };
 
-    window.setTimeout(finishLaunch, 1540);
-    skipButton?.addEventListener("click", finishLaunch, { once: true });
+    /** 只响应最终 article 自身的完成事件，忽略其子元素冒泡的色带与文字动画结束事件。 */
+    const finishAfterFinalStop = (event: AnimationEvent) => {
+      if (!finalStop || event.target !== finalStop || event.animationName !== "launch-final-stop-frame") {
+        return;
+      }
+
+      finalStop.removeEventListener("animationend", finishAfterFinalStop);
+      finishLaunch();
+    };
+
+    finalStop?.addEventListener("animationend", finishAfterFinalStop);
+    fallbackTimeoutId = window.setTimeout(finishLaunch, launchMotionDuration);
+    // 启动层本身是整块跳过热区；按钮只保留键盘与辅助技术可发现的明确操作入口。
+    launchSequence?.addEventListener("click", finishLaunch, { once: true });
   }
 </script>

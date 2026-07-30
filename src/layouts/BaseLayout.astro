@@ -34,6 +34,12 @@ const canonicalUrl = new URL(Astro.url.pathname, siteInfo.url);
 const socialImageUrl = new URL(image, siteInfo.url);
 
 /**
+ * 仅在生产环境把启动序列的已播放状态写入当前 tab。
+ * 开发服务器必须在每次刷新时重新播放，方便反复调整导视节奏，而部署站仍保持一次性启动体验。
+ */
+const shouldPersistLaunchSeen = import.meta.env.PROD;
+
+/**
  * 在静态 HTML 的根节点写入界面中性色与线路色。
  * 浅深色媒体条件只替换无彩基础材料，线路 token 始终来自铁路领域模型以保证导视色跨主题一致。
  */
@@ -120,20 +126,36 @@ const websiteStructuredData = {
     <title>{pageTitle}</title>
     {
       showLaunchSequence && (
-        <script is:inline>
+        <script is:inline define:vars={{ shouldPersistLaunchSeen }}>
           (() => {
-            // 此标记只在当前 tab 会话中生效：刷新或站内返回不重复播放，关闭 tab 后可再次进入启动序列。
+            // 生产环境中此标记只在当前 tab 会话内生效；开发环境不读写它，确保刷新即可重看动画。
             const launchSessionKey = "fetarute.launch.seen";
+            // 动态偏好不依赖存储：用户要求减弱动态时，首屏必须立即可用且不短暂挂出启动层。
+            const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+            if (prefersReducedMotion) {
+              document.documentElement.dataset.launchSkipped = "true";
+              return;
+            }
 
             try {
-              const hasSeenLaunch = window.sessionStorage.getItem(launchSessionKey) === "true";
-              const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+              if (!shouldPersistLaunchSeen) {
+                // 清除之前在生产预览或旧开发页面留下的状态，避免它干扰本地调试。
+                window.sessionStorage.removeItem(launchSessionKey);
+              }
 
-              if (hasSeenLaunch || prefersReducedMotion) {
+              const hasSeenLaunch =
+                shouldPersistLaunchSeen && window.sessionStorage.getItem(launchSessionKey) === "true";
+
+              if (hasSeenLaunch) {
                 document.documentElement.dataset.launchSkipped = "true";
-                window.sessionStorage.setItem(launchSessionKey, "true");
+                if (shouldPersistLaunchSeen) {
+                  window.sessionStorage.setItem(launchSessionKey, "true");
+                }
               } else {
-                window.sessionStorage.setItem(launchSessionKey, "true");
+                if (shouldPersistLaunchSeen) {
+                  window.sessionStorage.setItem(launchSessionKey, "true");
+                }
                 document.documentElement.dataset.launching = "true";
               }
             } catch {

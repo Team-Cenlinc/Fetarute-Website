@@ -29,3 +29,4 @@ AGENTS.md
 
 # Design notes, agent handoffs and other in-progress context; durable decisions belong in tracked docs.
 .scratch/
+Design.md

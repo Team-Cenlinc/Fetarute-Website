@@ -132,6 +132,27 @@ export function getRailwayLineCssVariableName(code: RailwayLine["code"]): string
 }
 
 /**
+ * 根据线路实体色选择站牌色块上的浅色或深色文字。
+ * 返回语义 CSS token 而非重复中性色值，使色块在浅深外观下都优先采用与背景对比度更高的前景。
+ */
+export function getRailwayLineTextColor(color: HexColor): string {
+  const channels = [1, 3, 5].map(
+    (offset) => Number.parseInt(color.slice(offset, offset + 2), 16) / 255,
+  );
+  const linearChannels = channels.map((channel) =>
+    channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
+  );
+  const luminance =
+    0.2126 * linearChannels[0] + 0.7152 * linearChannels[1] + 0.0722 * linearChannels[2];
+  const darkTextLuminance = 0.007;
+  const lightTextLuminance = 0.91;
+  const darkContrast = (luminance + 0.05) / (darkTextLuminance + 0.05);
+  const lightContrast = (lightTextLuminance + 0.05) / (luminance + 0.05);
+
+  return darkContrast >= lightContrast ? "var(--color-scene-fallback)" : "var(--color-on-hero)";
+}
+
+/**
  * 从铁路领域数据派生的线路色表。
  * 此表不另存任何色值；新增线路后会自动拥有可供页面和导出器查询的 CSS token。
  */
