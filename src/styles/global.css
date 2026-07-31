@@ -35,6 +35,8 @@
   --motion-launch-traverse: cubic-bezier(0.77, 0, 0.175, 1);
   /* 启动层退出保持干净且可中断，跳过动画时从当前画面平滑放行首页。 */
   --motion-launch-exit: cubic-bezier(0.23, 1, 0.32, 1);
+  /* 整屏前向淡出使用 Quint 曲线：品牌先短暂停住，画面再于中段迅速靠近观察者并收束消散。 */
+  --motion-launch-forward-fade: cubic-bezier(0.86, 0, 0.07, 1);
   /* 方正小圆角用于导视牌和内容模块，避免页面同时出现多套形状语言。 */
   --radius-panel: 10px;
   font-family: var(--font-fetarute-ui);
@@ -507,7 +509,11 @@ h3 {
   background: var(--color-background);
   cursor: pointer;
   opacity: 1;
-  transition: opacity 360ms var(--motion-launch-exit);
+  transform: scale(1);
+  transform-origin: center;
+  transition:
+    opacity 360ms var(--motion-launch-forward-fade),
+    transform 360ms var(--motion-launch-forward-fade);
 }
 
 html[data-launching] .launch-sequence {
@@ -516,9 +522,11 @@ html[data-launching] .launch-sequence {
 
 .launch-sequence[data-state="leaving"] {
   opacity: 0;
+  transform: scale(1.16);
+  will-change: transform, opacity;
 }
 
-/* 离场时让定格完成的品牌保持最终姿态，整块启动层才会连同 Logo 平滑淡出至首页。 */
+/* 离场时让定格完成的品牌保持最终姿态，整块启动层才会以中心 Logo 为焦点前推并淡出至首页。 */
 .launch-sequence[data-state="leaving"] .launch-sequence__brand {
   opacity: 1;
   transform: translateY(0);
