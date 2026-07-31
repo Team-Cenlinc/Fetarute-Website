@@ -33,7 +33,7 @@ export interface InterfacePalette {
   fetaruteInfoText: string;
   /** Fetarute 出口导视黄，专门标识前往其他站内目的地的出口牌。 */
   fetaruteExit: string;
-  /** 出口导视黄上的深色文字与图标，优先服务远距离阅读。 */
+  /** 出口导视黄上的文字与图标；随外观模式切换深浅前景以保持远距离阅读。 */
   fetaruteExitText: string;
   /** 图片尚未加载时的首屏场景底色。 */
   sceneFallback: string;
@@ -80,10 +80,10 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     border: "#3D474A",
     action: "#EEF0EF",
     actionText: "#1B2022",
-    fetaruteInfo: "#0067B1",
+    fetaruteInfo: "#155575",
     fetaruteInfoText: "#F4F6F5",
-    fetaruteExit: "#F3C742",
-    fetaruteExitText: "#171B1D",
+    fetaruteExit: "#7A5A16",
+    fetaruteExitText: "#F4F6F5",
     sceneFallback: "#0D1011",
     onHero: "#F4F6F5",
     heroScrim: "rgb(4 6 7 / 0.68)",

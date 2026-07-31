@@ -25,7 +25,7 @@
   --fetarute-info-text: var(--palette-fetarute-info-text);
   /* Fetarute 出口黄的公开语义 token，供离开当前信息层级的导视牌复用。 */
   --fetarute-exit: var(--palette-fetarute-exit);
-  /* 出口黄上的文字前景固定为专用深色，保证远距离扫读。 */
+  /* 出口牌文字前景由 palette 按外观模式切换深浅，保证远距离扫读。 */
   --fetarute-exit-text: var(--palette-fetarute-exit-text);
   /* 服务台使用独立的信息导视色，不占用任一真实铁路线路的身份。 */
   --color-service: var(--fetarute-info);
@@ -85,6 +85,12 @@
 
 html {
   scroll-behavior: smooth;
+  /* 隐藏浏览器原生滚动条，保留鼠标滚轮、触控板、键盘与触摸滚动，避免长页面失去浏览能力。 */
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
 }
 
 /* 手动外观选择同时告知浏览器原生控件采用对应配色，系统模式则继续由媒体条件决定。 */
@@ -119,7 +125,7 @@ a {
 main {
   display: grid;
   gap: 88px;
-  padding: 156px clamp(20px, 5vw, 72px) 80px;
+  padding: 168px clamp(20px, 5vw, 72px) 80px;
 }
 
 .site-header {
@@ -128,16 +134,17 @@ main {
   top: 20px;
   left: 50%;
   display: grid;
-  width: min(1440px, calc(100% - 40px));
-  min-height: clamp(84px, 6vw, 96px);
+  /* 桌面导视牌以视口的 85% 流动铺开，40px 仅作为窄视口的安全边距而非宽度上限。 */
+  width: min(85vw, calc(100% - 40px));
+  min-height: clamp(96px, 7vw, 104px);
   transform: translateX(-50%);
-  /* 桌面导视牌以内容作为下限，余量由整排共同吸收，长语种与展开图标无需依赖固定列宽。 */
+  /* 导视列仅随内容与固定内边距取宽，宽屏余量留在品牌与中间留白，避免右侧色块横向膨胀。 */
   grid-template-columns:
     minmax(190px, 1.15fr)
     minmax(48px, 1.6fr)
-    minmax(max-content, 0.9fr)
-    minmax(max-content, 1fr)
-    minmax(max-content, 1.1fr);
+    max-content
+    max-content
+    max-content;
   align-items: stretch;
   overflow: visible;
   background: var(--color-header-surface);
@@ -182,7 +189,7 @@ html[data-launching] .site-header {
 
 .brand-wordmark {
   display: block;
-  width: clamp(132px, 10.5vw, 160px);
+  width: clamp(144px, 11.5vw, 176px);
   flex: 0 0 auto;
   color: var(--color-text);
   line-height: 0;
@@ -204,8 +211,13 @@ html[data-launching] .site-header {
   min-width: 0;
   align-content: center;
   justify-items: end;
+  /* 以 Header 内侧底边为线路底牌基线；由标题半行高、半行距、实心圆半高与边框共同反推所需下移量。 */
+  --home-nav-indicator-bottom-offset: calc(
+    clamp(48px, 3.5vw, 52px) - clamp(13.52px, 1.3vw, 18.72px) - clamp(4px, 0.35vw, 5px) -
+      clamp(8px, 0.75vw, 10px) - 3px
+  );
   color: var(--color-text);
-  padding: 0 clamp(12px, 1.3vw, 20px);
+  padding: 0 20px;
 }
 
 .home-nav__primary {
@@ -218,7 +230,7 @@ html[data-launching] .site-header {
 .home-nav__text-stack {
   display: grid;
   justify-items: end;
-  gap: 6px;
+  gap: clamp(8px, 0.7vw, 10px);
 }
 
 .home-nav__label,
@@ -226,8 +238,8 @@ html[data-launching] .site-header {
 .exit-menu__label {
   font-size: clamp(26px, 2.5vw, 36px);
   font-weight: 790;
-  letter-spacing: -0.065em;
-  line-height: 1;
+  letter-spacing: -0.045em;
+  line-height: 1.04;
   transition: transform 100ms var(--motion-header-enter);
 }
 
@@ -237,7 +249,6 @@ html[data-launching] .site-header {
   height: clamp(28px, 2.2vw, 34px);
   margin-top: -0.06em;
   place-items: center;
-  transition: transform 180ms var(--motion-header-enter);
 }
 
 .home-nav__arrow svg {
@@ -249,51 +260,45 @@ html[data-launching] .site-header {
 .home-nav__indicator {
   position: relative;
   display: grid;
-  width: clamp(16px, 1.5vw, 20px);
+  width: 100%;
   height: clamp(16px, 1.5vw, 20px);
-  place-items: center;
   color: var(--line-mt);
   overflow: visible;
 }
 
-.home-nav__indicator-ring,
-.home-nav__indicator-curve {
+.home-nav__indicator-dot,
+.home-nav__indicator-band {
   position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  transform-origin: right center;
 }
 
-.home-nav__indicator-ring {
-  transition:
-    opacity 120ms var(--motion-header-enter),
-    transform 180ms var(--motion-header-enter);
-}
-
-.home-nav__indicator-curve {
-  opacity: 0;
-  transform: translate3d(0, 1px, 0) rotate(-26deg) scale(0.58);
-  transition:
-    opacity 120ms var(--motion-header-enter),
-    transform 180ms var(--motion-header-enter);
-}
-
-.home-nav__indicator-ring svg,
-.home-nav__indicator-curve svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-/* 复用同色内环向圆心补足厚度，外缘仍完全由 Phosphor 的原始圆环决定，避免改变文字右缘对齐。 */
-.home-nav__indicator-ring::after {
-  position: absolute;
-  inset: clamp(0.5px, 0.07vw, 0.75px);
-  border: clamp(2.25px, 0.2vw, 2.7px) solid currentColor;
+.home-nav__indicator-dot {
+  top: 0;
+  /* 圆点中心对齐“首页文字 + 固定箭头”的整体中心，作为线路色的静态起点。 */
+  right: calc(
+    (100% - clamp(3px, 0.4vw, 6px) - clamp(28px, 2.2vw, 34px) - clamp(16px, 1.5vw, 20px)) / 2
+  );
+  width: clamp(16px, 1.5vw, 20px);
+  height: clamp(16px, 1.5vw, 20px);
   border-radius: 50%;
-  content: "";
-  pointer-events: none;
+  background: currentColor;
+  transition:
+    opacity 120ms var(--motion-header-enter),
+    transform 180ms var(--motion-header-enter);
+}
+
+.home-nav__indicator-band {
+  /* 底牌延伸至箭头右缘，使紫色线路状态覆盖“文字 + 箭头”的完整导视范围。 */
+  right: calc(-1 * (clamp(3px, 0.4vw, 6px) + clamp(28px, 2.2vw, 34px)));
+  bottom: 0;
+  left: 0;
+  height: 20px;
+  background: currentColor;
+  opacity: 0;
+  transform: translate3d(0, calc(var(--home-nav-indicator-bottom-offset) + 2px), 0) scaleY(0.35);
+  transform-origin: center bottom;
+  transition:
+    opacity 120ms var(--motion-header-enter),
+    transform 180ms var(--motion-header-enter);
 }
 
 .home-nav:focus-visible {
@@ -310,22 +315,15 @@ html[data-launching] .site-header {
 }
 
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .home-nav:hover .home-nav__arrow,
-  .home-nav:focus-visible .home-nav__arrow {
-    transform: translate3d(3px, -2px, 0);
-  }
-
-  /* 圆环沿文字右缘向内展开，保留与首页文字而非外侧箭头的对齐关系。 */
-  .home-nav:hover .home-nav__indicator-ring,
-  .home-nav:focus-visible .home-nav__indicator-ring {
+  /* Hover 只在具备精细指针的设备上播放，避免触屏误触发。 */
+  .home-nav:hover .home-nav__indicator-dot {
     opacity: 0;
-    transform: scale(0.66);
+    transform: scale(0.72);
   }
 
-  .home-nav:hover .home-nav__indicator-curve,
-  .home-nav:focus-visible .home-nav__indicator-curve {
+  .home-nav:hover .home-nav__indicator-band {
     opacity: 1;
-    transform: translate3d(0, 1px, 0) rotate(-26deg) scale(1.78);
+    transform: translate3d(0, var(--home-nav-indicator-bottom-offset), 0) scaleY(1);
   }
 
   .exit-menu:hover .exit-menu__arrow {
@@ -341,6 +339,38 @@ html[data-launching] .site-header {
     margin-left: clamp(3px, 0.4vw, 6px);
     opacity: 1;
     transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* 键盘焦点不受指针能力限制，始终保留首页已选线路的可见反馈。 */
+  .home-nav:focus-visible .home-nav__indicator-dot {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+
+  .home-nav:focus-visible .home-nav__indicator-band {
+    opacity: 1;
+    transform: translate3d(0, var(--home-nav-indicator-bottom-offset), 0) scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-nav__indicator-dot,
+  .home-nav__indicator-band {
+    transition: none;
+  }
+
+  .home-nav:hover .home-nav__indicator-dot,
+  .home-nav:focus-visible .home-nav__indicator-dot {
+    opacity: 0;
+    transform: none;
+  }
+
+  .home-nav:hover .home-nav__indicator-band,
+  .home-nav:focus-visible .home-nav__indicator-band {
+    opacity: 1;
+    transform: translate3d(0, var(--home-nav-indicator-bottom-offset), 0) scaleY(1);
   }
 }
 
@@ -383,7 +413,9 @@ html[data-launching] .site-header {
   gap: 6px;
   cursor: pointer;
   overflow: hidden;
-  padding: 0 clamp(18px, 2.25vw, 36px);
+  padding: 0 24px;
+  /* 左侧起始留白比文字右缘多 16px，强调相邻导视牌之间的分界而不拉长整块色带。 */
+  padding-inline-start: 40px;
   list-style: none;
 }
 
@@ -396,7 +428,7 @@ html[data-launching] .site-header {
 
 .service-desk__copy {
   display: grid;
-  gap: 6px;
+  gap: clamp(8px, 0.7vw, 10px);
   justify-items: end;
 }
 
@@ -438,12 +470,14 @@ html[data-launching] .site-header {
   justify-items: end;
   gap: 6px;
   overflow: hidden;
-  padding: 0 clamp(18px, 2.25vw, 36px);
+  padding: 0 24px;
+  /* 出口牌沿用服务台的左侧缓冲，让两块功能牌在同一条导视带上拥有一致节奏。 */
+  padding-inline-start: 40px;
 }
 
 .exit-menu__copy {
   display: grid;
-  gap: 6px;
+  gap: clamp(8px, 0.7vw, 10px);
   justify-items: end;
   text-align: right;
 }
@@ -536,26 +570,25 @@ html[data-launching] .site-header {
   border: 3px solid color-mix(in srgb, var(--color-text) 92%, transparent);
   border-top: 0;
   box-shadow: none;
-  transform-origin: right top;
 }
 
 .service-desk__menu {
   display: grid;
   width: min(318px, calc(100vw - 40px));
-  gap: 20px;
+  gap: 22px;
   background: var(--color-service);
   color: var(--color-service-text);
-  padding: 22px;
+  padding: 24px;
 }
 
 .service-menu__group {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .service-menu__group + .service-menu__group {
   border-top: 1px solid color-mix(in srgb, var(--color-service-text) 42%, transparent);
-  padding-top: 20px;
+  padding-top: 22px;
 }
 
 .service-menu__heading {
@@ -1466,11 +1499,12 @@ html[data-launching] .launch-sequence {
 
 @media (max-width: 1023px) and (min-width: 761px) {
   .site-header {
+    /* 中等桌面同样让导视牌按内容与固定内边距取宽，避免色块再次分配到中间余量。 */
     grid-template-columns:
       minmax(152px, 1fr)
-      minmax(max-content, 0.72fr)
-      minmax(max-content, 0.85fr)
-      minmax(max-content, 0.92fr);
+      max-content
+      max-content
+      max-content;
   }
 
   .site-header__spacer {
@@ -1489,6 +1523,12 @@ html[data-launching] .launch-sequence {
   .service-desk__summary,
   .exit-menu {
     padding-inline: 16px;
+  }
+
+  .service-desk__summary,
+  .exit-menu {
+    /* 中等桌面保留 12px 的左侧额外缓冲，避免在固定内容列中压缩文字。 */
+    padding-inline-start: 28px;
   }
 
   .home-nav__label,
@@ -1569,6 +1609,13 @@ html[data-launching] .launch-sequence {
     justify-self: center;
     width: 14px;
     height: 14px;
+  }
+
+  .home-nav__indicator-dot {
+    left: 0;
+    right: auto;
+    width: 100%;
+    height: 100%;
   }
 
   .service-desk,
