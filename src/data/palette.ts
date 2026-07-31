@@ -27,6 +27,14 @@ export interface InterfacePalette {
   action: string;
   /** 放置在 action 色上的文字与图标颜色。 */
   actionText: string;
+  /** Fetarute 信息导视蓝，专门标识语言、帮助与界面设置，不与真实线路色混用。 */
+  fetaruteInfo: string;
+  /** 信息导视蓝上的浅色文字与图标，保证站牌在两种外观下都有足够对比。 */
+  fetaruteInfoText: string;
+  /** Fetarute 出口导视黄，专门标识前往其他站内目的地的出口牌。 */
+  fetaruteExit: string;
+  /** 出口导视黄上的深色文字与图标，优先服务远距离阅读。 */
+  fetaruteExitText: string;
   /** 图片尚未加载时的首屏场景底色。 */
   sceneFallback: string;
   /** 覆盖在首屏场景上的高亮文字与焦点轮廓。 */
@@ -53,6 +61,10 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     border: "#C9CED0",
     action: "#1B2022",
     actionText: "#F4F6F5",
+    fetaruteInfo: "#0067B1",
+    fetaruteInfoText: "#F4F6F5",
+    fetaruteExit: "#F3C742",
+    fetaruteExitText: "#171B1D",
     sceneFallback: "#171B1D",
     onHero: "#F4F6F5",
     heroScrim: "rgb(9 12 13 / 0.55)",
@@ -68,6 +80,10 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     border: "#3D474A",
     action: "#EEF0EF",
     actionText: "#1B2022",
+    fetaruteInfo: "#0067B1",
+    fetaruteInfoText: "#F4F6F5",
+    fetaruteExit: "#F3C742",
+    fetaruteExitText: "#171B1D",
     sceneFallback: "#0D1011",
     onHero: "#F4F6F5",
     heroScrim: "rgb(4 6 7 / 0.68)",
@@ -89,6 +105,10 @@ const interfacePaletteCssVariableByKey: Readonly<Record<keyof InterfacePalette, 
   border: "--palette-border",
   action: "--palette-action",
   actionText: "--palette-action-text",
+  fetaruteInfo: "--palette-fetarute-info",
+  fetaruteInfoText: "--palette-fetarute-info-text",
+  fetaruteExit: "--palette-fetarute-exit",
+  fetaruteExitText: "--palette-fetarute-exit-text",
   sceneFallback: "--palette-scene-fallback",
   onHero: "--palette-on-hero",
   heroScrim: "--palette-hero-scrim",

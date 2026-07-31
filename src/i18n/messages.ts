@@ -21,8 +21,6 @@ export interface SiteMessages {
   headerLabel: string;
   /** 固定顶部主导航的无障碍标签。 */
   navigationLabel: string;
-  /** 导视线路代码的无障碍标签。 */
-  routeCodeLabel: string;
   /** 三个首页锚点对应的导航标签。 */
   navigation: {
     home: string;
@@ -32,6 +30,20 @@ export interface SiteMessages {
   };
   /** 顶栏语言切换链接组的无障碍标签。 */
   languageNavigationLabel: string;
+  /** 顶栏服务导视下拉菜单的可见名称与无障碍标签。 */
+  serviceDeskLabel: string;
+  /** 黄色出口牌的主要文字，入口菜单与可见站牌共用同一名称。 */
+  destinationMenuLabel: string;
+  /** 黄色出口牌的次级说明，提示读者这里收纳更多站内去向。 */
+  destinationMenuHint: string;
+  /** 服务导视中外观设置这一组的标签。 */
+  appearanceNavigationLabel: string;
+  /** 外观选项的本地化名称，供按钮文案与状态同步使用。 */
+  appearanceOptions: {
+    system: string;
+    light: string;
+    dark: string;
+  };
   /** 启动动画的无障碍标签与跳过提示。 */
   launch: {
     label: string;
@@ -71,7 +83,6 @@ const messages: Record<Locale, SiteMessages> = {
     brandHomeLabel: "Fetarute 首页",
     headerLabel: "站点顶部导航",
     navigationLabel: "主导航",
-    routeCodeLabel: "FETARUTE LINE 线路代号",
     navigation: {
       home: "首页",
       features: "玩法",
@@ -79,6 +90,15 @@ const messages: Record<Locale, SiteMessages> = {
       join: "加入",
     },
     languageNavigationLabel: "选择语言",
+    serviceDeskLabel: "服务台",
+    destinationMenuLabel: "出口",
+    destinationMenuHint: "前往菜单、各网站",
+    appearanceNavigationLabel: "外观",
+    appearanceOptions: {
+      system: "跟随系统",
+      light: "浅色",
+      dark: "深色",
+    },
     launch: {
       label: "Fetarute 启动画面",
       skipLabel: "跳过启动动画",
@@ -124,7 +144,6 @@ const messages: Record<Locale, SiteMessages> = {
     brandHomeLabel: "Fetarute 首頁",
     headerLabel: "網站頂部導覽",
     navigationLabel: "主要導覽",
-    routeCodeLabel: "FETARUTE LINE 路線代號",
     navigation: {
       home: "首頁",
       features: "玩法",
@@ -132,6 +151,15 @@ const messages: Record<Locale, SiteMessages> = {
       join: "加入",
     },
     languageNavigationLabel: "選擇語言",
+    serviceDeskLabel: "服務台",
+    destinationMenuLabel: "出口",
+    destinationMenuHint: "前往選單、各網站",
+    appearanceNavigationLabel: "外觀",
+    appearanceOptions: {
+      system: "跟隨系統",
+      light: "淺色",
+      dark: "深色",
+    },
     launch: {
       label: "Fetarute 啟動畫面",
       skipLabel: "略過啟動動畫",
@@ -178,7 +206,6 @@ const messages: Record<Locale, SiteMessages> = {
     brandHomeLabel: "Fetarute home",
     headerLabel: "Site header",
     navigationLabel: "Primary navigation",
-    routeCodeLabel: "FETARUTE LINE route code",
     navigation: {
       home: "Home",
       features: "Features",
@@ -186,6 +213,15 @@ const messages: Record<Locale, SiteMessages> = {
       join: "Join",
     },
     languageNavigationLabel: "Choose language",
+    serviceDeskLabel: "Service desk",
+    destinationMenuLabel: "Exit",
+    destinationMenuHint: "Menu & links",
+    appearanceNavigationLabel: "Appearance",
+    appearanceOptions: {
+      system: "System",
+      light: "Light",
+      dark: "Dark",
+    },
     launch: {
       label: "Fetarute launch sequence",
       skipLabel: "Skip launch sequence",

@@ -27,13 +27,11 @@ export interface PrimaryNavItem {
 }
 
 /**
- * 页眉与启动动画共用的导视展示配置。
- * 标题保留官网级定位；启动线路只存稳定代码，真实站名、站序和颜色始终从铁路数据模型读取。
+ * 首页首屏与启动动画共用的导视展示配置。
+ * 启动线路只存稳定代码，真实站名、站序和颜色始终从铁路数据模型读取。
  */
 export interface WayfindingPrototype {
-  /** 页眉左侧的线路代号，作为视觉定位点而非服务器实时状态。 */
-  routeCode: string;
-  /** 页眉中展示的线路名称。 */
+  /** 首页场景中展示的线路名称。 */
   routeName: string;
   /** 启动序列依线路内站序播放的正式线路代码。 */
   launchLineCode: RailwayLine["code"];
@@ -66,7 +64,6 @@ export const primaryNavItems: readonly PrimaryNavItem[] = [
  * 蒲塘桥场景位于大都会线，因而启动序列以 MT 已确认的线路站序播放，避免继续使用虚构站名。
  */
 export const wayfindingPrototype: WayfindingPrototype = {
-  routeCode: "FT",
   routeName: "FETARUTE LINE",
   launchLineCode: "MT",
 };

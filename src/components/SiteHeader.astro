@@ -1,12 +1,20 @@
 ---
-import { primaryNavItems, siteInfo, wayfindingPrototype } from "@/data/site";
+import arrowUpRightIcon from "@phosphor-icons/core/assets/bold/arrow-up-right-bold.svg?raw";
+import circleHalfIcon from "@phosphor-icons/core/assets/bold/circle-half-bold.svg?raw";
+import circleIcon from "@phosphor-icons/core/assets/bold/circle-bold.svg?raw";
+import circleNotchIcon from "@phosphor-icons/core/assets/bold/circle-notch-bold.svg?raw";
+import infoIcon from "@phosphor-icons/core/assets/bold/info-bold.svg?raw";
+import moonIcon from "@phosphor-icons/core/assets/bold/moon-bold.svg?raw";
+import sunIcon from "@phosphor-icons/core/assets/bold/sun-bold.svg?raw";
+import translateIcon from "@phosphor-icons/core/assets/bold/translate-bold.svg?raw";
+import fetaruteLogo from "@/assets/fetarute-branding/fetarute-logo.svg?raw";
 import { localeMetadata, locales, type Locale } from "@/i18n/config";
 import { getLocalizedRelativeUrl } from "@/i18n/links";
 import { getMessages } from "@/i18n/messages";
 
 /**
  * 固定顶部导视导航的属性。
- * 当前语言决定锚点链接、导航文字和无障碍标签，保证语言切换后不会回落到默认语言页面。
+ * 当前语言决定链接、菜单文字和无障碍标签，保证切换语言后仍停留在相同的公开首页路径。
  */
 export interface Props {
   /** 当前页面所属的公开语言。 */
@@ -15,51 +23,432 @@ export interface Props {
 
 const { locale } = Astro.props;
 const messages = getMessages(locale);
+
+/**
+ * 手动外观切换的三种稳定选项。
+ * “跟随系统”不写入强制值，其余两项与 BaseLayout 的 palette CSS 变量一一对应。
+ */
+const appearanceOptions = [
+  { value: "system", label: messages.appearanceOptions.system, icon: circleHalfIcon },
+  { value: "light", label: messages.appearanceOptions.light, icon: sunIcon },
+  { value: "dark", label: messages.appearanceOptions.dark, icon: moonIcon },
+] as const;
 ---
 
 <header class="site-header" aria-label={messages.headerLabel}>
   <a class="brand" href={getLocalizedRelativeUrl(locale)} aria-label={messages.brandHomeLabel}>
-    <img
-      class="brand-mark"
-      src="/favicon-96x96.png"
-      width="34"
-      height="34"
-      alt=""
-      aria-hidden="true"
-    />
-    <span class="brand-copy">
-      <strong>{siteInfo.name}</strong>
-      <small>{wayfindingPrototype.routeName}</small>
+    <span class="brand-wordmark" aria-hidden="true" set:html={fetaruteLogo}></span>
+  </a>
+
+  <span class="site-header__spacer" aria-hidden="true"></span>
+
+  <a class="home-nav" href={getLocalizedRelativeUrl(locale)}>
+    <span class="home-nav__primary">
+      <span class="home-nav__text-stack">
+        <span class="home-nav__label">{messages.navigation.home}</span>
+        <span class="home-nav__indicator" aria-hidden="true">
+          <span class="home-nav__indicator-ring" set:html={circleIcon}></span>
+          <span class="home-nav__indicator-curve" set:html={circleNotchIcon}></span>
+        </span>
+      </span>
+      <span class="home-nav__arrow" aria-hidden="true" set:html={arrowUpRightIcon}></span>
     </span>
   </a>
 
-  <span class="route-code" aria-label={messages.routeCodeLabel}>
-    {wayfindingPrototype.routeCode}
+  <details class="service-desk">
+    <summary class="service-desk__summary">
+      <span class="service-desk__direction">
+        <span class="service-desk__copy">
+          <span class="service-desk__label">{messages.serviceDeskLabel}</span>
+          <span class="service-desk__marker-row" aria-hidden="true">
+            <span class="service-desk__marker" set:html={translateIcon}></span>
+            <span class="service-desk__marker" set:html={circleHalfIcon}></span>
+          </span>
+        </span>
+        <span class="service-desk__information" aria-hidden="true" set:html={infoIcon}></span>
+      </span>
+    </summary>
+
+    <div class="service-desk__menu" aria-label={messages.serviceDeskLabel}>
+      <section class="service-menu__group" aria-labelledby="language-menu-label">
+        <h2 id="language-menu-label" class="service-menu__heading">
+          {messages.languageNavigationLabel}
+        </h2>
+        <nav class="language-links" aria-label={messages.languageNavigationLabel}>
+          {
+            locales.map((alternateLocale) => (
+              <a
+                class="language-link"
+                href={getLocalizedRelativeUrl(alternateLocale)}
+                lang={localeMetadata[alternateLocale].languageTag}
+                aria-label={localeMetadata[alternateLocale].label}
+                aria-current={alternateLocale === locale ? "page" : undefined}
+              >
+                {localeMetadata[alternateLocale].shortLabel}
+              </a>
+            ))
+          }
+        </nav>
+      </section>
+
+      <section class="service-menu__group" aria-labelledby="appearance-menu-label">
+        <h2 id="appearance-menu-label" class="service-menu__heading">
+          {messages.appearanceNavigationLabel}
+        </h2>
+        <div class="appearance-options">
+          {
+            appearanceOptions.map((option) => (
+              <button
+                class="appearance-choice"
+                type="button"
+                data-appearance-choice={option.value}
+                aria-pressed="false"
+              >
+                <span class="appearance-choice__icon" aria-hidden="true" set:html={option.icon}></span>
+                <span>{option.label}</span>
+              </button>
+            ))
+          }
+        </div>
+      </section>
+    </div>
+  </details>
+
+  <span class="exit-menu">
+    <span class="exit-menu__direction">
+      <span class="exit-menu__copy">
+        <span class="exit-menu__primary">
+          <span class="exit-menu__label">{messages.destinationMenuLabel}</span>
+        </span>
+        <span class="exit-menu__hint">{messages.destinationMenuHint}</span>
+      </span>
+      <span class="exit-menu__arrow" aria-hidden="true" set:html={arrowUpRightIcon}></span>
+    </span>
   </span>
-
-  <nav class="nav-links" aria-label={messages.navigationLabel}>
-    {
-      primaryNavItems.map((item) => (
-        <a href={getLocalizedRelativeUrl(locale, "", item.fragment)} class="nav-link">
-          {messages.navigation[item.labelKey]}
-        </a>
-      ))
-    }
-  </nav>
-
-  <nav class="language-links" aria-label={messages.languageNavigationLabel}>
-    {
-      locales.map((alternateLocale) => (
-        <a
-          class="language-link"
-          href={getLocalizedRelativeUrl(alternateLocale)}
-          lang={localeMetadata[alternateLocale].languageTag}
-          aria-label={localeMetadata[alternateLocale].label}
-          aria-current={alternateLocale === locale ? "page" : undefined}
-        >
-          {localeMetadata[alternateLocale].shortLabel}
-        </a>
-      ))
-    }
-  </nav>
 </header>
+
+<script>
+  // 与 BaseLayout 的首帧读取共用同一键，用户点击后立即更新根节点 palette 与菜单选中态。
+  const appearanceStorageKey = "fetarute.appearance";
+  const appearanceChoices = ["system", "light", "dark"];
+  const appearanceButtons = Array.from(
+    document.querySelectorAll<HTMLButtonElement>("[data-appearance-choice]"),
+  );
+  const serviceDesk = document.querySelector<HTMLDetailsElement>(".service-desk");
+  const headerMenus = [serviceDesk].filter(
+    (menu): menu is HTMLDetailsElement => menu instanceof HTMLDetailsElement,
+  );
+
+  /**
+   * 将服务台中的外观选择同步到文档根节点和持久化设置。
+   * 系统模式移除 data-appearance，让 CSS 媒体条件重新成为唯一的外观来源。
+   */
+  function applyAppearance(choice: string) {
+    const selectedChoice = appearanceChoices.includes(choice) ? choice : "system";
+
+    if (selectedChoice === "system") {
+      document.documentElement.removeAttribute("data-appearance");
+      try {
+        window.localStorage.removeItem(appearanceStorageKey);
+      } catch {
+        // 存储不可用时仍可在当前页面完成外观切换。
+      }
+    } else {
+      document.documentElement.dataset.appearance = selectedChoice;
+      try {
+        window.localStorage.setItem(appearanceStorageKey, selectedChoice);
+      } catch {
+        // 持久化失败不应阻断当前页面的可见反馈。
+      }
+    }
+
+    appearanceButtons.forEach((button) => {
+      button.setAttribute(
+        "aria-pressed",
+        String(button.dataset.appearanceChoice === selectedChoice),
+      );
+    });
+  }
+
+  /** 记录正在播放的菜单状态，让再次触发时可以沿当前方向反转，而不是跳回初始帧。 */
+  const headerMenuAnimations = new WeakMap<
+    HTMLDetailsElement,
+    { direction: "opening" | "closing"; animation: Animation }
+  >();
+  /** 桌面服务台离开后的短暂收起延迟，允许指针自然移动到与站牌相连的菜单内容。 */
+  const headerHoverCloseTimers = new WeakMap<HTMLDetailsElement, number>();
+
+  /**
+   * 找到服务台导视牌对应的浮层。
+   * 只读取当前 details 内的直接菜单，避免在页面新增同名结构后串扰其它交互。
+   */
+  function getHeaderMenuPanel(menu: HTMLDetailsElement) {
+    return menu.querySelector<HTMLElement>(".service-desk__menu");
+  }
+
+  /** 减少动态效果时保留状态切换本身，省去位移与缩放的过渡。 */
+  function prefersReducedHeaderMotion() {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  /** 只在可精确悬停的设备上启用导视牌预览，触屏仍使用显式点击以避免误开菜单。 */
+  function supportsHeaderHoverPreview() {
+    return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  }
+
+  /** 清除已安排的收起任务，保证指针折返时菜单可从当前位置继续保持展开。 */
+  function cancelHeaderHoverClose(menu: HTMLDetailsElement) {
+    const closeTimer = headerHoverCloseTimers.get(menu);
+
+    if (closeTimer === undefined) {
+      return;
+    }
+
+    window.clearTimeout(closeTimer);
+    headerHoverCloseTimers.delete(menu);
+  }
+
+  /** 读取全局 Header 动效曲线，确保脚本浮层与 CSS 触发反馈使用同一套导视节奏。 */
+  function getHeaderMotionEasing(variableName: "--motion-header-enter" | "--motion-header-exit") {
+    return getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+  }
+
+  /**
+   * 将已处于收起途中的菜单反转回展开状态。
+   * 菜单的动画对象保留当前呈现帧，因此快速连续点击不会产生位置跳变。
+   */
+  function reopenHeaderMenu(menu: HTMLDetailsElement) {
+    const activeAnimation = headerMenuAnimations.get(menu);
+
+    if (activeAnimation?.direction !== "closing") {
+      return;
+    }
+
+    activeAnimation.direction = "opening";
+    delete menu.dataset.closing;
+    activeAnimation.animation.reverse();
+  }
+
+  /**
+   * 播放从触发牌右上角展开的菜单过渡。
+   * 只使用透明度和 transform，避免动画期间触发布局重排；未来新增菜单时也会先收起旧菜单。
+   */
+  function openHeaderMenu(menu: HTMLDetailsElement) {
+    if (!menu.open || prefersReducedHeaderMotion()) {
+      return;
+    }
+
+    headerMenus.forEach((otherMenu) => {
+      if (otherMenu !== menu && otherMenu.open) {
+        closeHeaderMenu(otherMenu);
+      }
+    });
+
+    const panel = getHeaderMenuPanel(menu);
+    if (!panel) {
+      return;
+    }
+
+    const activeAnimation = headerMenuAnimations.get(menu);
+    if (activeAnimation?.direction === "closing") {
+      reopenHeaderMenu(menu);
+      return;
+    }
+
+    activeAnimation?.animation.cancel();
+    const animation = panel.animate(
+      [
+        { opacity: 0, transform: "translate3d(0, -8px, 0) scale(0.985)" },
+        { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)" },
+      ],
+      {
+        duration: 220,
+        easing: getHeaderMotionEasing("--motion-header-enter"),
+        fill: "both",
+      },
+    );
+    const record = { direction: "opening" as const, animation };
+    headerMenuAnimations.set(menu, record);
+
+    animation.finished
+      .catch(() => undefined)
+      .then(() => {
+        if (headerMenuAnimations.get(menu) !== record || record.direction !== "opening") {
+          return;
+        }
+
+        animation.cancel();
+        headerMenuAnimations.delete(menu);
+      });
+  }
+
+  /**
+   * 沿菜单展开路径反向收起指定导视牌。
+   * Escape 会把焦点返还给触发牌，点击页面空白处则只收起，避免焦点被强制拉回顶部。
+   */
+  function closeHeaderMenu(menu: HTMLDetailsElement, restoreFocus = false) {
+    cancelHeaderHoverClose(menu);
+
+    if (!menu.open) {
+      return;
+    }
+
+    const finishClosing = () => {
+      menu.removeAttribute("open");
+      delete menu.dataset.closing;
+      headerMenuAnimations.delete(menu);
+
+      if (restoreFocus) {
+        menu.querySelector<HTMLElement>("summary")?.focus();
+      }
+    };
+
+    if (prefersReducedHeaderMotion()) {
+      finishClosing();
+      return;
+    }
+
+    const activeAnimation = headerMenuAnimations.get(menu);
+    if (activeAnimation?.direction === "closing") {
+      return;
+    }
+
+    menu.dataset.closing = "true";
+    if (activeAnimation?.direction === "opening") {
+      activeAnimation.direction = "closing";
+      activeAnimation.animation.reverse();
+      activeAnimation.animation.finished
+        .catch(() => undefined)
+        .then(() => {
+          if (headerMenuAnimations.get(menu) === activeAnimation && activeAnimation.direction === "closing") {
+            finishClosing();
+          }
+        });
+      return;
+    }
+
+    const panel = getHeaderMenuPanel(menu);
+    if (!panel) {
+      finishClosing();
+      return;
+    }
+
+    const animation = panel.animate(
+      [
+        { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)" },
+        { opacity: 0, transform: "translate3d(0, -8px, 0) scale(0.985)" },
+      ],
+      {
+        duration: 160,
+        easing: getHeaderMotionEasing("--motion-header-exit"),
+        fill: "forwards",
+      },
+    );
+    const record = { direction: "closing" as const, animation };
+    headerMenuAnimations.set(menu, record);
+
+    animation.finished
+      .catch(() => undefined)
+      .then(() => {
+        if (headerMenuAnimations.get(menu) === record && record.direction === "closing") {
+          finishClosing();
+        }
+      });
+  }
+
+  let storedAppearance = "system";
+  try {
+    storedAppearance = window.localStorage.getItem(appearanceStorageKey) ?? "system";
+  } catch {
+    // 读取失败时保持系统主题，避免用异常状态替代可用的默认外观。
+  }
+  applyAppearance(storedAppearance);
+
+  appearanceButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      applyAppearance(button.dataset.appearanceChoice ?? "system");
+    });
+  });
+
+  headerMenus.forEach((menu) => {
+    menu.addEventListener("toggle", () => {
+      if (menu.open) {
+        openHeaderMenu(menu);
+      }
+    });
+
+    menu.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeHeaderMenu(menu, true);
+      }
+    });
+
+    menu.querySelector<HTMLElement>("summary")?.addEventListener("click", (event) => {
+      if (!menu.open) {
+        return;
+      }
+
+      event.preventDefault();
+      const activeAnimation = headerMenuAnimations.get(menu);
+      if (activeAnimation?.direction === "closing") {
+        reopenHeaderMenu(menu);
+      } else {
+        closeHeaderMenu(menu);
+      }
+    });
+  });
+
+  if (serviceDesk) {
+    serviceDesk.addEventListener("pointerover", (event) => {
+      if (!supportsHeaderHoverPreview()) {
+        return;
+      }
+
+      const previousTarget = event.relatedTarget;
+      if (previousTarget instanceof Node && serviceDesk.contains(previousTarget)) {
+        return;
+      }
+
+      cancelHeaderHoverClose(serviceDesk);
+      if (serviceDesk.open) {
+        reopenHeaderMenu(serviceDesk);
+      } else {
+        serviceDesk.open = true;
+      }
+    });
+
+    serviceDesk.addEventListener("pointerout", (event) => {
+      if (!supportsHeaderHoverPreview()) {
+        return;
+      }
+
+      // 下拉面板虽视觉上位于触发牌外，仍是 details 的 DOM 子节点；移入它不应触发收起。
+      const nextTarget = event.relatedTarget;
+      if (nextTarget instanceof Node && serviceDesk.contains(nextTarget)) {
+        return;
+      }
+
+      cancelHeaderHoverClose(serviceDesk);
+      const closeTimer = window.setTimeout(() => {
+        headerHoverCloseTimers.delete(serviceDesk);
+        closeHeaderMenu(serviceDesk);
+      }, 120);
+      headerHoverCloseTimers.set(serviceDesk, closeTimer);
+    });
+  }
+
+  document.addEventListener("click", (event) => {
+    const clickTarget = event.target;
+
+    if (!(clickTarget instanceof Node)) {
+      return;
+    }
+
+    headerMenus.forEach((menu) => {
+      if (menu.open && !menu.contains(clickTarget)) {
+        closeHeaderMenu(menu);
+      }
+    });
+  });
+</script>

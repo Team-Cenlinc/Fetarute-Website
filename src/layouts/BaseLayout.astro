@@ -70,9 +70,17 @@ ${getRailwayLineCssVariables()}
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-appearance]) {
 ${getInterfacePaletteCssVariables(interfacePalette.dark)}
   }
+}
+
+html[data-appearance="light"] {
+${getInterfacePaletteCssVariables(interfacePalette.light)}
+}
+
+html[data-appearance="dark"] {
+${getInterfacePaletteCssVariables(interfacePalette.dark)}
 }
 `;
 
@@ -177,6 +185,22 @@ const websiteStructuredData = {
     <Font cssVariable="--font-fetarute-display-italic" />
     <style is:global set:html={paletteCss}></style>
     <title>{pageTitle}</title>
+    <script is:inline>
+      (() => {
+        // 在首帧读取用户已选外观，避免服务台的手动设置先以系统主题闪现一次。
+        const appearanceStorageKey = "fetarute.appearance";
+
+        try {
+          const storedAppearance = window.localStorage.getItem(appearanceStorageKey);
+
+          if (storedAppearance === "light" || storedAppearance === "dark") {
+            document.documentElement.dataset.appearance = storedAppearance;
+          }
+        } catch {
+          // 隐私模式或被禁用的存储不影响系统主题的默认可用性。
+        }
+      })();
+    </script>
     {
       showLaunchSequence && (
         <script is:inline define:vars={{ shouldPersistLaunchSeen }}>
