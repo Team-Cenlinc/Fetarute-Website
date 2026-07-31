@@ -98,7 +98,7 @@ main {
   width: min(1180px, calc(100% - 36px));
   min-height: 62px;
   transform: translateX(-50%);
-  grid-template-columns: minmax(190px, 1fr) auto minmax(360px, 1fr);
+  grid-template-columns: minmax(190px, 1fr) auto minmax(340px, 1fr) auto;
   align-items: stretch;
   overflow: hidden;
   border: 1px solid var(--color-border);
@@ -123,6 +123,7 @@ html[data-launching] .site-header {
 
 .brand,
 .nav-links,
+.language-links,
 .hero-actions {
   display: flex;
   align-items: center;
@@ -232,6 +233,40 @@ html[data-launching] .site-header {
 
 .nav-link:active {
   transform: scale(0.97);
+}
+
+.language-links {
+  align-self: stretch;
+  border-left: 1px solid var(--color-border);
+  padding: 7px 6px;
+}
+
+.language-link {
+  display: grid;
+  min-width: 32px;
+  min-height: 44px;
+  place-items: center;
+  padding: 0 5px;
+  color: var(--color-muted);
+  font-family: "SFMono-Regular", "Cascadia Mono", "Noto Sans Mono CJK SC", monospace;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  transition:
+    color 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.language-link:hover,
+.language-link:focus-visible {
+  background: color-mix(in srgb, var(--color-action) 10%, transparent);
+  color: var(--color-text);
+  outline: none;
+}
+
+.language-link[aria-current="page"] {
+  background: var(--color-action);
+  color: var(--color-action-text);
 }
 
 .hero-section,
@@ -1030,7 +1065,7 @@ html[data-launching] .launch-sequence {
   .site-header {
     width: calc(100% - 24px);
     min-height: 54px;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
   }
 
   .brand {
@@ -1054,6 +1089,7 @@ html[data-launching] .launch-sequence {
 
   .nav-links {
     grid-column: 1 / -1;
+    grid-row: 2;
     justify-content: flex-start;
     overflow-x: auto;
     border-top: 1px solid var(--color-border);
@@ -1067,6 +1103,17 @@ html[data-launching] .launch-sequence {
 
   .nav-link {
     min-height: 38px;
+  }
+
+  .language-links {
+    grid-column: 3;
+    grid-row: 1;
+    padding: 4px;
+  }
+
+  .language-link {
+    min-width: 30px;
+    min-height: 46px;
   }
 
   .hero-section {

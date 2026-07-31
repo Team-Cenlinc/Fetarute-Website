@@ -1,11 +1,25 @@
 import { defineConfig, fontProviders } from "astro/config";
 import { siteInfo } from "./src/data/site";
+import { defaultLocale, locales } from "./src/i18n/config";
 
 export default defineConfig({
   // Fetarute 官网默认按静态站点发布；需要账号、订单或后台能力时再评估 SSR。
   output: "static",
   // 正式站点地址用于在静态构建阶段生成稳定的 canonical 和分享链接。
   site: siteInfo.url,
+  /**
+   * 静态多语言路由配置。
+   * 所有语言都拥有路径前缀，根路径只作为默认简中入口的兼容跳转，避免不同语言的 canonical 结构不对称。
+   */
+  i18n: {
+    locales: [...locales],
+    defaultLocale,
+    routing: {
+      prefixDefaultLocale: true,
+      // 根路径由 index.astro 生成唯一的静态跳转，避免内建跳转与文件路由争夺同一个输出文件。
+      redirectToDefaultLocale: false,
+    },
+  },
   /**
    * 本地 Noto Sans 字体配置。
    *

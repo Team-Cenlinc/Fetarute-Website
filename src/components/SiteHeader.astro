@@ -1,9 +1,24 @@
 ---
 import { primaryNavItems, siteInfo, wayfindingPrototype } from "@/data/site";
+import { localeMetadata, locales, type Locale } from "@/i18n/config";
+import { getLocalizedRelativeUrl } from "@/i18n/links";
+import { getMessages } from "@/i18n/messages";
+
+/**
+ * 固定顶部导视导航的属性。
+ * 当前语言决定锚点链接、导航文字和无障碍标签，保证语言切换后不会回落到默认语言页面。
+ */
+export interface Props {
+  /** 当前页面所属的公开语言。 */
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const messages = getMessages(locale);
 ---
 
-<header class="site-header" aria-label="站点顶部导航">
-  <a class="brand" href="/" aria-label={`${siteInfo.name} 首页`}>
+<header class="site-header" aria-label={messages.headerLabel}>
+  <a class="brand" href={getLocalizedRelativeUrl(locale)} aria-label={messages.brandHomeLabel}>
     <img
       class="brand-mark"
       src="/favicon-96x96.png"
@@ -18,15 +33,31 @@ import { primaryNavItems, siteInfo, wayfindingPrototype } from "@/data/site";
     </span>
   </a>
 
-  <span class="route-code" aria-label={`${wayfindingPrototype.routeName} 线路代号`}>
+  <span class="route-code" aria-label={messages.routeCodeLabel}>
     {wayfindingPrototype.routeCode}
   </span>
 
-  <nav class="nav-links" aria-label="主导航">
+  <nav class="nav-links" aria-label={messages.navigationLabel}>
     {
       primaryNavItems.map((item) => (
-        <a href={item.href} class="nav-link">
-          {item.label}
+        <a href={getLocalizedRelativeUrl(locale, "", item.fragment)} class="nav-link">
+          {messages.navigation[item.labelKey]}
+        </a>
+      ))
+    }
+  </nav>
+
+  <nav class="language-links" aria-label={messages.languageNavigationLabel}>
+    {
+      locales.map((alternateLocale) => (
+        <a
+          class="language-link"
+          href={getLocalizedRelativeUrl(alternateLocale)}
+          lang={localeMetadata[alternateLocale].languageTag}
+          aria-label={localeMetadata[alternateLocale].label}
+          aria-current={alternateLocale === locale ? "page" : undefined}
+        >
+          {localeMetadata[alternateLocale].shortLabel}
         </a>
       ))
     }

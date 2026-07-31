@@ -9,29 +9,49 @@ import {
   interfacePalette,
 } from "@/data/palette";
 import { siteInfo } from "@/data/site";
+import { defaultLocale, localeMetadata, locales, type Locale } from "@/i18n/config";
+import { getLocalizedAbsoluteUrl } from "@/i18n/links";
+import { getMessages } from "@/i18n/messages";
 
 /**
  * 基础页面布局属性。
  * 所有页面都通过这里统一设置 title 和 description，避免 metadata 分散维护。
  */
 export interface Props {
+  /** 当前静态页面所属的公开语言，驱动文案、字体和 SEO metadata。 */
+  locale: Locale;
+  /** 页面标题；未提供时使用服务器名称。 */
   title?: string;
+  /** 页面专属描述；未提供时使用当前语言的站点描述。 */
   description?: string;
   /** 页面专属分享图片；未提供时使用站点级品牌图标。 */
   image?: string;
   /** 首页启用的导视启动层；其他页面保持直接可读。 */
   showLaunchSequence?: boolean;
+  /** 当前页面在语言根目录后的稳定路径；首页传空字符串，未来独立页传路由片段。 */
+  pagePath?: string;
+  /** 已发布当前逻辑页面的语言，用于精确生成 hreflang 而不声明尚未翻译的页面。 */
+  availableLocales?: readonly Locale[];
 }
 
 const {
+  locale,
   title = siteInfo.name,
-  description = siteInfo.description,
+  description,
   image = siteInfo.socialImage,
   showLaunchSequence = false,
+  pagePath = "",
+  availableLocales = locales,
 } = Astro.props;
+const messages = getMessages(locale);
+const pageDescription = description ?? messages.description;
 const pageTitle = title === siteInfo.name ? title : `${title} | ${siteInfo.name}`;
-const canonicalUrl = new URL(Astro.url.pathname, siteInfo.url);
+const canonicalUrl = getLocalizedAbsoluteUrl(locale, pagePath);
 const socialImageUrl = new URL(image, siteInfo.url);
+const languageAlternates = availableLocales.map((alternateLocale) => ({
+  locale: alternateLocale,
+  href: getLocalizedAbsoluteUrl(alternateLocale, pagePath),
+}));
 
 /**
  * 仅在生产环境把启动序列的已播放状态写入当前 tab。
@@ -64,16 +84,17 @@ const websiteStructuredData = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: siteInfo.name,
-  url: siteInfo.url,
-  description: siteInfo.description,
+  url: canonicalUrl,
+  description: pageDescription,
+  inLanguage: localeMetadata[locale].languageTag,
 };
 ---
 
 <!doctype html>
-<html lang="zh-Hans">
+<html lang={localeMetadata[locale].languageTag}>
   <head>
     <meta charset="UTF-8" />
-    <meta name="description" content={description} />
+    <meta name="description" content={pageDescription} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
     <meta name="application-name" content={siteInfo.name} />
@@ -82,6 +103,16 @@ const websiteStructuredData = {
     <meta name="theme-color" content={interfacePalette.dark.canvas} media="(prefers-color-scheme: dark)" />
 
     <link rel="canonical" href={canonicalUrl} />
+    {
+      languageAlternates.map((alternate) => (
+        <link
+          rel="alternate"
+          hreflang={localeMetadata[alternate.locale].languageTag}
+          href={alternate.href}
+        />
+      ))
+    }
+    <link rel="alternate" hreflang="x-default" href={getLocalizedAbsoluteUrl(defaultLocale, pagePath)} />
     <link
       rel="icon"
       type="image/png"
@@ -100,26 +131,48 @@ const websiteStructuredData = {
     <link rel="manifest" href="/site.webmanifest" />
 
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:locale" content={localeMetadata[locale].openGraphLocale} />
+    {
+      availableLocales
+        .filter((alternateLocale) => alternateLocale !== locale)
+        .map((alternateLocale) => (
+          <meta
+            property="og:locale:alternate"
+            content={localeMetadata[alternateLocale].openGraphLocale}
+          />
+        ))
+    }
     <meta property="og:site_name" content={siteInfo.name} />
     <meta property="og:title" content={pageTitle} />
-    <meta property="og:description" content={description} />
+    <meta property="og:description" content={pageDescription} />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:image" content={socialImageUrl} />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="512" />
     <meta property="og:image:height" content="512" />
-    <meta property="og:image:alt" content={`${siteInfo.name} 品牌图标`} />
+    <meta property="og:image:alt" content={messages.socialImageAlt} />
 
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content={pageTitle} />
-    <meta name="twitter:description" content={description} />
+    <meta name="twitter:description" content={pageDescription} />
     <meta name="twitter:image" content={socialImageUrl} />
-    <meta name="twitter:image:alt" content={`${siteInfo.name} 品牌图标`} />
+    <meta name="twitter:image:alt" content={messages.socialImageAlt} />
 
     <Font cssVariable="--font-fetarute-display" preload={[{ weight: "100 900", style: "normal" }]} />
-    <Font cssVariable="--font-fetarute-sans-sc" preload={[{ weight: "100 900", style: "normal" }]} />
-    <Font cssVariable="--font-fetarute-sans-tc" />
+    {
+      locale === "zh-Hans" ? (
+        <Font cssVariable="--font-fetarute-sans-sc" preload={[{ weight: "100 900", style: "normal" }]} />
+      ) : (
+        <Font cssVariable="--font-fetarute-sans-sc" />
+      )
+    }
+    {
+      locale === "zh-Hant" ? (
+        <Font cssVariable="--font-fetarute-sans-tc" preload={[{ weight: "100 900", style: "normal" }]} />
+      ) : (
+        <Font cssVariable="--font-fetarute-sans-tc" />
+      )
+    }
     <Font cssVariable="--font-fetarute-sans-jp" />
     <Font cssVariable="--font-fetarute-display-italic" />
     <style is:global set:html={paletteCss}></style>
@@ -173,8 +226,8 @@ const websiteStructuredData = {
     ></script>
   </head>
   <body>
-    {showLaunchSequence && <LaunchSequence />}
-    <SiteHeader />
+    {showLaunchSequence && <LaunchSequence locale={locale} />}
+    <SiteHeader locale={locale} />
     <main>
       <slot />
     </main>

@@ -7,7 +7,21 @@ import {
 } from "@/data/railway";
 import fetaruteLogo from "@/assets/fetarute-branding/fetarute-logo.svg?raw";
 import { getRailwayLineCssVariableName, getRailwayLineTextColor } from "@/data/palette";
-import { siteInfo, wayfindingPrototype } from "@/data/site";
+import { wayfindingPrototype } from "@/data/site";
+import type { Locale } from "@/i18n/config";
+import { getMessages } from "@/i18n/messages";
+
+/**
+ * 启动动画的属性。
+ * 站名仍按铁路领域数据的两套正式名称展示；locale 只负责动画容器和跳过操作等普通界面文案。
+ */
+export interface Props {
+  /** 当前静态页面所属的公开语言。 */
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const messages = getMessages(locale);
 
 /**
  * 启动动画使用首屏配置指定的真实线路。
@@ -74,7 +88,7 @@ const launchSequenceDuration =
 
 <section
   class="launch-sequence"
-  aria-label={`${siteInfo.name} 启动画面`}
+  aria-label={messages.launch.label}
   data-motion-duration={launchSequenceDuration}
   data-stop-interval={launchStopInterval}
   style={`--launch-final-stop-duration: ${finalStopDuration}ms; --launch-brand-traverse-duration: ${finalBrandTraverseDuration}ms; --launch-brand-duration: ${finalBrandDuration}ms`}
@@ -140,8 +154,8 @@ const launchSequenceDuration =
     <!-- 内联 SVG 才能继承 palette 的 --color-text，在浅深外观下保持同一份品牌几何。 -->
     <div class="launch-sequence__brand" aria-hidden="true" set:html={fetaruteLogo}></div>
   </div>
-  <button class="launch-sequence__skip" type="button" aria-label="跳过启动动画">
-    <span aria-hidden="true">点击任意处跳过动画</span>
+  <button class="launch-sequence__skip" type="button" aria-label={messages.launch.skipLabel}>
+    <span aria-hidden="true">{messages.launch.skipHint}</span>
   </button>
 </section>
 

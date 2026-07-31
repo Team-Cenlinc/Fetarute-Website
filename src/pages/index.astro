@@ -1,96 +1,22 @@
 ---
-import { getCollection } from "astro:content";
-import { Picture } from "astro:assets";
-import BaseLayout from "@/layouts/BaseLayout.astro";
-import { siteInfo, wayfindingPrototype } from "@/data/site";
-import pyutocorDuskScene from "@/assets/pages/home/pyutocor-dusk.png";
+import { defaultLocale } from "@/i18n/config";
+import { siteInfo } from "@/data/site";
 
-const newsItems = (await getCollection("news"))
-  .sort((left, right) => Number(right.data.publishedAt) - Number(left.data.publishedAt))
-  .slice(0, 3);
+// 纯静态发布不能依赖服务端重定向；根路径只输出一个 noindex 的立即跳转页，避免生成没有 locale 的第二份首页内容。
+const defaultLocaleHref = `/${defaultLocale}/`;
+const canonicalUrl = new URL(defaultLocaleHref, siteInfo.url);
 ---
 
-<BaseLayout title={siteInfo.name} description={siteInfo.description} showLaunchSequence>
-  <section class="hero-section" id="home" aria-labelledby="hero-title">
-    <Picture
-      class="hero-scene"
-      src={pyutocorDuskScene}
-      formats={["avif"]}
-      fallbackFormat="webp"
-      alt={`${siteInfo.name} 的暮色铁路城市景观`}
-      loading="eager"
-      fetchpriority="high"
-    />
-    <div class="hero-copy">
-      <p class="server-kicker">{wayfindingPrototype.routeName}</p>
-      <h1 id="hero-title">下一站，{siteInfo.name}。</h1>
-      <p class="hero-description">
-        从站台出发，探索这条仍在铺设中的路线。
-      </p>
-      <div class="hero-actions" aria-label="主要操作">
-        <a class="button button-primary" href="#join">查看加入方式</a>
-        <a class="button button-secondary" href="#news">阅读公告</a>
-      </div>
-    </div>
-
-    <aside class="server-card" aria-label="服务器信息">
-      <span class="server-card-label">服务器地址</span>
-      <strong>{siteInfo.serverAddress}</strong>
-      <p>正式地址确认后只需要更新 `src/data/site.ts`。</p>
-    </aside>
-  </section>
-
-  <section class="content-section" id="features" aria-labelledby="features-title">
-    <div class="section-heading">
-      <p class="section-label">Features</p>
-      <h2 id="features-title">先保留内容架构，不急着堆交互</h2>
-    </div>
-    <div class="feature-grid">
-      <article>
-        <h3>内容优先</h3>
-        <p>规则、指南和公告通过 Astro Content Collections 管理，便于后续扩展独立页面。</p>
-      </article>
-      <article>
-        <h3>静态发布</h3>
-        <p>默认 SSG，适合官网首屏和长内容页面，也方便部署到静态托管环境。</p>
-      </article>
-      <article>
-        <h3>按需交互</h3>
-        <p>在线人数、地图或复制服务器地址这类功能后续可以作为 island 独立加入。</p>
-      </article>
-    </div>
-  </section>
-
-  <section class="content-section" id="news" aria-labelledby="news-title">
-    <div class="section-heading">
-      <p class="section-label">News</p>
-      <h2 id="news-title">公告内容已经接入集合</h2>
-    </div>
-    <ol class="news-list">
-      {
-        newsItems.map((entry) => (
-          <li>
-            <time datetime={entry.data.publishedAt.toISOString()}>
-              {entry.data.publishedAt.toLocaleDateString("zh-CN")}
-            </time>
-            <div>
-              <h3>{entry.data.title}</h3>
-              <p>{entry.data.description}</p>
-            </div>
-          </li>
-        ))
-      }
-    </ol>
-  </section>
-
-  <section class="content-section join-section" id="join" aria-labelledby="join-title">
-    <div class="section-heading">
-      <p class="section-label">Join</p>
-      <h2 id="join-title">下一步补齐真实服务器信息</h2>
-    </div>
-    <p>
-      等服务器版本、地址、白名单或身份验证流程确定后，把加入流程写进
-      `src/content/guides/join.md`，再决定是否需要独立指南页。
-    </p>
-  </section>
-</BaseLayout>
+<!doctype html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="refresh" content={`0;url=${defaultLocaleHref}`} />
+    <meta name="robots" content="noindex, follow" />
+    <link rel="canonical" href={canonicalUrl} />
+    <title>Redirecting to Fetarute</title>
+  </head>
+  <body>
+    <a href={defaultLocaleHref}>Continue to Fetarute</a>
+  </body>
+</html>

@@ -1,4 +1,6 @@
 ---
+translationKey: "join"
+locale: "zh-Hans"
 title: "加入服务器"
 description: "Fetarute 加入指南的内容占位。"
 order: 10

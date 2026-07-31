@@ -7,8 +7,6 @@ import type { RailwayLine } from "@/data/railway";
 export interface SiteInfo {
   /** 公开展示的服务器名称。 */
   name: string;
-  /** 默认 SEO 描述；页面没有专门描述时使用它。 */
-  description: string;
   /** 官网正式地址；canonical、社交卡片和结构化数据都从这里生成绝对 URL。 */
   url: string;
   /** 默认社交分享图片；页面没有专属封面时使用品牌图标。 */
@@ -18,12 +16,14 @@ export interface SiteInfo {
 }
 
 /**
- * 顶部导航项。
- * `href` 可以先指向首页 section，等独立页面稳定后再切换为页面路由。
+ * 主导航的稳定结构。
+ * 文案键交给当前 locale 的消息表翻译，锚点仍集中在站点数据层，避免页面组件各自约定首页章节地址。
  */
 export interface PrimaryNavItem {
-  label: string;
-  href: string;
+  /** 对应 i18n navigation 消息中的键名。 */
+  labelKey: "home" | "features" | "news" | "join";
+  /** 首页中可长期引用的章节锚点。 */
+  fragment: "home" | "features" | "news" | "join";
 }
 
 /**
@@ -41,25 +41,24 @@ export interface WayfindingPrototype {
 
 /**
  * Fetarute 官网当前的公开站点配置。
- * 真实服务器地址、品牌名或默认 SEO 文案确认后优先改这里，布局和页面只消费该对象。
+ * 真实服务器地址、品牌名或分享图片确认后优先改这里；本地化文案与 SEO 描述则集中在 i18n messages。
  */
 export const siteInfo: SiteInfo = {
   name: "Fetarute",
-  description: "Fetarute 是一个正在建设中的 Minecraft 服务器官网。",
   url: "https://www.fetarute.org",
   socialImage: "/web-app-manifest-512x512.png",
   serverAddress: "play.fetarute.example",
 };
 
 /**
- * 首页首版导航配置。
- * 早期全部指向首页 section，等公告、指南等独立页面稳定后再把对应入口升级为路由。
+ * 首页主导航的展示顺序和章节锚点。
+ * 每种语言复用同一信息架构，只有 labelKey 所指向的读者文案随 locale 改变。
  */
-export const primaryNavItems: PrimaryNavItem[] = [
-  { label: "首页", href: "#home" },
-  { label: "玩法", href: "#features" },
-  { label: "公告", href: "#news" },
-  { label: "加入", href: "#join" },
+export const primaryNavItems: readonly PrimaryNavItem[] = [
+  { labelKey: "home", fragment: "home" },
+  { labelKey: "features", fragment: "features" },
+  { labelKey: "news", fragment: "news" },
+  { labelKey: "join", fragment: "join" },
 ];
 
 /**

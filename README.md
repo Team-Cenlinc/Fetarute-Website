@@ -48,6 +48,7 @@ src/
   components/        可复用 Astro 组件
   content/           公告、指南等内容
   data/              站点级静态数据
+  i18n/              公开语言、文案、内容查询与本地化链接
   layouts/           页面布局
   pages/             Astro 页面路由
   styles/            全局样式和品牌变量
@@ -58,6 +59,8 @@ src/
 
 - 公告：`src/content/news/`
 - 指南：`src/content/guides/`
-- 站点名称、默认描述、服务器地址、主导航：`src/data/site.ts`
+- 站点名称、服务器地址、品牌图片与语言无关的主导航结构：`src/data/site.ts`
+- 公开语言、普通界面文案、各语言 SEO 描述与本地化链接：`src/i18n/`
+- 公告和指南需在 frontmatter 标明 `locale` 与 `translationKey`，同一内容的翻译共用关联键。
 
 当前首页是项目骨架，不是最终视觉方案。正式设计前应先确认服务器定位、真实地址、版本、玩法模块、加入流程和需要公开的社区入口。

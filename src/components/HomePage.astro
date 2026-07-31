@@ -1,0 +1,106 @@
+---
+import { Picture } from "astro:assets";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import pyutocorDuskScene from "@/assets/pages/home/pyutocor-dusk.png";
+import { siteInfo, wayfindingPrototype } from "@/data/site";
+import { getLocalizedNews } from "@/i18n/content";
+import { localeMetadata, type Locale } from "@/i18n/config";
+import { getLocalizedRelativeUrl } from "@/i18n/links";
+import { getMessages } from "@/i18n/messages";
+
+/**
+ * 多语言首页的属性。
+ * 每个公开语言路由只传入 locale；页面结构、图片与交互边界保持同一份 Astro SSG 实现。
+ */
+export interface Props {
+  /** 当前首页所属的公开语言。 */
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const messages = getMessages(locale);
+const newsItems = await getLocalizedNews(locale);
+const dateFormatter = new Intl.DateTimeFormat(localeMetadata[locale].languageTag, {
+  dateStyle: "long",
+});
+---
+
+<BaseLayout locale={locale} description={messages.description} showLaunchSequence>
+  <section class="hero-section" id="home" aria-labelledby="hero-title">
+    <Picture
+      class="hero-scene"
+      src={pyutocorDuskScene}
+      formats={["avif"]}
+      fallbackFormat="webp"
+      alt={messages.home.sceneAlt}
+      loading="eager"
+      fetchpriority="high"
+    />
+    <div class="hero-copy">
+      <p class="server-kicker">{wayfindingPrototype.routeName}</p>
+      <h1 id="hero-title">{messages.home.title}</h1>
+      <p class="hero-description">{messages.home.description}</p>
+      <div class="hero-actions" aria-label={messages.home.actionsLabel}>
+        <a class="button button-primary" href={getLocalizedRelativeUrl(locale, "", "join")}>
+          {messages.home.joinAction}
+        </a>
+        <a class="button button-secondary" href={getLocalizedRelativeUrl(locale, "", "news")}>
+          {messages.home.newsAction}
+        </a>
+      </div>
+    </div>
+
+    <aside class="server-card" aria-label={messages.home.serverCardLabel}>
+      <span class="server-card-label">{messages.home.serverCardLabel}</span>
+      <strong>{siteInfo.serverAddress}</strong>
+      <p>{messages.home.serverCardDescription}</p>
+    </aside>
+  </section>
+
+  <section class="content-section" id="features" aria-labelledby="features-title">
+    <div class="section-heading">
+      <p class="section-label">{messages.home.featuresKicker}</p>
+      <h2 id="features-title">{messages.home.featuresTitle}</h2>
+    </div>
+    <div class="feature-grid">
+      {
+        messages.home.features.map((feature) => (
+          <article>
+            <h3>{feature.title}</h3>
+            <p>{feature.description}</p>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="content-section" id="news" aria-labelledby="news-title">
+    <div class="section-heading">
+      <p class="section-label">{messages.home.newsKicker}</p>
+      <h2 id="news-title">{messages.home.newsTitle}</h2>
+    </div>
+    <ol class="news-list">
+      {
+        newsItems.map((entry) => (
+          <li>
+            <time datetime={entry.data.publishedAt.toISOString()}>
+              {dateFormatter.format(entry.data.publishedAt)}
+            </time>
+            <div>
+              <h3>{entry.data.title}</h3>
+              <p>{entry.data.description}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section class="content-section join-section" id="join" aria-labelledby="join-title">
+    <div class="section-heading">
+      <p class="section-label">{messages.home.joinKicker}</p>
+      <h2 id="join-title">{messages.home.joinTitle}</h2>
+    </div>
+    <p>{messages.home.joinDescription}</p>
+  </section>
+</BaseLayout>
