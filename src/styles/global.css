@@ -205,6 +205,11 @@ html[data-launching] .site-header {
   min-width: 0;
 }
 
+/* 小屏把服务台与出口收束为三个独立触发牌；桌面继续使用下方的文字导视牌。 */
+.mobile-header-tools {
+  display: none;
+}
+
 .home-nav {
   position: relative;
   display: grid;
@@ -579,6 +584,95 @@ html[data-launching] .site-header {
   background: var(--color-service);
   color: var(--color-service-text);
   padding: 24px;
+}
+
+/* 小屏菜单共用同一块绝对定位面板，保证从任一图标打开时都贴齐 Header 右缘。 */
+.mobile-header-tool__menu {
+  position: absolute;
+  z-index: 3;
+  top: 100%;
+  right: 0;
+  display: grid;
+  width: min(298px, calc(100vw - 24px));
+  gap: 22px;
+  border: 3px solid color-mix(in srgb, currentColor 92%, transparent);
+  border-top: 0;
+  padding: 18px;
+}
+
+.mobile-header-tool--service .mobile-header-tool__menu {
+  background: var(--color-service);
+  color: var(--color-service-text);
+}
+
+.mobile-header-tool--destination .mobile-header-tool__menu {
+  background: var(--color-exit);
+  color: var(--color-exit-text);
+}
+
+.mobile-destination-menu__heading {
+  display: grid;
+  gap: 6px;
+}
+
+.mobile-destination-menu__heading p {
+  margin: 0;
+  color: color-mix(in srgb, currentColor 78%, transparent);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.35;
+}
+
+.mobile-header-tool--destination .service-menu__heading {
+  color: color-mix(in srgb, var(--color-exit-text) 78%, transparent);
+}
+
+.mobile-destination-menu__links {
+  display: grid;
+  gap: 6px;
+}
+
+.mobile-destination-menu__links a {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 10px;
+  color: color-mix(in srgb, var(--color-exit-text) 82%, transparent);
+  font-size: 15px;
+  font-weight: 730;
+  transition:
+    background-color 180ms var(--motion-header-enter),
+    color 180ms var(--motion-header-enter),
+    transform 180ms var(--motion-header-enter);
+}
+
+.mobile-destination-menu__links a svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.mobile-destination-menu__links a:hover,
+.mobile-destination-menu__links a:focus-visible {
+  background: color-mix(in srgb, var(--color-exit-text) 18%, transparent);
+  color: var(--color-exit-text);
+}
+
+.mobile-destination-menu__links a:focus-visible {
+  outline: 2px solid var(--color-exit-text);
+  outline-offset: -2px;
+}
+
+.mobile-destination-menu__links a[aria-current="page"] {
+  background: color-mix(in srgb, var(--color-exit-text) 28%, transparent);
+  color: var(--color-exit-text);
+}
+
+.mobile-destination-menu__links a:active {
+  transform: scale(0.98);
 }
 
 .service-menu__group {
@@ -1492,7 +1586,10 @@ html[data-launching] .launch-sequence {
   .service-desk__summary > *,
   .exit-menu,
   .exit-menu > *,
-  .appearance-choice {
+  .appearance-choice,
+  .mobile-header-tool__summary,
+  .mobile-header-tool__icon,
+  .mobile-destination-menu__links a {
     transition-duration: 0ms;
   }
 }
@@ -1557,11 +1654,7 @@ html[data-launching] .launch-sequence {
     top: 12px;
     width: calc(100% - 24px);
     min-height: 76px;
-    grid-template-columns:
-      minmax(112px, 1fr)
-      minmax(max-content, 0.48fr)
-      minmax(max-content, 0.76fr)
-      minmax(max-content, 0.7fr);
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .brand {
@@ -1576,81 +1669,80 @@ html[data-launching] .launch-sequence {
     display: none;
   }
 
-  .home-nav {
-    min-width: 0;
-    justify-items: center;
-    gap: 0;
-    padding: 0;
+  /* 三个触发牌各自保持 44px 以上的触控面积；品牌仍是左侧唯一的图形识别。 */
+  .mobile-header-tools {
+    display: grid;
+    grid-auto-columns: 44px;
+    grid-auto-flow: column;
+    align-self: stretch;
+    gap: 2px;
+    justify-self: end;
   }
 
-  .home-nav__label {
+  .mobile-header-tool {
+    position: static;
+    min-width: 0;
+  }
+
+  .mobile-header-tool--service {
+    background: var(--color-service);
+    color: var(--color-service-text);
+  }
+
+  .mobile-header-tool--destination {
+    background: var(--color-exit);
+    color: var(--color-exit-text);
+  }
+
+  .mobile-header-tool__summary {
+    display: grid;
+    width: 44px;
+    height: 100%;
+    min-height: 76px;
+    place-items: center;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .mobile-header-tool__summary::-webkit-details-marker {
     display: none;
   }
 
-  .home-nav__primary {
+  .mobile-header-tool__summary::marker {
+    content: "";
+  }
+
+  .mobile-header-tool__summary:focus-visible {
+    outline: 3px solid currentColor;
+    outline-offset: -3px;
+  }
+
+  .mobile-header-tool__summary:active .mobile-header-tool__icon {
+    transform: translateY(1px);
+  }
+
+  .mobile-header-tool[open] .mobile-header-tool__summary {
+    background: color-mix(in srgb, currentColor 10%, transparent);
+  }
+
+  .mobile-header-tool__icon {
     display: grid;
-    justify-items: center;
-    gap: 0;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    transition: transform 100ms var(--motion-header-enter);
   }
 
-  .home-nav__text-stack {
-    display: contents;
-  }
-
-  .home-nav__arrow {
-    grid-area: 1 / 1;
-    width: 25px;
-    height: 25px;
-    margin-top: 0;
-  }
-
-  .home-nav__indicator {
-    grid-area: 2 / 1;
-    justify-self: center;
-    width: 14px;
-    height: 14px;
-  }
-
-  .home-nav__indicator-dot {
-    left: 0;
-    right: auto;
+  .mobile-header-tool__icon svg {
+    display: block;
     width: 100%;
     height: 100%;
   }
 
+  .home-nav,
   .service-desk,
   .exit-menu {
-    min-width: 0;
-  }
-
-  .service-desk__summary {
-    justify-content: center;
-    gap: 4px;
-    padding: 0 7px;
-  }
-
-  .service-desk__label,
-  .exit-menu__label {
-    font-size: 14px;
-  }
-
-  .service-desk__marker-row {
     display: none;
-  }
-
-  .exit-menu {
-    justify-items: center;
-    gap: 0;
-    padding: 0 10px;
-  }
-
-  .exit-menu__hint {
-    display: none;
-  }
-
-  .service-desk__menu {
-    width: min(298px, calc(100vw - 24px));
-    padding: 18px;
   }
 
   .hero-section {

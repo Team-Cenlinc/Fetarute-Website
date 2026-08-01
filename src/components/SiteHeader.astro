@@ -1,11 +1,13 @@
 ---
 import arrowUpRightIcon from "@phosphor-icons/core/assets/bold/arrow-up-right-bold.svg?raw";
 import circleHalfIcon from "@phosphor-icons/core/assets/bold/circle-half-bold.svg?raw";
+import dotsThreeIcon from "@phosphor-icons/core/assets/bold/dots-three-bold.svg?raw";
 import infoIcon from "@phosphor-icons/core/assets/bold/info-bold.svg?raw";
 import moonIcon from "@phosphor-icons/core/assets/bold/moon-bold.svg?raw";
 import sunIcon from "@phosphor-icons/core/assets/bold/sun-bold.svg?raw";
 import translateIcon from "@phosphor-icons/core/assets/bold/translate-bold.svg?raw";
 import fetaruteLogo from "@/assets/fetarute-branding/fetarute-logo.svg?raw";
+import { primaryNavItems } from "@/data/site";
 import { localeMetadata, locales, type Locale } from "@/i18n/config";
 import { getLocalizedRelativeUrl } from "@/i18n/links";
 import { getMessages } from "@/i18n/messages";
@@ -38,6 +40,110 @@ const appearanceOptions = [
     <span class="brand-wordmark" aria-hidden="true" set:html={fetaruteLogo}></span>
   </a>
 
+  <div class="mobile-header-tools">
+    <details class="mobile-header-tool mobile-header-tool--service" data-header-menu>
+      <summary class="mobile-header-tool__summary" aria-label={messages.languageNavigationLabel}>
+        <span class="mobile-header-tool__icon" aria-hidden="true" set:html={translateIcon}></span>
+      </summary>
+
+      <div
+        class="mobile-header-tool__menu"
+        data-header-menu-panel
+        aria-labelledby="mobile-language-menu-label"
+      >
+        <section class="service-menu__group" aria-labelledby="mobile-language-menu-label">
+          <h2 id="mobile-language-menu-label" class="service-menu__heading">
+            {messages.languageNavigationLabel}
+          </h2>
+          <nav class="language-links" aria-label={messages.languageNavigationLabel}>
+            {
+              locales.map((alternateLocale) => (
+                <a
+                  class="language-link"
+                  href={getLocalizedRelativeUrl(alternateLocale)}
+                  lang={localeMetadata[alternateLocale].languageTag}
+                  aria-label={localeMetadata[alternateLocale].label}
+                  aria-current={alternateLocale === locale ? "page" : undefined}
+                >
+                  {localeMetadata[alternateLocale].shortLabel}
+                </a>
+              ))
+            }
+          </nav>
+        </section>
+      </div>
+    </details>
+
+    <details class="mobile-header-tool mobile-header-tool--service" data-header-menu>
+      <summary class="mobile-header-tool__summary" aria-label={messages.appearanceNavigationLabel}>
+        <span class="mobile-header-tool__icon" aria-hidden="true" set:html={circleHalfIcon}></span>
+      </summary>
+
+      <div
+        class="mobile-header-tool__menu"
+        data-header-menu-panel
+        aria-labelledby="mobile-appearance-menu-label"
+      >
+        <section class="service-menu__group" aria-labelledby="mobile-appearance-menu-label">
+          <h2 id="mobile-appearance-menu-label" class="service-menu__heading">
+            {messages.appearanceNavigationLabel}
+          </h2>
+          <div class="appearance-options">
+            {
+              appearanceOptions.map((option) => (
+                <button
+                  class="appearance-choice"
+                  type="button"
+                  data-appearance-choice={option.value}
+                  aria-pressed="false"
+                >
+                  <span class="appearance-choice__icon" aria-hidden="true" set:html={option.icon}></span>
+                  <span>{option.label}</span>
+                </button>
+              ))
+            }
+          </div>
+        </section>
+      </div>
+    </details>
+
+    <details class="mobile-header-tool mobile-header-tool--destination" data-header-menu>
+      <summary class="mobile-header-tool__summary" aria-label={messages.destinationMenuLabel}>
+        <span class="mobile-header-tool__icon" aria-hidden="true" set:html={dotsThreeIcon}></span>
+      </summary>
+
+      <div
+        class="mobile-header-tool__menu mobile-destination-menu__panel"
+        data-header-menu-panel
+        aria-labelledby="mobile-destination-menu-label"
+      >
+        <div class="mobile-destination-menu__heading">
+          <h2 id="mobile-destination-menu-label" class="service-menu__heading">
+            {messages.destinationMenuLabel}
+          </h2>
+          <p>{messages.destinationMenuHint}</p>
+        </div>
+        <nav class="mobile-destination-menu__links" aria-label={messages.navigationLabel}>
+          {
+            primaryNavItems.map((item) => (
+              <a
+                href={
+                  item.fragment === "home"
+                    ? getLocalizedRelativeUrl(locale)
+                    : getLocalizedRelativeUrl(locale, "", item.fragment)
+                }
+                aria-current={item.fragment === "home" ? "page" : undefined}
+              >
+                <span>{messages.navigation[item.labelKey]}</span>
+                <span aria-hidden="true" set:html={arrowUpRightIcon}></span>
+              </a>
+            ))
+          }
+        </nav>
+      </div>
+    </details>
+  </div>
+
   <span class="site-header__spacer" aria-hidden="true"></span>
 
   <a class="home-nav" href={getLocalizedRelativeUrl(locale)}>
@@ -53,7 +159,7 @@ const appearanceOptions = [
     </span>
   </a>
 
-  <details class="service-desk">
+  <details class="service-desk" data-header-menu>
     <summary class="service-desk__summary">
       <span class="service-desk__direction">
         <span class="service-desk__copy">
@@ -67,7 +173,7 @@ const appearanceOptions = [
       </span>
     </summary>
 
-    <div class="service-desk__menu" aria-label={messages.serviceDeskLabel}>
+    <div class="service-desk__menu" data-header-menu-panel aria-label={messages.serviceDeskLabel}>
       <section class="service-menu__group" aria-labelledby="language-menu-label">
         <h2 id="language-menu-label" class="service-menu__heading">
           {messages.languageNavigationLabel}
@@ -132,10 +238,7 @@ const appearanceOptions = [
   const appearanceButtons = Array.from(
     document.querySelectorAll<HTMLButtonElement>("[data-appearance-choice]"),
   );
-  const serviceDesk = document.querySelector<HTMLDetailsElement>(".service-desk");
-  const headerMenus = [serviceDesk].filter(
-    (menu): menu is HTMLDetailsElement => menu instanceof HTMLDetailsElement,
-  );
+  const headerMenus = Array.from(document.querySelectorAll<HTMLDetailsElement>("[data-header-menu]"));
 
   /**
    * 将服务台中的外观选择同步到文档根节点和持久化设置。
@@ -173,19 +276,23 @@ const appearanceOptions = [
     HTMLDetailsElement,
     { direction: "opening" | "closing"; animation: Animation }
   >();
-  /** 桌面服务台离开后的短暂收起延迟，允许指针自然移动到与站牌相连的菜单内容。 */
+  /** 所有 Header 菜单共用的 hover 收起计时器，允许指针从触发牌移动到下方菜单。 */
   const headerHoverCloseTimers = new WeakMap<HTMLDetailsElement, number>();
+  /** 精细指针触发的临时预览集合；click 后会转为固定打开，避免首次 click 反而关闭菜单。 */
+  const headerHoverPreviewMenus = new WeakSet<HTMLDetailsElement>();
+  /** click/touch 或键盘打开后固定的菜单集合，指针离开时也继续保持可操作。 */
+  const headerPinnedMenus = new WeakSet<HTMLDetailsElement>();
   /** 菜单以裁切向下揭示的时长；收起延迟必须覆盖它，避免尚未显露的区域失去 hover 命中。 */
-  const serviceDeskMenuRevealDuration = 220;
+  const headerMenuRevealDuration = 220;
   /** 揭示结束后额外保留的指针交接时间，覆盖从触发牌移入扩大菜单区域的自然轨迹。 */
-  const serviceDeskHoverCloseDelay = serviceDeskMenuRevealDuration + 100;
+  const headerHoverCloseDelay = headerMenuRevealDuration + 100;
 
   /**
-   * 找到服务台导视牌对应的浮层。
+   * 找到当前 Header 导视牌对应的浮层。
    * 只读取当前 details 内的直接菜单，避免在页面新增同名结构后串扰其它交互。
    */
   function getHeaderMenuPanel(menu: HTMLDetailsElement) {
-    return menu.querySelector<HTMLElement>(".service-desk__menu");
+    return menu.querySelector<HTMLElement>("[data-header-menu-panel]");
   }
 
   /** 减少动态效果时保留状态切换本身，省去位移与缩放的过渡。 */
@@ -210,6 +317,30 @@ const appearanceOptions = [
     headerHoverCloseTimers.delete(menu);
   }
 
+  /** 延迟收起未被 click 固定的预览菜单；键盘焦点仍在面板内时保持打开，避免破坏键盘操作。 */
+  function scheduleHeaderHoverClose(menu: HTMLDetailsElement) {
+    cancelHeaderHoverClose(menu);
+
+    if (headerPinnedMenus.has(menu)) {
+      return;
+    }
+
+    const closeTimer = window.setTimeout(() => {
+      headerHoverCloseTimers.delete(menu);
+
+      if (
+        headerPinnedMenus.has(menu) ||
+        menu.matches(":hover") ||
+        menu.contains(document.activeElement)
+      ) {
+        return;
+      }
+
+      closeHeaderMenu(menu);
+    }, headerHoverCloseDelay);
+    headerHoverCloseTimers.set(menu, closeTimer);
+  }
+
   /** 读取全局 Header 动效曲线，确保脚本浮层与 CSS 触发反馈使用同一套导视节奏。 */
   function getHeaderMotionEasing(variableName: "--motion-header-enter" | "--motion-header-exit") {
     return getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
@@ -232,11 +363,11 @@ const appearanceOptions = [
   }
 
   /**
-   * 播放从服务台导视牌底边向下延伸的菜单过渡。
+   * 播放从 Header 导视牌底边向下延伸的菜单过渡。
    * 以裁切揭示代替淡入，让同色菜单读作 Header 的连续延伸，同时避免动画期间触发布局重排。
    */
   function openHeaderMenu(menu: HTMLDetailsElement) {
-    if (!menu.open || prefersReducedHeaderMotion()) {
+    if (!menu.open) {
       return;
     }
 
@@ -245,6 +376,10 @@ const appearanceOptions = [
         closeHeaderMenu(otherMenu);
       }
     });
+
+    if (prefersReducedHeaderMotion()) {
+      return;
+    }
 
     const panel = getHeaderMenuPanel(menu);
     if (!panel) {
@@ -264,7 +399,7 @@ const appearanceOptions = [
         { clipPath: "inset(0)" },
       ],
       {
-        duration: serviceDeskMenuRevealDuration,
+        duration: headerMenuRevealDuration,
         easing: getHeaderMotionEasing("--motion-header-enter"),
         fill: "both",
       },
@@ -292,6 +427,8 @@ const appearanceOptions = [
     cancelHeaderHoverClose(menu);
 
     if (!menu.open) {
+      headerHoverPreviewMenus.delete(menu);
+      headerPinnedMenus.delete(menu);
       return;
     }
 
@@ -299,6 +436,8 @@ const appearanceOptions = [
       menu.removeAttribute("open");
       delete menu.dataset.closing;
       headerMenuAnimations.delete(menu);
+      headerHoverPreviewMenus.delete(menu);
+      headerPinnedMenus.delete(menu);
 
       if (restoreFocus) {
         menu.querySelector<HTMLElement>("summary")?.focus();
@@ -376,6 +515,41 @@ const appearanceOptions = [
       }
     });
 
+    menu.addEventListener("pointerenter", () => {
+      if (!supportsHeaderHoverPreview() || headerPinnedMenus.has(menu)) {
+        return;
+      }
+
+      cancelHeaderHoverClose(menu);
+      headerHoverPreviewMenus.add(menu);
+      if (menu.open) {
+        reopenHeaderMenu(menu);
+      } else {
+        menu.open = true;
+      }
+    });
+
+    menu.addEventListener("pointerleave", () => {
+      if (!supportsHeaderHoverPreview()) {
+        return;
+      }
+
+      scheduleHeaderHoverClose(menu);
+    });
+
+    // 预览菜单的焦点移出整个 details 后重新安排收起，面板内部转移则不打断键盘操作。
+    menu.addEventListener("focusout", (event) => {
+      const nextFocusedElement = event.relatedTarget;
+
+      if (nextFocusedElement instanceof Node && menu.contains(nextFocusedElement)) {
+        return;
+      }
+
+      if (headerHoverPreviewMenus.has(menu)) {
+        scheduleHeaderHoverClose(menu);
+      }
+    });
+
     menu.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -385,10 +559,20 @@ const appearanceOptions = [
 
     menu.querySelector<HTMLElement>("summary")?.addEventListener("click", (event) => {
       if (!menu.open) {
+        // 触摸、键盘或没有先触发 hover 的 click 都应把菜单固定为可继续操作的打开状态。
+        headerPinnedMenus.add(menu);
         return;
       }
 
       event.preventDefault();
+      cancelHeaderHoverClose(menu);
+      if (headerHoverPreviewMenus.has(menu)) {
+        // hover 预览后的第一次 click 用于固定菜单，不应沿用旧逻辑把菜单立即关掉。
+        headerHoverPreviewMenus.delete(menu);
+        headerPinnedMenus.add(menu);
+        return;
+      }
+
       const activeAnimation = headerMenuAnimations.get(menu);
       if (activeAnimation?.direction === "closing") {
         reopenHeaderMenu(menu);
@@ -397,39 +581,6 @@ const appearanceOptions = [
       }
     });
   });
-
-  if (serviceDesk) {
-    serviceDesk.addEventListener("pointerenter", () => {
-      if (!supportsHeaderHoverPreview()) {
-        return;
-      }
-
-      cancelHeaderHoverClose(serviceDesk);
-      if (serviceDesk.open) {
-        reopenHeaderMenu(serviceDesk);
-      } else {
-        serviceDesk.open = true;
-      }
-    });
-
-    serviceDesk.addEventListener("pointerleave", () => {
-      if (!supportsHeaderHoverPreview()) {
-        return;
-      }
-
-      cancelHeaderHoverClose(serviceDesk);
-      const closeTimer = window.setTimeout(() => {
-        headerHoverCloseTimers.delete(serviceDesk);
-        // 触发牌会因图标展开而改变命中区域；延迟结束后仍在 details 内则不应误收起菜单。
-        if (serviceDesk.matches(":hover")) {
-          return;
-        }
-
-        closeHeaderMenu(serviceDesk);
-      }, serviceDeskHoverCloseDelay);
-      headerHoverCloseTimers.set(serviceDesk, closeTimer);
-    });
-  }
 
   document.addEventListener("click", (event) => {
     const clickTarget = event.target;
