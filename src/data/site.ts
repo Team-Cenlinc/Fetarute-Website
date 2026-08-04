@@ -1,5 +1,5 @@
 // 配置文件会在 Astro 启动前由 Node 直接读取 site.ts，因此这里使用相对路径避免配置加载阶段没有 Vite 别名解析器。
-import { getRailwayLineKey, type RailwayLineKey } from "./railway";
+import { getRailwayLineKey, railwayLines, type RailwayLineKey } from "./railway";
 
 /**
  * 官网基础信息的单一数据源。
@@ -34,6 +34,19 @@ export interface PrimaryNavItem {
 export interface WayfindingPrototype {
   /** 启动序列依线路内站序播放的正式线路复合身份键。 */
   launchLineKey: RailwayLineKey;
+  /** 首页导视牌的装饰性轨网信号配置；只营造网络活力，不表示首页归属某条真实线路。 */
+  homeNavigationSignal: HomeNavigationSignal;
+}
+
+/**
+ * 首页导视牌的装饰性轨网信号配置。
+ * 候选项只保存线路身份，颜色仍由 railway.ts 派生；单线与双线等概率出现，但都不改变固定 Header 的几何。
+ */
+export interface HomeNavigationSignal {
+  /** 可供同一浏览会话随机选择的非主线线路身份。 */
+  lineKeys: readonly RailwayLineKey[];
+  /** 选中双线轨道形态的概率，取值范围为 0 至 1。 */
+  doubleLineProbability: number;
 }
 
 /**
@@ -59,9 +72,21 @@ export const primaryNavItems: readonly PrimaryNavItem[] = [
 ];
 
 /**
+ * 首页装饰信号的候选线路身份。
+ * 灰色主线保留给真实线路语义，首页只轮换高辨识度的支线与城市线，避免 Header 在不同会话中显得失焦。
+ */
+const homeNavigationSignalLineKeys: readonly RailwayLineKey[] = railwayLines
+  .filter((line) => line.code !== "Main")
+  .map((line) => getRailwayLineKey(line.operatorCode, line.code));
+
+/**
  * 首页首轮导视展示配置。
  * 蒲塘桥场景位于大都会线，因而启动序列以 MT 已确认的线路站序播放，避免继续使用虚构站名。
  */
 export const wayfindingPrototype: WayfindingPrototype = {
   launchLineKey: getRailwayLineKey("SURC", "MT"),
+  homeNavigationSignal: {
+    lineKeys: homeNavigationSignalLineKeys,
+    doubleLineProbability: 0.5,
+  },
 };

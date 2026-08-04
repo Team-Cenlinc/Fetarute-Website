@@ -7,7 +7,9 @@ import moonIcon from "@phosphor-icons/core/assets/bold/moon-bold.svg?raw";
 import sunIcon from "@phosphor-icons/core/assets/bold/sun-bold.svg?raw";
 import translateIcon from "@phosphor-icons/core/assets/bold/translate-bold.svg?raw";
 import fetaruteLogo from "@/assets/fetarute-branding/fetarute-logo.svg?raw";
-import { primaryNavItems } from "@/data/site";
+import { getRailwayLineCssVariableName } from "@/data/palette";
+import { railwayLineByKey } from "@/data/railway";
+import { primaryNavItems, wayfindingPrototype } from "@/data/site";
 import { localeMetadata, locales, type Locale } from "@/i18n/config";
 import { getLocalizedRelativeUrl } from "@/i18n/links";
 import { getMessages } from "@/i18n/messages";
@@ -25,6 +27,22 @@ const { locale } = Astro.props;
 const messages = getMessages(locale);
 
 /**
+ * 供首页装饰信号选择的 CSS 线路 token。
+ * 先由 site.ts 的身份白名单筛选，再在此解析为 palette token，避免客户端持有或复制任何十六进制线路色。
+ */
+const homeNavigationSignalLineCssVariables = wayfindingPrototype.homeNavigationSignal.lineKeys.map(
+  (lineKey) => {
+    const line = railwayLineByKey.get(lineKey);
+
+    if (!line) {
+      throw new Error(`首页导视信号引用了未录入的线路：${lineKey}。`);
+    }
+
+    return getRailwayLineCssVariableName(line);
+  },
+);
+
+/**
  * 手动外观切换的三种稳定选项。
  * “跟随系统”不写入强制值，其余两项与 BaseLayout 的 palette CSS 变量一一对应。
  */
@@ -34,6 +52,142 @@ const appearanceOptions = [
   { value: "dark", label: messages.appearanceOptions.dark, icon: moonIcon },
 ] as const;
 ---
+
+<script
+  is:inline
+  define:vars={{
+    homeNavigationSignalLineCssVariables,
+    homeNavigationSignalDoubleLineProbability:
+      wayfindingPrototype.homeNavigationSignal.doubleLineProbability,
+  }}
+>
+  (() => {
+    // 同一 tab 内固定轨网信号，避免语言切换或普通导航让 Header 的线路身份来回跳变。
+    const homeNavigationSignalStorageKey = "fetarute.home-navigation-signal";
+
+    /** 生成 0（含）到 1（不含）的随机数；优先使用密码学随机源，受限环境才退回浏览器默认随机源。 */
+    function getHomeNavigationSignalRandom() {
+      try {
+        const randomValues = new Uint32Array(1);
+        window.crypto.getRandomValues(randomValues);
+        return randomValues[0] / 2 ** 32;
+      } catch {
+        return Math.random();
+      }
+    }
+
+    /** 验证会话缓存仍引用当前构建所允许的线路 token，部署更新后忽略过期或手改的存储值。 */
+    function isHomeNavigationSignal(value) {
+      return (
+        value !== null &&
+        typeof value === "object" &&
+        "cssVariables" in value &&
+        "pattern" in value &&
+        Array.isArray(value.cssVariables) &&
+        value.cssVariables.every(
+          (cssVariable) =>
+            typeof cssVariable === "string" &&
+            homeNavigationSignalLineCssVariables.includes(cssVariable),
+        ) &&
+        ((value.pattern === "single" && value.cssVariables.length === 1) ||
+          (value.pattern === "double" &&
+            value.cssVariables.length === 2 &&
+            value.cssVariables[0] !== value.cssVariables[1]))
+      );
+    }
+
+    /** 从已核准的线路 token 与配置好的单双线形态中抽取一次新的纯装饰性信号。 */
+    function createHomeNavigationSignal() {
+      if (homeNavigationSignalLineCssVariables.length === 0) {
+        return null;
+      }
+
+      const lineIndex = Math.floor(
+        getHomeNavigationSignalRandom() * homeNavigationSignalLineCssVariables.length,
+      );
+      const primaryCssVariable = homeNavigationSignalLineCssVariables[lineIndex];
+      const isDoubleLine =
+        homeNavigationSignalLineCssVariables.length > 1 &&
+        getHomeNavigationSignalRandom() < homeNavigationSignalDoubleLineProbability;
+
+      if (!isDoubleLine) {
+        return {
+          cssVariables: [primaryCssVariable],
+          pattern: "single",
+        };
+      }
+
+      // 第二色从去除首色后的候选中抽取，保证并列圆点和双色色带始终包含两条不同线路。
+      const secondaryCssVariables = homeNavigationSignalLineCssVariables.filter(
+        (cssVariable) => cssVariable !== primaryCssVariable,
+      );
+      const secondaryIndex = Math.floor(
+        getHomeNavigationSignalRandom() * secondaryCssVariables.length,
+      );
+
+      return {
+        cssVariables: [primaryCssVariable, secondaryCssVariables[secondaryIndex]],
+        pattern: "double",
+      };
+    }
+
+    let homeNavigationSignal = null;
+    let canPersistHomeNavigationSignal = true;
+
+    try {
+      const storedSignal = window.sessionStorage.getItem(homeNavigationSignalStorageKey);
+      let parsedSignal = null;
+
+      try {
+        parsedSignal = storedSignal ? JSON.parse(storedSignal) : null;
+      } catch {
+        // 仅忽略损坏的历史缓存；存储本身仍可用时会以当前构建的有效信号覆盖它。
+      }
+
+      if (isHomeNavigationSignal(parsedSignal)) {
+        homeNavigationSignal = parsedSignal;
+      }
+    } catch {
+      // 私密浏览或受限存储下不选择随机信号，保持 BaseLayout 提供的确定线路色。
+      canPersistHomeNavigationSignal = false;
+    }
+
+    if (canPersistHomeNavigationSignal && !homeNavigationSignal) {
+      const nextHomeNavigationSignal = createHomeNavigationSignal();
+
+      try {
+        if (nextHomeNavigationSignal) {
+          window.sessionStorage.setItem(
+            homeNavigationSignalStorageKey,
+            JSON.stringify(nextHomeNavigationSignal),
+          );
+
+          homeNavigationSignal = nextHomeNavigationSignal;
+        }
+      } catch {
+        // 只有成功写入才应用随机信号；否则回退到页面已有的确定线路色。
+      }
+    }
+
+    if (homeNavigationSignal) {
+      document.documentElement.style.setProperty(
+        "--home-nav-line-color",
+        `var(${homeNavigationSignal.cssVariables[0]})`,
+      );
+
+      if (homeNavigationSignal.pattern === "double") {
+        document.documentElement.style.setProperty(
+          "--home-nav-line-color-secondary",
+          `var(${homeNavigationSignal.cssVariables[1]})`,
+        );
+      } else {
+        document.documentElement.style.removeProperty("--home-nav-line-color-secondary");
+      }
+
+      document.documentElement.dataset.homeNavIndicatorPattern = homeNavigationSignal.pattern;
+    }
+  })();
+</script>
 
 <header class="site-header" aria-label={messages.headerLabel}>
   <a class="brand" href={getLocalizedRelativeUrl(locale)} aria-label={messages.brandHomeLabel}>

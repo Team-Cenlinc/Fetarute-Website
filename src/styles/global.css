@@ -267,8 +267,12 @@ html[data-launching] .site-header {
   display: grid;
   width: 100%;
   height: clamp(16px, 1.5vw, 20px);
-  /* 首页指示器消费 BaseLayout 按 launchLineKey 生成的语义 token，避免固定某一条线路。 */
-  color: var(--color-home-line);
+  /* 单线站点圆的原始直径；双线态沿水平方向并列追加同尺寸圆点。 */
+  --home-nav-indicator-dot-diameter: clamp(16px, 1.5vw, 20px);
+  /* 双圆之间保留极窄的轨道间隙，使它读作一对线路信号而不是椭圆。 */
+  --home-nav-indicator-dot-gap: clamp(2px, 0.18vw, 3px);
+  /* 会话轨网信号优先于启动线路；无脚本或存储受限时回退到 BaseLayout 的确定线路色。 */
+  color: var(--home-nav-line-color, var(--color-home-line));
   overflow: visible;
 }
 
@@ -281,15 +285,43 @@ html[data-launching] .site-header {
   top: 0;
   /* 圆点中心对齐“首页文字 + 固定箭头”的整体中心，作为线路色的静态起点。 */
   right: calc(
-    (100% - clamp(3px, 0.4vw, 6px) - clamp(28px, 2.2vw, 34px) - clamp(16px, 1.5vw, 20px)) / 2
+    (
+        100% - clamp(3px, 0.4vw, 6px) - clamp(28px, 2.2vw, 34px) -
+          var(--home-nav-indicator-dot-diameter)
+      ) /
+      2
   );
-  width: clamp(16px, 1.5vw, 20px);
-  height: clamp(16px, 1.5vw, 20px);
+  width: var(--home-nav-indicator-dot-diameter);
+  height: var(--home-nav-indicator-dot-diameter);
   border-radius: 50%;
   background: currentColor;
   transition:
     opacity 120ms var(--motion-header-enter),
     transform 180ms var(--motion-header-enter);
+}
+
+/* 双线向原站点圆并列追加同尺寸的第二色圆点；右侧圆的右缘与“首页”文字右缘对齐。 */
+html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-dot {
+  right: calc(var(--home-nav-indicator-dot-diameter) + var(--home-nav-indicator-dot-gap));
+}
+
+html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-dot::after {
+  position: absolute;
+  top: 0;
+  left: calc(100% + var(--home-nav-indicator-dot-gap));
+  width: var(--home-nav-indicator-dot-diameter);
+  height: var(--home-nav-indicator-dot-diameter);
+  border-radius: 50%;
+  background: var(--home-nav-line-color-secondary);
+  content: "";
+}
+
+html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
+  background: linear-gradient(
+    to right,
+    var(--home-nav-line-color) 0 50%,
+    var(--home-nav-line-color-secondary) 50% 100%
+  );
 }
 
 .home-nav__indicator-band {
