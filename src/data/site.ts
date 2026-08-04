@@ -1,4 +1,5 @@
-import type { RailwayLine } from "@/data/railway";
+// 配置文件会在 Astro 启动前由 Node 直接读取 site.ts，因此这里使用相对路径避免配置加载阶段没有 Vite 别名解析器。
+import { getRailwayLineKey, type RailwayLineKey } from "./railway";
 
 /**
  * 官网基础信息的单一数据源。
@@ -27,14 +28,12 @@ export interface PrimaryNavItem {
 }
 
 /**
- * 首页首屏与启动动画共用的导视展示配置。
- * 启动线路只存稳定代码，真实站名、站序和颜色始终从铁路数据模型读取。
+ * 首页首屏与启动动画共用的导视配置。
+ * 配置只存复合线路身份键，线路名称、站序和颜色始终从铁路数据模型读取，避免页面配置复制线路事实。
  */
 export interface WayfindingPrototype {
-  /** 首页场景中展示的线路名称。 */
-  routeName: string;
-  /** 启动序列依线路内站序播放的正式线路代码。 */
-  launchLineCode: RailwayLine["code"];
+  /** 启动序列依线路内站序播放的正式线路复合身份键。 */
+  launchLineKey: RailwayLineKey;
 }
 
 /**
@@ -64,6 +63,5 @@ export const primaryNavItems: readonly PrimaryNavItem[] = [
  * 蒲塘桥场景位于大都会线，因而启动序列以 MT 已确认的线路站序播放，避免继续使用虚构站名。
  */
 export const wayfindingPrototype: WayfindingPrototype = {
-  routeName: "FETARUTE LINE",
-  launchLineCode: "MT",
+  launchLineKey: getRailwayLineKey("SURC", "MT"),
 };

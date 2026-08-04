@@ -267,7 +267,8 @@ html[data-launching] .site-header {
   display: grid;
   width: 100%;
   height: clamp(16px, 1.5vw, 20px);
-  color: var(--line-mt);
+  /* 首页指示器消费 BaseLayout 按 launchLineKey 生成的语义 token，避免固定某一条线路。 */
+  color: var(--color-home-line);
   overflow: visible;
 }
 

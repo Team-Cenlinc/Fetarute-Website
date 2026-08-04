@@ -3,6 +3,7 @@ import { Picture } from "astro:assets";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import pyutocorDuskScene from "@/assets/pages/home/pyutocor-dusk.png";
 import { siteInfo, wayfindingPrototype } from "@/data/site";
+import { railwayLineByKey } from "@/data/railway";
 import { getLocalizedNews } from "@/i18n/content";
 import { localeMetadata, type Locale } from "@/i18n/config";
 import { getLocalizedRelativeUrl } from "@/i18n/links";
@@ -23,6 +24,16 @@ const newsItems = await getLocalizedNews(locale);
 const dateFormatter = new Intl.DateTimeFormat(localeMetadata[locale].languageTag, {
   dateStyle: "long",
 });
+
+/**
+ * 首页导视标题与启动序列共享同一个线路实体。
+ * 沿用线路记录的 secondaryName 保持现有英文 kicker 视觉，同时避免在站点配置中复制自由字符串。
+ */
+const launchLine = railwayLineByKey.get(wayfindingPrototype.launchLineKey);
+
+if (!launchLine) {
+  throw new Error(`首页引用了未录入的线路 ${wayfindingPrototype.launchLineKey}。`);
+}
 ---
 
 <BaseLayout locale={locale} description={messages.description} showLaunchSequence>
@@ -37,7 +48,7 @@ const dateFormatter = new Intl.DateTimeFormat(localeMetadata[locale].languageTag
       fetchpriority="high"
     />
     <div class="hero-copy">
-      <p class="server-kicker">{wayfindingPrototype.routeName}</p>
+      <p class="server-kicker">{launchLine.secondaryName}</p>
       <h1 id="hero-title">{messages.home.title}</h1>
       <p class="hero-description">{messages.home.description}</p>
       <div class="hero-actions" aria-label={messages.home.actionsLabel}>

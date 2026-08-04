@@ -5,10 +5,12 @@ import LaunchSequence from "@/components/LaunchSequence.astro";
 import "@/styles/global.css";
 import {
   getInterfacePaletteCssVariables,
+  getRailwayLineCssVariableName,
   getRailwayLineCssVariables,
   interfacePalette,
 } from "@/data/palette";
-import { siteInfo } from "@/data/site";
+import { railwayLineByKey } from "@/data/railway";
+import { siteInfo, wayfindingPrototype } from "@/data/site";
 import { defaultLocale, localeMetadata, locales, type Locale } from "@/i18n/config";
 import { getLocalizedAbsoluteUrl } from "@/i18n/links";
 import { getMessages } from "@/i18n/messages";
@@ -60,13 +62,27 @@ const languageAlternates = availableLocales.map((alternateLocale) => ({
 const shouldPersistLaunchSeen = import.meta.env.PROD;
 
 /**
- * 在静态 HTML 的根节点写入界面中性色与线路色。
+ * 首页指示器、启动动画与首页标题共享同一条线路记录。
+ * 这里将复合线路身份转换为 CSS 变量引用，避免 global.css 固定某一条线路而与配置漂移。
+ */
+const wayfindingLine = railwayLineByKey.get(wayfindingPrototype.launchLineKey);
+
+if (!wayfindingLine) {
+  throw new Error(`布局引用了未录入的线路 ${wayfindingPrototype.launchLineKey}。`);
+}
+
+const wayfindingLineCssVariable = getRailwayLineCssVariableName(wayfindingLine);
+
+/**
+ * 在静态 HTML 的根节点写入界面中性色、线路色与当前首页线路语义别名。
  * 浅深色媒体条件只替换无彩基础材料，线路 token 始终来自铁路领域模型以保证导视色跨主题一致。
  */
 const paletteCss = `
 :root {
 ${getInterfacePaletteCssVariables(interfacePalette.light)}
 ${getRailwayLineCssVariables()}
+/* 首页指示器消费与启动线路一致的语义 token，实际颜色仍由 railway.ts 的线路变量提供。 */
+--color-home-line: var(${wayfindingLineCssVariable});
 }
 
 @media (prefers-color-scheme: dark) {

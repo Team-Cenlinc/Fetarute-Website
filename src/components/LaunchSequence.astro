@@ -2,7 +2,7 @@
 import {
   getRailwayLineStops,
   getRailwayStationLineServices,
-  railwayLineByCode,
+  railwayLineByKey,
   railwayStationById,
 } from "@/data/railway";
 import fetaruteLogo from "@/assets/fetarute-branding/fetarute-logo.svg?raw";
@@ -27,10 +27,10 @@ const messages = getMessages(locale);
  * 启动动画使用首屏配置指定的真实线路。
  * 线路、车站或站序缺失会在静态构建时中止，避免发布后退回虚构站名或无颜色的导视动画。
  */
-const launchLine = railwayLineByCode.get(wayfindingPrototype.launchLineCode);
+const launchLine = railwayLineByKey.get(wayfindingPrototype.launchLineKey);
 
 if (!launchLine) {
-  throw new Error(`启动动画引用了未录入的线路 ${wayfindingPrototype.launchLineCode}。`);
+  throw new Error(`启动动画引用了未录入的线路 ${wayfindingPrototype.launchLineKey}。`);
 }
 
 /**
@@ -54,7 +54,7 @@ const finalBrandDuration = 760;
  * 按真实线路站序构造启动站牌。
  * 候选站来自首屏线路，客户端会在播放前随机重排；每一帧仍读取本站全部服务线路，确保换乘站能同时展示正确的色带和线路站序。
  */
-const launchStops = getRailwayLineStops(launchLine.code).map((lineStop) => {
+const launchStops = getRailwayLineStops(wayfindingPrototype.launchLineKey).map((lineStop) => {
   const station = railwayStationById.get(lineStop.stationId);
 
   if (!station) {
@@ -74,7 +74,7 @@ const launchStops = getRailwayLineStops(launchLine.code).map((lineStop) => {
     lineServices: lineServices.map((service, serviceIndex) => ({
       lineCode: service.line.code,
       stationIndexLabel: String(service.stationIndex).padStart(2, "0"),
-      lineCssVariable: getRailwayLineCssVariableName(service.line.code),
+      lineCssVariable: getRailwayLineCssVariableName(service.line),
       lineInk: getRailwayLineTextColor(service.line.color),
       sequenceDelay: serviceIndex * 72,
     })),

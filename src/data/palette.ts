@@ -1,4 +1,10 @@
-import { railwayLines, type HexColor, type RailwayLine } from "@/data/railway";
+import {
+  getRailwayLineKey,
+  railwayLines,
+  type HexColor,
+  type RailwayLine,
+  type RailwayLineKey,
+} from "@/data/railway";
 
 /**
  * 界面外观模式。
@@ -133,22 +139,31 @@ export function getInterfacePaletteCssVariables(palette: InterfacePalette): stri
 export interface RailwayLinePaletteEntry {
   /** 线路自身的官方导视颜色。 */
   color: HexColor;
-  /** 供 CSS 使用的自定义属性名称，例如 --line-mt。 */
+  /** 供 CSS 使用的自定义属性名称，例如 --line-surc-mt。 */
   cssVariable: string;
 }
 
 /**
- * 将线路代码规范为 CSS custom property 名称。
- * 对外线路代码保留原始大小写，CSS token 则统一小写并过滤特殊字符，保证导出样式可安全解析。
+ * 将运营方代码和线路代码规范为 CSS custom property 名称。
+ * CSS token 使用复合身份并统一小写、清洗特殊字符，保证不同运营方的同名线路不会覆盖彼此。
  */
-export function getRailwayLineCssVariableName(code: RailwayLine["code"]): string {
-  const normalizedCode = code.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+export function getRailwayLineCssVariableName(
+  line: Pick<RailwayLine, "operatorCode" | "code">,
+): string {
+  const normalizedOperatorCode = line.operatorCode
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const normalizedLineCode = line.code
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
-  if (!normalizedCode) {
-    throw new Error("线路代码无法转换为 CSS 自定义属性名称。");
+  if (!normalizedOperatorCode || !normalizedLineCode) {
+    throw new Error(`线路无法转换为 CSS 自定义属性名称：${line.operatorCode}:${line.code}。`);
   }
 
-  return `--line-${normalizedCode}`;
+  return `--line-${normalizedOperatorCode}-${normalizedLineCode}`;
 }
 
 /**
@@ -176,22 +191,38 @@ export function getRailwayLineTextColor(color: HexColor): string {
  * 从铁路领域数据派生的线路色表。
  * 此表不另存任何色值；新增线路后会自动拥有可供页面和导出器查询的 CSS token。
  */
-export const railwayLinePaletteByCode: ReadonlyMap<string, RailwayLinePaletteEntry> = new Map(
-  railwayLines.map((line) => [
-    line.code,
-    {
-      color: line.color,
-      cssVariable: getRailwayLineCssVariableName(line.code),
-    },
-  ]),
+export const railwayLinePaletteByKey: ReadonlyMap<RailwayLineKey, RailwayLinePaletteEntry> =
+  new Map(
+    railwayLines.map((line) => [
+      getRailwayLineKey(line.operatorCode, line.code),
+      {
+        color: line.color,
+        cssVariable: getRailwayLineCssVariableName(line),
+      },
+    ]),
+  );
+
+/**
+ * 线路 CSS 变量的构建期条目。
+ * 先从铁路领域数据生成完整的复合命名，再检查变量名唯一，避免同名线路覆盖已经导出的色值。
+ */
+const railwayLineCssVariableEntries = railwayLines.map(
+  (line) => [getRailwayLineCssVariableName(line), line.color] as const,
 );
+
+if (
+  new Set(railwayLineCssVariableEntries.map(([cssVariable]) => cssVariable)).size !==
+  railwayLineCssVariableEntries.length
+) {
+  throw new Error("线路 CSS 自定义属性名称重复，无法生成唯一的线路色变量。");
+}
 
 /**
  * 将所有已录入线路色导出为 CSS 变量声明。
  * Layout 在根元素写入这些 token，使首屏动画和后续线路专题无需在各自组件内重新声明颜色。
  */
 export function getRailwayLineCssVariables(): string {
-  return railwayLines
-    .map((line) => `${getRailwayLineCssVariableName(line.code)}: ${line.color};`)
+  return railwayLineCssVariableEntries
+    .map(([cssVariable, color]) => `${cssVariable}: ${color};`)
     .join("\n");
 }

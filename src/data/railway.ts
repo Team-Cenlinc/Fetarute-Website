@@ -34,11 +34,20 @@ export interface RailwayOperator {
 }
 
 /**
+ * 线路的复合身份键。
+ * 线路展示代码只在运营方范围内保证稳定，因此所有关联、索引和 CSS 命名都必须同时携带运营方代码。
+ */
+declare const railwayLineKeyBrand: unique symbol;
+export type RailwayLineKey = string & {
+  readonly [railwayLineKeyBrand]: "RailwayLineKey";
+};
+
+/**
  * 一条铁路线路的共享身份。
- * 线路色只在这里定义一次，车站、动画和页面主题都通过线路代码取得，避免复制颜色值。
+ * 线路色只在这里定义一次，车站、动画和页面主题都通过线路复合键取得，避免复制颜色值。
  */
 export interface RailwayLine {
-  /** 线路的稳定代码，保留运营方定义的大小写作为对外导视代码。 */
+  /** 运营方范围内稳定的展示代码；线路全局身份由 operatorCode 与 code 共同组成。 */
   code: string;
   /** 中文导视中的线路名称。 */
   primaryName: string;
@@ -51,12 +60,27 @@ export interface RailwayLine {
 }
 
 /**
+ * 创建线路的复合身份键。
+ * 使用可读的分隔符便于静态数据与构建错误定位，同时拒绝会破坏键边界的空值和分隔符。
+ */
+export function getRailwayLineKey(
+  operatorCode: RailwayOperator["code"],
+  lineCode: RailwayLine["code"],
+): RailwayLineKey {
+  if (!operatorCode || !lineCode || operatorCode.includes(":") || lineCode.includes(":")) {
+    throw new Error(`线路身份无效：${operatorCode}:${lineCode}。`);
+  }
+
+  return `${operatorCode}:${lineCode}` as RailwayLineKey;
+}
+
+/**
  * 一座车站在单条线路内的服务记录。
- * 车站直接持有其 ListOf[Lines]，同时保留线路内站序；线路的名称、颜色与运营方仍通过 code 关联唯一的线路记录。
+ * 车站直接持有其 ListOf[Lines]，同时保留线路内站序；线路的名称、颜色与运营方通过 lineKey 关联唯一的线路记录。
  */
 export interface RailwayStationLine {
-  /** 服务该车站的线路代码。 */
-  lineCode: RailwayLine["code"];
+  /** 服务该车站的线路复合身份键；线路展示代码从关联的 RailwayLine 读取。 */
+  lineKey: RailwayLineKey;
   /** 车站在线路内的自然数序号，例如 MT-03 写为 3。 */
   stationIndex: number;
 }
@@ -83,8 +107,8 @@ export interface RailwayStation {
  * 换乘站会拥有多条记录，站序只在对应线路内有效，不能被误读为全网的车站编号。
  */
 export interface RailwayLineStop {
-  /** 服务该车站的线路代码。 */
-  lineCode: RailwayLine["code"];
+  /** 服务该车站的线路复合身份键。 */
+  lineKey: RailwayLineKey;
   /** 被该线路服务的车站标识。 */
   stationId: RailwayStation["id"];
   /** 车站在线路内的自然数序号，例如 MT-03 写为 3。 */
@@ -110,7 +134,7 @@ export const railwayOperators: readonly RailwayOperator[] = [
 
 /**
  * Fetarute 已录入的铁路线路。
- * 未来车站站序、启动动画和页面视觉只能引用这里的 code，不应自行写入线路名称或色值。
+ * 未来车站站序、启动动画和页面视觉只能引用这里的线路身份，不应自行写入线路名称或色值。
  */
 export const railwayLines: readonly RailwayLine[] = [
   {
@@ -172,6 +196,34 @@ export const railwayLines: readonly RailwayLine[] = [
 ];
 
 /**
+ * 校验线路展示名称与官方导视色在全网唯一。
+ * 这些字段直接参与导视识别，重复值会让不同线路无法被稳定区分，因此在 SSG 构建期立即中止。
+ */
+function assertUniqueRailwayLineField(
+  field: "primaryName" | "secondaryName" | "color",
+  fieldLabel: string,
+): void {
+  const seen = new Map<string, RailwayLine>();
+
+  for (const line of railwayLines) {
+    const normalizedValue = line[field].trim().toLowerCase();
+    const previousLine = seen.get(normalizedValue);
+
+    if (previousLine) {
+      throw new Error(
+        `线路${fieldLabel}重复：${previousLine.operatorCode}:${previousLine.code} 与 ${line.operatorCode}:${line.code} 都使用“${line[field]}”。`,
+      );
+    }
+
+    seen.set(normalizedValue, line);
+  }
+}
+
+assertUniqueRailwayLineField("primaryName", "中文名称");
+assertUniqueRailwayLineField("secondaryName", "英文名称");
+assertUniqueRailwayLineField("color", "官方导视颜色");
+
+/**
  * Fetarute 已录入的实体车站。
  * 每座车站只录入一次，ListOf[Lines] 是线路站序的唯一事实来源；换乘站在同一车站记录内列出多条服务。
  */
@@ -181,14 +233,14 @@ export const railwayStations: readonly RailwayStation[] = [
     primaryName: "蒲塘桥",
     secondaryName: "Pyutocor",
     stationCode: "PTK",
-    lines: [{ lineCode: "MT", stationIndex: 3 }],
+    lines: [{ lineKey: getRailwayLineKey("SURC", "MT"), stationIndex: 3 }],
   },
   {
     id: "riverside",
     primaryName: "河滨道",
     secondaryName: "Riverside",
     stationCode: "RVS",
-    lines: [{ lineCode: "MT", stationIndex: 2 }],
+    lines: [{ lineKey: getRailwayLineKey("SURC", "MT"), stationIndex: 2 }],
   },
   {
     id: "westside",
@@ -196,8 +248,8 @@ export const railwayStations: readonly RailwayStation[] = [
     secondaryName: "Westside",
     stationCode: "WSD",
     lines: [
-      { lineCode: "DS", stationIndex: 4 },
-      { lineCode: "MT", stationIndex: 5 },
+      { lineKey: getRailwayLineKey("SURC", "DS"), stationIndex: 4 },
+      { lineKey: getRailwayLineKey("SURC", "MT"), stationIndex: 5 },
     ],
   },
   {
@@ -205,28 +257,28 @@ export const railwayStations: readonly RailwayStation[] = [
     primaryName: "浦汇",
     secondaryName: "Pyuu Hui",
     stationCode: "PHI",
-    lines: [{ lineCode: "WS", stationIndex: 2 }],
+    lines: [{ lineKey: getRailwayLineKey("SURC", "WS"), stationIndex: 2 }],
   },
   {
     id: "chongchow-lym-kahn",
     primaryName: "中州·林间",
     secondaryName: "Chongchow - Lym Kahn",
     stationCode: "LYM",
-    lines: [{ lineCode: "WS", stationIndex: 3 }],
+    lines: [{ lineKey: getRailwayLineKey("SURC", "WS"), stationIndex: 3 }],
   },
   {
     id: "fueya-kein-po",
     primaryName: "笛矢·涧坡",
     secondaryName: "Fueya - Kein Po",
     stationCode: "KPO",
-    lines: [{ lineCode: "WS", stationIndex: 4 }],
+    lines: [{ lineKey: getRailwayLineKey("SURC", "WS"), stationIndex: 4 }],
   },
   {
     id: "hai-hsing",
     primaryName: "海兴",
     secondaryName: "Hai Hsing",
     stationCode: "HAS",
-    lines: [{ lineCode: "DS", stationIndex: 7 }],
+    lines: [{ lineKey: getRailwayLineKey("SURC", "DS"), stationIndex: 7 }],
   },
   {
     id: "neo-fueya-hor-huu",
@@ -234,8 +286,8 @@ export const railwayStations: readonly RailwayStation[] = [
     secondaryName: "Neo Fueya - Hor Huu",
     stationCode: "HHU",
     lines: [
-      { lineCode: "DS", stationIndex: 1 },
-      { lineCode: "MT", stationIndex: 8 },
+      { lineKey: getRailwayLineKey("SURC", "DS"), stationIndex: 1 },
+      { lineKey: getRailwayLineKey("SURC", "MT"), stationIndex: 8 },
     ],
   },
   {
@@ -243,21 +295,21 @@ export const railwayStations: readonly RailwayStation[] = [
     primaryName: "大港城",
     secondaryName: "The Port City",
     stationCode: "TPC",
-    lines: [{ lineCode: "WS", stationIndex: 13 }],
+    lines: [{ lineKey: getRailwayLineKey("SURC", "WS"), stationIndex: 13 }],
   },
   {
     id: "nam-toa",
     primaryName: "南渡",
     secondaryName: "Nam Toa",
     stationCode: "NTA",
-    lines: [{ lineCode: "WS", stationIndex: 14 }],
+    lines: [{ lineKey: getRailwayLineKey("SURC", "WS"), stationIndex: 14 }],
   },
   {
     id: "cape-jungle",
     primaryName: "丛林角",
     secondaryName: "Cape Jungle",
     stationCode: "CJG",
-    lines: [{ lineCode: "PN", stationIndex: 4 }],
+    lines: [{ lineKey: getRailwayLineKey("SURN", "PN"), stationIndex: 4 }],
   },
 ];
 
@@ -267,18 +319,27 @@ export const railwayStations: readonly RailwayStation[] = [
  */
 export const railwayLineStops: readonly RailwayLineStop[] = railwayStations.flatMap((station) =>
   station.lines.map((line) => ({
-    lineCode: line.lineCode,
+    lineKey: line.lineKey,
     stationId: station.id,
     stationIndex: line.stationIndex,
   })),
 );
 
 /**
- * 按线路代码提供常量时间查询。
- * 组件和导出器通过这个索引复用同一条线路记录，避免为动画或主题另建颜色表。
+ * 线路复合键与线路实体的构建期索引项。
+ * 先集中生成并检查键，再导出 Map，避免重复线路身份静默覆盖前一条记录。
  */
-export const railwayLineByCode: ReadonlyMap<string, RailwayLine> = new Map(
-  railwayLines.map((line) => [line.code, line] as const),
+const railwayLineEntries = railwayLines.map(
+  (line) => [getRailwayLineKey(line.operatorCode, line.code), line] as const,
+);
+
+if (new Set(railwayLineEntries.map(([lineKey]) => lineKey)).size !== railwayLineEntries.length) {
+  throw new Error("线路复合身份键重复，无法建立铁路线路索引。");
+}
+
+/** 按线路复合键提供常量时间查询，供组件和导出器复用同一条线路记录。 */
+export const railwayLineByKey: ReadonlyMap<RailwayLineKey, RailwayLine> = new Map(
+  railwayLineEntries,
 );
 
 /**
@@ -324,10 +385,10 @@ export function getRailwayStationLineServices(
   }
 
   return station.lines.map((stationLine) => {
-    const line = railwayLineByCode.get(stationLine.lineCode);
+    const line = railwayLineByKey.get(stationLine.lineKey);
 
     if (!line) {
-      throw new Error(`车站 ${station.id} 引用了未录入的线路 ${stationLine.lineCode}。`);
+      throw new Error(`车站 ${station.id} 引用了未录入的线路 ${stationLine.lineKey}。`);
     }
 
     return {
@@ -351,8 +412,8 @@ export function getRailwayLinesForOperator(
  * 按站序返回一条线路的已录入车站服务记录。
  * 返回副本再排序，既提供动画所需的行进顺序，也不改变源数据中按录入批次保留的记录顺序。
  */
-export function getRailwayLineStops(lineCode: RailwayLine["code"]): readonly RailwayLineStop[] {
+export function getRailwayLineStops(lineKey: RailwayLineKey): readonly RailwayLineStop[] {
   return railwayLineStops
-    .filter((lineStop) => lineStop.lineCode === lineCode)
+    .filter((lineStop) => lineStop.lineKey === lineKey)
     .sort((left, right) => left.stationIndex - right.stationIndex);
 }
