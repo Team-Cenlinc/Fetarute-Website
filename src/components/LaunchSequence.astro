@@ -1,13 +1,11 @@
 ---
 import {
-  getRailwayLineStops,
   getRailwayStationLineServices,
-  railwayLineByKey,
   railwayStationById,
+  railwayStations,
 } from "@/data/railway";
 import fetaruteLogo from "@/assets/fetarute-branding/fetarute-logo.svg?raw";
 import { getRailwayLineCssVariableName, getRailwayLineTextColor } from "@/data/palette";
-import { wayfindingPrototype } from "@/data/site";
 import type { Locale } from "@/i18n/config";
 import { getMessages } from "@/i18n/messages";
 
@@ -24,16 +22,6 @@ const { locale } = Astro.props;
 const messages = getMessages(locale);
 
 /**
- * 启动动画使用首屏配置指定的真实线路。
- * 线路、车站或站序缺失会在静态构建时中止，避免发布后退回虚构站名或无颜色的导视动画。
- */
-const launchLine = railwayLineByKey.get(wayfindingPrototype.launchLineKey);
-
-if (!launchLine) {
-  throw new Error(`启动动画引用了未录入的线路 ${wayfindingPrototype.launchLineKey}。`);
-}
-
-/**
  * 为导视牌中的中文间隔号增加呼吸空间，而不改变铁路数据中的规范站名。
  * 站名仍以 railway.ts 的原始值参与关联、长度分档和未来搜索；这里只处理视觉排版。
  */
@@ -43,22 +31,30 @@ function formatWayfindingPrimaryName(name: string): string {
 
 /** 各站闪现的间隔，与 global.css 中启动帧的节奏共同定义总播放时长。 */
 const launchStopInterval = 370;
+/** 每次开屏从全网已录入车站中无重复抽取的数量，控制导视节奏而不将随机序列伪装成一条线路。 */
+const launchStopCount = 5;
 /** 最终站牌的稳定阅读时长；其后才进入品牌定格，不让 Logo 与站名争夺注意力。 */
 const finalStopDuration = 620;
 /** 末段线路色带驶离的时间；保留既有的干净速度，不让色带拖慢品牌收束。 */
 const finalBrandTraverseDuration = 420;
 /** 品牌定格的总时长；Logo 落位后仍独自停留一段时间，形成可识别的终点。 */
 const finalBrandDuration = 760;
+/** 列车穿越时长随本次抽取站数延展，在品牌定格前完成离场而不抢占最后的识别时刻。 */
+const launchTrainTraverseDuration =
+  (launchStopCount - 1) * launchStopInterval +
+  finalStopDuration +
+  finalBrandTraverseDuration +
+  100;
 
 /**
- * 按真实线路站序构造启动站牌。
- * 候选站来自首屏线路，客户端会在播放前随机重排；每一帧仍读取本站全部服务线路，确保换乘站能同时展示正确的色带和线路站序。
+ * 按全网已录入车站构造启动候选站牌。
+ * 客户端会在播放前无重复地随机抽取五座车站；每一帧仍读取本站全部服务线路，确保换乘站能同时展示正确的色带和线路站序。
  */
-const launchStops = getRailwayLineStops(wayfindingPrototype.launchLineKey).map((lineStop) => {
-  const station = railwayStationById.get(lineStop.stationId);
+const launchStopCandidates = railwayStations.map((recordedStation) => {
+  const station = railwayStationById.get(recordedStation.id);
 
   if (!station) {
-    throw new Error(`启动动画无法解析车站 ${lineStop.stationId}。`);
+    throw new Error(`启动动画无法解析车站 ${recordedStation.id}。`);
   }
 
   const lineServices = getRailwayStationLineServices(station.id);
@@ -81,22 +77,27 @@ const launchStops = getRailwayLineStops(wayfindingPrototype.launchLineKey).map((
   };
 });
 
-/** 由当前线路内的站数推导最迟离场点，包含最终站牌和品牌定格，数据增减时不会让兜底计时变长。 */
+if (launchStopCandidates.length < launchStopCount) {
+  throw new Error(`启动动画至少需要 ${launchStopCount} 座已录入车站。`);
+}
+
+/** 由每次播放的固定抽取数量推导最迟离场点，包含最终站牌和品牌定格，候选站库增长时不会拖慢开屏。 */
 const launchSequenceDuration =
-  (launchStops.length - 1) * launchStopInterval + finalStopDuration + finalBrandDuration;
+  (launchStopCount - 1) * launchStopInterval + finalStopDuration + finalBrandDuration;
 ---
 
 <section
   class="launch-sequence"
   aria-label={messages.launch.label}
   data-motion-duration={launchSequenceDuration}
+  data-stop-count={launchStopCount}
   data-stop-interval={launchStopInterval}
-  style={`--launch-final-stop-duration: ${finalStopDuration}ms; --launch-brand-traverse-duration: ${finalBrandTraverseDuration}ms; --launch-brand-duration: ${finalBrandDuration}ms`}
+  style={`--launch-final-stop-duration: ${finalStopDuration}ms; --launch-brand-traverse-duration: ${finalBrandTraverseDuration}ms; --launch-brand-duration: ${finalBrandDuration}ms; --launch-train-traverse-duration: ${launchTrainTraverseDuration}ms`}
 >
   <div class="launch-sequence__stops" aria-hidden="true">
     <div class="launch-sequence__track">
       {
-        launchStops.map((stop, index) => (
+        launchStopCandidates.map((stop, index) => (
           <div
             class="launch-track-state"
             data-launch-track-key={stop.station.id}
@@ -116,7 +117,7 @@ const launchSequenceDuration =
       }
     </div>
     {
-      launchStops.map((stop, index) => (
+      launchStopCandidates.map((stop, index) => (
         <article
           class="launch-stop"
           data-launch-track-key={stop.station.id}
@@ -182,9 +183,11 @@ const launchSequenceDuration =
   const launchFallbackGraceDuration = 600;
   /** 站牌之间的行进间隔来自组件数据，脚本重排后仍与 CSS 总时长保持一致。 */
   const launchStopInterval = Number(launchSequence?.dataset.stopInterval ?? "370");
+  /** 每次播放的抽取数量由静态组件传入，避免脚本与服务端时长计算各自维护一份常量。 */
+  const launchStopCount = Number(launchSequence?.dataset.stopCount ?? "5");
 
   /**
-   * 用 Fisher-Yates 打乱启动站牌，保留每次播放的全部已录入车站但不把它伪装成地理线路方向。
+   * 用 Fisher-Yates 打乱全网启动候选站牌，再无重复抽取固定数量的车站。
    * 这是感知节奏的随机化，不承担路由或运营数据含义，因此无需可复现的随机种子。
    */
   const shuffleLaunchStops = (stops: HTMLElement[]): HTMLElement[] => {
@@ -204,12 +207,19 @@ const launchSequenceDuration =
   if (document.documentElement.dataset.launchSkipped === "true") {
     launchSequence?.remove();
   } else {
-    const shuffledStops = shuffleLaunchStops(
+    const shuffledStopCandidates = shuffleLaunchStops(
       Array.from(launchSequence?.querySelectorAll<HTMLElement>(".launch-stop") ?? []),
     );
-    const finalStop = shuffledStops.at(-1);
+    const selectedStops = shuffledStopCandidates.slice(0, launchStopCount);
+    const unselectedStops = shuffledStopCandidates.slice(launchStopCount);
+    const finalStop = selectedStops.at(-1);
 
-    shuffledStops.forEach((stop, index) => {
+    unselectedStops.forEach((stop) => {
+      trackStatesByKey.get(stop.dataset.launchTrackKey)?.remove();
+      stop.remove();
+    });
+
+    selectedStops.forEach((stop, index) => {
       const trackState = trackStatesByKey.get(stop.dataset.launchTrackKey);
 
       stop.removeAttribute("data-launch-final");

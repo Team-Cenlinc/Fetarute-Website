@@ -62,13 +62,14 @@ const languageAlternates = availableLocales.map((alternateLocale) => ({
 const shouldPersistLaunchSeen = import.meta.env.PROD;
 
 /**
- * 首页指示器、启动动画与首页标题共享同一条线路记录。
+ * 首页指示器与首页标题共享同一条线路记录。
+ * 启动动画改为从全网车站库随机取站，因此不能再把它误读为这条首页主视觉线路的站序。
  * 这里将复合线路身份转换为 CSS 变量引用，避免 global.css 固定某一条线路而与配置漂移。
  */
-const wayfindingLine = railwayLineByKey.get(wayfindingPrototype.launchLineKey);
+const wayfindingLine = railwayLineByKey.get(wayfindingPrototype.homeLineKey);
 
 if (!wayfindingLine) {
-  throw new Error(`布局引用了未录入的线路 ${wayfindingPrototype.launchLineKey}。`);
+  throw new Error(`布局引用了未录入的线路 ${wayfindingPrototype.homeLineKey}。`);
 }
 
 const wayfindingLineCssVariable = getRailwayLineCssVariableName(wayfindingLine);
@@ -81,7 +82,7 @@ const paletteCss = `
 :root {
 ${getInterfacePaletteCssVariables(interfacePalette.light)}
 ${getRailwayLineCssVariables()}
-/* 首页指示器消费与启动线路一致的语义 token，实际颜色仍由 railway.ts 的线路变量提供。 */
+/* 首页指示器消费当前主视觉线路的语义 token，实际颜色仍由 railway.ts 的线路变量提供。 */
 --color-home-line: var(${wayfindingLineCssVariable});
 }
 

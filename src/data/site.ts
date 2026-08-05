@@ -28,12 +28,12 @@ export interface PrimaryNavItem {
 }
 
 /**
- * 首页首屏与启动动画共用的导视配置。
+ * 首页主视觉与导视装饰共用的配置。
  * 配置只存复合线路身份键，线路名称、站序和颜色始终从铁路数据模型读取，避免页面配置复制线路事实。
  */
 export interface WayfindingPrototype {
-  /** 启动序列依线路内站序播放的正式线路复合身份键。 */
-  launchLineKey: RailwayLineKey;
+  /** 首页主视觉使用的正式线路复合身份键；开屏动画另从全网车站库随机取站。 */
+  homeLineKey: RailwayLineKey;
   /** 首页导视牌的装饰性轨网信号配置；只营造网络活力，不表示首页归属某条真实线路。 */
   homeNavigationSignal: HomeNavigationSignal;
 }
@@ -81,10 +81,10 @@ const homeNavigationSignalLineKeys: readonly RailwayLineKey[] = railwayLines
 
 /**
  * 首页首轮导视展示配置。
- * 蒲塘桥场景位于大都会线，因而启动序列以 MT 已确认的线路站序播放，避免继续使用虚构站名。
+ * 蒲塘桥场景暂位于大都会线，主视觉只引用已确认的真实线路；启动序列则从全网已录入车站随机取站。
  */
 export const wayfindingPrototype: WayfindingPrototype = {
-  launchLineKey: getRailwayLineKey("SURC", "MT"),
+  homeLineKey: getRailwayLineKey("SURC", "MT"),
   homeNavigationSignal: {
     lineKeys: homeNavigationSignalLineKeys,
     doubleLineProbability: 0.5,

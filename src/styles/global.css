@@ -1365,7 +1365,9 @@ html[data-launching] .launch-sequence {
   }
 
   .launch-sequence[data-ready="true"] .launch-sequence__train {
-    animation: launch-train-traverse 1880ms var(--motion-launch-traverse) 60ms both;
+    /* 列车时长由组件按本次抽取站数写入，确保站库增长后列车仍在最终站牌之后离场。 */
+    animation: launch-train-traverse var(--launch-train-traverse-duration)
+      var(--motion-launch-traverse) 60ms both;
   }
 
   .launch-sequence[data-ready="true"] .launch-stop[data-launch-final="true"],

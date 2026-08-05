@@ -26,13 +26,13 @@ const dateFormatter = new Intl.DateTimeFormat(localeMetadata[locale].languageTag
 });
 
 /**
- * 首页导视标题与启动序列共享同一个线路实体。
- * 沿用线路记录的 secondaryName 保持现有英文 kicker 视觉，同时避免在站点配置中复制自由字符串。
+ * 首页导视标题读取当前主视觉的线路实体。
+ * 启动序列随机取全网车站，首屏仍可独立指定与实际场景对应的线路，避免在站点配置中复制自由字符串。
  */
-const launchLine = railwayLineByKey.get(wayfindingPrototype.launchLineKey);
+const homeLine = railwayLineByKey.get(wayfindingPrototype.homeLineKey);
 
-if (!launchLine) {
-  throw new Error(`首页引用了未录入的线路 ${wayfindingPrototype.launchLineKey}。`);
+if (!homeLine) {
+  throw new Error(`首页引用了未录入的线路 ${wayfindingPrototype.homeLineKey}。`);
 }
 ---
 
@@ -48,7 +48,7 @@ if (!launchLine) {
       fetchpriority="high"
     />
     <div class="hero-copy">
-      <p class="server-kicker">{launchLine.secondaryName}</p>
+      <p class="server-kicker">{homeLine.secondaryName}</p>
       <h1 id="hero-title">{messages.home.title}</h1>
       <p class="hero-description">{messages.home.description}</p>
       <div class="hero-actions" aria-label={messages.home.actionsLabel}>
