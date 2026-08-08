@@ -30,6 +30,8 @@ export interface Props {
   image?: string;
   /** 首页启用的导视启动层；其他页面保持直接可读。 */
   showLaunchSequence?: boolean;
+  /** 首页的首屏实景需要贴齐视口，其他页面继续保留标准内容边距。 */
+  fullBleedMain?: boolean;
   /** 当前页面在语言根目录后的稳定路径；首页传空字符串，未来独立页传路由片段。 */
   pagePath?: string;
   /** 已发布当前逻辑页面的语言，用于精确生成 hreflang 而不声明尚未翻译的页面。 */
@@ -42,6 +44,7 @@ const {
   description,
   image = siteInfo.socialImage,
   showLaunchSequence = false,
+  fullBleedMain = false,
   pagePath = "",
   availableLocales = locales,
 } = Astro.props;
@@ -269,7 +272,7 @@ const websiteStructuredData = {
   <body>
     {showLaunchSequence && <LaunchSequence locale={locale} />}
     <SiteHeader locale={locale} />
-    <main>
+    <main class:list={{ "main--full-bleed": fullBleedMain }}>
       <slot />
     </main>
   </body>

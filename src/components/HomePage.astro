@@ -1,12 +1,9 @@
 ---
-import { Picture } from "astro:assets";
+import { getImage } from "astro:assets";
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import pyutocorDuskScene from "@/assets/pages/home/pyutocor-dusk.png";
-import { siteInfo, wayfindingPrototype } from "@/data/site";
-import { railwayLineByKey } from "@/data/railway";
+import { homeLandingScenes } from "@/data/home-landing";
 import { getLocalizedNews } from "@/i18n/content";
 import { localeMetadata, type Locale } from "@/i18n/config";
-import { getLocalizedRelativeUrl } from "@/i18n/links";
 import { getMessages } from "@/i18n/messages";
 
 /**
@@ -26,47 +23,100 @@ const dateFormatter = new Intl.DateTimeFormat(localeMetadata[locale].languageTag
 });
 
 /**
- * 首页导视标题读取当前主视觉的线路实体。
- * 启动序列随机取全网车站，首屏仍可独立指定与实际场景对应的线路，避免在站点配置中复制自由字符串。
+ * 为每张受控实景生成可由浏览器延迟选择的两种现代格式。
+ * 首帧保留第一张作为无脚本回退；脚本只替换地址，不会将所有候选图片同时放进页面布局。
  */
-const homeLine = railwayLineByKey.get(wayfindingPrototype.homeLineKey);
+const landingSceneImages = await Promise.all(
+  homeLandingScenes.map(async (scene) => {
+    const [avif, webp] = await Promise.all([
+      getImage({ src: scene.image, format: "avif", width: scene.image.width }),
+      getImage({ src: scene.image, format: "webp", width: scene.image.width }),
+    ]);
 
-if (!homeLine) {
-  throw new Error(`首页引用了未录入的线路 ${wayfindingPrototype.homeLineKey}。`);
+    return {
+      id: scene.id,
+      alt: messages.home.sceneAltById[scene.id],
+      focalPoint: scene.focalPoint,
+      width: scene.image.width,
+      height: scene.image.height,
+      avifSrc: avif.src,
+      webpSrc: webp.src,
+    };
+  }),
+);
+
+const defaultLandingScene = landingSceneImages[0];
+
+if (!defaultLandingScene) {
+  throw new Error("首页至少需要登记一张可用的到站实景。");
 }
 ---
 
-<BaseLayout locale={locale} description={messages.description} showLaunchSequence>
+<BaseLayout locale={locale} description={messages.description} showLaunchSequence fullBleedMain>
   <section class="hero-section" id="home" aria-labelledby="hero-title">
-    <Picture
-      class="hero-scene"
-      src={pyutocorDuskScene}
-      formats={["avif"]}
-      fallbackFormat="webp"
-      alt={messages.home.sceneAlt}
-      loading="eager"
-      fetchpriority="high"
-    />
+    <picture class="hero-scene" data-landing-scene-id={defaultLandingScene.id}>
+      <source srcset={defaultLandingScene.avifSrc} type="image/avif" />
+      <img
+        data-landing-scene-image
+        src={defaultLandingScene.webpSrc}
+        width={defaultLandingScene.width}
+        height={defaultLandingScene.height}
+        alt={defaultLandingScene.alt}
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
+        style={`object-position: ${defaultLandingScene.focalPoint};`}
+      />
+    </picture>
     <div class="hero-copy">
-      <p class="server-kicker">{homeLine.secondaryName}</p>
       <h1 id="hero-title">{messages.home.title}</h1>
       <p class="hero-description">{messages.home.description}</p>
-      <div class="hero-actions" aria-label={messages.home.actionsLabel}>
-        <a class="button button-primary" href={getLocalizedRelativeUrl(locale, "", "join")}>
-          {messages.home.joinAction}
-        </a>
-        <a class="button button-secondary" href={getLocalizedRelativeUrl(locale, "", "news")}>
-          {messages.home.newsAction}
-        </a>
-      </div>
     </div>
-
-    <aside class="server-card" aria-label={messages.home.serverCardLabel}>
-      <span class="server-card-label">{messages.home.serverCardLabel}</span>
-      <strong>{siteInfo.serverAddress}</strong>
-      <p>{messages.home.serverCardDescription}</p>
-    </aside>
   </section>
+
+  <script is:inline define:vars={{ landingSceneImages }}>
+    (() => {
+      const sceneElement = document.querySelector("[data-landing-scene-id]");
+      const sceneImage = sceneElement?.querySelector("[data-landing-scene-image]");
+      const avifSource = sceneElement?.querySelector('source[type="image/avif"]');
+
+      if (!(sceneElement instanceof HTMLElement) || !(sceneImage instanceof HTMLImageElement)) {
+        return;
+      }
+
+      /** 使用密码学随机源避免刷新时固定落在同一张图；旧浏览器安全回退至 Math.random。 */
+      const getRandomIndex = (length) => {
+        if (length <= 1) {
+          return 0;
+        }
+
+        if (window.crypto?.getRandomValues) {
+          const values = new Uint32Array(1);
+          window.crypto.getRandomValues(values);
+          return Math.floor((values[0] / 2 ** 32) * length);
+        }
+
+        return Math.floor(Math.random() * length);
+      };
+
+      const selectedScene = landingSceneImages[getRandomIndex(landingSceneImages.length)];
+
+      if (!selectedScene) {
+        return;
+      }
+
+      sceneElement.dataset.landingSceneId = selectedScene.id;
+      sceneImage.src = selectedScene.webpSrc;
+      sceneImage.width = selectedScene.width;
+      sceneImage.height = selectedScene.height;
+      sceneImage.alt = selectedScene.alt;
+      sceneImage.style.objectPosition = selectedScene.focalPoint;
+
+      if (avifSource instanceof HTMLSourceElement) {
+        avifSource.srcset = selectedScene.avifSrc;
+      }
+    })();
+  </script>
 
   <section class="content-section" id="features" aria-labelledby="features-title">
     <div class="section-heading">

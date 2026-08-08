@@ -1,4 +1,5 @@
 import type { Locale } from "@/i18n/config";
+import type { HomeLandingSceneId } from "@/data/home-landing";
 
 /** 首页玩法说明中的单个信息模块文案。 */
 interface HomeFeatureMessage {
@@ -52,14 +53,10 @@ export interface SiteMessages {
   };
   /** 首页首屏与各内容区块使用的文案。 */
   home: {
-    sceneAlt: string;
+    /** 每张首屏实景的替代文本，键与受控场景清单保持一一对应。 */
+    sceneAltById: Readonly<Record<HomeLandingSceneId, string>>;
     title: string;
     description: string;
-    actionsLabel: string;
-    joinAction: string;
-    newsAction: string;
-    serverCardLabel: string;
-    serverCardDescription: string;
     featuresKicker: string;
     featuresTitle: string;
     features: readonly [HomeFeatureMessage, HomeFeatureMessage, HomeFeatureMessage];
@@ -105,14 +102,11 @@ const messages: Record<Locale, SiteMessages> = {
       skipHint: "点击任意处跳过动画",
     },
     home: {
-      sceneAlt: "Fetarute 的暮色铁路城市景观",
-      title: "下一站，Fetarute。",
-      description: "从站台出发，探索这条仍在铺设中的路线。",
-      actionsLabel: "主要操作",
-      joinAction: "查看加入方式",
-      newsAction: "阅读公告",
-      serverCardLabel: "服务器地址",
-      serverCardDescription: "正式地址确认后只需要更新站点数据。",
+      sceneAltById: {
+        "pyutocor-dusk": "Fetarute 的暮色铁路城市景观",
+      },
+      title: "欢迎来到 Fetarute。",
+      description: "在这里，开始属于你的探索故事。",
       featuresKicker: "FEATURES",
       featuresTitle: "先保留内容架构，不急着堆交互",
       features: [
@@ -166,14 +160,11 @@ const messages: Record<Locale, SiteMessages> = {
       skipHint: "點擊任意處略過動畫",
     },
     home: {
-      sceneAlt: "Fetarute 的暮色鐵路城市景觀",
-      title: "下一站，Fetarute。",
-      description: "從月台出發，探索這條仍在鋪設中的路線。",
-      actionsLabel: "主要操作",
-      joinAction: "查看加入方式",
-      newsAction: "閱讀公告",
-      serverCardLabel: "伺服器位址",
-      serverCardDescription: "正式位址確認後只需要更新網站資料。",
+      sceneAltById: {
+        "pyutocor-dusk": "Fetarute 的暮色鐵路城市景觀",
+      },
+      title: "歡迎來到 Fetarute。",
+      description: "在這裡，開始屬於你的探索故事。",
       featuresKicker: "FEATURES",
       featuresTitle: "先保留內容架構，不急著堆疊互動",
       features: [
@@ -228,15 +219,11 @@ const messages: Record<Locale, SiteMessages> = {
       skipHint: "Click anywhere to skip",
     },
     home: {
-      sceneAlt: "Fetarute railway city at dusk",
-      title: "The next stop: Fetarute.",
-      description: "Leave the platform and explore a route that is still being laid.",
-      actionsLabel: "Primary actions",
-      joinAction: "How to join",
-      newsAction: "Read the news",
-      serverCardLabel: "Server address",
-      serverCardDescription:
-        "Once confirmed, the published address only needs an update to site data.",
+      sceneAltById: {
+        "pyutocor-dusk": "Fetarute railway city at dusk",
+      },
+      title: "Welcome to Fetarute.",
+      description: "Your story of exploration starts here.",
       featuresKicker: "FEATURES",
       featuresTitle: "Keep the content architecture clear before adding interaction",
       features: [
