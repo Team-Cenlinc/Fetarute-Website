@@ -23,6 +23,12 @@ npm run check
 git diff --check
 ```
 
+GitHub Actions 会在 pull request 和 `main` 推送时执行字体子集一致性检查，并运行同一条
+`npm run check`，其中包含 Prettier、Astro 类型检查与静态构建。
+
+本地 `git commit` 会由 Husky 先格式化暂存文件，再执行字体子集一致性检查与
+`npm run check`；若子集产物有更新，需将生成的文件一并暂存后重新提交。
+
 字体子集化：
 
 ```sh

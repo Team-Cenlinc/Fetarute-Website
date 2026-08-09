@@ -1,0 +1,37 @@
+name: Verify website
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# CI 只读取仓库内容，不授予发布、写入或令牌管理权限。
+permissions:
+  contents: read
+
+concurrency:
+  # 同一分支的新提交会取消旧检查，避免过期结果占用执行额度。
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # 源字体已受版本控制，文案变化后必须同步提交可发布的 woff2 子集。
+      - run: npm run font:subset
+      - run: git diff --exit-code -- scripts/font-subset/chars.txt src/assets/fonts
+
+      # check 已串联 Prettier、Astro 类型检查和静态构建。
+      - run: npm run check

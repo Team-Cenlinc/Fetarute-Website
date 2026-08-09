@@ -24,7 +24,9 @@
     "font:subset:display-italic": "NODE_OPTIONS=--experimental-strip-types node scripts/font-subset/build-subsets.ts display-italic",
     "font:subset": "npm run font:extract && NODE_OPTIONS=--experimental-strip-types node scripts/font-subset/build-subsets.ts",
     "build:with-fonts": "npm run font:subset && npm run build",
-    "check": "npm run format:check && npm run typecheck && npm run build"
+    "check": "npm run format:check && npm run typecheck && npm run build",
+    "precommit:check": "npm run font:subset && git diff --exit-code -- scripts/font-subset/chars.txt src/assets/fonts && npm run check",
+    "prepare": "husky"
   },
   "dependencies": {
     "@phosphor-icons/core": "^2.1.1",
@@ -33,6 +35,8 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "@types/node": "^25.9.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.3.0",
     "prettier": "^3.9.5",
     "subset-font": "^2.5.0",
     "typescript": "^6.0.3"
