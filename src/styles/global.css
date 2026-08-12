@@ -61,6 +61,18 @@
   --motion-header-enter: cubic-bezier(0.22, 1, 0.36, 1);
   /* Header 的收起曲线与进入方向相反，使菜单沿触发牌的来路返回。 */
   --motion-header-exit: cubic-bezier(0.4, 0, 1, 1);
+  /* 阅读态 Header 展开用快速起势、无回弹的曲线，让完整导视牌像同一盏灯箱向外恢复。 */
+  --motion-header-layout-expand: cubic-bezier(0.23, 1, 0.32, 1);
+  /* 阅读态 Header 收束采用对称曲线，保持向下阅读时的克制节奏而不抢占内容。 */
+  --motion-header-layout-contract: cubic-bezier(0.77, 0, 0.175, 1);
+  /* 展开给予文字与导视牌足够读写时间，但不拖慢用户返回导航。 */
+  --duration-header-layout-expand: 240ms;
+  /* 收束是阅读中的低优先级动作，短于展开且不形成额外停顿。 */
+  --duration-header-layout-contract: 180ms;
+  /* Header 内容交接只覆盖文字与图标的进出场，留出外壳改尺寸前后的清晰空档。 */
+  --duration-header-content-handoff: 100ms;
+  /* 减少动态时只保留状态辨识所需的短反馈，空间变化始终立即完成。 */
+  --duration-header-reduced-feedback: 120ms;
   /* 方正小圆角用于导视牌和内容模块，避免页面同时出现多套形状语言。 */
   --radius-panel: 10px;
   font-family: var(--font-fetarute-ui);
@@ -157,16 +169,24 @@ main.main--full-bleed {
   background: var(--color-header-surface);
   transition:
     opacity 440ms var(--motion-header-enter),
-    transform 440ms var(--motion-header-enter);
+    transform 440ms var(--motion-header-enter),
+    width var(--duration-header-layout-expand) var(--motion-header-layout-expand),
+    min-height var(--duration-header-layout-expand) var(--motion-header-layout-expand);
+}
+
+/* 深链或历史记录的首次定位只建立正确终态，不能被浏览器误读为一次可见的用户收缩。 */
+html[data-header-layout-initializing] .site-header {
+  transition: none;
 }
 
 .site-header::after {
   content: "";
   position: absolute;
+  /* 外轮廓必须覆盖服务台和出口的功能色块，才能把整组导航读作一块连续导视牌。 */
   z-index: 2;
   inset: 0;
-  /* 灯箱只保留一道连续外轮廓，避免把内部功能色块切成彼此独立的卡片。 */
-  border: 3px solid color-mix(in srgb, var(--color-text) 92%, transparent);
+  /* 使用不透明结构色，避免下方偏白牌面混入边缘后形成浅色残沿。 */
+  border: 3px solid var(--color-text);
   pointer-events: none;
 }
 
@@ -437,6 +457,11 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   color: var(--color-exit-text);
 }
 
+/* 紧凑出口牌独立于完整态出口牌，只在阅读模式替代文字导视，避免改变原有 Header 的版式与悬停反馈。 */
+.compact-exit-menu {
+  display: none;
+}
+
 .service-desk__summary,
 .exit-menu {
   min-height: inherit;
@@ -626,8 +651,9 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   padding: 24px;
 }
 
-/* 小屏菜单共用同一块绝对定位面板，保证从任一图标打开时都贴齐 Header 右缘。 */
-.mobile-header-tool__menu {
+/* 目的地菜单与小屏触发牌共用同一块绝对定位面板，保证从图标打开时都贴齐 Header 右缘。 */
+.mobile-header-tool__menu,
+.compact-exit-menu__menu {
   position: absolute;
   z-index: 3;
   top: 100%;
@@ -650,6 +676,11 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   color: var(--color-exit-text);
 }
 
+.compact-exit-menu__menu {
+  background: var(--color-exit);
+  color: var(--color-exit-text);
+}
+
 .mobile-destination-menu__heading {
   display: grid;
   gap: 6px;
@@ -664,7 +695,8 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   line-height: 1.35;
 }
 
-.mobile-header-tool--destination .service-menu__heading {
+.mobile-header-tool--destination .service-menu__heading,
+.compact-exit-menu__menu .service-menu__heading {
   color: color-mix(in srgb, var(--color-exit-text) 78%, transparent);
 }
 
@@ -1562,17 +1594,27 @@ html[data-launching] .launch-sequence {
 @media (prefers-reduced-motion: reduce) {
   .site-header,
   .home-nav,
+  .service-desk__summary,
+  .exit-menu,
+  .appearance-choice,
+  .mobile-header-tool__summary,
+  .mobile-destination-menu__links a {
+    transition-property: color, background-color, opacity;
+    transition-duration: var(--duration-header-reduced-feedback);
+    transition-timing-function: linear;
+  }
+
+  /* 空间位移、尺寸与裁切不向减少动态用户播放；仅保留上方控制的颜色/背景/透明度反馈。 */
+  .site-header {
+    transition-property: opacity;
+  }
+
   .home-nav__primary,
   .home-nav__arrow,
   .home-nav__indicator,
-  .service-desk__summary,
   .service-desk__summary > *,
-  .exit-menu,
   .exit-menu > *,
-  .appearance-choice,
-  .mobile-header-tool__summary,
-  .mobile-header-tool__icon,
-  .mobile-destination-menu__links a {
+  .mobile-header-tool__icon {
     transition-duration: 0ms;
   }
 }
@@ -1624,6 +1666,251 @@ html[data-launching] .launch-sequence {
 
   .exit-menu__hint {
     font-size: 11px;
+  }
+}
+
+@media (min-width: 761px) {
+  /* 阅读进入长区间后，把完整导视牌压缩为可随时返回或展开菜单的窄条；完整态的尺寸和网格不受此状态影响。 */
+  html[data-header-compact]:not([data-header-hover-expanded]) .site-header {
+    width: min(520px, calc(100% - 40px));
+    min-height: 56px;
+    grid-template-columns: minmax(148px, 1fr) 56px 56px 56px;
+    /* 收束只改变 live DOM 的尺寸；展开回到基础规则的 240ms，避免整块导视牌被快照缩放。 */
+    transition:
+      opacity 440ms var(--motion-header-enter),
+      transform 440ms var(--motion-header-enter),
+      width var(--duration-header-layout-contract) var(--motion-header-layout-contract),
+      min-height var(--duration-header-layout-contract) var(--motion-header-layout-contract);
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .brand {
+    padding-inline: 18px;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .brand-wordmark {
+    width: min(132px, 24vw);
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .site-header__spacer,
+  html[data-header-compact]:not([data-header-hover-expanded]) .exit-menu {
+    display: none;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav {
+    width: 56px;
+    min-width: 56px;
+    min-height: 56px;
+    padding: 0;
+    place-items: center;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__primary {
+    align-items: center;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__text-stack {
+    width: 36px;
+    gap: 0;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__label,
+  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__arrow,
+  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__indicator-band {
+    display: none;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__indicator {
+    width: 36px;
+    height: 16px;
+    /* 紧凑态使用固定圆点尺寸，双线仍能在 56px 的导视格内保持可辨识的轨道间隙。 */
+    --home-nav-indicator-dot-diameter: 16px;
+    --home-nav-indicator-dot-gap: 2px;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__indicator-dot {
+    top: 0;
+    right: calc((100% - var(--home-nav-indicator-dot-diameter)) / 2);
+  }
+
+  html[data-header-compact]:not(
+      [data-header-hover-expanded]
+    )[data-home-nav-indicator-pattern="double"]
+    .home-nav__indicator-dot {
+    right: calc((100% + var(--home-nav-indicator-dot-gap)) / 2);
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded])
+    .home-nav:hover
+    .home-nav__indicator-dot,
+  html[data-header-compact]:not([data-header-hover-expanded])
+    .home-nav:focus-visible
+    .home-nav__indicator-dot {
+    opacity: 1;
+    transform: none;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .service-desk {
+    min-width: 56px;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .service-desk__summary {
+    min-height: 56px;
+    padding: 0;
+    place-items: center;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .service-desk__direction {
+    align-items: center;
+    justify-content: center;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .service-desk__copy {
+    display: none;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .service-desk__information {
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    opacity: 1;
+    transform: none;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .compact-exit-menu {
+    position: relative;
+    display: block;
+    min-width: 56px;
+    align-self: stretch;
+    background: var(--color-exit);
+    color: var(--color-exit-text);
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .compact-exit-menu__summary {
+    display: grid;
+    width: 56px;
+    min-height: 56px;
+    place-items: center;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded])
+    .compact-exit-menu__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .compact-exit-menu__summary::marker {
+    content: "";
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded])
+    .compact-exit-menu__summary:focus-visible {
+    outline: 3px solid var(--color-exit-text);
+    outline-offset: -3px;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded])
+    .compact-exit-menu__summary:active
+    .compact-exit-menu__icon {
+    transform: translateY(1px);
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded])
+    .compact-exit-menu[open]
+    .compact-exit-menu__summary {
+    background: color-mix(in srgb, currentColor 10%, transparent);
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .compact-exit-menu__icon {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    transition: transform 100ms var(--motion-header-enter);
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .compact-exit-menu__icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* 内容先退场、外壳再变形、目标内容最后入场，避免不同密度的文字与图标在同一帧互相覆盖。 */
+  .home-nav__primary,
+  .service-desk__direction,
+  .exit-menu,
+  .home-nav__indicator,
+  .service-desk__information,
+  .compact-exit-menu {
+    transition: opacity var(--duration-header-content-handoff) linear;
+  }
+
+  .home-nav__primary {
+    /* 保留完整态首页牌既有的按压位移，仅为分段交接叠加透明度而不改变 expanded 反馈。 */
+    transition:
+      transform 100ms var(--motion-header-enter),
+      opacity var(--duration-header-content-handoff) linear;
+  }
+
+  html[data-header-content-phase="contracting"] .home-nav__primary,
+  html[data-header-content-phase="contracting"] .service-desk__direction,
+  html[data-header-content-phase="contracting"] .exit-menu,
+  html[data-header-content-phase="contracting"] .compact-exit-menu,
+  html[data-header-content-phase="expanding"] .home-nav__indicator,
+  html[data-header-content-phase="expanding"] .service-desk__information,
+  html[data-header-content-phase="expanding"] .compact-exit-menu {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  html[data-header-content-phase="compact-entering"]:not([data-header-content-ready])
+    .home-nav__indicator,
+  html[data-header-content-phase="compact-entering"]:not([data-header-content-ready])
+    .service-desk__information,
+  html[data-header-content-phase="compact-entering"]:not([data-header-content-ready])
+    .compact-exit-menu,
+  html[data-header-content-phase="expanded-entering"]:not([data-header-content-ready])
+    .home-nav__primary,
+  html[data-header-content-phase="expanded-entering"]:not([data-header-content-ready])
+    .service-desk__direction,
+  html[data-header-content-phase="expanded-entering"]:not([data-header-content-ready]) .exit-menu {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* 收束前先把 sandwich 放到目标格的位置但退出网格流；它全程隐藏，直到窄条几何建立后才成为可操作的格子。 */
+  html[data-header-content-phase="contracting"] .compact-exit-menu,
+  html[data-header-compact][data-header-content-phase="compact-entering"]:not(
+      [data-header-content-ready]
+    )
+    .compact-exit-menu {
+    position: absolute;
+    inset: 0 0 0 auto;
+    display: block;
+    width: 56px;
+    min-width: 56px;
+    align-self: stretch;
+    visibility: hidden;
+  }
+
+  html[data-header-content-phase="contracting"] .home-nav,
+  html[data-header-content-phase="contracting"] .service-desk__summary,
+  html[data-header-content-phase="expanding"] .home-nav,
+  html[data-header-content-phase="expanding"] .service-desk__summary,
+  html[data-header-content-phase="compact-entering"]:not([data-header-content-ready]) .home-nav,
+  html[data-header-content-phase="compact-entering"]:not([data-header-content-ready])
+    .service-desk__summary,
+  html[data-header-content-phase="expanded-entering"]:not([data-header-content-ready]) .home-nav,
+  html[data-header-content-phase="expanded-entering"]:not([data-header-content-ready])
+    .service-desk__summary {
+    pointer-events: none;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    html[data-header-compact]:not([data-header-hover-expanded]) .compact-exit-menu__summary:hover {
+      background: color-mix(in srgb, currentColor 10%, transparent);
+    }
   }
 }
 
@@ -1694,6 +1981,16 @@ html[data-launching] .launch-sequence {
     place-items: center;
     cursor: pointer;
     list-style: none;
+  }
+
+  /* 小屏原本就是图标导视牌；阅读模式只降低高度，不改变既有的服务台与目的地菜单结构。 */
+  html[data-header-compact] .site-header,
+  html[data-header-compact] .mobile-header-tool__summary {
+    min-height: 56px;
+  }
+
+  html[data-header-compact] .brand-wordmark {
+    width: min(30vw, 112px);
   }
 
   .mobile-header-tool__summary::-webkit-details-marker {

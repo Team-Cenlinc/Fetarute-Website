@@ -3,6 +3,7 @@ import arrowUpRightIcon from "@phosphor-icons/core/assets/bold/arrow-up-right-bo
 import circleHalfIcon from "@phosphor-icons/core/assets/bold/circle-half-bold.svg?raw";
 import dotsThreeIcon from "@phosphor-icons/core/assets/bold/dots-three-bold.svg?raw";
 import infoIcon from "@phosphor-icons/core/assets/bold/info-bold.svg?raw";
+import listIcon from "@phosphor-icons/core/assets/bold/list-bold.svg?raw";
 import moonIcon from "@phosphor-icons/core/assets/bold/moon-bold.svg?raw";
 import sunIcon from "@phosphor-icons/core/assets/bold/sun-bold.svg?raw";
 import translateIcon from "@phosphor-icons/core/assets/bold/translate-bold.svg?raw";
@@ -300,7 +301,7 @@ const appearanceOptions = [
 
   <span class="site-header__spacer" aria-hidden="true"></span>
 
-  <a class="home-nav" href={getLocalizedRelativeUrl(locale)}>
+  <a class="home-nav" href={getLocalizedRelativeUrl(locale)} aria-label={messages.navigation.home}>
     <span class="home-nav__primary">
       <span class="home-nav__text-stack">
         <span class="home-nav__label">{messages.navigation.home}</span>
@@ -314,7 +315,7 @@ const appearanceOptions = [
   </a>
 
   <details class="service-desk" data-header-menu>
-    <summary class="service-desk__summary">
+    <summary class="service-desk__summary" aria-label={messages.serviceDeskLabel}>
       <span class="service-desk__direction">
         <span class="service-desk__copy">
           <span class="service-desk__label">{messages.serviceDeskLabel}</span>
@@ -383,6 +384,41 @@ const appearanceOptions = [
       <span class="exit-menu__arrow" aria-hidden="true" set:html={arrowUpRightIcon}></span>
     </span>
   </span>
+
+  <details class="compact-exit-menu" data-header-menu>
+    <summary class="compact-exit-menu__summary" aria-label={messages.destinationMenuLabel}>
+      <span class="compact-exit-menu__icon" aria-hidden="true" set:html={listIcon}></span>
+    </summary>
+    <div
+      class="compact-exit-menu__menu mobile-destination-menu__panel"
+      data-header-menu-panel
+      aria-labelledby="desktop-destination-menu-label"
+    >
+      <div class="mobile-destination-menu__heading">
+        <h2 id="desktop-destination-menu-label" class="service-menu__heading">
+          {messages.destinationMenuLabel}
+        </h2>
+        <p>{messages.destinationMenuHint}</p>
+      </div>
+      <nav class="mobile-destination-menu__links" aria-label={messages.navigationLabel}>
+        {
+          primaryNavItems.map((item) => (
+            <a
+              href={
+                item.fragment === "home"
+                  ? getLocalizedRelativeUrl(locale)
+                  : getLocalizedRelativeUrl(locale, "", item.fragment)
+              }
+              aria-current={item.fragment === "home" ? "page" : undefined}
+            >
+              <span>{messages.navigation[item.labelKey]}</span>
+              <span aria-hidden="true" set:html={arrowUpRightIcon}></span>
+            </a>
+          ))
+        }
+      </nav>
+    </div>
+  </details>
 </header>
 
 <script>
@@ -393,6 +429,34 @@ const appearanceOptions = [
     document.querySelectorAll<HTMLButtonElement>("[data-appearance-choice]"),
   );
   const headerMenus = Array.from(document.querySelectorAll<HTMLDetailsElement>("[data-header-menu]"));
+  const siteHeader = document.querySelector<HTMLElement>(".site-header");
+  /** 向下阅读超过此距离才收束导视牌，避免首屏与短距离定位滚动反复改变 Header 密度。 */
+  const compactHeaderScrollThreshold = 160;
+  /** 小于此差值的滚动抖动不改变模式，触控板慢速停靠时仍保持稳定。 */
+  const compactHeaderScrollDirectionThreshold = 8;
+  let lastHeaderScrollPosition = window.scrollY;
+  let compactHeaderAnimationFrame: number | undefined;
+  /** 首次同步只校准锚点或历史记录带来的初始状态，不把页面加载误读成一次用户触发的收缩。 */
+  let hasSyncedCompactHeaderState = false;
+  /** 最近一次有效滚动方向；阅读模式依赖这一连续语义，不再用单帧位置覆盖用户刚刚的上滑意图。 */
+  let compactHeaderScrollDirection: "up" | "down" | undefined;
+  /** 当前方向已累计的位移；向下只有达到滞后距离后才重新收束 Header。 */
+  let compactHeaderScrollDirectionDistance = 0;
+  /** 指针离开完整导视牌后的短暂缓冲，允许自然移向下方菜单而不立即折回紧凑态。 */
+  const compactHeaderHoverContractDelay = 180;
+  let compactHeaderHoverContractTimer: number | undefined;
+  /** 内容交接的阶段只描述 live DOM 的可见性，禁止以旧新快照叠放来改变 Header 尺寸。 */
+  type HeaderContentPhase =
+    | "contracting"
+    | "compact-entering"
+    | "expanding"
+    | "expanded-entering";
+  /** 最近一次被接受的 Header 目标，重复 scroll 事件不会重启正在进行的同向交接。 */
+  let headerLayoutIntent: { compact: boolean; hoverExpanded: boolean } | undefined;
+  /** 每次新输入都会使上一段交接失效，保证快速反向从当前 live DOM 状态继续。 */
+  let headerContentHandoffRun = 0;
+  /** 用 AbortController 解除上一段 transitionend 监听，避免旧回调覆盖最新输入。 */
+  let headerContentTransitionController: AbortController | undefined;
 
   /**
    * 将服务台中的外观选择同步到文档根节点和持久化设置。
@@ -423,6 +487,299 @@ const appearanceOptions = [
         String(button.dataset.appearanceChoice === selectedChoice),
       );
     });
+  }
+
+  /**
+   * 同步阅读中的紧凑导视状态。
+   * 向下进入长内容后收成线路点与功能图标；用户一反向上滚便立即恢复完整牌面，保证回看与重新导航不需额外操作。
+   */
+  function syncCompactHeader() {
+    const currentScrollPosition = window.scrollY;
+    const scrollDelta = currentScrollPosition - lastHeaderScrollPosition;
+    const nextScrollDirection = scrollDelta > 0 ? "down" : scrollDelta < 0 ? "up" : undefined;
+    const isNearPageStart = currentScrollPosition < compactHeaderScrollThreshold;
+
+    if (nextScrollDirection) {
+      if (nextScrollDirection === compactHeaderScrollDirection) {
+        compactHeaderScrollDirectionDistance += Math.abs(scrollDelta);
+      } else {
+        compactHeaderScrollDirection = nextScrollDirection;
+        compactHeaderScrollDirectionDistance = Math.abs(scrollDelta);
+      }
+    }
+
+    if (isNearPageStart) {
+      setHeaderLayoutState(false, false, hasSyncedCompactHeaderState);
+      cancelCompactHeaderHoverContract();
+      compactHeaderScrollDirection = undefined;
+      compactHeaderScrollDirectionDistance = 0;
+    } else if (compactHeaderScrollDirection === "up") {
+      setHeaderLayoutState(false, false, hasSyncedCompactHeaderState);
+      cancelCompactHeaderHoverContract();
+    } else if (
+      compactHeaderScrollDirection === "down" &&
+      compactHeaderScrollDirectionDistance >= compactHeaderScrollDirectionThreshold
+    ) {
+      setHeaderLayoutState(true, false, hasSyncedCompactHeaderState);
+    } else if (compactHeaderScrollDirection === undefined) {
+      // 页面因锚点、刷新或历史记录直接落在内容区时，仍以紧凑态作为无需额外输入的初始状态。
+      setHeaderLayoutState(true, false, hasSyncedCompactHeaderState);
+    }
+
+    lastHeaderScrollPosition = currentScrollPosition;
+    hasSyncedCompactHeaderState = true;
+    compactHeaderAnimationFrame = undefined;
+  }
+
+  /** 将连续 scroll 事件压缩到浏览器绘制帧，避免阅读时为每个输入事件重复写入根节点状态。 */
+  function scheduleCompactHeaderSync() {
+    if (compactHeaderAnimationFrame !== undefined) {
+      return;
+    }
+
+    compactHeaderAnimationFrame = window.requestAnimationFrame(syncCompactHeader);
+  }
+
+  /** 清除待执行的 hover 收束，防止指针回到 Header 时仍被过期计时器折回窄条。 */
+  function cancelCompactHeaderHoverContract() {
+    if (compactHeaderHoverContractTimer === undefined) {
+      return;
+    }
+
+    window.clearTimeout(compactHeaderHoverContractTimer);
+    compactHeaderHoverContractTimer = undefined;
+  }
+
+  /** 判断指针是否直接进入紧凑出口格；该格需要保留 sandwich 菜单的即时可操作性。 */
+  function isCompactExitPointerTarget(event: PointerEvent) {
+    return document.elementFromPoint(event.clientX, event.clientY)?.closest(".compact-exit-menu") !== null;
+  }
+
+  /** 只写入阅读态相关 attribute，集中保证所有入口都会得到同一份最终 DOM 状态。 */
+  function applyHeaderLayoutState(nextCompact: boolean, nextHoverExpanded: boolean) {
+    document.documentElement.toggleAttribute("data-header-compact", nextCompact);
+    document.documentElement.toggleAttribute(
+      "data-header-hover-expanded",
+      nextCompact && nextHoverExpanded,
+    );
+  }
+
+  /** 只在桌面密度之间交接内容；小屏本来就是图标导视，保持其现有即时结构。 */
+  function canStageHeaderContentHandoff() {
+    return (
+      !prefersReducedHeaderMotion() &&
+      window.matchMedia("(min-width: 761px)").matches &&
+      siteHeader !== null
+    );
+  }
+
+  /** 读取当前视觉密度；hover 展开虽然保留 compact 语义，但画面仍是完整导视牌。 */
+  function isHeaderVisuallyCompact() {
+    return (
+      document.documentElement.hasAttribute("data-header-compact") &&
+      !document.documentElement.hasAttribute("data-header-hover-expanded")
+    );
+  }
+
+  /** 写入内容交接阶段；ready 表示新密度已经就位，可以让目标内容开始淡入。 */
+  function setHeaderContentPhase(phase: HeaderContentPhase | undefined, ready = false) {
+    if (!phase) {
+      delete document.documentElement.dataset.headerContentPhase;
+      delete document.documentElement.dataset.headerContentReady;
+      return;
+    }
+
+    document.documentElement.dataset.headerContentPhase = phase;
+    document.documentElement.toggleAttribute("data-header-content-ready", ready);
+  }
+
+  /** 取消旧交接的事件监听，但保留当前已渲染的画面，让新输入能从该画面连续反向。 */
+  function cancelHeaderContentHandoff() {
+    headerContentHandoffRun += 1;
+    headerContentTransitionController?.abort();
+    headerContentTransitionController = undefined;
+    return headerContentHandoffRun;
+  }
+
+  /** 等待指定 live DOM 内容完成透明度交接；元素不存在时直接继续，不引入基于时钟的兜底跳变。 */
+  function waitForHeaderContentOpacity(element: Element | null, run: number) {
+    if (!element) {
+      return Promise.resolve();
+    }
+
+    const controller = new AbortController();
+    headerContentTransitionController = controller;
+
+    return new Promise<void>((resolve) => {
+      const complete = () => {
+        if (headerContentTransitionController === controller) {
+          headerContentTransitionController = undefined;
+        }
+        resolve();
+      };
+      const onTransitionEnd = (event: Event) => {
+        if (
+          event.target === element &&
+          event instanceof TransitionEvent &&
+          event.propertyName === "opacity"
+        ) {
+          complete();
+        }
+      };
+
+      controller.signal.addEventListener("abort", complete, { once: true });
+      element.addEventListener("transitionend", onTransitionEnd, { signal: controller.signal });
+      element.addEventListener("transitioncancel", onTransitionEnd, { signal: controller.signal });
+
+      if (run !== headerContentHandoffRun) {
+        controller.abort();
+      }
+    });
+  }
+
+  /** 在新密度已布局的一帧后再让内容淡入，确保文字和图标不会与上一密度交叠。 */
+  function revealHeaderContent(
+    phase: "compact-entering" | "expanded-entering",
+    selector: string,
+    run: number,
+  ) {
+    setHeaderContentPhase(phase);
+    const completion = waitForHeaderContentOpacity(siteHeader?.querySelector(selector) ?? null, run);
+
+    window.requestAnimationFrame(() => {
+      if (run === headerContentHandoffRun) {
+        setHeaderContentPhase(phase, true);
+      }
+    });
+
+    void completion.then(() => {
+      if (run === headerContentHandoffRun) {
+        setHeaderContentPhase(undefined);
+      }
+    });
+  }
+
+  /**
+   * 统一写入完整、紧凑与 hover 展开的最终状态。
+   * CSS transition 会从当前呈现值连续反向，避免另建快照层造成文字、图标或边框的缩放拖影。
+   */
+  function setHeaderLayoutState(
+    nextCompact: boolean,
+    nextHoverExpanded: boolean,
+    shouldAnimate = true,
+  ) {
+    const normalizedHoverExpanded = nextCompact && nextHoverExpanded;
+    const nextIntent = { compact: nextCompact, hoverExpanded: normalizedHoverExpanded };
+    const isCompact = document.documentElement.hasAttribute("data-header-compact");
+    const isHoverExpanded = document.documentElement.hasAttribute("data-header-hover-expanded");
+
+    if (
+      headerLayoutIntent?.compact === nextIntent.compact &&
+      headerLayoutIntent.hoverExpanded === nextIntent.hoverExpanded
+    ) {
+      return;
+    }
+
+    headerLayoutIntent = nextIntent;
+
+    if (!shouldAnimate || !canStageHeaderContentHandoff()) {
+      cancelHeaderContentHandoff();
+      setHeaderContentPhase(undefined);
+
+      if (isCompact === nextCompact && isHoverExpanded === normalizedHoverExpanded) {
+        return;
+      }
+
+      document.documentElement.dataset.headerLayoutInitializing = "true";
+      applyHeaderLayoutState(nextCompact, normalizedHoverExpanded);
+      window.requestAnimationFrame(() => {
+        delete document.documentElement.dataset.headerLayoutInitializing;
+      });
+      return;
+    }
+
+    const run = cancelHeaderContentHandoff();
+    const currentPhase = document.documentElement.dataset.headerContentPhase as
+      | HeaderContentPhase
+      | undefined;
+    const isCurrentContentReady = document.documentElement.hasAttribute(
+      "data-header-content-ready",
+    );
+    const nextVisuallyCompact = nextCompact && !normalizedHoverExpanded;
+    const currentVisuallyCompact = isHeaderVisuallyCompact();
+
+    if (nextVisuallyCompact === currentVisuallyCompact) {
+      setHeaderContentPhase(undefined);
+      applyHeaderLayoutState(nextCompact, normalizedHoverExpanded);
+      return;
+    }
+
+    if (nextVisuallyCompact) {
+      if (currentPhase === "expanded-entering" && !isCurrentContentReady) {
+        applyHeaderLayoutState(nextCompact, normalizedHoverExpanded);
+        revealHeaderContent("compact-entering", ".compact-exit-menu", run);
+        return;
+      }
+
+      setHeaderContentPhase("contracting");
+      void waitForHeaderContentOpacity(siteHeader?.querySelector(".exit-menu") ?? null, run).then(() => {
+        if (run !== headerContentHandoffRun) {
+          return;
+        }
+
+        applyHeaderLayoutState(nextCompact, normalizedHoverExpanded);
+        revealHeaderContent("compact-entering", ".compact-exit-menu", run);
+      });
+      return;
+    }
+
+    if (currentPhase === "compact-entering" && !isCurrentContentReady) {
+      applyHeaderLayoutState(nextCompact, normalizedHoverExpanded);
+      revealHeaderContent("expanded-entering", ".exit-menu", run);
+      return;
+    }
+
+    setHeaderContentPhase("expanding");
+    void waitForHeaderContentOpacity(siteHeader?.querySelector(".compact-exit-menu") ?? null, run).then(() => {
+      if (run !== headerContentHandoffRun) {
+        return;
+      }
+
+      applyHeaderLayoutState(nextCompact, normalizedHoverExpanded);
+      revealHeaderContent("expanded-entering", ".exit-menu", run);
+    });
+  }
+
+  /**
+   * 指针进入阅读态 Header 时临时展开完整导视牌。
+   * 最右侧 sandwich 格例外，避免用户为了打开菜单却先丢失该触发器；触屏不启用 hover 捷径，减少动态效果则直接切换状态。
+   */
+  function expandCompactHeaderOnHover(event: PointerEvent) {
+    if (
+      !supportsHeaderHoverPreview() ||
+      !document.documentElement.hasAttribute("data-header-compact") ||
+      isCompactExitPointerTarget(event)
+    ) {
+      return;
+    }
+
+    cancelCompactHeaderHoverContract();
+    setHeaderLayoutState(true, true);
+  }
+
+  /** 延迟收回 hover 展开的牌面，保证移动到溢出菜单时空间关系保持连续。 */
+  function scheduleCompactHeaderHoverContract() {
+    cancelCompactHeaderHoverContract();
+
+    compactHeaderHoverContractTimer = window.setTimeout(() => {
+      compactHeaderHoverContractTimer = undefined;
+
+      if (siteHeader?.matches(":hover")) {
+        return;
+      }
+
+      setHeaderLayoutState(true, false);
+    }, compactHeaderHoverContractDelay);
   }
 
   /** 记录正在播放的菜单状态，让再次触发时可以沿当前方向反转，而不是跳回初始帧。 */
@@ -749,4 +1106,10 @@ const appearanceOptions = [
       }
     });
   });
+
+  siteHeader?.addEventListener("pointerenter", expandCompactHeaderOnHover);
+  siteHeader?.addEventListener("pointerleave", scheduleCompactHeaderHoverContract);
+
+  syncCompactHeader();
+  window.addEventListener("scroll", scheduleCompactHeaderSync, { passive: true });
 </script>
