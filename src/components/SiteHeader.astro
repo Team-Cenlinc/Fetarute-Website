@@ -550,6 +550,11 @@ const appearanceOptions = [
     compactHeaderHoverContractTimer = undefined;
   }
 
+  /** 页面顶部始终保留完整导视牌；hover 收束计时器不能覆盖这一比指针状态更高的阅读约束。 */
+  function mustKeepHeaderExpandedAtPageStart() {
+    return window.scrollY < compactHeaderScrollThreshold;
+  }
+
   /** 判断指针是否直接进入紧凑出口格；该格需要保留 sandwich 菜单的即时可操作性。 */
   function isCompactExitPointerTarget(event: PointerEvent) {
     return document.elementFromPoint(event.clientX, event.clientY)?.closest(".compact-exit-menu") !== null;
@@ -771,10 +776,20 @@ const appearanceOptions = [
   function scheduleCompactHeaderHoverContract() {
     cancelCompactHeaderHoverContract();
 
+    if (mustKeepHeaderExpandedAtPageStart()) {
+      setHeaderLayoutState(false, false);
+      return;
+    }
+
     compactHeaderHoverContractTimer = window.setTimeout(() => {
       compactHeaderHoverContractTimer = undefined;
 
       if (siteHeader?.matches(":hover")) {
+        return;
+      }
+
+      if (mustKeepHeaderExpandedAtPageStart()) {
+        setHeaderLayoutState(false, false);
         return;
       }
 
@@ -852,9 +867,9 @@ const appearanceOptions = [
     headerHoverCloseTimers.set(menu, closeTimer);
   }
 
-  /** 读取全局 Header 动效曲线，确保脚本浮层与 CSS 触发反馈使用同一套导视节奏。 */
-  function getHeaderMotionEasing(variableName: "--motion-header-enter" | "--motion-header-exit") {
-    return getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+  /** 读取全局 Header 空间动效曲线，确保脚本菜单与 CSS 的揭示方向保持一致。 */
+  function getHeaderMotionEasing() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--motion-header-standard-spatial").trim();
   }
 
   /**
@@ -911,7 +926,7 @@ const appearanceOptions = [
       ],
       {
         duration: headerMenuRevealDuration,
-        easing: getHeaderMotionEasing("--motion-header-enter"),
+        easing: getHeaderMotionEasing(),
         fill: "both",
       },
     );
@@ -989,7 +1004,7 @@ const appearanceOptions = [
       [{ clipPath: "inset(0)" }, { clipPath: "inset(0 0 100% 0)" }],
       {
         duration: 160,
-        easing: getHeaderMotionEasing("--motion-header-exit"),
+        easing: getHeaderMotionEasing(),
         fill: "forwards",
       },
     );

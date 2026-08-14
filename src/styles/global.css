@@ -57,14 +57,20 @@
   --motion-launch-exit: cubic-bezier(0.23, 1, 0.32, 1);
   /* 整屏前向淡出使用 Quint 曲线：品牌先短暂停住，画面再于中段迅速靠近观察者并收束消散。 */
   --motion-launch-forward-fade: cubic-bezier(0.86, 0, 0.07, 1);
-  /* Header 的进入反馈采用快速起势、无回弹的曲线，保持导视牌像实体灯箱而不是漂浮组件。 */
-  --motion-header-enter: cubic-bezier(0.22, 1, 0.36, 1);
-  /* Header 的收起曲线与进入方向相反，使菜单沿触发牌的来路返回。 */
-  --motion-header-exit: cubic-bezier(0.4, 0, 1, 1);
+  /* Header 的颜色、背景与透明度状态层使用标准缓动，确保高频反馈克制且立即可辨。 */
+  --motion-header-standard-effects: ease;
+  /* 菜单揭示、图标显隐和启动后的 Header 入场快速起势、无回弹，维持实体导视牌的方向感。 */
+  --motion-header-standard-spatial: cubic-bezier(0.23, 1, 0.32, 1);
+  /* 阅读态外壳收束采用对称运动，向下阅读与反向展开都保持可预测的节奏。 */
+  --motion-header-standard-move: cubic-bezier(0.77, 0, 0.175, 1);
+  /* 真实控制的 hover、focus 与 pressed 状态层在短时长内完成，避免高频操作显得拖沓。 */
+  --duration-header-standard-effects: 150ms;
+  /* 局部按下只保留短促触感，不让操作反馈演变为布局动画。 */
+  --duration-header-press: 100ms;
   /* 阅读态 Header 展开用快速起势、无回弹的曲线，让完整导视牌像同一盏灯箱向外恢复。 */
-  --motion-header-layout-expand: cubic-bezier(0.23, 1, 0.32, 1);
+  --motion-header-layout-expand: var(--motion-header-standard-spatial);
   /* 阅读态 Header 收束采用对称曲线，保持向下阅读时的克制节奏而不抢占内容。 */
-  --motion-header-layout-contract: cubic-bezier(0.77, 0, 0.175, 1);
+  --motion-header-layout-contract: var(--motion-header-standard-move);
   /* 展开给予文字与导视牌足够读写时间，但不拖慢用户返回导航。 */
   --duration-header-layout-expand: 240ms;
   /* 收束是阅读中的低优先级动作，短于展开且不形成额外停顿。 */
@@ -168,8 +174,8 @@ main.main--full-bleed {
   overflow: visible;
   background: var(--color-header-surface);
   transition:
-    opacity 440ms var(--motion-header-enter),
-    transform 440ms var(--motion-header-enter),
+    opacity 440ms var(--motion-header-standard-spatial),
+    transform 440ms var(--motion-header-standard-spatial),
     width var(--duration-header-layout-expand) var(--motion-header-layout-expand),
     min-height var(--duration-header-layout-expand) var(--motion-header-layout-expand);
 }
@@ -256,7 +262,7 @@ html[data-launching] .site-header {
   display: flex;
   align-items: flex-start;
   gap: clamp(3px, 0.4vw, 6px);
-  transition: transform 100ms var(--motion-header-enter);
+  transition: transform var(--duration-header-press) var(--motion-header-standard-spatial);
 }
 
 .home-nav__text-stack {
@@ -272,7 +278,7 @@ html[data-launching] .site-header {
   font-weight: 790;
   letter-spacing: -0.045em;
   line-height: 1.04;
-  transition: transform 100ms var(--motion-header-enter);
+  transition: transform var(--duration-header-press) var(--motion-header-standard-spatial);
 }
 
 .home-nav__arrow {
@@ -323,8 +329,8 @@ html[data-launching] .site-header {
   border-radius: 50%;
   background: currentColor;
   transition:
-    opacity 120ms var(--motion-header-enter),
-    transform 180ms var(--motion-header-enter);
+    opacity var(--duration-header-standard-effects) var(--motion-header-standard-effects),
+    transform 180ms var(--motion-header-standard-spatial);
 }
 
 /* 双线向原站点圆并列追加同尺寸的第二色圆点；右侧圆的右缘与“首页”文字右缘对齐。 */
@@ -362,8 +368,8 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   transform: translate3d(0, calc(var(--home-nav-indicator-bottom-offset) + 2px), 0) scaleY(0.35);
   transform-origin: center bottom;
   transition:
-    opacity 120ms var(--motion-header-enter),
-    transform 180ms var(--motion-header-enter);
+    opacity var(--duration-header-standard-effects) var(--motion-header-standard-effects),
+    transform 180ms var(--motion-header-standard-spatial);
 }
 
 .home-nav:focus-visible {
@@ -391,19 +397,20 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
     transform: translate3d(0, var(--home-nav-indicator-bottom-offset), 0) scaleY(1);
   }
 
-  .exit-menu:hover .exit-menu__arrow {
-    width: clamp(28px, 2.2vw, 34px);
-    margin-left: clamp(3px, 0.4vw, 6px);
+  .exit-menu:hover .exit-menu__arrow,
+  .service-desk__summary:hover .service-desk__information,
+  .service-desk[open] .service-desk__information {
+    width: var(--header-direction-affordance-size);
+    margin-inline-start: var(--header-direction-affordance-gap);
     opacity: 1;
     transform: translate3d(0, 0, 0);
+    visibility: visible;
+    transition-delay: 0ms;
   }
 
-  .service-desk__summary:hover .service-desk__information,
-  .service-desk__summary:focus-visible .service-desk__information {
-    width: clamp(28px, 2.2vw, 34px);
-    margin-left: clamp(3px, 0.4vw, 6px);
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
+  .service-desk__summary:hover,
+  .mobile-header-tool--service .mobile-header-tool__summary:hover {
+    background-color: color-mix(in srgb, currentColor 8%, transparent);
   }
 }
 
@@ -489,8 +496,21 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   list-style: none;
 }
 
+/* 服务台只在真实 hover、focus、pressed 与 open 状态叠加低对比状态层，避免把导视牌变成会跳动的按钮。 */
+.service-desk__summary,
+.mobile-header-tool--service .mobile-header-tool__summary {
+  background-color: transparent;
+  transition: background-color var(--duration-header-standard-effects)
+    var(--motion-header-standard-effects);
+}
+
 .service-desk__direction,
 .exit-menu__direction {
+  /* 两块功能牌共用的图标尺寸，保证推出时扩展到完全相同的物理终点。 */
+  --header-direction-affordance-size: clamp(28px, 2.2vw, 34px);
+  /* 图标从文字末端推出后保留的固定呼吸距离，使两块牌的延展量一致。 */
+  --header-direction-affordance-gap: clamp(3px, 0.4vw, 6px);
+  position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
@@ -522,7 +542,7 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   justify-content: flex-end;
   gap: 6px;
   min-height: clamp(18px, 1.45vw, 22px);
-  transition: transform 100ms var(--motion-header-enter);
+  transition: transform var(--duration-header-press) var(--motion-header-standard-spatial);
 }
 
 .service-desk__marker svg,
@@ -557,42 +577,33 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   justify-items: end;
 }
 
+.service-desk__information,
 .exit-menu__arrow {
   display: grid;
   width: 0;
-  height: clamp(28px, 2.2vw, 34px);
-  margin-top: -0.18em;
-  margin-left: 0;
-  flex: 0 0 auto;
+  height: var(--header-direction-affordance-size);
+  margin-inline-start: 0;
   place-items: center;
   opacity: 0;
   overflow: hidden;
+  flex: 0 0 auto;
   pointer-events: none;
   transform: translate3d(6px, 0, 0);
+  visibility: hidden;
   transition:
-    width 180ms var(--motion-header-enter),
-    margin-left 180ms var(--motion-header-enter),
-    opacity 120ms var(--motion-header-enter),
-    transform 180ms var(--motion-header-enter);
+    width 180ms var(--motion-header-standard-spatial),
+    margin-inline-start 180ms var(--motion-header-standard-spatial),
+    opacity var(--duration-header-standard-effects) var(--motion-header-standard-effects),
+    transform var(--duration-header-standard-effects) var(--motion-header-standard-spatial),
+    visibility 0ms linear 180ms;
 }
 
 .service-desk__information {
-  display: grid;
-  width: 0;
-  height: clamp(28px, 2.2vw, 34px);
-  margin-top: -0.06em;
-  margin-left: 0;
-  flex: 0 0 auto;
-  place-items: center;
-  opacity: 0;
-  overflow: hidden;
-  pointer-events: none;
-  transform: translate3d(6px, 0, 0);
-  transition:
-    width 180ms var(--motion-header-enter),
-    margin-left 180ms var(--motion-header-enter),
-    opacity 120ms var(--motion-header-enter),
-    transform 180ms var(--motion-header-enter);
+  margin-block-start: -0.06em;
+}
+
+.exit-menu__arrow {
+  margin-block-start: -0.18em;
 }
 
 .exit-menu__arrow svg {
@@ -624,8 +635,23 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   outline-offset: -3px;
 }
 
-.service-desk__summary:active {
-  background: color-mix(in srgb, currentColor 8%, transparent);
+.service-desk__summary:focus-visible,
+.service-desk[open] .service-desk__summary,
+.mobile-header-tool--service .mobile-header-tool__summary:focus-visible,
+.mobile-header-tool--service[open] .mobile-header-tool__summary,
+.service-desk__summary:active,
+.mobile-header-tool--service .mobile-header-tool__summary:active {
+  background-color: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.service-desk__summary:focus-visible .service-desk__information,
+.service-desk[open] .service-desk__information {
+  width: var(--header-direction-affordance-size);
+  margin-inline-start: var(--header-direction-affordance-gap);
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  visibility: visible;
+  transition-delay: 0ms;
 }
 
 .service-desk__summary:active .service-desk__copy {
@@ -716,9 +742,9 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   font-size: 15px;
   font-weight: 730;
   transition:
-    background-color 180ms var(--motion-header-enter),
-    color 180ms var(--motion-header-enter),
-    transform 180ms var(--motion-header-enter);
+    background-color var(--duration-header-standard-effects) var(--motion-header-standard-effects),
+    color var(--duration-header-standard-effects) var(--motion-header-standard-effects),
+    transform var(--duration-header-press) var(--motion-header-standard-spatial);
 }
 
 .mobile-destination-menu__links a svg {
@@ -784,8 +810,8 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   font-weight: 800;
   letter-spacing: 0.04em;
   transition:
-    color 180ms cubic-bezier(0.22, 1, 0.36, 1),
-    background-color 180ms cubic-bezier(0.22, 1, 0.36, 1);
+    color var(--duration-header-standard-effects) var(--motion-header-standard-effects),
+    background-color var(--duration-header-standard-effects) var(--motion-header-standard-effects);
 }
 
 .language-link:hover,
@@ -825,9 +851,9 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   padding: 0 10px;
   text-align: left;
   transition:
-    background-color 180ms var(--motion-header-enter),
-    color 180ms var(--motion-header-enter),
-    transform 180ms var(--motion-header-enter);
+    background-color var(--duration-header-standard-effects) var(--motion-header-standard-effects),
+    color var(--duration-header-standard-effects) var(--motion-header-standard-effects),
+    transform var(--duration-header-press) var(--motion-header-standard-spatial);
 }
 
 .appearance-choice__icon svg {
@@ -852,7 +878,7 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
 }
 
 .appearance-choice:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 .content-section {
@@ -1617,6 +1643,19 @@ html[data-launching] .launch-sequence {
   .mobile-header-tool__icon {
     transition-duration: 0ms;
   }
+
+  .service-desk__information,
+  .exit-menu__arrow {
+    transition:
+      opacity var(--duration-header-reduced-feedback) linear,
+      visibility 0ms linear var(--duration-header-reduced-feedback);
+    transform: none;
+  }
+
+  .service-desk__summary:focus-visible .service-desk__information,
+  .service-desk[open] .service-desk__information {
+    transform: none;
+  }
 }
 
 @media (max-width: 1023px) and (min-width: 761px) {
@@ -1677,8 +1716,8 @@ html[data-launching] .launch-sequence {
     grid-template-columns: minmax(148px, 1fr) 56px 56px 56px;
     /* 收束只改变 live DOM 的尺寸；展开回到基础规则的 240ms，避免整块导视牌被快照缩放。 */
     transition:
-      opacity 440ms var(--motion-header-enter),
-      transform 440ms var(--motion-header-enter),
+      opacity 440ms var(--motion-header-standard-spatial),
+      transform 440ms var(--motion-header-standard-spatial),
       width var(--duration-header-layout-contract) var(--motion-header-layout-contract),
       min-height var(--duration-header-layout-contract) var(--motion-header-layout-contract);
   }
@@ -1760,8 +1799,11 @@ html[data-launching] .launch-sequence {
   }
 
   html[data-header-compact]:not([data-header-hover-expanded]) .service-desk__direction {
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    place-items: center;
   }
 
   html[data-header-compact]:not([data-header-hover-expanded]) .service-desk__copy {
@@ -1774,6 +1816,8 @@ html[data-launching] .launch-sequence {
     margin: 0;
     opacity: 1;
     transform: none;
+    visibility: visible;
+    transition-delay: 0ms;
   }
 
   html[data-header-compact]:not([data-header-hover-expanded]) .compact-exit-menu {
@@ -1826,7 +1870,7 @@ html[data-launching] .launch-sequence {
     width: 24px;
     height: 24px;
     place-items: center;
-    transition: transform 100ms var(--motion-header-enter);
+    transition: transform var(--duration-header-press) var(--motion-header-standard-spatial);
   }
 
   html[data-header-compact]:not([data-header-hover-expanded]) .compact-exit-menu__icon svg {
@@ -1848,8 +1892,20 @@ html[data-launching] .launch-sequence {
   .home-nav__primary {
     /* 保留完整态首页牌既有的按压位移，仅为分段交接叠加透明度而不改变 expanded 反馈。 */
     transition:
-      transform 100ms var(--motion-header-enter),
+      transform var(--duration-header-press) var(--motion-header-standard-spatial),
       opacity var(--duration-header-content-handoff) linear;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* 常态服务台保留图标的 effects + spatial 反馈；分段交接阶段才由上方 100ms 透明度规则接管。 */
+    html:not([data-header-content-phase]) .service-desk__information {
+      transition:
+        width 180ms var(--motion-header-standard-spatial),
+        margin-inline-start 180ms var(--motion-header-standard-spatial),
+        opacity var(--duration-header-standard-effects) var(--motion-header-standard-effects),
+        transform var(--duration-header-standard-effects) var(--motion-header-standard-spatial),
+        visibility 0ms linear 180ms;
+    }
   }
 
   html[data-header-content-phase="contracting"] .home-nav__primary,
@@ -2010,16 +2066,12 @@ html[data-launching] .launch-sequence {
     transform: translateY(1px);
   }
 
-  .mobile-header-tool[open] .mobile-header-tool__summary {
-    background: color-mix(in srgb, currentColor 10%, transparent);
-  }
-
   .mobile-header-tool__icon {
     display: grid;
     width: 24px;
     height: 24px;
     place-items: center;
-    transition: transform 100ms var(--motion-header-enter);
+    transition: transform var(--duration-header-press) var(--motion-header-standard-spatial);
   }
 
   .mobile-header-tool__icon svg {
