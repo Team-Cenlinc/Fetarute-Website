@@ -198,7 +198,8 @@ export function getRailwayLineCssVariableName(
 
 /**
  * 根据线路实体色选择站牌色块上的浅色或深色文字。
- * 返回语义 CSS token 而非重复中性色值，使色块在浅深外观下都优先采用与背景对比度更高的前景。
+ * 线路号是大号导视字，采用亮度阈值：浅色线路使用深字，深色线路使用浅字，避免底色只因微小对比差而始终落到深字。
+ * 返回语义 CSS token 而非重复中性色值，使色块在浅深外观下仍与页面中性前景同步。
  */
 export function getRailwayLineTextColor(color: HexColor): string {
   const channels = [1, 3, 5].map(
@@ -209,12 +210,8 @@ export function getRailwayLineTextColor(color: HexColor): string {
   );
   const luminance =
     0.2126 * linearChannels[0] + 0.7152 * linearChannels[1] + 0.0722 * linearChannels[2];
-  const darkTextLuminance = 0.007;
-  const lightTextLuminance = 0.91;
-  const darkContrast = (luminance + 0.05) / (darkTextLuminance + 0.05);
-  const lightContrast = (lightTextLuminance + 0.05) / (luminance + 0.05);
 
-  return darkContrast >= lightContrast ? "var(--color-scene-fallback)" : "var(--color-on-hero)";
+  return luminance < 0.25 ? "var(--color-on-hero)" : "var(--color-scene-fallback)";
 }
 
 /**
