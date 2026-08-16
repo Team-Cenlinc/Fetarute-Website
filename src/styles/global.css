@@ -1014,19 +1014,45 @@ h3 {
   line-height: 1.4;
 }
 
-/* 首屏后的像素阈值不生成独立段落；它只在第一叙事站进入阅读线时触发全屏出发遮罩。 */
+/*
+ * 首屏后的出发跑道是遮罩滑入时唯一允许露出的底色，不让第一叙事站从下方提前穿出。
+ * 遮罩完成验票前它占满一屏；离场前由脚本收起，正文便在同一滚动位置接住视口。
+ */
 .departure-gate-sentinel {
-  width: 1px;
-  height: 1px;
-  margin-block: -44px;
+  width: 100%;
+  height: 100dvh;
+  /* 双侧抵消首页 grid 的章间距：跑道紧贴 Landing，收起后第一站也会恰好落在当前视口。 */
+  margin-block: -88px;
+  background: var(--color-background);
   pointer-events: none;
 }
 
+.departure-gate-sentinel[data-departure-gate-runway="complete"] {
+  height: 0;
+  overflow: hidden;
+}
+
+.departure-gate-sentinel[data-departure-gate-runway="seen"] {
+  display: none;
+}
+
 /*
- * 出发遮罩固定在第一叙事站之上，而不是占据文档流中的一段空白。
- * 读者完成验票或主动略过后，遮罩自身淡出，底下的 Serverlink 站名边界自然成为下一帧。
+ * 出发遮罩固定在出发跑道之上；它从视口下方完整滑入、定点后才成为 modal。
+ * 跑道确保正文始终藏在不透明底色之后；验票或略过时才由遮罩淡出显露 Serverlink 站名边界。
  */
 .departure-gate {
+  /* 由滚动进度写入 0 到 1；靠近阶段只派生遮罩位置，保持不透明以隔离尚未抵达的正文。 */
+  --departure-gate-approach-progress: 0;
+  /* Guard 上划时由指针距离写入；它只影响整片遮罩，不干扰验票卡片自身的拖动 transform。 */
+  --departure-gate-swipe-distance: 0px;
+  /* 全屏 Guard 是重型表面，入场使用 Material 3 Emphasized Decelerate，给最后落位更从容的减速。 */
+  --motion-departure-gate-arrive: cubic-bezier(0.05, 0.7, 0.1, 1);
+  /* 离场采用对应的 Material 3 Accelerate；它短于入场以尊重用户已经作出的放行决定。 */
+  --motion-departure-gate-leave: cubic-bezier(0.3, 0, 1, 1);
+  /* 重型整屏表面需要比卡片更长的落位时间，但仍停在一次滚动结算的感知范围内。 */
+  --duration-departure-gate-arrive: 420ms;
+  /* 用户主动略过后，遮罩以更短的时长离开，让第一站自然接住向前的手势。 */
+  --duration-departure-gate-leave: 300ms;
   position: fixed;
   z-index: 29;
   inset: 0;
@@ -1035,32 +1061,60 @@ h3 {
   background: var(--color-background);
   color: var(--color-text);
   isolation: isolate;
-  opacity: 0;
+  opacity: 1;
   pointer-events: none;
-  transform: scale(1);
-  transition:
-    opacity 200ms var(--motion-launch-exit),
-    visibility 0ms linear 200ms;
+  transform: translateY(100dvh);
+  transition: visibility 0ms linear 200ms;
   visibility: hidden;
 }
 
+.departure-gate[data-state="approaching"],
+.departure-gate[data-state="snapping"],
 .departure-gate[data-state="active"],
+.departure-gate[data-state="swiping"],
 .departure-gate[data-state="dragging"],
 .departure-gate[data-state="returning"],
 .departure-gate[data-state="validated"],
 .departure-gate[data-state="skipped"],
 .departure-gate[data-state="leaving"] {
-  pointer-events: auto;
   transition-delay: 0ms;
   visibility: visible;
 }
 
+.departure-gate[data-state="approaching"] {
+  opacity: 1;
+  transform: translateY(calc((1 - var(--departure-gate-approach-progress)) * 100dvh));
+  /* 仅在滚动接管与收束期间提升合成优先级，避免常驻 will-change 占用绘制资源。 */
+  will-change: transform;
+  transition: none;
+}
+
+.departure-gate[data-state="snapping"] {
+  opacity: 1;
+  transform: translateY(0);
+  will-change: transform;
+  transition: transform var(--duration-departure-gate-arrive) var(--motion-departure-gate-arrive);
+}
+
 .departure-gate[data-state="active"],
+.departure-gate[data-state="swiping"],
 .departure-gate[data-state="dragging"],
 .departure-gate[data-state="returning"],
 .departure-gate[data-state="validated"],
 .departure-gate[data-state="skipped"] {
   opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.departure-gate[data-state="active"],
+.departure-gate[data-state="swiping"] {
+  touch-action: none;
+}
+
+.departure-gate[data-state="swiping"] {
+  transform: translateY(calc(-1 * var(--departure-gate-swipe-distance)));
+  transition: none;
 }
 
 /* 放行时只动 transform 与 opacity；缩放大于 1 表达遮罩向前消散，不制造从零出现的跳跃。 */
@@ -1069,9 +1123,18 @@ h3 {
   pointer-events: none;
   transform: scale(1.06);
   transition:
-    opacity 360ms var(--motion-launch-exit),
-    transform 360ms var(--motion-launch-exit),
-    visibility 0ms linear 360ms;
+    opacity var(--duration-departure-gate-leave) var(--motion-departure-gate-leave),
+    transform var(--duration-departure-gate-leave) var(--motion-departure-gate-leave),
+    visibility 0ms linear var(--duration-departure-gate-leave);
+}
+
+/* 上划略过把整片 Guard 送往视口上沿，正文只在跑道收起与这条离场路径开始后出现。 */
+.departure-gate[data-state="leaving"][data-departure-gate-exit-direction="up"] {
+  opacity: 1;
+  transform: translateY(-100dvh);
+  transition:
+    transform var(--duration-departure-gate-leave) var(--motion-departure-gate-leave),
+    visibility 0ms linear var(--duration-departure-gate-leave);
 }
 
 .departure-gate__scene {
@@ -1653,6 +1716,10 @@ h3 {
     transition:
       opacity 160ms var(--motion-header-standard-effects),
       visibility 0ms linear 160ms;
+  }
+
+  .departure-gate[data-state="leaving"][data-departure-gate-exit-direction="up"] {
+    opacity: 0;
   }
 
   .departure-gate__pass {
@@ -2796,6 +2863,11 @@ html[data-launching] .launch-sequence {
     padding: 0 0 64px;
   }
 
+  .departure-gate-sentinel {
+    /* 窄屏首页的章节间距为 64px，跑道需要匹配抵消才能无缝承接首屏。 */
+    margin-block: -64px;
+  }
+
   .site-header {
     top: 12px;
     width: calc(100% - 24px);
@@ -2921,10 +2993,6 @@ html[data-launching] .launch-sequence {
   .connection-copy,
   .news-list li {
     grid-template-columns: 1fr;
-  }
-
-  .departure-gate-sentinel {
-    margin-block: -32px;
   }
 
   .departure-gate__scene {
