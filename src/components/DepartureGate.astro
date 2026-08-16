@@ -1,0 +1,724 @@
+---
+import type { Locale } from "@/i18n/config";
+import { getMessages } from "@/i18n/messages";
+import ftaLogo from "@/assets/wayfinding/fta-logo.svg?raw";
+import arrowRightIcon from "@phosphor-icons/core/assets/regular/arrow-right.svg?raw";
+import contactlessPaymentIcon from "@phosphor-icons/core/assets/regular/contactless-payment.svg?raw";
+import contactlessSignalIcon from "@phosphor-icons/core/assets/regular/wifi-high.svg?raw";
+
+/**
+ * 首屏与第一叙事站之间的出发遮罩属性。
+ * 它被投递到 BaseLayout 的正文外层，才能在锁定 main 时继续保有自己的可操作焦点。
+ */
+export interface Props {
+  /** 当前公开语言决定遮罩中的交互文案与读屏标签。 */
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const messages = getMessages(locale);
+/** 生产站把本次出发写入当前 tab；开发环境每次刷新都保留可重看占位动效的机会。 */
+const shouldPersistDepartureSeen = import.meta.env.PROD;
+---
+
+<section
+  class="departure-gate"
+  data-departure-gate
+  data-state="armed"
+  data-persist-session={shouldPersistDepartureSeen ? "true" : "false"}
+  data-ready-status={messages.home.departure.readyStatus}
+  data-dragging-status={messages.home.departure.draggingStatus}
+  data-validated-status={messages.home.departure.validatedStatus}
+  data-skipped-status={messages.home.departure.skippedStatus}
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="departure-gate-title"
+  aria-describedby="departure-gate-instruction"
+>
+  <div class="departure-gate__scene">
+    <div class="departure-gate__copy">
+      <h2 id="departure-gate-title">{messages.home.departure.title}</h2>
+      <p id="departure-gate-instruction">{messages.home.departure.description}</p>
+    </div>
+
+    <div class="departure-gate__stage" data-departure-stage>
+      <!-- 导引线只在静止时出现；脚本会按卡片与感应区的实际位置生成它，拖动时立即让出操作视野。 -->
+      <svg class="departure-gate__drag-guide" data-departure-drag-guide aria-hidden="true" focusable="false">
+        <path class="departure-gate__drag-guide-path" data-departure-drag-guide-path></path>
+        <path class="departure-gate__drag-guide-head" data-departure-drag-guide-head></path>
+      </svg>
+      <button
+        class="departure-gate__pass"
+        data-departure-pass
+        type="button"
+        aria-label={messages.home.departure.cardActionLabel}
+        aria-describedby="departure-gate-instruction"
+        aria-pressed="false"
+      >
+        <span class="departure-gate__pass-face">
+          <span class="departure-gate__pass-edge" aria-hidden="true"></span>
+          <!-- 线路色曲线只作为卡面装饰，确保中性底色上的 Fetarute 凭证文字仍是阅读主角。 -->
+          <span class="departure-gate__pass-routes" aria-hidden="true"><span></span><span></span><span></span></span>
+          <!-- 卡名保持紧凑的两行文字，与 Figma 的基础排版关系一致，不把产品名拆散成装饰性元素。 -->
+          <strong class="departure-gate__pass-title">
+            <span>{messages.home.departure.passName[0]}</span>
+            <span>{messages.home.departure.passName[1]}</span>
+          </strong>
+          <!-- 卡号是一次会话内的轻量凭证细节，不把虚构的路线序号伪装成真实运营信息。 -->
+          <span class="departure-gate__pass-number" data-departure-pass-number aria-hidden="true">FTU-0000-0000</span>
+          <!-- 非接触标记复用项目已安装的 Phosphor 图标，避免为装饰手绘近似的支付符号。 -->
+          <span class="departure-gate__pass-contactless" aria-hidden="true" set:html={contactlessPaymentIcon}></span>
+        </span>
+      </button>
+
+      <button
+        class="departure-gate__reader"
+        data-departure-reader
+        type="button"
+        aria-label={messages.home.departure.readerActionLabel}
+        aria-describedby="departure-gate-instruction"
+        aria-pressed="false"
+      >
+        <span class="departure-gate__reader-housing">
+          <!-- 屏幕只显示 Validator 的真实待机信息，品牌归属留给下方运营导视牌。 -->
+          <span class="departure-gate__reader-screen" aria-hidden="true">
+            <span class="departure-gate__reader-screen-top">
+              <strong class="departure-gate__reader-screen-caption">{messages.home.departure.screenSystemLabel}</strong>
+              <span class="departure-gate__reader-screen-mode">
+                <span>{messages.home.departure.screenReadyLabel}</span>
+                <span class="departure-gate__reader-signal"></span>
+              </span>
+            </span>
+            <span class="departure-gate__reader-screen-idle">
+              <!-- 待机状态只保留已有图标库的 NFC 符号；不再播放额外的波纹动画。 -->
+              <span class="departure-gate__reader-screen-contactless" set:html={contactlessSignalIcon}></span>
+              <!-- 小屏在拖动时用箭头取代 NFC，成为无文字的“继续靠近”方向符号。 -->
+              <span class="departure-gate__reader-screen-go" set:html={arrowRightIcon}></span>
+              <strong class="departure-gate__reader-screen-idle-copy">{messages.home.departure.screenIdleAction}</strong>
+              <strong class="departure-gate__reader-screen-result">{messages.home.departure.screenValidatedAction}</strong>
+            </span>
+          </span>
+        </span>
+        <span class="departure-gate__reader-sign">
+          <span class="departure-gate__reader-copy">
+            <strong>{messages.home.departure.readerNotice}</strong>
+            <small>{messages.home.departure.readerWelcome}</small>
+          </span>
+          <span class="departure-gate__reader-mark" aria-hidden="true" set:html={ftaLogo}></span>
+        </span>
+        <!-- 与外壳同材质的立柱和底座将设备固定在站内地面上，不靠悬浮阴影制造体积。 -->
+        <span class="departure-gate__reader-stand" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+
+  <p class="departure-gate__status" data-departure-status aria-live="polite">
+    {messages.home.departure.readyStatus}
+  </p>
+  <button class="departure-gate__skip" data-departure-skip type="button">
+    <span>{messages.home.departure.skipLabel}</span>
+    <small>{messages.home.departure.skipHint}</small>
+  </button>
+</section>
+
+<script>
+  /** 出发遮罩从等待到放行的单向状态，禁止完成后再次回到可触发状态。 */
+  type DepartureGateState = "armed" | "active" | "dragging" | "returning" | "validated" | "skipped" | "leaving";
+  /** SVG 导引线使用的局部坐标点，始终相对于出发交互舞台。 */
+  type DepartureGuidePoint = { x: number; y: number };
+
+  const departureGate = document.querySelector<HTMLElement>("[data-departure-gate]");
+  const departureSentinel = document.querySelector<HTMLElement>("[data-departure-gate-sentinel]");
+  const siteHeader = document.querySelector<HTMLElement>(".site-header");
+  const mainContent = document.querySelector<HTMLElement>("main");
+  const root = document.documentElement;
+
+  if (departureGate && departureSentinel) {
+    const stage = departureGate.querySelector<HTMLElement>("[data-departure-stage]");
+    const pass = departureGate.querySelector<HTMLButtonElement>("[data-departure-pass]");
+    const passNumber = departureGate.querySelector<HTMLElement>("[data-departure-pass-number]");
+    const reader = departureGate.querySelector<HTMLButtonElement>("[data-departure-reader]");
+    const readerHousing = departureGate.querySelector<HTMLElement>(".departure-gate__reader-housing");
+    const readerScreen = departureGate.querySelector<HTMLElement>(".departure-gate__reader-screen");
+    const dragGuide = departureGate.querySelector<SVGSVGElement>("[data-departure-drag-guide]");
+    const dragGuidePath = departureGate.querySelector<SVGPathElement>("[data-departure-drag-guide-path]");
+    const dragGuideHead = departureGate.querySelector<SVGPathElement>("[data-departure-drag-guide-head]");
+    const skip = departureGate.querySelector<HTMLButtonElement>("[data-departure-skip]");
+    const status = departureGate.querySelector<HTMLElement>("[data-departure-status]");
+    const shouldPersist = departureGate.dataset.persistSession === "true";
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const departureSessionKey = "fetarute.departure.seen";
+    /** 占位遮罩淡出给第一叙事站的标准时长，和 Launch 的离场长度保持可读的叙事节奏。 */
+    const departureExitDuration = reducedMotion ? 160 : 360;
+    /** 验票成功后保留一秒结果屏，让绿色状态有足够时间被读者确认再进入下一段。 */
+    const departureValidationHoldDuration = 1000;
+    /** 成功后先在感应区停留的时长，模拟真实拍卡完成的确认瞬间，再让卡片为结果屏让位。 */
+    const departureValidationDockDelay = reducedMotion ? 0 : 320;
+    let hasSeenDeparture = false;
+
+    /** 为当前标签页生成简短的 TransitUnion 卡号，保留凭证质感但不伪造线路或站点编号。 */
+    const createTransitUnionCardNumber = () => {
+      const values = new Uint16Array(2);
+      window.crypto.getRandomValues(values);
+      const segments = Array.from(values, (value) => String(value % 10000).padStart(4, "0"));
+      return `FTU-${segments.join("-")}`;
+    };
+
+    if (passNumber) passNumber.textContent = createTransitUnionCardNumber();
+
+    try {
+      if (!shouldPersist) {
+        // 开发时清除生产预览残留，方便反复核查遮罩与第一站的淡出交接。
+        window.sessionStorage.removeItem(departureSessionKey);
+      } else {
+        hasSeenDeparture = window.sessionStorage.getItem(departureSessionKey) === "true";
+      }
+    } catch {
+      // 存储不可用时仍要求当前页完成一次明确操作，只是不承诺跨刷新记忆该结果。
+    }
+
+    if (hasSeenDeparture) {
+      departureGate.remove();
+    } else if (stage && pass && reader && skip && status) {
+      let dragPointerId: number | undefined;
+      let dragStartX = 0;
+      let dragStartY = 0;
+      let passOffsetX = 0;
+      let passOffsetY = 0;
+      let passRotation = -5;
+      let dragStartOffsetX = 0;
+      let dragStartOffsetY = 0;
+      let dragStartPassBounds: DOMRect | undefined;
+      let draggedDuringPointerSession = false;
+      let suppressPassClick = false;
+      let hasDeparted = false;
+      let scrollFrameId: number | undefined;
+      let dragGuideFrameId: number | undefined;
+      let dragGuideObserver: ResizeObserver | undefined;
+      let launchStateObserver: MutationObserver | undefined;
+      let launchBoundaryObserver: MutationObserver | undefined;
+      let headerWasInert = false;
+      let mainWasInert = false;
+
+      /** 读取当前遮罩状态，所有事件先以它判断自己是否仍有写入权。 */
+      const getState = (): DepartureGateState =>
+        (departureGate.dataset.state as DepartureGateState | undefined) ?? "armed";
+
+      /** 统一写入状态属性，让 CSS 只根据这一处状态机渲染占位画面。 */
+      const setState = (nextState: DepartureGateState) => {
+        departureGate.dataset.state = nextState;
+      };
+
+      /** 判断当前是否仍允许读者拖动、验票或略过；离场后所有输入都必须失效。 */
+      const isInteractionActive = () => {
+        const state = getState();
+        return state === "active" || state === "dragging";
+      };
+
+      /** 将手势位置直接写到卡片本体，避免父级变量更新整片遮罩的样式计算。 */
+      const renderPassTransform = () => {
+        pass.style.transform = `translate(${passOffsetX}px, ${passOffsetY}px) rotate(${passRotation}deg)`;
+      };
+
+      /**
+       * 从矩形中心沿目标方向找到相向边缘，使导引线始终停在卡片与 Validator 实体之外。
+       * 以实际边界计算可避免桌面、平板与移动端分别维护一组箭头坐标。
+       */
+      const getFacingEdgePoint = (bounds: DOMRect, direction: DepartureGuidePoint): DepartureGuidePoint => {
+        const centre = {
+          x: bounds.left + bounds.width / 2,
+          y: bounds.top + bounds.height / 2,
+        };
+        const horizontalHalf = Math.max(bounds.width / 2, 1);
+        const verticalHalf = Math.max(bounds.height / 2, 1);
+        const scale = 1 / Math.max(Math.abs(direction.x) / horizontalHalf, Math.abs(direction.y) / verticalHalf, 1);
+
+        return {
+          x: centre.x + direction.x * scale,
+          y: centre.y + direction.y * scale,
+        };
+      };
+
+      /**
+       * 由卡片与感应区当前位置绘制一条二次贝塞尔导引线，并让箭头切线准确指向 Validator。
+       * 仅在待机时更新，避免在拖动手势中为不可见装饰重复做布局读取。
+       */
+      const renderDragGuide = () => {
+        if (
+          getState() !== "active" ||
+          !stage ||
+          !readerHousing ||
+          !dragGuide ||
+          !dragGuidePath ||
+          !dragGuideHead
+        ) {
+          return;
+        }
+
+        const stageBounds = stage.getBoundingClientRect();
+        const passBounds = pass.getBoundingClientRect();
+        const readerBounds = readerHousing.getBoundingClientRect();
+        const direction = {
+          x: readerBounds.left + readerBounds.width / 2 - (passBounds.left + passBounds.width / 2),
+          y: readerBounds.top + readerBounds.height / 2 - (passBounds.top + passBounds.height / 2),
+        };
+        const distance = Math.hypot(direction.x, direction.y);
+
+        if (stageBounds.width <= 0 || stageBounds.height <= 0 || distance <= 1) return;
+
+        const unitDirection = {
+          x: direction.x / distance,
+          y: direction.y / distance,
+        };
+        const clearance = Math.min(14, Math.max(8, distance * 0.04));
+        const passEdge = getFacingEdgePoint(passBounds, direction);
+        const readerEdge = getFacingEdgePoint(readerBounds, {
+          x: -direction.x,
+          y: -direction.y,
+        });
+        const start = {
+          x: passEdge.x + unitDirection.x * clearance - stageBounds.left,
+          y: passEdge.y + unitDirection.y * clearance - stageBounds.top,
+        };
+        const end = {
+          x: readerEdge.x - unitDirection.x * clearance - stageBounds.left,
+          y: readerEdge.y - unitDirection.y * clearance - stageBounds.top,
+        };
+        // 弯曲量以可绘制的两端净距为基准，避免实体靠近时仍生成一枚过度弯折的小钩子。
+        const availableDistance = Math.hypot(end.x - start.x, end.y - start.y);
+        const bend = Math.min(52, Math.max(14, availableDistance * 0.24));
+        const perpendicular = {
+          x: -unitDirection.y,
+          y: unitDirection.x,
+        };
+        const control = {
+          x: (start.x + end.x) / 2 + perpendicular.x * bend,
+          y: (start.y + end.y) / 2 + perpendicular.y * bend,
+        };
+        const finalTangent = {
+          x: end.x - control.x,
+          y: end.y - control.y,
+        };
+        const finalTangentLength = Math.max(Math.hypot(finalTangent.x, finalTangent.y), 1);
+        const finalTangentUnit = {
+          x: finalTangent.x / finalTangentLength,
+          y: finalTangent.y / finalTangentLength,
+        };
+        const arrowLength = Math.min(16, Math.max(11, distance * 0.12));
+        const arrowHalfWidth = arrowLength * 0.62;
+        const arrowBase = {
+          x: end.x - finalTangentUnit.x * arrowLength,
+          y: end.y - finalTangentUnit.y * arrowLength,
+        };
+        const arrowPerpendicular = {
+          x: -finalTangentUnit.y,
+          y: finalTangentUnit.x,
+        };
+        const arrowStart = {
+          x: arrowBase.x + arrowPerpendicular.x * arrowHalfWidth,
+          y: arrowBase.y + arrowPerpendicular.y * arrowHalfWidth,
+        };
+        const arrowEnd = {
+          x: arrowBase.x - arrowPerpendicular.x * arrowHalfWidth,
+          y: arrowBase.y - arrowPerpendicular.y * arrowHalfWidth,
+        };
+
+        dragGuide.setAttribute("viewBox", `0 0 ${stageBounds.width} ${stageBounds.height}`);
+        dragGuidePath.setAttribute("d", `M ${start.x} ${start.y} Q ${control.x} ${control.y} ${end.x} ${end.y}`);
+        dragGuideHead.setAttribute("d", `M ${arrowStart.x} ${arrowStart.y} L ${end.x} ${end.y} L ${arrowEnd.x} ${arrowEnd.y}`);
+      };
+
+      /** 将一次布局重算合并进动画帧，让 ResizeObserver 不会在同一帧多次读取矩形。 */
+      const queueDragGuideUpdate = () => {
+        if (dragGuideFrameId !== undefined) return;
+
+        dragGuideFrameId = window.requestAnimationFrame(() => {
+          dragGuideFrameId = undefined;
+          renderDragGuide();
+        });
+      };
+
+      /** 返回卡片当前位置到初始占位位置；未成功的拖放不做摇晃或错误惩罚。 */
+      const returnPassToStart = () => {
+        passOffsetX = 0;
+        passOffsetY = 0;
+        passRotation = -5;
+        renderPassTransform();
+      };
+
+      /** 卡片回到起点后才重新开放下一次拖放并显示导引线，避免回位途中出现错误的临时路径。 */
+      const finishPassReturn = () => {
+        if (hasDeparted || getState() !== "returning") return;
+
+        setState("active");
+        status.textContent = departureGate.dataset.readyStatus ?? status.textContent;
+        queueDragGuideUpdate();
+      };
+
+      /** 只响应卡片本体的 transform 结束事件，子元素样式变化不能提前结束回位状态。 */
+      const handlePassTransitionEnd = (event: TransitionEvent) => {
+        if (event.target !== pass || event.propertyName !== "transform") return;
+
+        finishPassReturn();
+        queueDragGuideUpdate();
+      };
+
+      /** Validator 在断点间使用 transform 回到居中位，过渡结束后需重算导引终点，避免箭头停留在旧屏幕位置。 */
+      const handleReaderTransitionEnd = (event: TransitionEvent) => {
+        if (event.target !== reader || event.propertyName !== "transform") return;
+
+        queueDragGuideUpdate();
+      };
+
+      /** 只在完成的两种结果写入会话，避免读者只是经过第一站就失去出发门。 */
+      const persistDepartureSeen = () => {
+        if (!shouldPersist) return;
+
+        try {
+          window.sessionStorage.setItem(departureSessionKey, "true");
+        } catch {
+          // 当前页面的单向状态仍能阻止同一次阅读里重新出现。
+        }
+      };
+
+      /** 遮罩激活期间记录本组件新增的 inert 边界，离场时不会误清除其他流程已有的锁定。 */
+      const lockPageForDeparture = () => {
+        headerWasInert = siteHeader?.hasAttribute("inert") ?? false;
+        mainWasInert = mainContent?.hasAttribute("inert") ?? false;
+        root.dataset.departureGating = "true";
+
+        if (!headerWasInert) siteHeader?.setAttribute("inert", "");
+        if (!mainWasInert) mainContent?.setAttribute("inert", "");
+      };
+
+      /** 仅恢复本遮罩负责的键盘边界，确保 Launch 等其他状态不会被提前放开。 */
+      const unlockPageAfterDeparture = () => {
+        delete root.dataset.departureGating;
+        if (!headerWasInert) siteHeader?.removeAttribute("inert");
+        if (!mainWasInert) mainContent?.removeAttribute("inert");
+      };
+
+      /** 停止随滚动检查的触发器，使已通过的第一站不可能在回滚时再次盖住内容。 */
+      const stopScrollControl = () => {
+        window.removeEventListener("scroll", queueScrollCheck);
+        window.removeEventListener("resize", queueScrollCheck);
+        if (scrollFrameId !== undefined) window.cancelAnimationFrame(scrollFrameId);
+        scrollFrameId = undefined;
+      };
+
+      /** 真正移除遮罩前先撤销所有全局监听，避免已卸载的节点继续持有焦点或滚动引用。 */
+      const removeDepartureGate = () => {
+        stopScrollControl();
+        dragGuideObserver?.disconnect();
+        if (dragGuideFrameId !== undefined) window.cancelAnimationFrame(dragGuideFrameId);
+        launchStateObserver?.disconnect();
+        launchBoundaryObserver?.disconnect();
+        document.removeEventListener("keydown", handleGateKeydown);
+        window.removeEventListener("pointermove", handlePassPointerMove);
+        window.removeEventListener("pointerup", settleDrag);
+        window.removeEventListener("pointercancel", settleDrag);
+        pass.removeEventListener("transitionend", handlePassTransitionEnd);
+        reader.removeEventListener("transitionend", handleReaderTransitionEnd);
+        unlockPageAfterDeparture();
+        departureGate.remove();
+      };
+
+      /** 终态统一进入淡出；遮罩始终覆盖第一 Section，淡出时才让其站名边界显现。 */
+      const beginLeaving = () => {
+        if (getState() === "leaving") return;
+
+        setState("leaving");
+        window.setTimeout(removeDepartureGate, departureExitDuration);
+      };
+
+      /** 释放拖放 capture，供验票、略过和 Escape 共用，避免遗留 pointer 所有权。 */
+      const stopDragging = () => {
+        const capturedPointerId = dragPointerId;
+        dragPointerId = undefined;
+        dragStartPassBounds = undefined;
+        if (capturedPointerId !== undefined && pass.hasPointerCapture(capturedPointerId)) {
+          pass.releasePointerCapture(capturedPointerId);
+        }
+      };
+
+      /** 验票成功时把行程卡吸附到屏幕感应区的视觉中心，避免不同拖放终点留下不一致的停留位置。 */
+      const centerValidatedPass = () => {
+        if (!hasDeparted || getState() !== "validated" || reducedMotion) return;
+
+        const targetBounds = readerScreen?.getBoundingClientRect() ?? readerHousing?.getBoundingClientRect() ?? reader.getBoundingClientRect();
+        passRotation = 0;
+        renderPassTransform();
+
+        const passRect = pass.getBoundingClientRect();
+        passOffsetX += targetBounds.left + targetBounds.width / 2 - (passRect.left + passRect.width / 2);
+        passOffsetY += targetBounds.top + targetBounds.height / 2 - (passRect.top + passRect.height / 2);
+        renderPassTransform();
+      };
+
+      /** 成功停留结束后，把卡片轻移到 Validator 左侧；计算时保留当前纵向位置，避免跳变成另一套构图。 */
+      const dockValidatedPass = () => {
+        if (!hasDeparted || getState() !== "validated") return;
+
+        const passRect = pass.getBoundingClientRect();
+        const readerBounds = readerHousing?.getBoundingClientRect() ?? reader.getBoundingClientRect();
+        const gateBounds = departureGate.getBoundingClientRect();
+        const safeInset = Math.max(12, Math.min(gateBounds.width, gateBounds.height) * 0.018);
+        const dockingGap = Math.min(28, Math.max(12, passRect.width * 0.07));
+        const targetPassLeft = Math.max(gateBounds.left + safeInset, readerBounds.left - dockingGap - passRect.width);
+
+        passOffsetX += targetPassLeft + passRect.width / 2 - (passRect.left + passRect.width / 2);
+        passRotation = 0;
+        if (!reducedMotion) renderPassTransform();
+      };
+
+      /** 验票或略过后都成为不可逆的一次性结果，并在当前文档里永久关闭触发器。 */
+      const completeDeparture = (outcome: "validated" | "skipped") => {
+        if (!isInteractionActive() || hasDeparted) return;
+
+        hasDeparted = true;
+        stopScrollControl();
+        stopDragging();
+        persistDepartureSeen();
+        setState(outcome);
+        status.textContent =
+          outcome === "validated"
+            ? departureGate.dataset.validatedStatus ?? status.textContent
+            : departureGate.dataset.skippedStatus ?? status.textContent;
+
+        if (outcome === "validated") {
+          pass.setAttribute("aria-pressed", "true");
+          reader.setAttribute("aria-pressed", "true");
+
+          centerValidatedPass();
+          window.setTimeout(dockValidatedPass, departureValidationDockDelay);
+          window.setTimeout(beginLeaving, departureValidationHoldDuration);
+          return;
+        }
+
+        window.setTimeout(beginLeaving, 0);
+      };
+
+      /** 根据 Validator 的实际尺寸定义感应区，卡片靠近设备即可触发，不要求放到像素级中心。 */
+      const isPassNearReader = () => {
+        const passRect = pass.getBoundingClientRect();
+        const readerRect = reader.getBoundingClientRect();
+        const horizontalDistance = passRect.left + passRect.width / 2 - (readerRect.left + readerRect.width / 2);
+        const verticalDistance = passRect.top + passRect.height / 2 - (readerRect.top + readerRect.height / 2);
+        const snapRadius = Math.max(108, Math.min(Math.max(readerRect.width, readerRect.height) * 0.62, 220));
+
+        return Math.hypot(horizontalDistance, verticalDistance) <= snapRadius;
+      };
+
+      /** 将拖动范围约束到全屏遮罩之内，使卡片可以经过页面任意位置但不会遗失到可视区域外。 */
+      const movePassWithinGate = (horizontalDelta: number, verticalDelta: number) => {
+        const gateBounds = departureGate.getBoundingClientRect();
+        const initialBounds = dragStartPassBounds ?? pass.getBoundingClientRect();
+        const safeInset = Math.max(12, Math.min(gateBounds.width, gateBounds.height) * 0.018);
+        const minOffsetX = gateBounds.left + safeInset - initialBounds.left;
+        const maxOffsetX = gateBounds.right - safeInset - initialBounds.right;
+        const minOffsetY = gateBounds.top + safeInset - initialBounds.top;
+        const maxOffsetY = gateBounds.bottom - safeInset - initialBounds.bottom;
+
+        passOffsetX = dragStartOffsetX + Math.min(Math.max(horizontalDelta, minOffsetX), maxOffsetX);
+        passOffsetY = dragStartOffsetY + Math.min(Math.max(verticalDelta, minOffsetY), maxOffsetY);
+      };
+
+      /** 通过滚动边界激活遮罩：第一叙事站已抵达视口，但还不能被直接阅读。 */
+      const activateDepartureGate = () => {
+        if (hasDeparted || getState() !== "armed") return;
+
+        stopScrollControl();
+        setState("active");
+        lockPageForDeparture();
+        window.requestAnimationFrame(() => {
+          queueDragGuideUpdate();
+          pass.focus({ preventScroll: true });
+        });
+      };
+
+      /** 将滚动事件压缩到动画帧，在第一 Section 抵达视口中线前完成遮罩接管。 */
+      const checkScrollThreshold = () => {
+        scrollFrameId = undefined;
+        if (hasDeparted || getState() !== "armed") return;
+
+        const triggerLine = window.innerHeight * 0.45;
+        if (departureSentinel.getBoundingClientRect().top <= triggerLine) {
+          activateDepartureGate();
+        }
+      };
+
+      /** 滚动与尺寸变化共用同一帧检查，防止触控板连续事件在同一帧重复激活。 */
+      function queueScrollCheck() {
+        if (scrollFrameId !== undefined) return;
+        scrollFrameId = window.requestAnimationFrame(checkScrollThreshold);
+      }
+
+      /** 只观察影响两端锚点的尺寸变化；卡片拖动时导引线已隐藏，不建立逐帧跟随循环。 */
+      if (readerHousing && dragGuide && dragGuidePath && dragGuideHead) {
+        dragGuideObserver = new ResizeObserver(queueDragGuideUpdate);
+        dragGuideObserver.observe(stage);
+        dragGuideObserver.observe(pass);
+        dragGuideObserver.observe(readerHousing);
+        pass.addEventListener("transitionend", handlePassTransitionEnd);
+        reader.addEventListener("transitionend", handleReaderTransitionEnd);
+      }
+
+      /** 只有 Launch 移除自己的全屏边界后才允许出发遮罩接管下一段滚动。 */
+      const armScrollControl = () => {
+        if (hasDeparted || getState() !== "armed") return;
+
+        window.addEventListener("scroll", queueScrollCheck, { passive: true });
+        window.addEventListener("resize", queueScrollCheck, { passive: true });
+        queueScrollCheck();
+      };
+
+      /** Launch 移除全屏层后仍会短暂保留 inert，因此需等现有焦点边界彻底释放才监听下一站滚动。 */
+      const waitForLaunchBoundaryRelease = () => {
+        const hasLaunchBoundary =
+          (siteHeader?.hasAttribute("inert") ?? false) || (mainContent?.hasAttribute("inert") ?? false);
+
+        if (!hasLaunchBoundary) {
+          armScrollControl();
+          return;
+        }
+
+        launchBoundaryObserver = new MutationObserver(() => {
+          const boundaryStillLocked =
+            (siteHeader?.hasAttribute("inert") ?? false) ||
+            (mainContent?.hasAttribute("inert") ?? false);
+          if (!boundaryStillLocked) {
+            launchBoundaryObserver?.disconnect();
+            armScrollControl();
+          }
+        });
+        if (siteHeader) {
+          launchBoundaryObserver.observe(siteHeader, { attributes: true, attributeFilter: ["inert"] });
+        }
+        if (mainContent) {
+          launchBoundaryObserver.observe(mainContent, { attributes: true, attributeFilter: ["inert"] });
+        }
+      };
+
+      /** Launch 可能正常播放或被跳过；观察根状态可覆盖两条路径而不改动它的成熟时间线。 */
+      const waitForLaunchToEnd = () => {
+        if (!root.hasAttribute("data-launching")) {
+          waitForLaunchBoundaryRelease();
+          return;
+        }
+
+        launchStateObserver = new MutationObserver(() => {
+          if (!root.hasAttribute("data-launching")) {
+            launchStateObserver?.disconnect();
+            waitForLaunchBoundaryRelease();
+          }
+        });
+        launchStateObserver.observe(root, { attributes: true, attributeFilter: ["data-launching"] });
+      };
+
+      pass.addEventListener("pointerdown", (event) => {
+        if (!isInteractionActive() || reducedMotion || event.button !== 0) return;
+
+        dragPointerId = event.pointerId;
+        dragStartX = event.clientX;
+        dragStartY = event.clientY;
+        dragStartOffsetX = passOffsetX;
+        dragStartOffsetY = passOffsetY;
+        dragStartPassBounds = pass.getBoundingClientRect();
+        draggedDuringPointerSession = false;
+        setState("dragging");
+        status.textContent = departureGate.dataset.draggingStatus ?? status.textContent;
+        pass.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      });
+
+      /**
+       * 手势开始于卡片，但移动和松开由窗口接收。
+       * 这样卡片越过 Validator、提示牌或页面边缘时也不会因命中元素改变而丢失拖放会话。
+       */
+      function handlePassPointerMove(event: PointerEvent) {
+        if (dragPointerId !== event.pointerId || hasDeparted) return;
+
+        const horizontalDelta = event.clientX - dragStartX;
+        const verticalDelta = event.clientY - dragStartY;
+        movePassWithinGate(horizontalDelta, verticalDelta);
+        draggedDuringPointerSession ||= Math.hypot(horizontalDelta, verticalDelta) > 6;
+        renderPassTransform();
+
+        if (draggedDuringPointerSession && isPassNearReader()) {
+          completeDeparture("validated");
+        }
+      }
+
+      const settleDrag = (event: PointerEvent) => {
+        if (dragPointerId !== event.pointerId) return;
+
+        stopDragging();
+        if (!draggedDuringPointerSession) {
+          setState("active");
+          status.textContent = departureGate.dataset.readyStatus ?? status.textContent;
+          return;
+        }
+
+        suppressPassClick = true;
+        if (isPassNearReader()) {
+          completeDeparture("validated");
+        } else {
+          setState("returning");
+          returnPassToStart();
+          // 减少动态效果时卡片没有 transform 过渡，不能等待不会发生的 transitionend。
+          if (reducedMotion) finishPassReturn();
+        }
+        window.setTimeout(() => {
+          suppressPassClick = false;
+          draggedDuringPointerSession = false;
+        }, 0);
+      };
+
+      window.addEventListener("pointermove", handlePassPointerMove);
+      window.addEventListener("pointerup", settleDrag);
+      window.addEventListener("pointercancel", settleDrag);
+      pass.addEventListener("lostpointercapture", settleDrag);
+      pass.addEventListener("click", (event) => {
+        if (suppressPassClick) {
+          event.preventDefault();
+          return;
+        }
+        completeDeparture("validated");
+      });
+      reader.addEventListener("click", () => completeDeparture("validated"));
+      skip.addEventListener("click", () => completeDeparture("skipped"));
+      departureGate.addEventListener("click", (event) => {
+        if (event.target === departureGate) completeDeparture("skipped");
+      });
+
+      /** 模态开启后让键盘只在三条明确的出发路径之间循环，留白点击仍保留给指针用户。 */
+      function handleGateKeydown(event: KeyboardEvent) {
+        if (!isInteractionActive()) return;
+
+        if (event.key === "Escape") {
+          event.preventDefault();
+          completeDeparture("skipped");
+          return;
+        }
+
+        if (event.key !== "Tab") return;
+
+        const controls = [pass, reader, skip];
+        const activeControlIndex = controls.indexOf(document.activeElement as HTMLButtonElement);
+        if (activeControlIndex === -1) {
+          event.preventDefault();
+          pass?.focus();
+        } else if (event.shiftKey && activeControlIndex <= 0) {
+          event.preventDefault();
+          skip?.focus();
+        } else if (!event.shiftKey && activeControlIndex === controls.length - 1) {
+          event.preventDefault();
+          pass?.focus();
+        }
+      }
+
+      document.addEventListener("keydown", handleGateKeydown);
+      waitForLaunchToEnd();
+    }
+  }
+</script>

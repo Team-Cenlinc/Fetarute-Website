@@ -1,12 +1,53 @@
 import type { Locale } from "@/i18n/config";
 import type { HomeLandingSceneId } from "@/data/home-landing";
 
-/** 首页玩法说明中的单个信息模块文案。 */
+/** 首页首个叙事站中的单个说明模块文案。 */
 interface HomeFeatureMessage {
   /** 信息模块标题。 */
   title: string;
   /** 说明当前技术或内容边界的简短正文。 */
   description: string;
+}
+
+/**
+ * 首页「出发检票遮罩」的可本地化文案。
+ * 读者以验票或主动略过两种明确选择进入第一叙事站，不能把遮罩误读为普通内容区块。
+ */
+interface HomeDepartureMessage {
+  /** 出发遮罩的主标题。 */
+  title: string;
+  /** 说明验票与点击留白略过这两条进入路径的简短引导。 */
+  description: string;
+  /** 行程卡的两行正式名称；紧凑分行保证 Fetarute 与 TransitUnion 始终被读作同一张凭证。 */
+  passName: readonly [brand: string, product: string];
+  /** 黄色运营导视牌上的有效乘车记录提醒。 */
+  readerNotice: string;
+  /** 黄色运营导视牌上的欢迎语，与提醒保持清晰的主次层级。 */
+  readerWelcome: string;
+  /** Validator 屏幕顶部的设备系统名，强调这块屏幕是运营设备而不是品牌海报。 */
+  screenSystemLabel: string;
+  /** Validator 屏幕顶部的当前就绪状态。 */
+  screenReadyLabel: string;
+  /** Validator 待机屏幕的主操作提示，说明拍卡会记录本次乘车。 */
+  screenIdleAction: string;
+  /** 验票成功后短暂停留在 Validator 屏幕上的结果，避免状态色与待机指令相互矛盾。 */
+  screenValidatedAction: string;
+  /** 增强后供键盘和读屏用户理解卡片操作的标签。 */
+  cardActionLabel: string;
+  /** 增强后供键盘和读屏用户理解读卡机操作的标签。 */
+  readerActionLabel: string;
+  /** 尚未验票时要求读者作出进入选择的即时状态。 */
+  readyStatus: string;
+  /** 拖动期间的即时状态。 */
+  draggingStatus: string;
+  /** 验票完成后的即时状态。 */
+  validatedStatus: string;
+  /** 点击留白可略过检票的可见提示。 */
+  skipHint: string;
+  /** 不验票时主动进入下一章节的控制文字。 */
+  skipLabel: string;
+  /** 略过检票后的即时状态，与验票成功都属于本 tab 的已通过结果。 */
+  skippedStatus: string;
 }
 
 /**
@@ -57,9 +98,12 @@ export interface SiteMessages {
     sceneAltById: Readonly<Record<HomeLandingSceneId, string>>;
     title: string;
     description: string;
+    /** 首屏滚动到第一叙事章时出现的一次性检票遮罩文案。 */
+    departure: HomeDepartureMessage;
     featuresKicker: string;
     featuresTitle: string;
-    features: readonly [HomeFeatureMessage, HomeFeatureMessage, HomeFeatureMessage];
+    /** 第一站对 Serverlink 与三座子服务器关系的两段说明。 */
+    features: readonly [HomeFeatureMessage, HomeFeatureMessage];
     newsKicker: string;
     newsTitle: string;
     joinKicker: string;
@@ -82,7 +126,7 @@ const messages: Record<Locale, SiteMessages> = {
     navigationLabel: "主导航",
     navigation: {
       home: "首页",
-      features: "玩法",
+      features: "旅程",
       news: "公告",
       join: "加入",
     },
@@ -107,21 +151,37 @@ const messages: Record<Locale, SiteMessages> = {
       },
       title: "欢迎来到 Fetarute。",
       description: "在这里，开始属于你的探索故事。",
-      featuresKicker: "FEATURES",
-      featuresTitle: "先保留内容架构，不急着堆交互",
+      departure: {
+        title: "下一站，从这里开始。",
+        description: "将行程卡靠近读卡机以开始旅程；也可点击留白略过此段。",
+        passName: ["Fetarute", "TransitUnion"],
+        readerNotice: "请确保您在登车前有有效记录。",
+        readerWelcome: "欢迎您来到 Fetarute",
+        screenSystemLabel: "VALIDATOR",
+        screenReadyLabel: "就绪",
+        screenIdleAction: "拍卡以记录乘车",
+        screenValidatedAction: "记录有效",
+        cardActionLabel: "验票行程卡，开始下一站",
+        readerActionLabel: "使用出发检票机，开始下一站",
+        readyStatus: "行程卡已准备好。完成检票以继续。",
+        draggingStatus: "将行程卡靠近出发检票机。",
+        validatedStatus: "已验票。下一站：一座被连接起来的世界。",
+        skipHint: "点击留白即可略过检票。",
+        skipLabel: "直接进入下一站",
+        skippedStatus: "已略过检票。下一站：一座被连接起来的世界。",
+      },
+      featuresKicker: "01 · SERVERLINK",
+      featuresTitle: "一座被连接起来的世界",
       features: [
         {
-          title: "内容优先",
+          title: "铁路让地点彼此可达",
           description:
-            "规则、指南和公告通过 Astro Content Collections 管理，便于后续扩展独立页面。",
+            "在 Fetarute，铁路不只是景观：它把车站、沿线的建设与留下记忆的人连接成同一座仍在生长的世界。",
         },
         {
-          title: "静态发布",
-          description: "默认 SSG，适合官网首屏和长内容页面，也方便部署到静态托管环境。",
-        },
-        {
-          title: "按需交互",
-          description: "在线人数、地图或复制服务器地址这类功能后续可以作为 island 独立加入。",
+          title: "三处停靠，同一段旅程",
+          description:
+            "三个子服务器由服连快线（Serverlink）连接。接下来的路线会在每一处停靠，讲述它们如何共同构成 Fetarute。",
         },
       ],
       newsKicker: "NEWS",
@@ -140,7 +200,7 @@ const messages: Record<Locale, SiteMessages> = {
     navigationLabel: "主要導覽",
     navigation: {
       home: "首頁",
-      features: "玩法",
+      features: "旅程",
       news: "公告",
       join: "加入",
     },
@@ -165,21 +225,37 @@ const messages: Record<Locale, SiteMessages> = {
       },
       title: "歡迎來到 Fetarute。",
       description: "在這裡，開始屬於你的探索故事。",
-      featuresKicker: "FEATURES",
-      featuresTitle: "先保留內容架構，不急著堆疊互動",
+      departure: {
+        title: "下一站，從這裡開始。",
+        description: "將行程卡靠近讀卡機以開始旅程；也可點擊留白略過此段。",
+        passName: ["Fetarute", "TransitUnion"],
+        readerNotice: "請確保您在登車前有有效記錄。",
+        readerWelcome: "歡迎您來到 Fetarute",
+        screenSystemLabel: "VALIDATOR",
+        screenReadyLabel: "就緒",
+        screenIdleAction: "拍卡以記錄乘車",
+        screenValidatedAction: "記錄有效",
+        cardActionLabel: "驗票行程卡，開始下一站",
+        readerActionLabel: "使用出發檢票機，開始下一站",
+        readyStatus: "行程卡已準備好。完成檢票以繼續。",
+        draggingStatus: "將行程卡靠近出發檢票機。",
+        validatedStatus: "已驗票。下一站：一座被連接起來的世界。",
+        skipHint: "點擊留白即可略過檢票。",
+        skipLabel: "直接進入下一站",
+        skippedStatus: "已略過檢票。下一站：一座被連接起來的世界。",
+      },
+      featuresKicker: "01 · SERVERLINK",
+      featuresTitle: "一座被連接起來的世界",
       features: [
         {
-          title: "內容優先",
+          title: "鐵路讓地點彼此可達",
           description:
-            "規則、指南和公告透過 Astro Content Collections 管理，方便後續擴充獨立頁面。",
+            "在 Fetarute，鐵路不只是景觀：它把車站、沿線的建設與留下記憶的人連接成同一座仍在生長的世界。",
         },
         {
-          title: "靜態發佈",
-          description: "預設 SSG，適合官網首屏與長篇內容，也方便部署到靜態託管環境。",
-        },
-        {
-          title: "按需互動",
-          description: "線上人數、地圖或複製伺服器位址等功能，之後可作為 island 獨立加入。",
+          title: "三處停靠，同一段旅程",
+          description:
+            "三個子伺服器由服連快線（Serverlink）連接。接下來的路線會在每一處停靠，講述它們如何共同構成 Fetarute。",
         },
       ],
       newsKicker: "NEWS",
@@ -199,7 +275,7 @@ const messages: Record<Locale, SiteMessages> = {
     navigationLabel: "Primary navigation",
     navigation: {
       home: "Home",
-      features: "Features",
+      features: "Journey",
       news: "News",
       join: "Join",
     },
@@ -224,23 +300,38 @@ const messages: Record<Locale, SiteMessages> = {
       },
       title: "Welcome to Fetarute.",
       description: "Your story of exploration starts here.",
-      featuresKicker: "FEATURES",
-      featuresTitle: "Keep the content architecture clear before adding interaction",
+      departure: {
+        title: "The next stop begins here.",
+        description:
+          "Bring the journey pass to the reader to begin; click the empty space to skip this transition.",
+        passName: ["Fetarute", "TransitUnion"],
+        readerNotice: "Please ensure you have a valid record before boarding.",
+        readerWelcome: "Welcome to Fetarute",
+        screenSystemLabel: "VALIDATOR",
+        screenReadyLabel: "READY",
+        screenIdleAction: "Tap your card to record your ride",
+        screenValidatedAction: "RECORD VALID",
+        cardActionLabel: "Validate the journey pass and begin the next stop",
+        readerActionLabel: "Use the departure reader and begin the next stop",
+        readyStatus: "The journey pass is ready. Validate it to continue.",
+        draggingStatus: "Bring the journey pass toward the departure reader.",
+        validatedStatus: "Validated. Next stop: a world connected together.",
+        skipHint: "Click the empty space to skip validation.",
+        skipLabel: "Enter the next stop",
+        skippedStatus: "Validation skipped. Next stop: a world connected together.",
+      },
+      featuresKicker: "01 · SERVERLINK",
+      featuresTitle: "A world connected together",
       features: [
         {
-          title: "Content first",
+          title: "Railways make places reachable",
           description:
-            "Rules, guides, and news are managed with Astro Content Collections for future standalone pages.",
+            "At Fetarute, railways are more than scenery: they connect stations, construction along the way, and the people whose memories made one growing world.",
         },
         {
-          title: "Static by default",
+          title: "Three stops, one journey",
           description:
-            "SSG suits an official landing page and long-form content while keeping static hosting straightforward.",
-        },
-        {
-          title: "Interaction on demand",
-          description:
-            "Live player counts, maps, and copy-address actions can arrive later as focused islands.",
+            "Three subservers are connected by Serverlink. The route ahead will stop at each one, showing how they form Fetarute together.",
         },
       ],
       newsKicker: "NEWS",

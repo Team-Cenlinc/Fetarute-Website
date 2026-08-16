@@ -272,6 +272,8 @@ const websiteStructuredData = {
   <body>
     {showLaunchSequence && <LaunchSequence locale={locale} />}
     <SiteHeader locale={locale} />
+    <!-- 首页叙事遮罩在 main 之外接收焦点；这样它锁定正文时仍能作为独立的可操作层淡出到第一站。 -->
+    <slot name="overlay" />
     <main class:list={{ "main--full-bleed": fullBleedMain }}>
       <slot />
     </main>

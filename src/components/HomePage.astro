@@ -1,5 +1,6 @@
 ---
 import { getImage } from "astro:assets";
+import DepartureGate from "@/components/DepartureGate.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { homeLandingScenes } from "@/data/home-landing";
 import { getLocalizedNews } from "@/i18n/content";
@@ -53,6 +54,8 @@ if (!defaultLandingScene) {
 ---
 
 <BaseLayout locale={locale} description={messages.description} showLaunchSequence fullBleedMain>
+  <DepartureGate slot="overlay" locale={locale} />
+
   <section class="hero-section" id="home" aria-labelledby="hero-title">
     <picture class="hero-scene" data-landing-scene-id={defaultLandingScene.id}>
       <source srcset={defaultLandingScene.avifSrc} type="image/avif" />
@@ -118,12 +121,20 @@ if (!defaultLandingScene) {
     })();
   </script>
 
-  <section class="content-section" id="features" aria-labelledby="features-title">
+  <!-- 该阈值不占据视觉段落；滚动到这里时，正文外的遮罩会盖住紧随其后的第一叙事站。 -->
+  <div class="departure-gate-sentinel" data-departure-gate-sentinel aria-hidden="true"></div>
+
+  <section class="content-section connection-section" id="features" aria-labelledby="features-title">
+    <div class="station-boundary" aria-hidden="true">
+      <span class="station-boundary__index">01</span>
+      <span class="station-boundary__line"></span>
+      <span class="station-boundary__name">SERVERLINK</span>
+    </div>
     <div class="section-heading">
       <p class="section-label">{messages.home.featuresKicker}</p>
       <h2 id="features-title">{messages.home.featuresTitle}</h2>
     </div>
-    <div class="feature-grid">
+    <div class="connection-copy">
       {
         messages.home.features.map((feature) => (
           <article>

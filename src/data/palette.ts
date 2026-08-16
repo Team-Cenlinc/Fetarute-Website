@@ -33,6 +33,18 @@ export interface InterfacePalette {
   action: string;
   /** 放置在 action 色上的文字与图标颜色。 */
   actionText: string;
+  /** 正常完成或记录有效的绿色状态色，不与线路绿或车站导视色混用。 */
+  statusOk: string;
+  /** 状态正常色上的文字与图标，供提示条和状态徽记保持统一可读性。 */
+  statusOkText: string;
+  /** 需要留意但不阻断流程的琥珀状态色，刻意区别于 FTA 出口导视黄。 */
+  statusCaution: string;
+  /** 状态留意色上的文字与图标，随外观模式调整以保证远距离辨识。 */
+  statusCautionText: string;
+  /** 无效记录或无法继续时的红色状态色，不承担线路识别。 */
+  statusError: string;
+  /** 状态错误色上的文字与图标，避免组件各自选择前景色。 */
+  statusErrorText: string;
   /** Fetarute 信息导视蓝，专门标识语言、帮助与界面设置，不与真实线路色混用。 */
   fetaruteInfo: string;
   /** 信息导视蓝上的浅色文字与图标，保证站牌在两种外观下都有足够对比。 */
@@ -67,6 +79,12 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     border: "#C9CED0",
     action: "#1B2022",
     actionText: "#F4F6F5",
+    statusOk: "#0F7A4F",
+    statusOkText: "#F4F6F5",
+    statusCaution: "#9A5D00",
+    statusCautionText: "#F4F6F5",
+    statusError: "#B8443E",
+    statusErrorText: "#F4F6F5",
     fetaruteInfo: "#0067B1",
     fetaruteInfoText: "#F4F6F5",
     fetaruteExit: "#F3C742",
@@ -86,6 +104,12 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     border: "#3D474A",
     action: "#EEF0EF",
     actionText: "#1B2022",
+    statusOk: "#4FCB8A",
+    statusOkText: "#1B2022",
+    statusCaution: "#F0B84A",
+    statusCautionText: "#1B2022",
+    statusError: "#FF8C84",
+    statusErrorText: "#1B2022",
     fetaruteInfo: "#155575",
     fetaruteInfoText: "#F4F6F5",
     fetaruteExit: "#7A5A16",
@@ -111,6 +135,12 @@ const interfacePaletteCssVariableByKey: Readonly<Record<keyof InterfacePalette, 
   border: "--palette-border",
   action: "--palette-action",
   actionText: "--palette-action-text",
+  statusOk: "--palette-status-ok",
+  statusOkText: "--palette-status-ok-text",
+  statusCaution: "--palette-status-caution",
+  statusCautionText: "--palette-status-caution-text",
+  statusError: "--palette-status-error",
+  statusErrorText: "--palette-status-error-text",
   fetaruteInfo: "--palette-fetarute-info",
   fetaruteInfoText: "--palette-fetarute-info-text",
   fetaruteExit: "--palette-fetarute-exit",
