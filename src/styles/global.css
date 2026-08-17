@@ -1354,8 +1354,8 @@ h3 {
   right: auto;
   left: 50%;
   display: grid;
-  /* Validator 的总宽度也受高度约束；矮屏缩放整个实体而非把屏幕挤成方块。 */
-  width: clamp(280px, min(31vw, 48dvh), 430px);
+  /* 桌面 Validator 保持居中节点感而不压过标题与行程卡；总宽度仍受高度约束，矮屏同步收束。 */
+  width: clamp(250px, min(27vw, 41dvh), 380px);
   border: 0;
   background: transparent;
   color: var(--color-text);
@@ -1371,12 +1371,18 @@ h3 {
 .departure-gate__reader-housing {
   position: relative;
   display: grid;
+  /* 屏幕与壳体确认条分开，维持真实检票机的前面板层级，又不占用成功屏的主视觉空间。 */
+  grid-template-rows: minmax(0, 1fr) clamp(12px, 1.4vw, 18px);
+  gap: clamp(9px, 1.1vw, 14px);
   /* 固定竖向长方形比例，让每种尺寸下都能读作真实 Validator，而非被压扁的色块。 */
   aspect-ratio: 0.75 / 1;
   margin-inline: clamp(18px, 2vw, 34px);
   padding: clamp(18px, 2vw, 28px);
   border: 1px solid color-mix(in srgb, var(--color-text) 52%, var(--color-border));
   background: color-mix(in srgb, var(--color-text) 76%, var(--color-background));
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, var(--color-surface-raised) 28%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, var(--color-background) 48%, transparent);
   transition:
     border-color 150ms var(--motion-header-standard-effects),
     background-color 150ms var(--motion-header-standard-effects);
@@ -1398,12 +1404,42 @@ h3 {
     color 150ms var(--motion-header-standard-effects);
 }
 
+/* 这条非交互确认区只提供设备材质和运行反馈；不画成卡槽，避免误导读者把非接触式操作当作插卡。 */
+.departure-gate__reader-housing-confirmation {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding-inline: 4px;
+  color: color-mix(in srgb, var(--color-surface-raised) 66%, var(--color-border));
+}
+
+.departure-gate__reader-housing-indicator {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-background) 52%, transparent);
+}
+
+.departure-gate__reader-housing-groove {
+  display: block;
+  height: 2px;
+  background: currentColor;
+  opacity: 0.7;
+}
+
 .departure-gate__reader-screen-top,
 .departure-gate__reader-screen-mode {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+
+.departure-gate__reader-screen-validated-label {
+  display: none;
 }
 
 .departure-gate__reader-screen-contactless svg {
@@ -1466,7 +1502,7 @@ h3 {
 }
 
 .departure-gate__reader-screen-idle-copy,
-.departure-gate__reader-screen-result {
+.departure-gate__reader-screen-result-copy {
   z-index: 1;
   max-width: 10ch;
   font-size: clamp(17px, 1.85vw, 25px);
@@ -1477,6 +1513,26 @@ h3 {
 
 .departure-gate__reader-screen-result {
   display: none;
+  justify-items: center;
+  align-content: center;
+  gap: clamp(10px, 1.3vw, 16px);
+  min-height: 100%;
+}
+
+.departure-gate__reader-screen-result-icon {
+  display: block;
+  width: clamp(68px, 7vw, 104px);
+  color: currentColor;
+}
+
+.departure-gate__reader-screen-result-icon svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.departure-gate__reader-screen-result-copy {
+  text-align: center;
 }
 
 .departure-gate__reader-signal {
@@ -1488,15 +1544,16 @@ h3 {
 }
 
 .departure-gate__reader-sign {
-  /* 导视牌与 Validator 外壳共用左右边界，明确它是设备的一部分而非另一张悬浮卡。 */
+  /* 导视牌与 Validator 外壳严格共用左右边界，缩小整机后仍维持一块完整的亚克力运营牌。 */
   position: relative;
   display: grid;
-  margin-inline: clamp(22px, 3vw, 48px);
+  margin-inline: clamp(18px, 2vw, 34px);
   min-height: 112px;
-  grid-template-columns: minmax(0, 1fr) 42px;
+  /* 右栏只承担运营方标记，为长提示句保留足够的整行宽度。 */
+  grid-template-columns: minmax(0, 1fr) 34px;
   align-items: end;
-  gap: 14px;
-  padding: 16px 18px 14px;
+  gap: 10px;
+  padding: 14px 12px 12px 14px;
   background: var(--fetarute-exit);
   color: var(--fetarute-exit-text);
   transition:
@@ -1508,29 +1565,29 @@ h3 {
   display: grid;
   align-self: stretch;
   align-content: space-between;
-  gap: 12px;
+  gap: 10px;
   text-align: left;
 }
 
 .departure-gate__reader-copy strong {
-  max-width: 25ch;
-  font-size: clamp(15px, 1.35vw, 18px);
-  font-weight: 850;
-  letter-spacing: -0.025em;
-  line-height: 1.32;
+  max-width: 100%;
+  font-size: clamp(14px, 1.1vw, 16px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.28;
 }
 
 .departure-gate__reader-copy small {
   color: color-mix(in srgb, var(--fetarute-exit-text) 76%, transparent);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.015em;
+  font-size: 11px;
+  font-weight: 740;
+  letter-spacing: 0.02em;
   line-height: 1.25;
 }
 
 .departure-gate__reader-mark {
   display: grid;
-  width: 34px;
+  width: 28px;
   align-self: end;
   color: var(--fetarute-info);
 }
@@ -1572,8 +1629,9 @@ h3 {
   border-color: var(--fetarute-info);
 }
 
-.departure-gate[data-state="validated"] .departure-gate__reader-housing {
-  border-color: var(--fetarute-exit);
+/* 成功反馈只延伸到底部确认灯，并与绿色结果屏使用同一状态色；外壳维持中性材质。 */
+.departure-gate[data-state="validated"] .departure-gate__reader-housing-confirmation {
+  color: var(--color-status-ok);
 }
 
 .departure-gate[data-state="validated"] .departure-gate__reader-screen {
@@ -1583,12 +1641,14 @@ h3 {
 
 /* 成功屏替换待机 NFC 与操作指令，令一秒停留明确表达验票结果而非再次提示拍卡。 */
 .departure-gate[data-state="validated"] .departure-gate__reader-screen-contactless,
-.departure-gate[data-state="validated"] .departure-gate__reader-screen-idle-copy {
+.departure-gate[data-state="validated"] .departure-gate__reader-screen-idle-copy,
+.departure-gate[data-state="validated"] .departure-gate__reader-screen-ready-label {
   display: none;
 }
 
+.departure-gate[data-state="validated"] .departure-gate__reader-screen-validated-label,
 .departure-gate[data-state="validated"] .departure-gate__reader-screen-result {
-  display: block;
+  display: grid;
 }
 
 .departure-gate__pass:focus-visible,
@@ -2769,7 +2829,7 @@ html[data-launching] .launch-sequence {
 }
 
 @media (max-width: 1100px) and (min-width: 761px) {
-  /* 中等宽度沿用小屏的右侧抽象 Validator，防止完整外壳与前景卡片在中线挤成一团。 */
+  /* 中等宽度沿用小屏的右侧抽象 Validator，防止完整外壳与前景卡片在中线堆成一团。 */
   .departure-gate__pass {
     bottom: 6%;
     left: 16px;
@@ -3058,6 +3118,8 @@ html[data-launching] .launch-sequence {
     min-height: 0;
     margin-inline: 0;
     padding: 10px;
+    grid-template-rows: minmax(0, 1fr) 10px;
+    gap: 7px;
   }
 
   .departure-gate__reader-sign {
@@ -3083,6 +3145,26 @@ html[data-launching] .launch-sequence {
 
   .departure-gate__reader-screen-contactless {
     width: 48px;
+  }
+
+  /* 小屏的成功态沿用圆形勾作唯一结果，不在这一秒钟的停留里压入难以阅读的文案。 */
+  .departure-gate__reader-screen-result-icon {
+    width: clamp(46px, 13vw, 58px);
+  }
+
+  .departure-gate__reader-screen-result-copy {
+    display: none;
+  }
+
+  .departure-gate__reader-housing-confirmation {
+    gap: 5px;
+    padding-inline: 2px;
+  }
+
+  .departure-gate__reader-housing-indicator {
+    width: 4px;
+    height: 4px;
+    box-shadow: none;
   }
 
   .departure-gate__reader-screen-go {

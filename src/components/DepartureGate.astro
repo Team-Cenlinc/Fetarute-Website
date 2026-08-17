@@ -3,6 +3,7 @@ import type { Locale } from "@/i18n/config";
 import { getMessages } from "@/i18n/messages";
 import ftaLogo from "@/assets/wayfinding/fta-logo.svg?raw";
 import arrowRightIcon from "@phosphor-icons/core/assets/regular/arrow-right.svg?raw";
+import checkCircleIcon from "@phosphor-icons/core/assets/regular/check-circle.svg?raw";
 import contactlessPaymentIcon from "@phosphor-icons/core/assets/regular/contactless-payment.svg?raw";
 import contactlessSignalIcon from "@phosphor-icons/core/assets/regular/wifi-high.svg?raw";
 
@@ -87,7 +88,8 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
             <span class="departure-gate__reader-screen-top">
               <strong class="departure-gate__reader-screen-caption">{messages.home.departure.screenSystemLabel}</strong>
               <span class="departure-gate__reader-screen-mode">
-                <span>{messages.home.departure.screenReadyLabel}</span>
+                <span class="departure-gate__reader-screen-ready-label">{messages.home.departure.screenReadyLabel}</span>
+                <span class="departure-gate__reader-screen-validated-label">{messages.home.departure.screenValidatedLabel}</span>
                 <span class="departure-gate__reader-signal"></span>
               </span>
             </span>
@@ -97,8 +99,17 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
               <!-- 小屏在拖动时用箭头取代 NFC，成为无文字的“继续靠近”方向符号。 -->
               <span class="departure-gate__reader-screen-go" set:html={arrowRightIcon}></span>
               <strong class="departure-gate__reader-screen-idle-copy">{messages.home.departure.screenIdleAction}</strong>
-              <strong class="departure-gate__reader-screen-result">{messages.home.departure.screenValidatedAction}</strong>
+              <!-- 成功图标采用圆环包住对号的公共交通确认语义；小屏仅保留它，避免短暂停留时文字重叠。 -->
+              <span class="departure-gate__reader-screen-result">
+                <span class="departure-gate__reader-screen-result-icon" set:html={checkCircleIcon}></span>
+                <strong class="departure-gate__reader-screen-result-copy">{messages.home.departure.screenValidatedAction}</strong>
+              </span>
             </span>
+          </span>
+          <!-- 屏幕下方的确认条属于外壳而非第二块屏幕，以微弱反馈让 Validator 读作站内实体设备。 -->
+          <span class="departure-gate__reader-housing-confirmation" aria-hidden="true">
+            <span class="departure-gate__reader-housing-indicator"></span>
+            <span class="departure-gate__reader-housing-groove"></span>
           </span>
         </span>
         <span class="departure-gate__reader-sign">

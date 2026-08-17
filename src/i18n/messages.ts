@@ -28,6 +28,8 @@ interface HomeDepartureMessage {
   screenSystemLabel: string;
   /** Validator 屏幕顶部的当前就绪状态。 */
   screenReadyLabel: string;
+  /** Validator 验票完成后替代就绪状态的短标签，让状态色和文字同步切换。 */
+  screenValidatedLabel: string;
   /** Validator 待机屏幕的主操作提示，说明拍卡会记录本次乘车。 */
   screenIdleAction: string;
   /** 验票成功后短暂停留在 Validator 屏幕上的结果，避免状态色与待机指令相互矛盾。 */
@@ -159,6 +161,7 @@ const messages: Record<Locale, SiteMessages> = {
         readerWelcome: "欢迎您来到 Fetarute",
         screenSystemLabel: "VALIDATOR",
         screenReadyLabel: "就绪",
+        screenValidatedLabel: "已验证",
         screenIdleAction: "拍卡以记录乘车",
         screenValidatedAction: "记录有效",
         cardActionLabel: "验票行程卡，开始下一站",
@@ -233,6 +236,7 @@ const messages: Record<Locale, SiteMessages> = {
         readerWelcome: "歡迎您來到 Fetarute",
         screenSystemLabel: "VALIDATOR",
         screenReadyLabel: "就緒",
+        screenValidatedLabel: "已驗證",
         screenIdleAction: "拍卡以記錄乘車",
         screenValidatedAction: "記錄有效",
         cardActionLabel: "驗票行程卡，開始下一站",
@@ -309,6 +313,7 @@ const messages: Record<Locale, SiteMessages> = {
         readerWelcome: "Welcome to Fetarute",
         screenSystemLabel: "VALIDATOR",
         screenReadyLabel: "READY",
+        screenValidatedLabel: "VALIDATED",
         screenIdleAction: "Tap your card to record your ride",
         screenValidatedAction: "RECORD VALID",
         cardActionLabel: "Validate the journey pass and begin the next stop",
