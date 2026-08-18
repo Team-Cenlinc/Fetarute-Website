@@ -1043,7 +1043,9 @@ h3 {
 .departure-gate {
   /* 由滚动进度写入 0 到 1；靠近阶段只派生遮罩位置，保持不透明以隔离尚未抵达的正文。 */
   --departure-gate-approach-progress: 0;
-  /* Guard 上划时由指针距离写入；它只影响整片遮罩，不干扰验票卡片自身的拖动 transform。 */
+  /* 回退时由真实 scrollY 派生 0 到 1；不使用第二条独立的 CSS 位移动画。 */
+  --departure-gate-return-progress: 0;
+  /* 移动端上划略过时由指针距离写入；只移动整片 Guard，不影响行程卡自身的拖动 transform。 */
   --departure-gate-swipe-distance: 0px;
   /* 全屏 Guard 是重型表面，入场使用 Material 3 Emphasized Decelerate，给最后落位更从容的减速。 */
   --motion-departure-gate-arrive: cubic-bezier(0.05, 0.7, 0.1, 1);
@@ -1072,6 +1074,7 @@ h3 {
 .departure-gate[data-state="snapping"],
 .departure-gate[data-state="active"],
 .departure-gate[data-state="swiping"],
+.departure-gate[data-state="retreating"],
 .departure-gate[data-state="dragging"],
 .departure-gate[data-state="returning"],
 .departure-gate[data-state="validated"],
@@ -1087,6 +1090,19 @@ h3 {
   /* 仅在滚动接管与收束期间提升合成优先级，避免常驻 will-change 占用绘制资源。 */
   will-change: transform;
   transition: none;
+}
+
+/* 回退位置直接跟随原生 scrollY；静默后的局部对齐也复用同一条物理滚动轨道。 */
+.departure-gate[data-state="retreating"] {
+  opacity: 1;
+  transform: translateY(calc(var(--departure-gate-return-progress) * 100dvh));
+  will-change: transform;
+  transition: none;
+}
+
+/* 局部归位期间显式关闭全站 smooth，确保 rAF 是唯一的 scrollY writer。 */
+html.departure-gate--return-settling {
+  scroll-behavior: auto;
 }
 
 .departure-gate[data-state="snapping"] {
@@ -1112,6 +1128,7 @@ h3 {
   touch-action: none;
 }
 
+/* 触控端只以向上位移略过 Guard；桌面状态不会进入这一分支。 */
 .departure-gate[data-state="swiping"] {
   transform: translateY(calc(-1 * var(--departure-gate-swipe-distance)));
   transition: none;
@@ -1203,6 +1220,19 @@ h3 {
 
 .departure-gate__drag-guide-head {
   stroke-width: 4.5;
+}
+
+/* 手势图标由脚本沿测量后的路径定位；默认隐藏以避免首次路径计算前闪到舞台原点。 */
+.departure-gate__drag-guide-prompt {
+  color: currentColor;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.departure-gate__drag-guide-prompt-icon {
+  display: block;
+  fill: currentColor;
 }
 
 .departure-gate[data-state="dragging"] .departure-gate__drag-guide,
@@ -1764,6 +1794,10 @@ h3 {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .departure-gate__drag-guide-prompt {
+    display: none;
+  }
+
   .departure-gate {
     transform: none;
     transition:
@@ -1776,6 +1810,11 @@ h3 {
     transition:
       opacity 160ms var(--motion-header-standard-effects),
       visibility 0ms linear 160ms;
+  }
+
+  .departure-gate[data-state="retreating"] {
+    transform: translateY(100dvh);
+    transition: none;
   }
 
   .departure-gate[data-state="leaving"][data-departure-gate-exit-direction="up"] {

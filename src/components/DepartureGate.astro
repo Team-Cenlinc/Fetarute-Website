@@ -6,6 +6,7 @@ import arrowRightIcon from "@phosphor-icons/core/assets/regular/arrow-right.svg?
 import checkCircleIcon from "@phosphor-icons/core/assets/regular/check-circle.svg?raw";
 import contactlessPaymentIcon from "@phosphor-icons/core/assets/regular/contactless-payment.svg?raw";
 import contactlessSignalIcon from "@phosphor-icons/core/assets/regular/wifi-high.svg?raw";
+import handPointingIcon from "@phosphor-icons/core/assets/regular/hand-pointing.svg?raw";
 
 /**
  * 首屏与第一叙事站之间的出发遮罩属性。
@@ -18,6 +19,8 @@ export interface Props {
 
 const { locale } = Astro.props;
 const messages = getMessages(locale);
+/** 仅提取图标路径嵌入既有导引 SVG，避免嵌套根 SVG 影响整座舞台的视口尺寸。 */
+const handPointingPath = handPointingIcon.match(/<path d="([^"]+)"/)?.[1] ?? "";
 /** 生产站把本次出发写入当前 tab；开发环境每次刷新都保留可重看占位动效的机会。 */
 const shouldPersistDepartureSeen = import.meta.env.PROD;
 ---
@@ -49,6 +52,12 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
       <svg class="departure-gate__drag-guide" data-departure-drag-guide aria-hidden="true" focusable="false">
         <path class="departure-gate__drag-guide-path" data-departure-drag-guide-path></path>
         <path class="departure-gate__drag-guide-head" data-departure-drag-guide-head></path>
+        <!-- 手势图标沿同一条动态曲线移动，明确这是一段可执行的拖拽路径而非纯装饰。 -->
+        <g class="departure-gate__drag-guide-prompt" data-departure-drag-guide-prompt>
+          <g transform="translate(-18 -18) scale(0.140625)">
+            <path class="departure-gate__drag-guide-prompt-icon" d={handPointingPath}></path>
+          </g>
+        </g>
       </svg>
       <button
         class="departure-gate__pass"
@@ -135,13 +144,14 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
 </section>
 
 <script>
-  /** 出发遮罩从靠近、定点到放行的单向状态；完成后禁止再次回到可触发状态。 */
+  /** 出发遮罩从靠近、定点、临时回退到放行的状态；只有完成后禁止再次回到可触发状态。 */
   type DepartureGateState =
     | "armed"
     | "approaching"
     | "snapping"
     | "active"
     | "swiping"
+    | "retreating"
     | "dragging"
     | "returning"
     | "validated"
@@ -151,6 +161,19 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
   type DepartureGateExitDirection = "fade" | "up";
   /** SVG 导引线使用的局部坐标点，始终相对于出发交互舞台。 */
   type DepartureGuidePoint = { x: number; y: number };
+  /** 回退停止后的单一物理滚动状态；输入停止前不创建它，避免与浏览器原生惯性争夺位置。 */
+  type DepartureReturnSettleMotion = {
+    /** 当前文档滚动位置，单位为 CSS px。 */
+    position: number;
+    /** 当前回退速度，单位为 CSS px/s。 */
+    velocity: number;
+    /** 静默后依据真实停留位置选出的局部落点，只可能是 Home 或 Validator 锚点。 */
+    targetScrollTop: number;
+    /** 上一帧的单调时间；首帧前缺省以保持刷新率无关的推进。 */
+    timestamp?: number;
+    /** 当前唯一可写入 scrollY 的动画帧。 */
+    frame?: number;
+  };
 
   const departureGate = document.querySelector<HTMLElement>("[data-departure-gate]");
   const departureSentinel = document.querySelector<HTMLElement>("[data-departure-gate-sentinel]");
@@ -168,6 +191,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
     const dragGuide = departureGate.querySelector<SVGSVGElement>("[data-departure-drag-guide]");
     const dragGuidePath = departureGate.querySelector<SVGPathElement>("[data-departure-drag-guide-path]");
     const dragGuideHead = departureGate.querySelector<SVGPathElement>("[data-departure-drag-guide-head]");
+    const dragGuidePrompt = departureGate.querySelector<SVGGElement>("[data-departure-drag-guide-prompt]");
     const skip = departureGate.querySelector<HTMLButtonElement>("[data-departure-skip]");
     const status = departureGate.querySelector<HTMLElement>("[data-departure-status]");
     const shouldPersist = departureGate.dataset.persistSession === "true";
@@ -185,6 +209,18 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
     const departureValidationDockDelay = reducedMotion ? 0 : 320;
     /** Landing 跨过六成后等待原生惯性停止的短窗口；与 Portal 的滚动结算一致，不在输入中争夺 scrollY。 */
     const departureSettleIdleDuration = 160;
+    /** 只在桌面精确指针环境启用“自由回退后归位”，移动版保留既有手势语义。 */
+    const departureDesktopScrollMediaQuery = "(min-width: 761px) and (pointer: fine)";
+    /** 回退超过相邻两站距离的十分之一，才视为读者确认要离开 Validator。 */
+    const departureReturnSettleCommitRatio = 0.1;
+    /** 短距离版面仍至少要求 64px 位移，避免一枚轻触触控板立刻离开闸机。 */
+    const departureReturnSettleMinimumCommitDistance = 64;
+    /** 归位沿用 Portal 的 90ms 临界阻尼响应，足够明确又不会像补帧般闪现。 */
+    const departureReturnSettleResponseMs = 90;
+    /** 图标沿导引线走完一段路径后短暂停顿，保持提示可读而不持续争夺注意力。 */
+    const departureDragPromptPauseDuration = 760;
+    /** 手势图标沿真实贝塞尔路径推进的时长；对应实体卡片的克制、无回弹移动。 */
+    const departureDragPromptTravelDuration = 1120;
     let hasSeenDeparture = false;
 
     /** 为当前标签页生成简短的 TransitUnion 卡号，保留凭证质感但不伪造线路或站点编号。 */
@@ -255,8 +291,14 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
       let gateSwipePointerId: number | undefined;
       let gateSwipeStartY = 0;
       let gateSwipeDistance = 0;
+      let departureReturnStartScrollTop = 0;
+      let departureReturnSettleTimeoutId: number | undefined;
+      let departureReturnSettleMotion: DepartureReturnSettleMotion | undefined;
       let dragGuideFrameId: number | undefined;
       let dragGuideObserver: ResizeObserver | undefined;
+      let dragGuidePromptFrameId: number | undefined;
+      let dragGuidePromptPathLength = 0;
+      let dragGuidePromptCycleStart: number | undefined;
       let launchStateObserver: MutationObserver | undefined;
       let launchBoundaryObserver: MutationObserver | undefined;
       let headerWasInert = false;
@@ -277,10 +319,84 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         departureGate.style.setProperty("--departure-gate-approach-progress", String(clampedProgress));
       };
 
-      /** 把读者对整片 Guard 的上划距离限制在一个视口内，既跟手又不会露出跑道之外的正文。 */
+      /** 回退期间由真实 scrollY 派生 Guard 位移；不再另开一条 CSS transform 动画。 */
+      const setReturnProgress = (progress: number) => {
+        const clampedProgress = Math.min(1, Math.max(0, progress));
+        departureGate.style.setProperty("--departure-gate-return-progress", String(clampedProgress));
+      };
+
+      /** 把触控端整片 Guard 的上划距离限制在一个视口内，只影响遮罩而不干扰行程卡的拖动位移。 */
       const setGateSwipeDistance = (distance: number) => {
         gateSwipeDistance = Math.min(window.innerHeight, Math.max(0, distance));
         departureGate.style.setProperty("--departure-gate-swipe-distance", `${gateSwipeDistance}px`);
+      };
+
+      /** 仅让桌面精确指针取得回退滚动的输入权，窄屏和触控设备不改写既有手势路径。 */
+      const usesDesktopGateScroll = () => window.matchMedia(departureDesktopScrollMediaQuery).matches;
+
+      /** 停止沿线图标的单一动画帧循环；遮罩离开或读者开始拖卡时不再保留后台绘制。 */
+      const stopDragGuidePrompt = () => {
+        if (dragGuidePromptFrameId !== undefined) window.cancelAnimationFrame(dragGuidePromptFrameId);
+        dragGuidePromptFrameId = undefined;
+        dragGuidePromptCycleStart = undefined;
+        if (dragGuidePrompt) dragGuidePrompt.style.visibility = "hidden";
+      };
+
+      /** 图标的位置和朝向直接从 SVG 路径取得，使所有断点都沿同一条测量后的贝塞尔线前进。 */
+      const animateDragGuidePrompt = (timestamp: number) => {
+        dragGuidePromptFrameId = undefined;
+        if (
+          reducedMotion ||
+          getState() !== "active" ||
+          !dragGuidePath ||
+          !dragGuidePrompt ||
+          dragGuidePromptPathLength <= 1
+        ) {
+          stopDragGuidePrompt();
+          return;
+        }
+
+        dragGuidePromptCycleStart ??= timestamp;
+        const cycleDuration = departureDragPromptTravelDuration + departureDragPromptPauseDuration;
+        const cycleElapsed = (timestamp - dragGuidePromptCycleStart) % cycleDuration;
+
+        if (cycleElapsed >= departureDragPromptTravelDuration) {
+          dragGuidePrompt.style.visibility = "hidden";
+          dragGuidePromptFrameId = window.requestAnimationFrame(animateDragGuidePrompt);
+          return;
+        }
+
+        const rawProgress = cycleElapsed / departureDragPromptTravelDuration;
+        // 沿线移动采用减速曲线，抵达箭头前的轻收束让卡片方向保持可读。
+        const progress = 1 - Math.pow(1 - rawProgress, 3);
+        const pathProgress = 0.08 + progress * 0.68;
+        const pathLength = dragGuidePromptPathLength * pathProgress;
+        const point = dragGuidePath.getPointAtLength(pathLength);
+        const nextPoint = dragGuidePath.getPointAtLength(Math.min(dragGuidePromptPathLength, pathLength + 1));
+        const heading = (Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x) * 180) / Math.PI + 90;
+        // 透明度只作为移动图标的入出场辅助，不独立承担提示语义。
+        const opacity = Math.min(1, rawProgress / 0.12, (1 - rawProgress) / 0.18);
+
+        dragGuidePrompt.style.visibility = "visible";
+        dragGuidePrompt.setAttribute("transform", `translate(${point.x} ${point.y}) rotate(${heading})`);
+        dragGuidePrompt.style.opacity = String(opacity);
+        dragGuidePromptFrameId = window.requestAnimationFrame(animateDragGuidePrompt);
+      };
+
+      /** 路径重算后仅启动一个图标循环，避免 ResizeObserver 的连续回调叠加多条动画。 */
+      const startDragGuidePrompt = () => {
+        if (
+          reducedMotion ||
+          getState() !== "active" ||
+          !dragGuidePrompt ||
+          dragGuidePromptPathLength <= 1 ||
+          dragGuidePromptFrameId !== undefined
+        ) {
+          return;
+        }
+
+        dragGuidePromptCycleStart = undefined;
+        dragGuidePromptFrameId = window.requestAnimationFrame(animateDragGuidePrompt);
       };
 
       /** 判断当前是否仍允许读者拖动、验票或略过；离场后所有输入都必须失效。 */
@@ -400,6 +516,8 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         dragGuide.setAttribute("viewBox", `0 0 ${stageBounds.width} ${stageBounds.height}`);
         dragGuidePath.setAttribute("d", `M ${start.x} ${start.y} Q ${control.x} ${control.y} ${end.x} ${end.y}`);
         dragGuideHead.setAttribute("d", `M ${arrowStart.x} ${arrowStart.y} L ${end.x} ${end.y} L ${arrowEnd.x} ${arrowEnd.y}`);
+        dragGuidePromptPathLength = dragGuidePath.getTotalLength();
+        startDragGuidePrompt();
       };
 
       /** 将一次布局重算合并进动画帧，让 ResizeObserver 不会在同一帧多次读取矩形。 */
@@ -496,13 +614,26 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         finishDepartureSettle = undefined;
       };
 
+      /** 归还回退结算的唯一写入权；新的原生输入可以从当前画面无缝接管。 */
+      const clearDepartureReturnSettle = () => {
+        if (departureReturnSettleTimeoutId !== undefined) window.clearTimeout(departureReturnSettleTimeoutId);
+        departureReturnSettleTimeoutId = undefined;
+        if (departureReturnSettleMotion?.frame !== undefined) {
+          window.cancelAnimationFrame(departureReturnSettleMotion.frame);
+        }
+        departureReturnSettleMotion = undefined;
+        root.classList.remove("departure-gate--return-settling");
+      };
+
       /** 真正移除遮罩前先撤销所有全局监听，避免已卸载的节点继续持有焦点或滚动引用。 */
       const removeDepartureGate = () => {
         stopScrollControl();
         clearDepartureSnapWait();
         clearDepartureSettleWait();
+        clearDepartureReturnSettle();
         dragGuideObserver?.disconnect();
         if (dragGuideFrameId !== undefined) window.cancelAnimationFrame(dragGuideFrameId);
+        stopDragGuidePrompt();
         launchStateObserver?.disconnect();
         launchBoundaryObserver?.disconnect();
         document.removeEventListener("keydown", handleGateKeydown);
@@ -512,10 +643,12 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         window.removeEventListener("pointermove", moveGateSwipe);
         window.removeEventListener("pointerup", settleGateSwipe);
         window.removeEventListener("pointercancel", settleGateSwipe);
-        departureGate.removeEventListener("pointerdown", beginGateSwipe);
-        stopGateSwipe();
+        window.removeEventListener("wheel", handleGateWheel, true);
+        window.removeEventListener("scrollend", handleDepartureReturnScrollEnd);
         pass.removeEventListener("transitionend", handlePassTransitionEnd);
         reader.removeEventListener("transitionend", handleReaderTransitionEnd);
+        departureGate.removeEventListener("pointerdown", beginGateSwipe);
+        stopGateSwipe();
         unlockPageAfterDeparture();
         departureGate.remove();
       };
@@ -722,11 +855,26 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         departureSettleTimeoutId = window.setTimeout(finishDepartureSettle, departureSettleIdleDuration);
       };
 
-      /** 将滚动事件压缩到动画帧；靠近阶段让不透明遮罩沿跑道上行，停顿后才由定点收束至 Guard。 */
+      /** 将滚动事件压缩到动画帧；回退时只由真实 scrollY 派生画面，静默后才开始局部归位。 */
       const checkScrollThreshold = () => {
         scrollFrameId = undefined;
         const state = getState();
-        if (hasDeparted || (state !== "armed" && state !== "approaching")) return;
+        if (hasDeparted || (state !== "armed" && state !== "approaching" && state !== "retreating")) return;
+
+        if (state === "retreating") {
+          const returnDistance = Math.max(1, departureReturnStartScrollTop);
+          const returnProgress = 1 - Math.min(returnDistance, Math.max(0, window.scrollY)) / returnDistance;
+          setReturnProgress(returnProgress);
+
+          if (window.scrollY <= 4) {
+            // 读者已原生抵达 Home，不等待静默窗口，直接消除可能累积的亚像素偏移。
+            finishDepartureReturnSettle(0);
+            return;
+          }
+
+          scheduleDepartureReturnSettle();
+          return;
+        }
 
         const approachProgress = Math.min(1, Math.max(0, getApproachProgress()));
         if (approachProgress <= 0) {
@@ -767,11 +915,150 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
       /** Launch 放行或定点被打断后，均可恢复 Guard 的滚动观察；其他终态不再重新接管页面。 */
       const armScrollControl = () => {
         const state = getState();
-        if (hasDeparted || (state !== "armed" && state !== "approaching")) return;
+        if (hasDeparted || (state !== "armed" && state !== "approaching" && state !== "retreating")) return;
 
         window.addEventListener("scroll", queueScrollCheck, { passive: true });
         window.addEventListener("resize", queueScrollCheck, { passive: true });
         queueScrollCheck();
+      };
+
+      /** 用临界阻尼推进选定的局部落点；rAF 是结算期间唯一的 scrollY writer。 */
+      const advanceDepartureReturnSettle = (
+        motion: DepartureReturnSettleMotion,
+        timestamp: number,
+      ): DepartureReturnSettleMotion => {
+        if (motion.timestamp === undefined || !Number.isFinite(timestamp)) {
+          return { ...motion, timestamp };
+        }
+
+        const elapsedSeconds = Math.max(0, timestamp - motion.timestamp) / 1000;
+        if (elapsedSeconds === 0) return { ...motion, timestamp };
+
+        const angularFrequency = 1000 / departureReturnSettleResponseMs;
+        const displacement = motion.position - motion.targetScrollTop;
+        const velocityTerm = motion.velocity + angularFrequency * displacement;
+        const decay = Math.exp(-angularFrequency * elapsedSeconds);
+        const position = motion.targetScrollTop + (displacement + velocityTerm * elapsedSeconds) * decay;
+        const velocity = (motion.velocity - angularFrequency * velocityTerm * elapsedSeconds) * decay;
+
+        return { ...motion, position, velocity, timestamp };
+      };
+
+      /** 根据停下时的真实位置选择 Home 或 Validator，不读取单次 wheel delta 来猜测读者意图。 */
+      const resolveDepartureReturnTargetScrollTop = () => {
+        const validatorScrollTop = Math.max(1, departureReturnStartScrollTop);
+        const currentScrollTop = Math.min(validatorScrollTop, Math.max(0, window.scrollY));
+        const displacement = validatorScrollTop - currentScrollTop;
+        const commitDistance = Math.max(
+          validatorScrollTop * departureReturnSettleCommitRatio,
+          Math.min(validatorScrollTop, departureReturnSettleMinimumCommitDistance),
+        );
+
+        return displacement >= commitDistance ? 0 : validatorScrollTop;
+      };
+
+      /** 完成局部结算后恢复对应边界：到 Home 则重启 Landing，到闸机则重新锁住未验票状态。 */
+      const finishDepartureReturnSettle = (targetScrollTop: number) => {
+        if (getState() !== "retreating") return;
+
+        root.classList.add("departure-gate--return-settling");
+        window.scrollTo({ left: window.scrollX, top: targetScrollTop, behavior: "auto" });
+        clearDepartureReturnSettle();
+
+        if (targetScrollTop <= 4) {
+          setApproachProgress(0);
+          setReturnProgress(0);
+          setState("armed");
+          return;
+        }
+
+        setApproachProgress(1);
+        setReturnProgress(0);
+        departureGate.removeAttribute("aria-hidden");
+        departureGate.removeAttribute("inert");
+        setState("active");
+        lockPageForDeparture();
+        status.textContent = departureGate.dataset.readyStatus ?? status.textContent;
+        queueDragGuideUpdate();
+      };
+
+      /** 原生惯性停止后才开始本地归位；反向滚动可传入闸机锚点，立即撤销原先的 Home 目标。 */
+      const beginDepartureReturnSettle = (requestedTargetScrollTop = resolveDepartureReturnTargetScrollTop()) => {
+        if (getState() !== "retreating" || departureReturnSettleMotion) return;
+
+        const targetScrollTop = requestedTargetScrollTop;
+
+        root.classList.add("departure-gate--return-settling");
+        departureReturnSettleMotion = {
+          position: window.scrollY,
+          velocity: 0,
+          targetScrollTop,
+        };
+
+        /**
+         * 回退结算的唯一帧循环：每帧只由此处写入 scrollY，抵达目标或 reduced-motion 立即落位时停止调度。
+         * 新输入会先清除 motion 与 frame，因而不会与浏览器重新接管的原生滚动同时写入位置。
+         */
+        const animate = () => {
+          const motion = departureReturnSettleMotion;
+          if (!motion || motion.frame !== undefined) return;
+
+          motion.frame = window.requestAnimationFrame((timestamp) => {
+            const activeMotion = departureReturnSettleMotion;
+            if (!activeMotion || getState() !== "retreating") return;
+
+            activeMotion.frame = undefined;
+            const nextMotion = reducedMotion
+              ? { ...activeMotion, position: activeMotion.targetScrollTop, velocity: 0, timestamp }
+              : advanceDepartureReturnSettle(activeMotion, timestamp);
+            const aligned = Math.abs(nextMotion.position - nextMotion.targetScrollTop) <= 0.5;
+            const stopped = Math.abs(nextMotion.velocity) <= 5;
+            departureReturnSettleMotion =
+              aligned && stopped
+                ? { ...nextMotion, position: nextMotion.targetScrollTop, velocity: 0 }
+                : nextMotion;
+            window.scrollTo({ left: window.scrollX, top: departureReturnSettleMotion.position, behavior: "auto" });
+
+            if (!aligned || !stopped) {
+              animate();
+              return;
+            }
+
+            finishDepartureReturnSettle(nextMotion.targetScrollTop);
+          });
+        };
+
+        animate();
+      };
+
+      /** 每笔真实滚动都会刷新静默窗口；Safari 提前派发 scrollend 时也不会抢走剩余惯性。 */
+      const scheduleDepartureReturnSettle = () => {
+        if (getState() !== "retreating" || departureReturnSettleMotion) return;
+
+        if (departureReturnSettleTimeoutId !== undefined) window.clearTimeout(departureReturnSettleTimeoutId);
+        departureReturnSettleTimeoutId = window.setTimeout(() => {
+          departureReturnSettleTimeoutId = undefined;
+          beginDepartureReturnSettle();
+        }, departureSettleIdleDuration);
+      };
+
+      /** scrollend 只确认可以继续等待静默；真正开启动画仍共享同一个 160ms 门槛。 */
+      const handleDepartureReturnScrollEnd = () => {
+        scheduleDepartureReturnSettle();
+      };
+
+      /** idle 时把 Guard 交回原生上滚；停止后按位置归位，未完成验票也不会写入会话。 */
+      const beginIdleGateReturn = () => {
+        if (hasDeparted || getState() !== "active") return;
+
+        departureGate.setAttribute("aria-hidden", "true");
+        departureGate.setAttribute("inert", "");
+        departureReturnStartScrollTop = Math.max(1, window.scrollY);
+        setReturnProgress(0);
+        setState("retreating");
+        unlockPageAfterDeparture();
+        armScrollControl();
+        scheduleDepartureReturnSettle();
       };
 
       /** Launch 移除全屏层后仍会短暂保留 inert，因此需等现有焦点边界彻底释放才监听下一站滚动。 */
@@ -858,6 +1145,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         if (!draggedDuringPointerSession) {
           setState("active");
           status.textContent = departureGate.dataset.readyStatus ?? status.textContent;
+          queueDragGuideUpdate();
           return;
         }
 
@@ -876,7 +1164,37 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         }, 0);
       };
 
-      /** 结束整片 Guard 的上划手势并归还 pointer capture，避免验票卡片的后续拖放继承旧输入。 */
+      /** 桌面 idle 时仅放行原生上滚；向前滚动仍不把“未验票”隐式解释成略过。 */
+      const handleGateWheel = (event: WheelEvent) => {
+        if (!usesDesktopGateScroll()) return;
+
+        const state = getState();
+        if (state === "retreating") {
+          if (event.ctrlKey || event.deltaY === 0) return;
+
+          if (event.deltaY < 0) {
+            // 新的上滚立即取消在途结算，完整归还给浏览器的原生惯性。
+            clearDepartureReturnSettle();
+            return;
+          }
+
+          // 反向输入同样拥有中断权，但仍不能穿过未验票 Guard；改为从当前位置平滑回到闸机锚点。
+          event.preventDefault();
+          clearDepartureReturnSettle();
+          beginDepartureReturnSettle(departureReturnStartScrollTop);
+          return;
+        }
+        if (state !== "active" || event.ctrlKey || hasDeparted || event.deltaY === 0) return;
+
+        if (event.deltaY < 0) {
+          beginIdleGateReturn();
+          return;
+        }
+
+        event.preventDefault();
+      };
+
+      /** 结束触控端 Guard 上划会话并归还 pointer capture，避免后续验票拖放继承旧输入。 */
       const stopGateSwipe = () => {
         const capturedPointerId = gateSwipePointerId;
         gateSwipePointerId = undefined;
@@ -885,9 +1203,9 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         }
       };
 
-      /** Guard 空白区域允许向上划走；卡片、Validator 与略过按钮继续保留各自的明确操作。 */
+      /** 移动端空白 Guard 保留原有的显式上划略过；桌面则完全交给自由原生滚动与位置归位。 */
       const beginGateSwipe = (event: PointerEvent) => {
-        if (getState() !== "active" || event.button !== 0) return;
+        if (usesDesktopGateScroll() || getState() !== "active" || event.button !== 0) return;
         if (event.target instanceof Element && event.target.closest("button")) return;
 
         gateSwipePointerId = event.pointerId;
@@ -898,14 +1216,14 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         event.preventDefault();
       };
 
-      /** 上划只跟随向上的距离；向下拖动不会把 Guard 拉离正文，也不会制造橡皮筋效果。 */
+      /** 上划只跟随向上的距离，向下拖动不拉开 Guard，以保留未验票不得向前通过的边界。 */
       const moveGateSwipe = (event: PointerEvent) => {
         if (gateSwipePointerId !== event.pointerId || hasDeparted) return;
 
         setGateSwipeDistance(gateSwipeStartY - event.clientY);
       };
 
-      /** 上划超过视口约五分之一即放行正文；未达到阈值则回到 Guard，避免轻触误跳过验票。 */
+      /** 触控端跨过明确阈值才略过；不足则恢复待机，避免轻触留白就离开 Validator。 */
       const settleGateSwipe = (event: PointerEvent) => {
         if (gateSwipePointerId !== event.pointerId) return;
 
@@ -928,6 +1246,8 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
       window.addEventListener("pointercancel", settleGateSwipe);
       pass.addEventListener("lostpointercapture", settleDrag);
       departureGate.addEventListener("pointerdown", beginGateSwipe);
+      window.addEventListener("wheel", handleGateWheel, { capture: true, passive: false });
+      window.addEventListener("scrollend", handleDepartureReturnScrollEnd, { passive: true });
       pass.addEventListener("click", (event) => {
         if (suppressPassClick) {
           event.preventDefault();
