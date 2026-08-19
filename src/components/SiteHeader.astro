@@ -8,9 +8,10 @@ import moonIcon from "@phosphor-icons/core/assets/bold/moon-bold.svg?raw";
 import sunIcon from "@phosphor-icons/core/assets/bold/sun-bold.svg?raw";
 import translateIcon from "@phosphor-icons/core/assets/bold/translate-bold.svg?raw";
 import fetaruteLogo from "@/assets/fetarute-branding/fetarute-logo.svg?raw";
+import DestinationMenu from "@/components/DestinationMenu.astro";
 import { getRailwayLineCssVariableName } from "@/data/palette";
 import { railwayLineByKey } from "@/data/railway";
-import { primaryNavItems, wayfindingPrototype } from "@/data/site";
+import { wayfindingPrototype } from "@/data/site";
 import { localeMetadata, locales, type Locale } from "@/i18n/config";
 import { getLocalizedRelativeUrl } from "@/i18n/links";
 import { getMessages } from "@/i18n/messages";
@@ -263,38 +264,20 @@ const appearanceOptions = [
     </details>
 
     <details class="mobile-header-tool mobile-header-tool--destination" data-header-menu>
-      <summary class="mobile-header-tool__summary" aria-label={messages.destinationMenuLabel}>
+      <summary class="mobile-header-tool__summary" aria-label={messages.moreMenuLabel}>
         <span class="mobile-header-tool__icon" aria-hidden="true" set:html={dotsThreeIcon}></span>
       </summary>
 
       <div
-        class="mobile-header-tool__menu mobile-destination-menu__panel"
+        class="mobile-header-tool__menu destination-menu__panel"
         data-header-menu-panel
         aria-labelledby="mobile-destination-menu-label"
       >
-        <div class="mobile-destination-menu__heading">
-          <h2 id="mobile-destination-menu-label" class="service-menu__heading">
-            {messages.destinationMenuLabel}
-          </h2>
-          <p>{messages.destinationMenuHint}</p>
-        </div>
-        <nav class="mobile-destination-menu__links" aria-label={messages.navigationLabel}>
-          {
-            primaryNavItems.map((item) => (
-              <a
-                href={
-                  item.fragment === "home"
-                    ? getLocalizedRelativeUrl(locale)
-                    : getLocalizedRelativeUrl(locale, "", item.fragment)
-                }
-                aria-current={item.fragment === "home" ? "page" : undefined}
-              >
-                <span>{messages.navigation[item.labelKey]}</span>
-                <span aria-hidden="true" set:html={arrowUpRightIcon}></span>
-              </a>
-            ))
-          }
-        </nav>
+        <DestinationMenu
+          locale={locale}
+          headingId="mobile-destination-menu-label"
+          includePrimaryNavigation
+        />
       </div>
     </details>
   </div>
@@ -373,50 +356,37 @@ const appearanceOptions = [
     </div>
   </details>
 
-  <span class="exit-menu">
-    <span class="exit-menu__direction">
-      <span class="exit-menu__copy">
-        <span class="exit-menu__primary">
-          <span class="exit-menu__label">{messages.destinationMenuLabel}</span>
+  <details class="exit-menu" data-header-menu>
+    <summary class="exit-menu__summary" aria-label={messages.exitMenuLabel}>
+      <span class="exit-menu__direction">
+        <span class="exit-menu__copy">
+          <span class="exit-menu__primary">
+            <span class="exit-menu__label">{messages.exitMenuLabel}</span>
+          </span>
+          <span class="exit-menu__hint">{messages.exitMenuHint}</span>
         </span>
-        <span class="exit-menu__hint">{messages.destinationMenuHint}</span>
+        <span class="exit-menu__arrow" aria-hidden="true" set:html={arrowUpRightIcon}></span>
       </span>
-      <span class="exit-menu__arrow" aria-hidden="true" set:html={arrowUpRightIcon}></span>
-    </span>
-  </span>
+    </summary>
+    <div
+      class="exit-menu__menu destination-menu__panel"
+      data-header-menu-panel
+      aria-label={messages.exitMenuHint}
+    >
+      <DestinationMenu locale={locale} headingId="expanded-destination-menu-label" />
+    </div>
+  </details>
 
   <details class="compact-exit-menu" data-header-menu>
-    <summary class="compact-exit-menu__summary" aria-label={messages.destinationMenuLabel}>
+    <summary class="compact-exit-menu__summary" aria-label={messages.exitMenuLabel}>
       <span class="compact-exit-menu__icon" aria-hidden="true" set:html={listIcon}></span>
     </summary>
     <div
-      class="compact-exit-menu__menu mobile-destination-menu__panel"
+      class="compact-exit-menu__menu destination-menu__panel"
       data-header-menu-panel
-      aria-labelledby="desktop-destination-menu-label"
+      aria-label={messages.exitMenuHint}
     >
-      <div class="mobile-destination-menu__heading">
-        <h2 id="desktop-destination-menu-label" class="service-menu__heading">
-          {messages.destinationMenuLabel}
-        </h2>
-        <p>{messages.destinationMenuHint}</p>
-      </div>
-      <nav class="mobile-destination-menu__links" aria-label={messages.navigationLabel}>
-        {
-          primaryNavItems.map((item) => (
-            <a
-              href={
-                item.fragment === "home"
-                  ? getLocalizedRelativeUrl(locale)
-                  : getLocalizedRelativeUrl(locale, "", item.fragment)
-              }
-              aria-current={item.fragment === "home" ? "page" : undefined}
-            >
-              <span>{messages.navigation[item.labelKey]}</span>
-              <span aria-hidden="true" set:html={arrowUpRightIcon}></span>
-            </a>
-          ))
-        }
-      </nav>
+      <DestinationMenu locale={locale} headingId="desktop-destination-menu-label" />
     </div>
   </details>
 </header>
@@ -686,6 +656,14 @@ const appearanceOptions = [
     }
 
     headerLayoutIntent = nextIntent;
+
+    // 完整出口牌即将被紧凑态替代时先收起，避免隐藏的 details 在返回完整 Header 后遗留过期展开状态。
+    if (nextCompact && !normalizedHoverExpanded) {
+      const fullExitMenu = siteHeader?.querySelector<HTMLDetailsElement>(".exit-menu");
+      if (fullExitMenu) {
+        closeHeaderMenu(fullExitMenu);
+      }
+    }
 
     if (!shouldAnimate || !canStageHeaderContentHandoff()) {
       cancelHeaderContentHandoff();
@@ -1105,6 +1083,13 @@ const appearanceOptions = [
       } else {
         closeHeaderMenu(menu);
       }
+    });
+
+    // 目的地已在当前页或新标签页打开后立即收起来源菜单，用户返回原页面时不会面对过期的展开状态。
+    menu.querySelectorAll<HTMLAnchorElement>("[data-header-menu-link]").forEach((link) => {
+      link.addEventListener("click", () => {
+        closeHeaderMenu(menu);
+      });
     });
   });
 

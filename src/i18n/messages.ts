@@ -1,5 +1,6 @@
 import type { Locale } from "@/i18n/config";
 import type { HomeLandingSceneId } from "@/data/home-landing";
+import type { ExternalDestination } from "@/data/site";
 
 /** 首页首个叙事站中的单个说明模块文案。 */
 interface HomeFeatureMessage {
@@ -76,10 +77,20 @@ export interface SiteMessages {
   languageNavigationLabel: string;
   /** 顶栏服务导视下拉菜单的可见名称与无障碍标签。 */
   serviceDeskLabel: string;
-  /** 黄色出口牌的主要文字，入口菜单与可见站牌共用同一名称。 */
-  destinationMenuLabel: string;
-  /** 黄色出口牌的次级说明，提示读者这里收纳更多站内去向。 */
-  destinationMenuHint: string;
+  /** 小屏三点菜单的可见名称，明确它同时容纳站内导览与出口服务。 */
+  moreMenuLabel: string;
+  /** 小屏三点菜单的次级说明，避免黄色工具牌被误读为单一站内导航。 */
+  moreMenuHint: string;
+  /** 黄色出口牌的主要文字，桌面完整态与紧凑态共用这一外部服务语义。 */
+  exitMenuLabel: string;
+  /** 黄色出口牌的次级说明，明确这些链接会离开官网前往正式服务。 */
+  exitMenuHint: string;
+  /** 在线地图这个父级服务的名称；各服务器地图在其下以短标签选择，避免重复“地图”。 */
+  onlineMapLabel: string;
+  /** 外部服务的本地化显示名称；URL 与服务类型仍集中维护在 site.ts。 */
+  externalDestinationLabels: Readonly<Record<ExternalDestination["key"], string>>;
+  /** 新标签页链接追加给读屏用户的副作用说明。 */
+  externalLinkNewTabHint: string;
   /** 服务导视中外观设置这一组的标签。 */
   appearanceNavigationLabel: string;
   /** 外观选项的本地化名称，供按钮文案与状态同步使用。 */
@@ -134,8 +145,18 @@ const messages: Record<Locale, SiteMessages> = {
     },
     languageNavigationLabel: "选择语言",
     serviceDeskLabel: "服务台",
-    destinationMenuLabel: "出口",
-    destinationMenuHint: "前往菜单、各网站",
+    moreMenuLabel: "菜单",
+    moreMenuHint: "站内导航与外部服务",
+    exitMenuLabel: "出口",
+    exitMenuHint: "前往外部服务",
+    onlineMapLabel: "在线地图",
+    externalDestinationLabels: {
+      wiki: "Fetarute Wiki",
+      creativeMap: "创造服",
+      survivalMap: "生存服",
+      lobbyMap: "大厅",
+    },
+    externalLinkNewTabHint: "在新标签页打开",
     appearanceNavigationLabel: "外观",
     appearanceOptions: {
       system: "跟随系统",
@@ -209,8 +230,18 @@ const messages: Record<Locale, SiteMessages> = {
     },
     languageNavigationLabel: "選擇語言",
     serviceDeskLabel: "服務台",
-    destinationMenuLabel: "出口",
-    destinationMenuHint: "前往選單、各網站",
+    moreMenuLabel: "選單",
+    moreMenuHint: "站內導覽與外部服務",
+    exitMenuLabel: "出口",
+    exitMenuHint: "前往外部服務",
+    onlineMapLabel: "線上地圖",
+    externalDestinationLabels: {
+      wiki: "Fetarute Wiki",
+      creativeMap: "創造服",
+      survivalMap: "生存服",
+      lobbyMap: "大廳",
+    },
+    externalLinkNewTabHint: "在新分頁開啟",
     appearanceNavigationLabel: "外觀",
     appearanceOptions: {
       system: "跟隨系統",
@@ -285,8 +316,18 @@ const messages: Record<Locale, SiteMessages> = {
     },
     languageNavigationLabel: "Choose language",
     serviceDeskLabel: "Service desk",
-    destinationMenuLabel: "Exit",
-    destinationMenuHint: "Menu & links",
+    moreMenuLabel: "Menu",
+    moreMenuHint: "Site navigation & external services",
+    exitMenuLabel: "Exit",
+    exitMenuHint: "External services",
+    onlineMapLabel: "Online maps",
+    externalDestinationLabels: {
+      wiki: "Fetarute Wiki",
+      creativeMap: "Creative",
+      survivalMap: "Survival",
+      lobbyMap: "Lobby",
+    },
+    externalLinkNewTabHint: "opens in a new tab",
     appearanceNavigationLabel: "Appearance",
     appearanceOptions: {
       system: "System",

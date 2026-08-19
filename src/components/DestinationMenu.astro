@@ -1,0 +1,139 @@
+---
+import arrowSquareOutIcon from "@phosphor-icons/core/assets/bold/arrow-square-out-bold.svg?raw";
+import arrowUpRightIcon from "@phosphor-icons/core/assets/bold/arrow-up-right-bold.svg?raw";
+import bookOpenTextIcon from "@phosphor-icons/core/assets/bold/book-open-text-bold.svg?raw";
+import mapTrifoldIcon from "@phosphor-icons/core/assets/bold/map-trifold-bold.svg?raw";
+import {
+  externalDestinations,
+  primaryNavItems,
+  type ExternalDestinationIcon,
+} from "@/data/site";
+import { type Locale } from "@/i18n/config";
+import { getLocalizedRelativeUrl } from "@/i18n/links";
+import { getMessages } from "@/i18n/messages";
+
+/**
+ * 可复用于完整、紧凑与小屏 Header 的目的地菜单属性。
+ * 小屏额外展示站内导航，桌面出口只呈现会离开官网的正式服务，避免混淆两个导航层级。
+ */
+export interface Props {
+  /** 当前页面语言决定站内锚点、本地化目的地名称与辅助技术提示。 */
+  locale: Locale;
+  /** 当前菜单标题的唯一 DOM id，保证多个响应式菜单同时存在时不重复引用。 */
+  headingId: string;
+  /** 是否在出口服务前补充站内首页章节导航；仅三点移动菜单需要。 */
+  includePrimaryNavigation?: boolean;
+}
+
+const { locale, headingId, includePrimaryNavigation = false } = Astro.props;
+const messages = getMessages(locale);
+const externalHeadingId = `${headingId}-external`;
+const mapHeadingId = `${headingId}-maps`;
+
+/**
+ * 外部服务图标按语义集中映射，书本代表资料库、折页地图代表可浏览世界，而不把第三方品牌图形带进导航。
+ */
+const externalDestinationIcons = {
+  wiki: bookOpenTextIcon,
+  map: mapTrifoldIcon,
+} satisfies Record<ExternalDestinationIcon, string>;
+---
+
+{
+  includePrimaryNavigation && (
+    <div class="destination-menu__heading">
+      <h2 id={headingId} class="destination-menu__heading-label">
+        {messages.moreMenuLabel}
+      </h2>
+      <p>{messages.moreMenuHint}</p>
+    </div>
+  )
+}
+
+{
+  includePrimaryNavigation && (
+    <nav class="destination-menu__links" aria-label={messages.navigationLabel}>
+      {primaryNavItems.map((item) => (
+        <a
+          class="destination-menu__link"
+          data-header-menu-link
+          href={
+            item.fragment === "home"
+              ? getLocalizedRelativeUrl(locale)
+              : getLocalizedRelativeUrl(locale, "", item.fragment)
+          }
+          aria-current={item.fragment === "home" ? "page" : undefined}
+        >
+          <span>{messages.navigation[item.labelKey]}</span>
+          <span class="destination-menu__link-arrow" aria-hidden="true" set:html={arrowUpRightIcon}></span>
+        </a>
+      ))}
+    </nav>
+  )
+}
+
+<div class:list={{ "destination-menu__external-group": includePrimaryNavigation }}>
+  {
+    includePrimaryNavigation && (
+      <h3 id={externalHeadingId} class="destination-menu__group-heading">
+        {messages.exitMenuLabel}
+      </h3>
+    )
+  }
+  <div class="destination-menu__external-services">
+    <a
+      class="destination-menu__link destination-menu__link--external"
+      data-header-menu-link
+      href={externalDestinations.wiki.href}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={`${messages.externalDestinationLabels.wiki} (${messages.externalLinkNewTabHint})`}
+    >
+      <span class="destination-menu__link-label">
+        <span
+          class="destination-menu__link-icon"
+          aria-hidden="true"
+          set:html={externalDestinationIcons[externalDestinations.wiki.icon]}
+        ></span>
+        <span>{messages.externalDestinationLabels.wiki}</span>
+      </span>
+      <span
+        class="destination-menu__link-arrow"
+        aria-hidden="true"
+        set:html={arrowSquareOutIcon}
+      ></span>
+    </a>
+
+    <section class="destination-menu__map-group" aria-labelledby={mapHeadingId}>
+      <h3 id={mapHeadingId} class="destination-menu__map-heading">
+        <span class="destination-menu__link-icon" aria-hidden="true" set:html={mapTrifoldIcon}></span>
+        <span>{messages.onlineMapLabel}</span>
+      </h3>
+      <nav class="destination-menu__map-links" aria-label={messages.onlineMapLabel}>
+        {
+          externalDestinations.maps.map((destination) => {
+            const label = messages.externalDestinationLabels[destination.key];
+
+            return (
+              <a
+                class="destination-menu__map-link"
+                data-header-menu-link
+                href={destination.href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`${messages.onlineMapLabel}：${label} (${messages.externalLinkNewTabHint})`}
+              >
+                <span>{label}</span>
+                <span
+                  class="destination-menu__map-link-arrow"
+                  aria-hidden="true"
+                  set:html={arrowSquareOutIcon}
+                ></span>
+              </a>
+            );
+          })
+        }
+      </nav>
+    </section>
+  </div>
+</div>

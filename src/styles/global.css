@@ -221,8 +221,7 @@ html[data-launching] .site-header {
 .language-links,
 .service-desk__summary,
 .appearance-choice,
-.home-nav,
-.exit-menu {
+.home-nav {
   display: flex;
   align-items: center;
 }
@@ -411,7 +410,8 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
     transform: translate3d(0, var(--home-nav-indicator-bottom-offset), 0) scaleY(1);
   }
 
-  .exit-menu:hover .exit-menu__arrow,
+  .exit-menu__summary:hover .exit-menu__arrow,
+  .exit-menu[open] .exit-menu__arrow,
   .service-desk__summary:hover .service-desk__information,
   .service-desk[open] .service-desk__information {
     width: var(--header-direction-affordance-size);
@@ -484,7 +484,7 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
 }
 
 .service-desk__summary,
-.exit-menu {
+.exit-menu__summary {
   min-height: inherit;
   height: 100%;
 }
@@ -494,6 +494,14 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
 }
 
 .service-desk__summary::marker {
+  content: "";
+}
+
+.exit-menu__summary::-webkit-details-marker {
+  display: none;
+}
+
+.exit-menu__summary::marker {
   content: "";
 }
 
@@ -510,9 +518,26 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   list-style: none;
 }
 
+/* 出口牌与服务台一样是显式触发器；裁切只作用于摘要内容，不能把下挂的外部服务面板一并裁掉。 */
+.exit-menu__summary {
+  display: grid;
+  min-height: inherit;
+  height: 100%;
+  align-content: center;
+  justify-items: end;
+  gap: 6px;
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0 24px;
+  /* 出口牌沿用服务台的左侧缓冲，让两块功能牌在同一条导视带上拥有一致节奏。 */
+  padding-inline-start: 40px;
+  list-style: none;
+}
+
 /* 服务台只在真实 hover、focus、pressed 与 open 状态叠加低对比状态层，避免把导视牌变成会跳动的按钮。 */
 .service-desk__summary,
-.mobile-header-tool--service .mobile-header-tool__summary {
+.mobile-header-tool--service .mobile-header-tool__summary,
+.exit-menu__summary {
   background-color: transparent;
   transition: background-color var(--duration-header-standard-effects)
     var(--motion-header-standard-effects);
@@ -565,18 +590,6 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   display: block;
   width: 100%;
   height: 100%;
-}
-
-.exit-menu {
-  position: relative;
-  display: grid;
-  align-content: center;
-  justify-items: end;
-  gap: 6px;
-  overflow: hidden;
-  padding: 0 24px;
-  /* 出口牌沿用服务台的左侧缓冲，让两块功能牌在同一条导视带上拥有一致节奏。 */
-  padding-inline-start: 40px;
 }
 
 .exit-menu__copy {
@@ -649,12 +662,20 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   outline-offset: -3px;
 }
 
+.exit-menu__summary:focus-visible {
+  outline: 3px solid var(--color-exit-text);
+  outline-offset: -3px;
+}
+
 .service-desk__summary:focus-visible,
 .service-desk[open] .service-desk__summary,
 .mobile-header-tool--service .mobile-header-tool__summary:focus-visible,
 .mobile-header-tool--service[open] .mobile-header-tool__summary,
 .service-desk__summary:active,
-.mobile-header-tool--service .mobile-header-tool__summary:active {
+.mobile-header-tool--service .mobile-header-tool__summary:active,
+.exit-menu__summary:focus-visible,
+.exit-menu[open] .exit-menu__summary,
+.exit-menu__summary:active {
   background-color: color-mix(in srgb, currentColor 12%, transparent);
 }
 
@@ -669,6 +690,10 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
 }
 
 .service-desk__summary:active .service-desk__copy {
+  transform: translateY(1px);
+}
+
+.exit-menu__summary:active .exit-menu__copy {
   transform: translateY(1px);
 }
 
@@ -691,9 +716,10 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   padding: 24px;
 }
 
-/* 目的地菜单与小屏触发牌共用同一块绝对定位面板，保证从图标打开时都贴齐 Header 右缘。 */
+/* 目的地菜单与小屏、紧凑、完整出口牌共用同一块绝对定位面板，保证始终贴齐 Header 右缘。 */
 .mobile-header-tool__menu,
-.compact-exit-menu__menu {
+.compact-exit-menu__menu,
+.exit-menu__menu {
   position: absolute;
   z-index: 3;
   top: 100%;
@@ -721,12 +747,18 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   color: var(--color-exit-text);
 }
 
-.mobile-destination-menu__heading {
+.exit-menu__menu {
+  width: min(318px, calc(100vw - 40px));
+  background: var(--color-exit);
+  color: var(--color-exit-text);
+}
+
+.destination-menu__heading {
   display: grid;
   gap: 6px;
 }
 
-.mobile-destination-menu__heading p {
+.destination-menu__heading p {
   margin: 0;
   color: color-mix(in srgb, currentColor 78%, transparent);
   font-size: 12px;
@@ -735,17 +767,35 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   line-height: 1.35;
 }
 
-.mobile-header-tool--destination .service-menu__heading,
-.compact-exit-menu__menu .service-menu__heading {
+.destination-menu__heading-label,
+.destination-menu__group-heading {
+  margin: 0;
   color: color-mix(in srgb, var(--color-exit-text) 78%, transparent);
+  font-family: "SFMono-Regular", "Cascadia Mono", "Noto Sans Mono CJK SC", monospace;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
 }
 
-.mobile-destination-menu__links {
+.destination-menu__external-group {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--color-exit-text) 42%, transparent);
+  padding-top: 18px;
+}
+
+.destination-menu__external-services {
+  display: grid;
+  gap: 12px;
+}
+
+.destination-menu__links {
   display: grid;
   gap: 6px;
 }
 
-.mobile-destination-menu__links a {
+.destination-menu__link {
   display: flex;
   min-height: 42px;
   align-items: center;
@@ -761,29 +811,121 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
     transform var(--duration-header-press) var(--motion-header-standard-spatial);
 }
 
-.mobile-destination-menu__links a svg {
+.destination-menu__link-label {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.destination-menu__link-icon,
+.destination-menu__link-arrow {
+  display: grid;
   width: 18px;
   height: 18px;
   flex: 0 0 auto;
+  place-items: center;
 }
 
-.mobile-destination-menu__links a:hover,
-.mobile-destination-menu__links a:focus-visible {
+.destination-menu__link-icon svg,
+.destination-menu__link-arrow svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+.destination-menu__link:hover,
+.destination-menu__link:focus-visible {
   background: color-mix(in srgb, var(--color-exit-text) 18%, transparent);
   color: var(--color-exit-text);
 }
 
-.mobile-destination-menu__links a:focus-visible {
+.destination-menu__link:focus-visible {
   outline: 2px solid var(--color-exit-text);
   outline-offset: -2px;
 }
 
-.mobile-destination-menu__links a[aria-current="page"] {
+.destination-menu__link[aria-current="page"] {
   background: color-mix(in srgb, var(--color-exit-text) 28%, transparent);
   color: var(--color-exit-text);
 }
 
-.mobile-destination-menu__links a:active {
+.destination-menu__link:active {
+  transform: scale(0.98);
+}
+
+/* 在线地图是服务父项而非默认跳转；三张地图放入同一组，让用户先理解服务再选择服务器。 */
+.destination-menu__map-group {
+  display: grid;
+  gap: 6px;
+  background: color-mix(in srgb, var(--color-exit-text) 8%, transparent);
+  padding: 8px;
+}
+
+.destination-menu__map-heading {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0 2px;
+  color: var(--color-exit-text);
+  font-size: 15px;
+  font-weight: 780;
+  letter-spacing: -0.03em;
+}
+
+.destination-menu__map-links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.destination-menu__map-link {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 0 8px;
+  background: color-mix(in srgb, var(--color-exit-text) 10%, transparent);
+  color: color-mix(in srgb, var(--color-exit-text) 88%, transparent);
+  font-size: 12px;
+  font-weight: 760;
+  letter-spacing: -0.04em;
+  line-height: 1.2;
+  transition:
+    background-color var(--duration-header-standard-effects) var(--motion-header-standard-effects),
+    color var(--duration-header-standard-effects) var(--motion-header-standard-effects),
+    transform var(--duration-header-press) var(--motion-header-standard-spatial);
+}
+
+.destination-menu__map-link-arrow {
+  display: grid;
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  place-items: center;
+}
+
+.destination-menu__map-link-arrow svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+}
+
+.destination-menu__map-link:hover,
+.destination-menu__map-link:focus-visible {
+  background: color-mix(in srgb, var(--color-exit-text) 22%, transparent);
+  color: var(--color-exit-text);
+}
+
+.destination-menu__map-link:focus-visible {
+  outline: 2px solid var(--color-exit-text);
+  outline-offset: -2px;
+}
+
+.destination-menu__map-link:active {
   transform: scale(0.98);
 }
 
@@ -2518,10 +2660,11 @@ html[data-launching] .launch-sequence {
   .site-header,
   .home-nav,
   .service-desk__summary,
-  .exit-menu,
+  .exit-menu__summary,
   .appearance-choice,
   .mobile-header-tool__summary,
-  .mobile-destination-menu__links a {
+  .destination-menu__link,
+  .destination-menu__map-link {
     transition-property: color, background-color, opacity;
     transition-duration: var(--duration-header-reduced-feedback);
     transition-timing-function: linear;
@@ -2536,7 +2679,7 @@ html[data-launching] .launch-sequence {
   .home-nav__arrow,
   .home-nav__indicator,
   .service-desk__summary > *,
-  .exit-menu > *,
+  .exit-menu__summary > *,
   .mobile-header-tool__icon {
     transition-duration: 0ms;
   }
@@ -2579,12 +2722,12 @@ html[data-launching] .launch-sequence {
 
   .home-nav,
   .service-desk__summary,
-  .exit-menu {
+  .exit-menu__summary {
     padding-inline: 16px;
   }
 
   .service-desk__summary,
-  .exit-menu {
+  .exit-menu__summary {
     /* 中等桌面保留 12px 的左侧额外缓冲，避免在固定内容列中压缩文字。 */
     padding-inline-start: 28px;
   }

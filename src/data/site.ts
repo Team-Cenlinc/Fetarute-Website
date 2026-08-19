@@ -27,6 +27,36 @@ export interface PrimaryNavItem {
   fragment: "home" | "features" | "news" | "join";
 }
 
+/** 出口菜单中可公开访问的外部服务类型；图标由 Header 按类型统一派生，避免数据层耦合视图资产。 */
+export type ExternalDestinationIcon = "wiki" | "map";
+
+/** 外部服务的稳定身份键；i18n 只为这些键提供文案，避免展示名称影响链接归属。 */
+export type ExternalDestinationKey = "wiki" | "creativeMap" | "survivalMap" | "lobbyMap";
+
+/**
+ * 外部出口服务的稳定配置。
+ * 链接与功能身份集中在这里，本地化显示文案仍由 messages.ts 提供，避免 Header 重复维护第三方地址。
+ */
+export interface ExternalDestination {
+  /** 供 i18n 文案与测试长期引用的稳定键，不使用会变更的展示名称或 URL。 */
+  key: ExternalDestinationKey;
+  /** 外部服务的 HTTPS 公开地址；Header 统一以新标签页打开，保留当前阅读位置。 */
+  href: string;
+  /** 用于快速辨识目的地类型的图标语义，而非品牌商标。 */
+  icon: ExternalDestinationIcon;
+}
+
+/**
+ * 出口菜单的分组信息架构。
+ * Wiki 是独立的资料库入口；三张地图统一归入“在线地图”，以反映它们只是同一服务下的服务器选择。
+ */
+export interface ExternalDestinationMenu {
+  /** 独立的知识库入口。 */
+  wiki: ExternalDestination;
+  /** 在线地图下按服务器划分的三个入口，顺序即菜单展示顺序。 */
+  maps: readonly ExternalDestination[];
+}
+
 /**
  * 首页主视觉与导视装饰共用的配置。
  * 配置只存复合线路身份键，线路名称、站序和颜色始终从铁路数据模型读取，避免页面配置复制线路事实。
@@ -70,6 +100,19 @@ export const primaryNavItems: readonly PrimaryNavItem[] = [
   { labelKey: "news", fragment: "news" },
   { labelKey: "join", fragment: "join" },
 ];
+
+/**
+ * 从官网离开后仍能继续了解或探索 Fetarute 的正式服务。
+ * 社群和联系入口不放入 Header，后续由 Footer 承接；这里仅保留知识库与世界地图这两类探索工具。
+ */
+export const externalDestinations: ExternalDestinationMenu = {
+  wiki: { key: "wiki", href: "https://wiki.fetarute.org", icon: "wiki" },
+  maps: [
+    { key: "survivalMap", href: "https://map.survival.fetarute.org", icon: "map" },
+    { key: "lobbyMap", href: "https://map.lobby.fetarute.org", icon: "map" },
+    { key: "creativeMap", href: "https://map.creative.fetarute.org", icon: "map" },
+  ],
+};
 
 /**
  * 首页装饰信号的候选线路身份。
