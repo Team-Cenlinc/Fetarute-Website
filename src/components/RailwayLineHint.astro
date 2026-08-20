@@ -1,0 +1,139 @@
+---
+/**
+ * 线路导视牌属性。
+ * 将颜色、线路编号与主副名称收束为一个组件，保证首页及后续车站页遵循同一套 Figma 导视构图。
+ */
+export interface Props {
+  /** 线路色的 CSS 值；调用方通常传入 railway.ts 派生的 CSS 变量引用。 */
+  lineColor: string;
+  /** 色块左上角展示的线路缩写，例如 SL。 */
+  lineCode: string;
+  /** 色块右下角展示的序号，例如 01。 */
+  sequence: string;
+  /** 当前语言中应优先阅读的线路名称。 */
+  primaryName: string;
+  /** 与主名称互补的次级语言名称。 */
+  secondaryName: string;
+  /** 主线路名是否为英文；英文单词较长时需要保留 Figma 导视牌的安全边距。 */
+  isEnglishPrimary: boolean;
+  /** 调用处追加定位类，适配不同页面的空间坐标而不复制导视内部结构。 */
+  class?: string;
+}
+
+const { lineColor, lineCode, sequence, primaryName, secondaryName, isEnglishPrimary, class: className } = Astro.props;
+---
+
+<div
+  class:list={["railway-line-hint", className]}
+  data-line-code={lineCode}
+  data-primary-language={isEnglishPrimary ? "en" : "zh"}
+  style={`--railway-line-hint-color: ${lineColor};`}
+>
+  <span class="railway-line-hint__badge">
+    <span class="railway-line-hint__code">{lineCode}</span>
+    <span class="railway-line-hint__sequence">{sequence}</span>
+  </span>
+  <span class="railway-line-hint__names">
+    <strong>{primaryName}</strong>
+    <small>{secondaryName}</small>
+  </span>
+</div>
+
+<style>
+  .railway-line-hint {
+    /* --railway-line-hint-color 始终来自线路领域数据，色块不维护额外的页面级色值。 */
+    display: flex;
+    align-items: start;
+    gap: clamp(12px, 0.94vw, 18px);
+  }
+
+  .railway-line-hint__badge {
+    /* --railway-line-hint-corner-inset 收紧导视牌的四角留白，使编号更贴近 Figma 的紧凑构图。 */
+    --railway-line-hint-corner-inset: 5%;
+    position: relative;
+    display: block;
+    width: clamp(76px, 7.24vw, 139px);
+    aspect-ratio: 1;
+    background: var(--railway-line-hint-color);
+    color: var(--palette-on-hero);
+    font-size: clamp(32px, 3.33vw, 64px);
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .railway-line-hint__code,
+  .railway-line-hint__sequence {
+    position: absolute;
+    display: block;
+    width: max-content;
+    letter-spacing: 0;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .railway-line-hint__code {
+    /* 默认以公共结构角距放置线路号；不同字形的光学校正必须限定到对应线路，不能污染组件复用。 */
+    top: var(--railway-line-hint-corner-inset);
+    left: var(--railway-line-hint-corner-inset);
+    text-align: left;
+  }
+
+  .railway-line-hint[data-line-code="SL"] .railway-line-hint__code {
+    /* SL 的左侧字形留白小于 01 的右侧，单独内缩以维持这组站牌的视觉对角等距。 */
+    left: calc(var(--railway-line-hint-corner-inset) + 0.1em);
+  }
+
+  .railway-line-hint__sequence {
+    /* 01 从右下角向左收束，右、下保留公共结构角距；SL 的左侧字形补偿不影响此锚点。 */
+    right: var(--railway-line-hint-corner-inset);
+    bottom: var(--railway-line-hint-corner-inset);
+    text-align: right;
+  }
+
+  .railway-line-hint__names {
+    display: grid;
+    gap: clamp(8px, 0.83vw, 16px);
+    padding-top: 0;
+  }
+
+  .railway-line-hint__names strong {
+    font-size: clamp(31px, 3.33vw, 64px);
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .railway-line-hint__names small {
+    font-family: var(--font-fetarute-display), var(--font-fetarute-sans-sc);
+    font-size: clamp(19px, 1.88vw, 36px);
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1;
+  }
+
+  .railway-line-hint[data-primary-language="en"] .railway-line-hint__names strong {
+    /* Serverlink 的自然字宽大于中文四字名，略收字号而不压缩字距。 */
+    font-size: clamp(28px, 2.86vw, 55px);
+  }
+
+  @media (max-width: 760px) {
+    .railway-line-hint {
+      gap: 10px;
+    }
+
+    .railway-line-hint__badge {
+      width: 68px;
+      /* 68px 色块按 Figma 的 64 / 139 字号比例缩放，避免窄屏时 SL 与 01 失去对角锚点。 */
+      font-size: 31.3px;
+    }
+
+    .railway-line-hint__names strong {
+      font-size: clamp(24px, 7vw, 32px);
+    }
+
+    .railway-line-hint__names small {
+      font-size: 17px;
+    }
+  }
+</style>

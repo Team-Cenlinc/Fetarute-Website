@@ -2,12 +2,32 @@ import type { Locale } from "@/i18n/config";
 import type { HomeLandingSceneId } from "@/data/home-landing";
 import type { ExternalDestination } from "@/data/site";
 
-/** 首页首个叙事站中的单个说明模块文案。 */
-interface HomeFeatureMessage {
-  /** 信息模块标题。 */
+/** 首页首段章节的可本地化正文。 */
+interface HomeIntroductionMessage {
+  /** 第一章的完整章节标题。 */
   title: string;
-  /** 说明当前技术或内容边界的简短正文。 */
+  /** 在大标题下保留一段可继续扩展的起源与概览正文。 */
   description: string;
+}
+
+/** 开屏小列车 Tooltip 的可本地化信息架构。 */
+interface HomeTrainTooltipMessage {
+  /** 供键盘与触屏触发器使用的操作说明。 */
+  triggerLabel: string;
+  /** Tooltip 的短标题。 */
+  title: string;
+  /** 当前所在地这一栏的标签。 */
+  currentLocationLabel: string;
+  /** 未来快选入口区域的标签。 */
+  nextStopsLabel: string;
+  /** 明确提示这是设计预留，不以空白槽位伪装成可用车站。 */
+  reservedHint: string;
+}
+
+/** 首页开屏抵达画面中不属于铁路数据的界面文案。 */
+interface HomeArrivalMessage {
+  /** 由小列车触发的路线信息提示窗文案。 */
+  trainTooltip: HomeTrainTooltipMessage;
 }
 
 /**
@@ -113,10 +133,10 @@ export interface SiteMessages {
     description: string;
     /** 首屏滚动到第一叙事章时出现的一次性检票遮罩文案。 */
     departure: HomeDepartureMessage;
-    featuresKicker: string;
-    featuresTitle: string;
-    /** 第一站对 Serverlink 与三座子服务器关系的两段说明。 */
-    features: readonly [HomeFeatureMessage, HomeFeatureMessage];
+    /** 开屏紧接着的第一段章节正文。 */
+    introduction: HomeIntroductionMessage;
+    /** 开屏抵达画面中小列车的 Tooltip 文案。 */
+    arrival: HomeArrivalMessage;
     newsKicker: string;
     newsTitle: string;
     joinKicker: string;
@@ -194,20 +214,20 @@ const messages: Record<Locale, SiteMessages> = {
         skipLabel: "直接进入下一站",
         skippedStatus: "已略过检票。下一站：一座被连接起来的世界。",
       },
-      featuresKicker: "01 · SERVERLINK",
-      featuresTitle: "一座被连接起来的世界",
-      features: [
-        {
-          title: "铁路让地点彼此可达",
-          description:
-            "在 Fetarute，铁路不只是景观：它把车站、沿线的建设与留下记忆的人连接成同一座仍在生长的世界。",
+      introduction: {
+        title: "01·Fetarute 的创立与概览",
+        description:
+          "Fetarute 成立于 2017 年。从最初的 QQ 门户群出发，我们以铁路把地点、共同建设与每一次抵达连接起来。",
+      },
+      arrival: {
+        trainTooltip: {
+          triggerLabel: "查看列车位置与下一站快选预留区域",
+          title: "列车导览",
+          currentLocationLabel: "当前位置",
+          nextStopsLabel: "下一站快选",
+          reservedHint: "路线节点将在下一轮设计中开放。",
         },
-        {
-          title: "三处停靠，同一段旅程",
-          description:
-            "三个子服务器由服连快线（Serverlink）连接。接下来的路线会在每一处停靠，讲述它们如何共同构成 Fetarute。",
-        },
-      ],
+      },
       newsKicker: "NEWS",
       newsTitle: "公告内容已经接入集合",
       joinKicker: "JOIN",
@@ -279,20 +299,20 @@ const messages: Record<Locale, SiteMessages> = {
         skipLabel: "直接進入下一站",
         skippedStatus: "已略過檢票。下一站：一座被連接起來的世界。",
       },
-      featuresKicker: "01 · SERVERLINK",
-      featuresTitle: "一座被連接起來的世界",
-      features: [
-        {
-          title: "鐵路讓地點彼此可達",
-          description:
-            "在 Fetarute，鐵路不只是景觀：它把車站、沿線的建設與留下記憶的人連接成同一座仍在生長的世界。",
+      introduction: {
+        title: "01·Fetarute 的創立與概覽",
+        description:
+          "Fetarute 成立於 2017 年。從最初的 QQ 門戶群出發，我們以鐵路把地點、共同建設與每一次抵達連接起來。",
+      },
+      arrival: {
+        trainTooltip: {
+          triggerLabel: "查看列車位置與下一站快選預留區域",
+          title: "列車導覽",
+          currentLocationLabel: "目前位置",
+          nextStopsLabel: "下一站快選",
+          reservedHint: "路線節點將在下一輪設計中開放。",
         },
-        {
-          title: "三處停靠，同一段旅程",
-          description:
-            "三個子伺服器由服連快線（Serverlink）連接。接下來的路線會在每一處停靠，講述它們如何共同構成 Fetarute。",
-        },
-      ],
+      },
       newsKicker: "NEWS",
       newsTitle: "公告內容已接入集合",
       joinKicker: "JOIN",
@@ -366,20 +386,20 @@ const messages: Record<Locale, SiteMessages> = {
         skipLabel: "Enter the next stop",
         skippedStatus: "Validation skipped. Next stop: a world connected together.",
       },
-      featuresKicker: "01 · SERVERLINK",
-      featuresTitle: "A world connected together",
-      features: [
-        {
-          title: "Railways make places reachable",
-          description:
-            "At Fetarute, railways are more than scenery: they connect stations, construction along the way, and the people whose memories made one growing world.",
+      introduction: {
+        title: "01 · Fetarute's origin & overview",
+        description:
+          "Founded in 2017, Fetarute began with a QQ gateway group. Railways connect its places, collective building, and every arrival along the way.",
+      },
+      arrival: {
+        trainTooltip: {
+          triggerLabel: "View the train position and reserved next-stop shortcuts",
+          title: "Train wayfinding",
+          currentLocationLabel: "Current location",
+          nextStopsLabel: "Next-stop shortcuts",
+          reservedHint: "Route stops will be added in the next design pass.",
         },
-        {
-          title: "Three stops, one journey",
-          description:
-            "Three subservers are connected by Serverlink. The route ahead will stop at each one, showing how they form Fetarute together.",
-        },
-      ],
+      },
       newsKicker: "NEWS",
       newsTitle: "News is already connected to a collection",
       joinKicker: "JOIN",

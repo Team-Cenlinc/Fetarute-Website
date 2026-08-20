@@ -1,0 +1,500 @@
+/*
+ * 首页开屏的线路变量由 HomePage 在 SSG 阶段注入。
+ * --home-arrival-line-color 始终引用 railway.ts 的 Serverlink 官方色；
+ * --home-arrival-train-color 是该线路的受控 HSL 偏移；
+ * 弯轨作为 Figma 导出的内联 SVG 渲染，列车控制器直接读取它的实际边界。
+ */
+.home-arrival {
+  /* --home-arrival-track-width 是常规轨道宽；--home-arrival-track-half 与弯轨端点对齐，避免各段中心线错位。 */
+  --home-arrival-track-width: clamp(34px, 3.23vw, 62px);
+  --home-arrival-track-half: clamp(17px, 1.615vw, 31px);
+  /* 列车尺寸保持 Figma 中约 3.2 倍轨宽、1.6 倍轨高的比例，避免窄屏时列车压过导视内容。 */
+  --home-arrival-train-width: clamp(116px, 10.42vw, 200px);
+  --home-arrival-train-height: clamp(58px, 9.26svh, 100px);
+  /* --home-arrival-bend-size 与 --home-arrival-bend-center-inset 保留 Figma SVG 的 249×250 曲线比例和端点位置。 */
+  --home-arrival-bend-size: clamp(162px, 12.97vw, 249px);
+  --home-arrival-bend-center-inset: clamp(20px, 1.615vw, 31px);
+  /* --home-arrival-track-origin-x 是三段主线共用的左侧基准，弯道切点与直轨不再各自维护坐标。 */
+  --home-arrival-track-origin-x: 9.32vw;
+  /* --home-arrival-joint-overlap 仅让矩形轨道压住 SVG 端点 1px，消除子像素抗锯齿造成的留白。 */
+  --home-arrival-joint-overlap: 1px;
+  position: relative;
+  /* 列车是跨车站的 fixed overlay；提升这一隔离层后，进入正文站时不会被后续 section 的底色盖住。 */
+  z-index: 1;
+  display: grid;
+  min-height: 100svh;
+  isolation: isolate;
+  overflow: visible;
+  background: var(--palette-canvas);
+  color: var(--palette-text);
+}
+
+.home-arrival__bend {
+  position: absolute;
+  z-index: 0;
+  top: calc(67.78svh + var(--home-arrival-track-half) - var(--home-arrival-bend-center-inset));
+  left: calc(
+    var(--home-arrival-track-origin-x) + var(--home-arrival-track-half) -
+      var(--home-arrival-bend-center-inset)
+  );
+  width: var(--home-arrival-bend-size);
+  height: var(--home-arrival-bend-size);
+  display: block;
+  color: var(--home-arrival-line-color);
+}
+
+.home-arrival__bend path {
+  stroke: currentColor;
+}
+
+.home-arrival__vertical-track,
+.home-arrival__horizontal-track {
+  position: absolute;
+  z-index: 0;
+  display: block;
+  background: var(--home-arrival-line-color);
+}
+
+.home-arrival__vertical-track {
+  top: calc(
+    67.78svh + var(--home-arrival-track-half) - var(--home-arrival-bend-center-inset) +
+      var(--home-arrival-bend-size) - var(--home-arrival-joint-overlap)
+  );
+  bottom: 0;
+  left: var(--home-arrival-track-origin-x);
+  width: var(--home-arrival-track-width);
+}
+
+.home-arrival__horizontal-track {
+  top: 67.78svh;
+  right: 0;
+  /* 由同一曲线端点推导横轨起点，确保每个 viewport 下都在 Bézier 切点处衔接。 */
+  left: calc(
+    var(--home-arrival-track-origin-x) + var(--home-arrival-track-half) -
+      var(--home-arrival-bend-center-inset) + var(--home-arrival-bend-size) -
+      var(--home-arrival-joint-overlap)
+  );
+  height: var(--home-arrival-track-width);
+}
+
+.home-arrival__copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-self: start;
+  justify-self: stretch;
+  width: 100%;
+  gap: clamp(16px, 1.45vw, 28px);
+  margin-top: 26.48svh;
+  text-align: center;
+}
+
+.home-arrival__copy h1 {
+  margin: 0;
+  justify-self: center;
+  font-size: clamp(76px, 10.42vw, 200px);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 0.98;
+  white-space: nowrap;
+}
+
+.home-arrival__copy p {
+  margin: 0;
+  justify-self: center;
+  font-family: var(--font-fetarute-display), var(--font-fetarute-sans-sc);
+  font-size: clamp(34px, 5.21vw, 100px);
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* 英文首站名较长，缩放字号并略向左让出右侧导视牌，而不是挤压字符。 */
+.home-arrival[data-home-arrival-locale="en"] .home-arrival__copy h1 {
+  font-size: clamp(54px, 5.4vw, 104px);
+  letter-spacing: -0.025em;
+}
+
+.home-arrival[data-home-arrival-locale="en"] .home-arrival__copy {
+  transform: translateX(-4vw);
+}
+
+.home-arrival__route {
+  position: absolute;
+  z-index: 2;
+  /* 相对标题容器保留 Figma 的 47px 垂直差：333 / 1080 - 286 / 1080。 */
+  top: 4.35svh;
+  left: 74.48vw;
+  display: flex;
+  align-items: start;
+  gap: clamp(12px, 0.94vw, 18px);
+}
+
+.home-arrival__train-visual {
+  /* 单一路径承载列车实体：0% 时已在起始锚点候车，进入弯道时自然变形为对应弧段。 */
+  position: fixed;
+  z-index: 18;
+  inset: 0;
+  width: 100vw;
+  height: 100svh;
+  overflow: visible;
+  color: var(--home-arrival-train-color);
+  opacity: 0;
+  pointer-events: none;
+  transition: color 150ms var(--motion-header-standard-effects);
+  visibility: hidden;
+}
+
+.home-arrival__train-visual[data-route-visible="true"] {
+  opacity: 1;
+  visibility: visible;
+}
+
+.home-arrival__train {
+  /* 透明按钮仅负责 Tooltip 和键盘焦点，视觉列车由相邻 SVG 路径统一绘制。 */
+  position: fixed;
+  z-index: 19;
+  top: 0;
+  left: 0;
+  display: block;
+  width: var(--home-arrival-train-width);
+  height: var(--home-arrival-train-height);
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: none;
+  transform: translate3d(var(--home-route-train-x, 0px), var(--home-route-train-y, 0px), 0);
+  visibility: hidden;
+}
+
+.home-arrival__train[data-route-visible="true"] {
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.home-arrival__train:focus-visible {
+  /* 列车本身承担焦点反馈；不再叠加会打断轨道节奏的黑色矩形轮廓。 */
+  outline: none;
+}
+
+/* Hover、键盘焦点与展开状态只把列车向线路蓝紫略偏移，维持扁平导视的连续色带。 */
+.home-arrival:has(.home-arrival__train:hover) .home-arrival__train-visual,
+.home-arrival:has(.home-arrival__train:focus-visible) .home-arrival__train-visual,
+.home-arrival:has(.home-arrival__train[data-tooltip-open="true"]) .home-arrival__train-visual {
+  color: color-mix(in oklch, var(--home-arrival-train-color) 88%, var(--home-arrival-line-color));
+}
+
+.home-arrival__train-tooltip {
+  position: fixed;
+  z-index: 19;
+  top: calc(var(--home-route-train-y, 0px) + clamp(82px, 10.6svh, 118px));
+  left: clamp(
+    20px,
+    calc(var(--home-route-train-x, 0px) + var(--home-arrival-train-width) - 4px),
+    calc(100vw - 312px)
+  );
+  display: grid;
+  width: min(292px, calc(100vw - 40px));
+  gap: 14px;
+  border: 2px solid var(--palette-text);
+  background: var(--palette-canvas);
+  color: var(--palette-text);
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition:
+    opacity 180ms var(--motion-header-standard-effects),
+    transform 180ms var(--motion-header-standard-spatial);
+}
+
+.home-arrival__train-tooltip > p,
+.home-arrival__train-tooltip div,
+.home-arrival__train-tooltip span,
+.home-arrival__train-tooltip small {
+  margin: 0;
+}
+
+.home-arrival__train-tooltip > p,
+.home-arrival__train-tooltip div > span:first-child {
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.home-arrival__train-tooltip > div {
+  display: grid;
+  gap: 5px;
+}
+
+.home-arrival__train-tooltip strong {
+  font-size: 23px;
+  letter-spacing: -0.055em;
+  line-height: 1.05;
+}
+
+.home-arrival__train-tooltip-next {
+  border-top: 1px solid color-mix(in srgb, var(--palette-text) 32%, transparent);
+  padding-top: 12px;
+}
+
+.home-arrival__train-tooltip-slots {
+  display: flex;
+  gap: 6px;
+}
+
+.home-arrival__train-tooltip-slots i {
+  display: block;
+  width: 28px;
+  height: 7px;
+  background: var(--home-arrival-line-color);
+}
+
+.home-arrival__train-tooltip small {
+  color: color-mix(in srgb, var(--palette-text) 64%, transparent);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.home-arrival__train[data-route-visible="true"][data-tooltip-open="true"]
+  + .home-arrival__train-tooltip {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.home-introduction {
+  /* --home-introduction-line-color 由本页的铁路数据注入，确保正文轨道和到达页使用同一官方线路色。 */
+  --home-introduction-track-width: clamp(34px, 3.23vw, 62px);
+  /* --home-introduction-track-origin-x 是主轨与站标共用的横向起点，轨宽封顶后仍能无缝相接。 */
+  --home-introduction-track-origin-x: 9.32vw;
+  /* 标题与 station mark 取同一行盒中心，避免不同 viewport 下站标向下漂移。 */
+  --home-introduction-copy-top: 4.63svh;
+  --home-introduction-title-line-half: clamp(24.51px, 2.85vw, 54.72px);
+  --home-introduction-track-half: clamp(17px, 1.615vw, 31px);
+  position: relative;
+  /* 正文作为独立低层画布，让跨站列车与 Tooltip 能完整覆盖其上的文字。 */
+  z-index: 0;
+  display: grid;
+  min-height: 100svh;
+  align-items: start;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--palette-canvas);
+  color: var(--palette-text);
+}
+
+.home-introduction__track,
+.home-introduction__branch {
+  position: absolute;
+  display: block;
+  background: var(--home-introduction-line-color);
+}
+
+.home-introduction__track {
+  top: 0;
+  bottom: 0;
+  left: var(--home-introduction-track-origin-x);
+  width: var(--home-introduction-track-width);
+}
+
+.home-introduction__branch {
+  /* 站标左缘直接贴住竖轨右缘，标题行盒中心决定其垂直坐标。 */
+  top: calc(
+    var(--home-introduction-copy-top) + var(--home-introduction-title-line-half) -
+      var(--home-introduction-track-half)
+  );
+  left: calc(var(--home-introduction-track-origin-x) + var(--home-introduction-track-width));
+  width: var(--home-introduction-track-width);
+  height: var(--home-introduction-track-width);
+}
+
+.home-introduction__copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: clamp(16px, 1.75vw, 34px);
+  margin-top: var(--home-introduction-copy-top);
+  margin-left: 17.76vw;
+  padding-right: clamp(24px, 6vw, 120px);
+}
+
+.home-introduction__copy h2 {
+  max-width: 1200px;
+  margin: 0;
+  font-size: clamp(43px, 5vw, 96px);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.14;
+}
+
+.home-introduction__copy p {
+  max-width: 760px;
+  margin: 0;
+  font-size: clamp(20px, 2.5vw, 48px);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
+@media (max-width: 1100px) and (min-width: 761px) {
+  .home-arrival__route {
+    left: auto;
+    right: clamp(24px, 4vw, 48px);
+  }
+}
+
+@media (max-width: 760px) {
+  .home-arrival {
+    /*
+     * 249:62 是 Figma 弯轨 viewBox 与描边宽的固定比例；弯道尺寸必须按此缩放，
+     * 否则 SVG 自带描边会比相邻矩形轨道更粗，并让两个端点偏离中心线。
+     */
+    --home-arrival-track-width: clamp(20px, 5.8vw, 30px);
+    --home-arrival-track-half: clamp(10px, 2.9vw, 15px);
+    --home-arrival-bend-size: clamp(80px, 23.3vw, 120px);
+    --home-arrival-bend-center-inset: var(--home-arrival-track-half);
+    /* 窄屏主线左基准仍由同一变量驱动，曲线、横轨与正文竖轨共用这一坐标。 */
+    --home-arrival-track-origin-x: 7vw;
+    --home-arrival-train-width: clamp(72px, 18vw, 100px);
+    --home-arrival-train-height: clamp(40px, 10vw, 48px);
+    min-height: max(680px, 100svh);
+  }
+
+  .home-arrival__copy {
+    width: min(100% - 32px, 620px);
+    /* 窄屏恢复居中网格锚点，使站名与其下方线路导视同处 viewport 中轴。 */
+    justify-self: center;
+    margin-top: 25svh;
+  }
+
+  .home-arrival__copy h1 {
+    max-width: 100%;
+    font-size: clamp(58px, 17vw, 98px);
+    white-space: normal;
+  }
+
+  .home-arrival[data-home-arrival-locale="en"] .home-arrival__copy h1 {
+    font-size: clamp(38px, 10.5vw, 58px);
+    line-height: 1.04;
+  }
+
+  .home-arrival[data-home-arrival-locale="en"] .home-arrival__copy {
+    transform: none;
+  }
+
+  .home-arrival__copy p {
+    max-width: 100%;
+    font-size: clamp(25px, 8vw, 42px);
+    white-space: normal;
+  }
+
+  .home-arrival__route {
+    position: static;
+    justify-self: center;
+    margin-top: clamp(4px, 0.93svh, 10px);
+  }
+
+  .home-arrival__horizontal-track {
+    top: 77svh;
+  }
+
+  .home-arrival__vertical-track {
+    top: calc(
+      77svh + var(--home-arrival-track-half) - var(--home-arrival-bend-center-inset) +
+        var(--home-arrival-bend-size) - var(--home-arrival-joint-overlap)
+    );
+  }
+
+  .home-arrival__bend {
+    top: calc(77svh + var(--home-arrival-track-half) - var(--home-arrival-bend-center-inset));
+    width: var(--home-arrival-bend-size);
+    height: var(--home-arrival-bend-size);
+  }
+
+  .home-arrival__train {
+    width: var(--home-arrival-train-width);
+    height: var(--home-arrival-train-height);
+  }
+
+  .home-arrival__train-tooltip {
+    left: clamp(
+      20px,
+      calc(var(--home-route-train-x, 0px) + var(--home-arrival-train-width) - 4px),
+      calc(100vw - 312px)
+    );
+  }
+
+  /* 列车驶入正文竖轨后，优先占用标题上方的留白，避免 Toolip 与正文标题发生层叠。 */
+  .home-arrival__train[data-route-segment="introduction"] + .home-arrival__train-tooltip {
+    top: max(84px, calc(var(--home-route-train-y, 0px) - 208px));
+    right: 20px;
+    left: auto;
+  }
+
+  .home-introduction {
+    /* 正文 station mark 与到达页采用同一窄屏轨宽比例，避免视觉上突然增粗。 */
+    --home-introduction-track-width: clamp(20px, 5.8vw, 30px);
+    /* 窄屏沿用到达页的 7vw 主线起点，并改以单行标题盒为 station mark 对齐基准。 */
+    --home-introduction-track-origin-x: 7vw;
+    --home-introduction-copy-top: 20svh;
+    --home-introduction-title-line-half: clamp(19.38px, 6.27vw, 24.51px);
+    --home-introduction-track-half: clamp(10px, 2.9vw, 15px);
+    min-height: max(680px, 100svh);
+  }
+
+  .home-introduction__track {
+    left: var(--home-introduction-track-origin-x);
+  }
+
+  .home-introduction__branch {
+    /* 继承共同轨道与标题行盒公式，避免小屏重新出现断线或纵向错位。 */
+    top: calc(
+      var(--home-introduction-copy-top) + var(--home-introduction-title-line-half) -
+        var(--home-introduction-track-half)
+    );
+    left: calc(var(--home-introduction-track-origin-x) + var(--home-introduction-track-width));
+  }
+
+  .home-introduction__copy {
+    /* 保留 branch 右缘后的导视留白，避免小屏的站名编号压到 station mark。 */
+    margin-top: var(--home-introduction-copy-top);
+    margin-left: calc(
+      var(--home-introduction-track-origin-x) + var(--home-introduction-track-width) +
+        var(--home-introduction-track-width) + clamp(8px, 2vw, 16px)
+    );
+    padding-right: 24px;
+  }
+
+  .home-introduction__copy h2 {
+    /* 43px 上限可让「的創立與概覽」等六字尾段保持完整，避免繁中末字孤行。 */
+    font-size: clamp(34px, 11vw, 43px);
+  }
+
+  .home-introduction__copy p {
+    font-size: clamp(19px, 5vw, 28px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 静态列车改以到站 section 为坐标系，随文档自然离开视窗而不再跟随 scroll 驱动位移。 */
+  .home-arrival__train-visual,
+  .home-arrival__train,
+  .home-arrival__train-tooltip {
+    position: absolute;
+  }
+
+  .home-arrival__train-visual {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* 减少动态保留颜色反馈与 Tooltip 内容，但取消过渡与 scroll 驱动的列车运动。 */
+  .home-arrival__train-visual,
+  .home-arrival__train,
+  .home-arrival__train-tooltip {
+    transition: none;
+  }
+}

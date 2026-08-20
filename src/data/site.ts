@@ -1,5 +1,10 @@
 // 配置文件会在 Astro 启动前由 Node 直接读取 site.ts，因此这里使用相对路径避免配置加载阶段没有 Vite 别名解析器。
-import { getRailwayLineKey, railwayLines, type RailwayLineKey } from "./railway";
+import {
+  getRailwayLineKey,
+  railwayLines,
+  type RailwayLineColorShift,
+  type RailwayLineKey,
+} from "./railway";
 
 /**
  * 官网基础信息的单一数据源。
@@ -64,8 +69,25 @@ export interface ExternalDestinationMenu {
 export interface WayfindingPrototype {
   /** 首页主视觉使用的正式线路复合身份键；开屏动画另从全网车站库随机取站。 */
   homeLineKey: RailwayLineKey;
+  /** 开屏抵达画面中的叙事站名；它是页面文案而不是铁路站序数据，避免误报为一座已录入车站。 */
+  homeArrivalStop: HomeArrivalStop;
+  /** 小列车由 homeLineKey 的官方色派生时采用的固定 HSL 偏移，保证它始终属于同一条线路。 */
+  homeTrainColorShift: RailwayLineColorShift;
   /** 首页导视牌的装饰性轨网信号配置；只营造网络活力，不表示首页归属某条真实线路。 */
   homeNavigationSignal: HomeNavigationSignal;
+}
+
+/**
+ * 首页开屏的叙事性抵达站。
+ * 该站只承担首页开场的空间感，尚不进入可查询的铁路车站库或编造未确认的线路站序。
+ */
+export interface HomeArrivalStop {
+  /** 简体中文页面中作为主站名展示的名称。 */
+  simplifiedChineseName: string;
+  /** 繁体中文页面中作为主站名展示的名称。 */
+  traditionalChineseName: string;
+  /** 英文页面中作为主站名展示的名称。 */
+  englishName: string;
 }
 
 /**
@@ -124,10 +146,20 @@ const homeNavigationSignalLineKeys: readonly RailwayLineKey[] = railwayLines
 
 /**
  * 首页首轮导视展示配置。
- * 蒲塘桥场景暂位于大都会线，主视觉只引用已确认的真实线路；启动序列则从全网已录入车站随机取站。
+ * 开屏以服联快线作为抵达导视；启动序列仍从全网已录入车站随机取站，不把叙事站误写进真实站序。
  */
 export const wayfindingPrototype: WayfindingPrototype = {
-  homeLineKey: getRailwayLineKey("SURC", "MT"),
+  homeLineKey: getRailwayLineKey("FTA", "SL"),
+  homeArrivalStop: {
+    simplifiedChineseName: "启始湾",
+    traditionalChineseName: "啟始灣",
+    englishName: "The Beginning Bay",
+  },
+  homeTrainColorShift: {
+    hueDegrees: -31,
+    saturationPoints: -7,
+    lightnessPoints: 23,
+  },
   homeNavigationSignal: {
     lineKeys: homeNavigationSignalLineKeys,
     doubleLineProbability: 0.5,

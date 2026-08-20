@@ -1,8 +1,15 @@
 ---
 import { getImage } from "astro:assets";
 import DepartureGate from "@/components/DepartureGate.astro";
+import RailwayLineHint from "@/components/RailwayLineHint.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import "@/styles/home.css";
+// 保持 Figma 导出的原始 Bézier 作为内联 SVG，使可见弯轨与列车采样的几何完全一致。
+import ServerlinkBend from "@/assets/pages/home/serverlink-bend.svg";
 import { homeLandingScenes } from "@/data/home-landing";
+import { getRailwayLineCssVariableName } from "@/data/palette";
+import { railwayLineByKey, shiftRailwayLineColor } from "@/data/railway";
+import { wayfindingPrototype } from "@/data/site";
 import { getLocalizedNews } from "@/i18n/content";
 import { localeMetadata, type Locale } from "@/i18n/config";
 import { getMessages } from "@/i18n/messages";
@@ -51,6 +58,26 @@ const defaultLandingScene = landingSceneImages[0];
 if (!defaultLandingScene) {
   throw new Error("首页至少需要登记一张可用的到站实景。");
 }
+
+const homeLine = railwayLineByKey.get(wayfindingPrototype.homeLineKey);
+
+if (!homeLine) {
+  throw new Error(`首页开屏引用了未录入的线路 ${wayfindingPrototype.homeLineKey}。`);
+}
+
+const homeLineCssVariable = getRailwayLineCssVariableName(homeLine);
+const homeTrainColor = shiftRailwayLineColor(homeLine.color, wayfindingPrototype.homeTrainColorShift);
+const homeArrivalStop = wayfindingPrototype.homeArrivalStop;
+/** 英语页面应让英文站名承担视觉主标题，中文回退为官方副站名；中文页面则保持对应字形为主。 */
+const [homeArrivalPrimaryName, homeArrivalSecondaryName] =
+  locale === "en"
+    ? [homeArrivalStop.englishName, homeArrivalStop.simplifiedChineseName]
+    : locale === "zh-Hant"
+      ? [homeArrivalStop.traditionalChineseName, homeArrivalStop.englishName]
+      : [homeArrivalStop.simplifiedChineseName, homeArrivalStop.englishName];
+/** 线路导视跟随当前阅读语言切换主副名称，避免英文画面仍被中文大字主导。 */
+const [homeLinePrimaryName, homeLineSecondaryName] =
+  locale === "en" ? [homeLine.secondaryName, homeLine.primaryName] : [homeLine.primaryName, homeLine.secondaryName];
 ---
 
 <BaseLayout locale={locale} description={messages.description} showLaunchSequence fullBleedMain>
@@ -124,25 +151,361 @@ if (!defaultLandingScene) {
   <!-- 出发跑道先承接首屏余量；它与遮罩同底色，确保验票结束前不会提前露出第一叙事站。 -->
   <div class="departure-gate-sentinel" data-departure-gate-sentinel aria-hidden="true"></div>
 
-  <section class="content-section connection-section" id="features" aria-labelledby="features-title">
-    <div class="station-boundary" aria-hidden="true">
-      <span class="station-boundary__index">01</span>
-      <span class="station-boundary__line"></span>
-      <span class="station-boundary__name">SERVERLINK</span>
+  <section
+    class="home-arrival"
+    data-home-arrival-route
+    data-home-arrival-locale={locale}
+    aria-labelledby="home-arrival-title"
+    style={`--home-arrival-line-color: var(${homeLineCssVariable}); --home-arrival-train-color: ${homeTrainColor};`}
+  >
+    <span class="home-arrival__vertical-track" data-home-arrival-vertical-track aria-hidden="true"></span>
+    <ServerlinkBend class="home-arrival__bend" data-home-arrival-bend aria-hidden="true" />
+    <span class="home-arrival__horizontal-track" data-home-arrival-horizontal aria-hidden="true"></span>
+    <div class="home-arrival__copy">
+      <h1 id="home-arrival-title">{homeArrivalPrimaryName}</h1>
+      <p>{homeArrivalSecondaryName}</p>
+      <RailwayLineHint
+        class="home-arrival__route"
+        lineColor={`var(${homeLineCssVariable})`}
+        lineCode={homeLine.code}
+        sequence="01"
+        primaryName={homeLinePrimaryName}
+        secondaryName={homeLineSecondaryName}
+        isEnglishPrimary={locale === "en"}
+      />
     </div>
-    <div class="section-heading">
-      <p class="section-label">{messages.home.featuresKicker}</p>
-      <h2 id="features-title">{messages.home.featuresTitle}</h2>
-    </div>
-    <div class="connection-copy">
-      {
-        messages.home.features.map((feature) => (
-          <article>
-            <h3>{feature.title}</h3>
-            <p>{feature.description}</p>
-          </article>
-        ))
-      }
+    <!-- 单一 SVG 列车段同时覆盖直轨和弯轨，列车进入弯道时自然弯曲而不会切换元素。 -->
+    <svg class="home-arrival__train-visual" data-home-arrival-train-visual aria-hidden="true">
+      <path data-home-arrival-train-visual-path fill="none" stroke="currentColor" stroke-linecap="butt" />
+    </svg>
+    <button
+      class="home-arrival__train"
+      data-home-arrival-train
+      type="button"
+      aria-label={messages.home.arrival.trainTooltip.triggerLabel}
+      aria-controls="home-arrival-train-tooltip"
+      aria-expanded="false"
+      disabled
+    ></button>
+    <aside class="home-arrival__train-tooltip" id="home-arrival-train-tooltip" role="tooltip" aria-hidden="true">
+      <p>{messages.home.arrival.trainTooltip.title}</p>
+      <div>
+        <span>{messages.home.arrival.trainTooltip.currentLocationLabel}</span>
+        <strong>{homeArrivalPrimaryName}</strong>
+      </div>
+      <div class="home-arrival__train-tooltip-next">
+        <span>{messages.home.arrival.trainTooltip.nextStopsLabel}</span>
+        <span class="home-arrival__train-tooltip-slots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <small>{messages.home.arrival.trainTooltip.reservedHint}</small>
+      </div>
+    </aside>
+  </section>
+
+  <script>
+    const homeArrivalTrain = document.querySelector<HTMLButtonElement>("[data-home-arrival-train]");
+    const homeArrivalRoute = document.querySelector<HTMLElement>("[data-home-arrival-route]");
+    const homeArrivalHorizontal = document.querySelector<HTMLElement>("[data-home-arrival-horizontal]");
+    const homeArrivalVertical = document.querySelector<HTMLElement>("[data-home-arrival-vertical-track]");
+    const homeArrivalBend = document.querySelector<HTMLElement>("[data-home-arrival-bend]");
+    const homeArrivalTrainVisual = document.querySelector<SVGSVGElement>("[data-home-arrival-train-visual]");
+    const homeArrivalTrainVisualPath = document.querySelector<SVGPathElement>(
+      "[data-home-arrival-train-visual-path]",
+    );
+    const homeIntroductionRoute = document.querySelector<HTMLElement>("[data-home-introduction-route]");
+    const homeIntroductionTrack = document.querySelector<HTMLElement>("[data-home-introduction-track]");
+    const homeArrivalTrainTooltip = document.querySelector<HTMLElement>("#home-arrival-train-tooltip");
+
+    if (
+      homeArrivalTrain &&
+      homeArrivalRoute &&
+      homeArrivalHorizontal &&
+      homeArrivalVertical &&
+      homeArrivalBend &&
+      homeArrivalTrainVisual &&
+      homeArrivalTrainVisualPath &&
+      homeIntroductionRoute &&
+      homeIntroductionTrack &&
+      homeArrivalTrainTooltip
+    ) {
+      /** 将一条数值限制在页面进度范围，避免 overscroll 时列车离开已绘制的线路。 */
+      const clampRouteProgress = (value: number) => Math.min(Math.max(value, 0), 1);
+      /** 让轨道锚点之间的过渡保留连续速度，而不是按离散 scroll 事件跳格。 */
+      const interpolateRoutePosition = (start: number, end: number, progress: number) =>
+        start + (end - start) * progress;
+      /** 从相对视口坐标获得稳定的文档坐标；两段正文的边界会随字体和内容增长自动更新。 */
+      const getDocumentTop = (element: HTMLElement) => element.getBoundingClientRect().top + window.scrollY;
+      /** 减少动态时保留轨道关系，但列车不再随滚动更新位置。 */
+      const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+      let pendingRouteFrame: number | undefined;
+
+      /**
+       * 为减少动态偏好提供一个附着在到站横轨右端的静态列车。
+       * SVG、透明触发器与 Tooltip 一起改用到站 section 的局部坐标，滚动页面不会让它们产生位移动画。
+       */
+      const renderReducedMotionTrain = () => {
+        const arrivalBounds = homeArrivalRoute.getBoundingClientRect();
+        const horizontalBounds = homeArrivalHorizontal.getBoundingClientRect();
+        const trainWidth = homeArrivalTrain.offsetWidth;
+        const trainHeight = homeArrivalTrain.offsetHeight;
+        const staticEndX = horizontalBounds.right - arrivalBounds.left;
+        const staticCenterY = horizontalBounds.top + horizontalBounds.height / 2 - arrivalBounds.top;
+
+        homeArrivalTrainVisualPath.setAttribute(
+          "d",
+          `M${staticEndX} ${staticCenterY} H${staticEndX - trainWidth}`,
+        );
+        homeArrivalTrainVisualPath.setAttribute("stroke-width", String(trainHeight));
+        homeArrivalTrainVisualPath.setAttribute("stroke-dasharray", `${trainWidth} ${trainWidth}`);
+        homeArrivalTrainVisualPath.setAttribute("stroke-dashoffset", "0");
+        homeArrivalRoute.style.setProperty("--home-route-train-x", `${staticEndX - trainWidth}px`);
+        homeArrivalRoute.style.setProperty("--home-route-train-y", `${staticCenterY - trainHeight / 2}px`);
+        homeArrivalTrain.dataset.routeVisible = "true";
+        homeArrivalTrainVisual.dataset.routeVisible = "true";
+        homeArrivalTrain.dataset.routeSegment = "static";
+        homeArrivalTrain.disabled = false;
+      };
+
+      /**
+       * 将列车作为 fixed overlay 贴到真实轨道的当前 viewport 位置。
+       * 前段沿横轨行进，中段取自 Figma 弯轨的 Bézier，后段与下一节垂直轨道共同向下推进。
+       */
+      const updateRouteTrain = () => {
+        pendingRouteFrame = undefined;
+
+        if (reducedMotionQuery.matches) {
+          renderReducedMotionTrain();
+          return;
+        }
+
+        const arrivalTop = getDocumentTop(homeArrivalRoute);
+        const introductionTop = getDocumentTop(homeIntroductionRoute);
+        const introductionBottom = introductionTop + homeIntroductionRoute.offsetHeight;
+        // 曲线结束后先完整驶过站页之间的竖直过渡段，再进入下一节的竖轨。
+        const curveEndProgress = 0.4;
+        const introductionTrackStartProgress = 0.48;
+        // 第二张 Figma 画面中，正文刚顶到视窗时列车位于竖轨中段；以该位置反推整段滚动行程。
+        const introductionStartRouteProgress =
+          introductionTrackStartProgress + (1 - introductionTrackStartProgress) / 2;
+        // 到达画面与正文站使用不同的滚动比例：进入正文时仍精确落在 Figma 规定的竖轨中段，
+        // 随后才用正文的完整高度驶向底端，避免列车在正文读到一半时提前消失。
+        const arrivalJourneyLength = Math.max(1, introductionTop - arrivalTop);
+        const introductionJourneyLength = Math.max(1, introductionBottom - introductionTop);
+        const rawProgress =
+          window.scrollY <= introductionTop
+            ? ((window.scrollY - arrivalTop) / arrivalJourneyLength) * introductionStartRouteProgress
+            : introductionStartRouteProgress +
+              ((window.scrollY - introductionTop) / introductionJourneyLength) *
+                (1 - introductionStartRouteProgress);
+        const horizontalBounds = homeArrivalHorizontal.getBoundingClientRect();
+        // ready 状态只允许在横轨真实进入视口时出现，避免列车先于线路悬在首屏实景上。
+        const isReadyTrackVisible =
+          horizontalBounds.bottom > 0 && horizontalBounds.top < window.innerHeight;
+        const isRouteActive = rawProgress >= 0 && rawProgress <= 1;
+        // 到站段内保持完整主线；到站前仅在可见横轨的右端候车，离开正文轨道后才收束 overlay。
+        const isRoutePrepared = isRouteActive || (rawProgress < 0 && isReadyTrackVisible);
+
+        homeArrivalTrain.dataset.routeVisible = String(isRouteActive);
+        homeArrivalTrainVisual.dataset.routeVisible = String(isRoutePrepared);
+        homeArrivalTrain.disabled = !isRouteActive;
+
+        if (!isRouteActive) {
+          homeArrivalTrain.dataset.tooltipOpen = "false";
+          homeArrivalTrain.setAttribute("aria-expanded", "false");
+          homeArrivalTrainTooltip.setAttribute("aria-hidden", "true");
+        }
+
+        if (!isRoutePrepared) {
+          homeArrivalTrain.dataset.routeSegment = "off";
+          return;
+        }
+
+        const progress = clampRouteProgress(rawProgress);
+        const trainWidth = homeArrivalTrain.offsetWidth;
+        const trainHeight = homeArrivalTrain.offsetHeight;
+        if (rawProgress < 0) {
+          // 候车列车直接取可见横轨的实时中心线，随线路从视口边缘一起进入而不会悬浮在首屏上。
+          const readyCenterY = horizontalBounds.top + horizontalBounds.height / 2;
+          // 从横向线段的右侧终点候车；路径向左书写，因此虚线段的右缘会与终点严格贴齐。
+          const readyPathStartX = window.innerWidth;
+          homeArrivalTrainVisualPath.setAttribute(
+            "d",
+            `M${readyPathStartX} ${readyCenterY} H${readyPathStartX - trainWidth}`,
+          );
+          homeArrivalTrainVisualPath.setAttribute("stroke-width", String(trainHeight));
+          homeArrivalTrainVisualPath.setAttribute("stroke-dasharray", `${trainWidth} ${trainWidth}`);
+          homeArrivalTrainVisualPath.setAttribute("stroke-dashoffset", "0");
+          homeArrivalRoute.style.setProperty("--home-route-train-x", `${readyPathStartX - trainWidth}px`);
+          homeArrivalRoute.style.setProperty("--home-route-train-y", `${readyCenterY - trainHeight / 2}px`);
+          homeArrivalTrain.dataset.routeSegment = "ready";
+          return;
+        }
+
+        const verticalBounds = homeArrivalVertical.getBoundingClientRect();
+        const bendBounds = homeArrivalBend.getBoundingClientRect();
+        const introductionTrackBounds = homeIntroductionTrack.getBoundingClientRect();
+        const bendPath = homeArrivalBend.querySelector<SVGPathElement>("path");
+
+        if (!bendPath) {
+          return;
+        }
+
+        const horizontalY = horizontalBounds.top + horizontalBounds.height / 2;
+        const curveStartX = bendBounds.right;
+        const curveStartY = bendBounds.top + bendBounds.height * (31 / 250);
+        const curveEndX = bendBounds.left + bendBounds.width * (31 / 249);
+        const curveEndY = bendBounds.bottom;
+        const verticalEndX = verticalBounds.left + verticalBounds.width / 2;
+        const verticalEndY = verticalBounds.bottom;
+        const introductionEndX = introductionTrackBounds.left + introductionTrackBounds.width / 2;
+        const introductionEndY = introductionTrackBounds.bottom;
+        // 从横向轨道右端驶入；path 从右向左书写，0% 时浅蓝列车的右缘正好贴齐终点。
+        const pathStartX = horizontalBounds.right;
+        const pathStartY = horizontalY;
+        const pathData = [
+          `M${pathStartX} ${pathStartY}`,
+          `L${curveStartX} ${curveStartY}`,
+          `C${bendBounds.left + bendBounds.width * (86 / 249)} ${curveStartY} ${curveEndX} ${
+            bendBounds.top + bendBounds.height * (109.5 / 250)
+          } ${curveEndX} ${curveEndY}`,
+          `L${verticalEndX} ${verticalEndY}`,
+          `L${introductionEndX} ${introductionEndY}`,
+        ].join(" ");
+        homeArrivalTrainVisualPath.setAttribute("d", pathData);
+        homeArrivalTrainVisualPath.setAttribute("stroke-width", String(trainHeight));
+
+        const horizontalLength = Math.hypot(curveStartX - pathStartX, curveStartY - pathStartY);
+        const curveLength = bendPath.getTotalLength() * (bendBounds.width / 249);
+        const verticalLength = Math.hypot(verticalEndX - curveEndX, verticalEndY - curveEndY);
+        const introductionLength = Math.hypot(
+          introductionEndX - verticalEndX,
+          introductionEndY - verticalEndY,
+        );
+        const journeyLength = horizontalLength + curveLength + verticalLength + introductionLength;
+        const horizontalTrainEntryLength = Math.max(0, horizontalLength - trainWidth);
+        let trainTailDistance: number;
+
+        if (progress < 0.15) {
+          homeArrivalTrain.dataset.routeSegment = "horizontal";
+          const segmentProgress = progress / 0.15;
+          trainTailDistance = interpolateRoutePosition(0, horizontalTrainEntryLength, segmentProgress);
+        } else if (progress < curveEndProgress) {
+          homeArrivalTrain.dataset.routeSegment = "curve";
+          const segmentProgress = (progress - 0.15) / (curveEndProgress - 0.15);
+          trainTailDistance = horizontalTrainEntryLength + curveLength * segmentProgress;
+        } else if (progress < introductionTrackStartProgress) {
+          homeArrivalTrain.dataset.routeSegment = "vertical";
+          const segmentProgress =
+            (progress - curveEndProgress) / (introductionTrackStartProgress - curveEndProgress);
+          trainTailDistance = horizontalTrainEntryLength + curveLength + verticalLength * segmentProgress;
+        } else {
+          homeArrivalTrain.dataset.routeSegment = "introduction";
+          const segmentProgress =
+            (progress - introductionTrackStartProgress) / (1 - introductionTrackStartProgress);
+          trainTailDistance =
+            horizontalTrainEntryLength + curveLength + verticalLength + introductionLength * segmentProgress;
+        }
+
+        const maxTrainTailDistance = Math.max(0, journeyLength - trainWidth);
+        const clampedTrainTailDistance = Math.min(trainTailDistance, maxTrainTailDistance);
+        homeArrivalTrainVisualPath.setAttribute(
+          "stroke-dasharray",
+          `${trainWidth} ${Math.max(1, journeyLength)}`,
+        );
+        homeArrivalTrainVisualPath.setAttribute("stroke-dashoffset", String(-clampedTrainTailDistance));
+
+        // Tooltip 继续以列车中点为锚；视觉列车本身由单一路径负责，不再有直轨/弯轨的跳变。
+        const trainCenter = homeArrivalTrainVisualPath.getPointAtLength(
+          Math.min(journeyLength, clampedTrainTailDistance + trainWidth / 2),
+        );
+        homeArrivalRoute.style.setProperty("--home-route-train-x", `${trainCenter.x - trainWidth / 2}px`);
+        homeArrivalRoute.style.setProperty("--home-route-train-y", `${trainCenter.y - trainHeight / 2}px`);
+
+        if (!isRouteActive) {
+          homeArrivalTrain.dataset.routeSegment = "ready";
+        }
+      };
+
+      /** 将高频滚动事件收束到下一帧，保证 overlay 与页面滚动在同一绘制节拍更新。 */
+      const requestRouteTrainUpdate = () => {
+        if (pendingRouteFrame === undefined) {
+          pendingRouteFrame = window.requestAnimationFrame(updateRouteTrain);
+        }
+      };
+
+      /** 让鼠标、键盘与触屏共用同一个 Tooltip 状态，视觉与辅助技术不会在一次点击后分叉。 */
+      const setTrainTooltipOpen = (isOpen: boolean) => {
+        homeArrivalTrain.dataset.tooltipOpen = String(isOpen);
+        homeArrivalTrain.setAttribute("aria-expanded", String(isOpen));
+        homeArrivalTrainTooltip.setAttribute("aria-hidden", String(!isOpen));
+      };
+      /** 细指针以悬停预览 Tooltip；粗指针则保留点击开关，避免触屏首点被 focus 事件反向关闭。 */
+      const fineHoverQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
+      let pendingTouchTooltipOpen: boolean | undefined;
+
+      homeArrivalTrain.addEventListener("pointerenter", () => {
+        if (fineHoverQuery.matches) {
+          setTrainTooltipOpen(true);
+        }
+      });
+      homeArrivalTrain.addEventListener("pointerleave", () => {
+        if (fineHoverQuery.matches) {
+          setTrainTooltipOpen(false);
+        }
+      });
+      homeArrivalTrain.addEventListener("focus", () => setTrainTooltipOpen(true));
+      homeArrivalTrain.addEventListener("blur", () => setTrainTooltipOpen(false));
+      homeArrivalTrain.addEventListener("pointerdown", (event) => {
+        pendingTouchTooltipOpen =
+          event.pointerType === "touch" ? homeArrivalTrain.dataset.tooltipOpen !== "true" : undefined;
+      });
+      homeArrivalTrain.addEventListener("click", () => {
+        if (pendingTouchTooltipOpen !== undefined) {
+          setTrainTooltipOpen(pendingTouchTooltipOpen);
+          pendingTouchTooltipOpen = undefined;
+          return;
+        }
+
+        setTrainTooltipOpen(true);
+      });
+
+      homeArrivalTrain.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          setTrainTooltipOpen(false);
+          homeArrivalTrain.blur();
+        }
+      });
+
+      window.addEventListener(
+        "scroll",
+        () => {
+          if (reducedMotionQuery.matches) {
+            return;
+          }
+
+          // 滚动后重新定位列车时收起卡片，避免悬浮信息与已离开的列车位置脱节。
+          setTrainTooltipOpen(false);
+          requestRouteTrainUpdate();
+        },
+        { passive: true },
+      );
+      window.addEventListener("resize", requestRouteTrainUpdate);
+      reducedMotionQuery.addEventListener("change", requestRouteTrainUpdate);
+      requestRouteTrainUpdate();
+    }
+  </script>
+
+  <section
+    class="home-introduction"
+    data-home-introduction-route
+    id="features"
+    aria-labelledby="home-introduction-title"
+    style={`--home-introduction-line-color: var(${homeLineCssVariable});`}
+  >
+    <span class="home-introduction__track" data-home-introduction-track aria-hidden="true"></span>
+    <span class="home-introduction__branch" aria-hidden="true"></span>
+    <div class="home-introduction__copy">
+      <h2 id="home-introduction-title">{messages.home.introduction.title}</h2>
+      <p>{messages.home.introduction.description}</p>
     </div>
   </section>
 

@@ -164,6 +164,8 @@ main {
 
 /* 首页到站画面贴齐视口，后续内容区仍由各自的最大宽度约束阅读行长。 */
 main.main--full-bleed {
+  /* 首页各段由连续轨道串联，因此取消通用页面的章间距。 */
+  gap: 0;
   padding: 0 0 80px;
 }
 
@@ -1167,6 +1169,11 @@ h3 {
   margin-block: -88px;
   background: var(--color-background);
   pointer-events: none;
+}
+
+/* 全宽首页没有章节间距，检票跑道不再需要用负外边距抵消通用 gap。 */
+main.main--full-bleed .departure-gate-sentinel {
+  margin-block: 0;
 }
 
 .departure-gate-sentinel[data-departure-gate-runway="complete"] {

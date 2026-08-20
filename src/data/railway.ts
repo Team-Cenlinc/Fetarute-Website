@@ -21,6 +21,82 @@ export function createHexColor(value: string): HexColor {
 }
 
 /**
+ * 基于既有线路色生成附属导视色的 HSL 偏移量。
+ * 偏移只描述色相、饱和度和明度的相对变化，避免列车、焦点或高亮色在页面组件中重新写入独立色值。
+ */
+export interface RailwayLineColorShift {
+  /** HSL 色相的增减角度；正值顺时针旋转，负值逆时针旋转。 */
+  hueDegrees: number;
+  /** HSL 饱和度的百分点增减。 */
+  saturationPoints: number;
+  /** HSL 明度的百分点增减。 */
+  lightnessPoints: number;
+}
+
+/** 将数值限制在一个闭区间内，确保色彩偏移不会生成无效的 HSL 通道。 */
+function clampColorChannel(value: number, minimum: number, maximum: number): number {
+  return Math.min(Math.max(value, minimum), maximum);
+}
+
+/**
+ * 从官方线路色派生一个可读的附属色。
+ * 首屏列车以同一条线路为色彩来源，只做受控 HSL 偏移；未来线路替换时不会遗留旧的矩形列车色。
+ */
+export function shiftRailwayLineColor(color: HexColor, shift: RailwayLineColorShift): HexColor {
+  const [red, green, blue] = [1, 3, 5].map(
+    (offset) => Number.parseInt(color.slice(offset, offset + 2), 16) / 255,
+  );
+  const maximum = Math.max(red, green, blue);
+  const minimum = Math.min(red, green, blue);
+  const delta = maximum - minimum;
+  const lightness = (maximum + minimum) / 2;
+  const saturation = delta === 0 ? 0 : delta / (1 - Math.abs(2 * lightness - 1));
+  let hue = 0;
+
+  if (delta !== 0) {
+    if (maximum === red) {
+      hue = ((green - blue) / delta) % 6;
+    } else if (maximum === green) {
+      hue = (blue - red) / delta + 2;
+    } else {
+      hue = (red - green) / delta + 4;
+    }
+
+    hue *= 60;
+    if (hue < 0) hue += 360;
+  }
+
+  const shiftedHue = (((hue + shift.hueDegrees) % 360) + 360) % 360;
+  const shiftedSaturation = clampColorChannel(saturation + shift.saturationPoints / 100, 0, 1);
+  const shiftedLightness = clampColorChannel(lightness + shift.lightnessPoints / 100, 0, 1);
+  const chroma = (1 - Math.abs(2 * shiftedLightness - 1)) * shiftedSaturation;
+  const hueSegment = shiftedHue / 60;
+  const secondary = chroma * (1 - Math.abs((hueSegment % 2) - 1));
+  const match = shiftedLightness - chroma / 2;
+  const channels =
+    hueSegment < 1
+      ? [chroma, secondary, 0]
+      : hueSegment < 2
+        ? [secondary, chroma, 0]
+        : hueSegment < 3
+          ? [0, chroma, secondary]
+          : hueSegment < 4
+            ? [0, secondary, chroma]
+            : hueSegment < 5
+              ? [secondary, 0, chroma]
+              : [chroma, 0, secondary];
+  const shiftedHex = channels
+    .map((channel) =>
+      Math.round((channel + match) * 255)
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("");
+
+  return createHexColor(`#${shiftedHex}`);
+}
+
+/**
  * 铁路运营公司。
  * 公司代码是线路归属和未来运营方页面的稳定关联键，不依赖可能变化的中英文展示名称。
  */
@@ -121,6 +197,11 @@ export interface RailwayLineStop {
  */
 export const railwayOperators: readonly RailwayOperator[] = [
   {
+    code: "FTA",
+    primaryName: "Fetarute 交通局",
+    secondaryName: "Fetarute Transit Authority",
+  },
+  {
     code: "SURN",
     primaryName: "Fetarute交通局生存北方铁路",
     secondaryName: "FTA SURnorth",
@@ -137,6 +218,13 @@ export const railwayOperators: readonly RailwayOperator[] = [
  * 未来车站站序、启动动画和页面视觉只能引用这里的线路身份，不应自行写入线路名称或色值。
  */
 export const railwayLines: readonly RailwayLine[] = [
+  {
+    code: "SL",
+    primaryName: "服联快线",
+    secondaryName: "Serverlink",
+    color: createHexColor("#1712A7"),
+    operatorCode: "FTA",
+  },
   {
     code: "Main",
     primaryName: "主线",
