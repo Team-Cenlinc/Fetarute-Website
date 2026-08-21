@@ -26,7 +26,7 @@ export interface Props {
   title?: string;
   /** 页面专属描述；未提供时使用当前语言的站点描述。 */
   description?: string;
-  /** 页面专属分享图片；未提供时使用站点级品牌图标。 */
+  /** 页面专属分享图片；未提供时使用站点级横向预览卡。 */
   image?: string;
   /** 首页启用的导视启动层；其他页面保持直接可读。 */
   showLaunchSequence?: boolean;
@@ -53,6 +53,8 @@ const pageDescription = description ?? messages.description;
 const pageTitle = title === siteInfo.name ? title : `${title} | ${siteInfo.name}`;
 const canonicalUrl = getLocalizedAbsoluteUrl(locale, pagePath);
 const socialImageUrl = new URL(image, siteInfo.url);
+const brandImageUrl = new URL(siteInfo.brandImage, siteInfo.url);
+const siteHomeUrl = new URL("/", siteInfo.url).toString();
 const languageAlternates = availableLocales.map((alternateLocale) => ({
   locale: alternateLocale,
   href: getLocalizedAbsoluteUrl(alternateLocale, pagePath),
@@ -105,16 +107,41 @@ ${getInterfacePaletteCssVariables(interfacePalette.dark)}
 `;
 
 /**
- * 搜索引擎使用的 WebSite 结构化数据。
- * 与页面 metadata 共用站点数据，避免搜索结果中的名称和网址出现分叉。
+ * 搜索引擎和 AI 工具使用的站点与页面结构化数据。
+ * WebSite 固定指向站点根而不是当前语言页面，WebPage 再描述当前 canonical，从而避免每个翻译页都被误报成不同的网站实体。
  */
-const websiteStructuredData = {
+const pageStructuredData = {
   "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: siteInfo.name,
-  url: canonicalUrl,
-  description: pageDescription,
-  inLanguage: localeMetadata[locale].languageTag,
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${siteHomeUrl}#organization`,
+      name: siteInfo.name,
+      url: siteHomeUrl,
+      logo: {
+        "@type": "ImageObject",
+        url: brandImageUrl,
+      },
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${siteHomeUrl}#website`,
+      name: siteInfo.name,
+      url: siteHomeUrl,
+      description: messages.description,
+      publisher: { "@id": `${siteHomeUrl}#organization` },
+    },
+    {
+      "@type": "WebPage",
+      "@id": `${canonicalUrl}#webpage`,
+      url: canonicalUrl,
+      name: pageTitle,
+      description: pageDescription,
+      inLanguage: localeMetadata[locale].languageTag,
+      isPartOf: { "@id": `${siteHomeUrl}#website` },
+      primaryImageOfPage: socialImageUrl,
+    },
+  ],
 };
 ---
 
@@ -175,12 +202,13 @@ const websiteStructuredData = {
     <meta property="og:description" content={pageDescription} />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:image" content={socialImageUrl} />
+    <meta property="og:image:secure_url" content={socialImageUrl} />
     <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content="512" />
-    <meta property="og:image:height" content="512" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content={messages.socialImageAlt} />
 
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={pageDescription} />
     <meta name="twitter:image" content={socialImageUrl} />
@@ -266,7 +294,7 @@ const websiteStructuredData = {
     <script
       type="application/ld+json"
       is:inline
-      set:html={JSON.stringify(websiteStructuredData)}
+      set:html={JSON.stringify(pageStructuredData)}
     ></script>
   </head>
   <body>

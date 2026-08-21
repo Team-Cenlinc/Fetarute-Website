@@ -10,7 +10,6 @@
   },
   "scripts": {
     "dev": "ASTRO_TELEMETRY_DISABLED=1 astro dev",
-    "build": "ASTRO_TELEMETRY_DISABLED=1 astro build",
     "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
     "sync": "ASTRO_TELEMETRY_DISABLED=1 astro sync",
     "typecheck": "ASTRO_TELEMETRY_DISABLED=1 astro check",
@@ -23,8 +22,11 @@
     "font:subset:display": "NODE_OPTIONS=--experimental-strip-types node scripts/font-subset/build-subsets.ts display",
     "font:subset:display-italic": "NODE_OPTIONS=--experimental-strip-types node scripts/font-subset/build-subsets.ts display-italic",
     "font:subset": "npm run font:extract && NODE_OPTIONS=--experimental-strip-types node scripts/font-subset/build-subsets.ts",
+    "social-card:build": "NODE_OPTIONS=--experimental-strip-types node scripts/generate-social-card.ts",
     "build:with-fonts": "npm run font:subset && npm run build",
-    "check": "npm run format:check && npm run typecheck && npm run build",
+    "test:discovery": "NODE_OPTIONS=--experimental-strip-types node --test test/discovery.test.ts",
+    "build": "npm run social-card:build && ASTRO_TELEMETRY_DISABLED=1 astro build",
+    "check": "npm run format:check && npm run typecheck && npm run test:discovery && npm run build",
     "precommit:check": "npm run font:subset && git diff --exit-code -- scripts/font-subset/chars.txt src/assets/fonts && npm run check",
     "prepare": "husky"
   },
@@ -34,10 +36,12 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
+    "@astrojs/sitemap": "^3.7.3",
     "@types/node": "^25.9.1",
     "husky": "^9.1.7",
     "lint-staged": "^17.3.0",
     "prettier": "^3.9.5",
+    "sharp": "^0.35.3",
     "subset-font": "^2.5.0",
     "typescript": "^6.0.3"
   }

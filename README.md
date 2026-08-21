@@ -7,6 +7,8 @@ Fetarute 服务器官网 · 新版
 - Astro SSG：默认静态生成，适合 Minecraft 服务器官网、公告、规则和指南。
 - TypeScript：使用 Astro strict 配置。
 - Astro Content Collections：管理公告和指南内容。
+- `@astrojs/sitemap`：从已发布的三语页面生成 sitemap，并与 robots.txt 共用收录边界。
+- Sharp：在构建期把既有 Logo、首页场景和铁路数据合成为稳定的社交预览 PNG。
 - npm + Node 24：`.nvmrc` 和 `package.json#engines` 已固定到 Node 24 系列。
 
 ## 开发命令
@@ -21,6 +23,12 @@ npm run dev
 ```sh
 npm run check
 git diff --check
+```
+
+社交分享卡会在普通构建前自动生成；需要单独更新时运行：
+
+```sh
+npm run social-card:build
 ```
 
 GitHub Actions 会在 pull request 和 `main` 推送时执行字体子集一致性检查，并运行同一条
@@ -43,9 +51,11 @@ npm run build:with-fonts
 ## 目录结构
 
 ```text
-public/                 浏览器图标、Web App Manifest 等需原样发布的品牌文件
+public/                 浏览器图标、Web App Manifest 与构建生成的社交分享卡等需原样发布的品牌文件
 fonts-source/           完整字体源文件，仅用于本地生成子集，不直接发布
-scripts/font-subset/    Node-only 字符抽取与 woff2 子集生成脚本
+scripts/
+  font-subset/          Node-only 字符抽取与 woff2 子集生成脚本
+  generate-social-card.ts  用既有 Logo、首页场景与铁路数据生成分享卡 PNG
 src/
   assets/
     fonts/            生成的浏览器 woff2 字体子集
@@ -59,6 +69,7 @@ src/
   pages/             Astro 页面路由
   styles/            全局样式和品牌变量
   content.config.ts  内容集合 schema
+test/                   Node 原生测试，覆盖公开收录与发现文件的输出边界
 ```
 
 ## 内容维护

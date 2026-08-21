@@ -1,6 +1,8 @@
 import { defineConfig, fontProviders } from "astro/config";
+import sitemap from "@astrojs/sitemap";
+import { isIndexablePublicUrl } from "./src/data/discovery";
 import { siteInfo } from "./src/data/site";
-import { defaultLocale, locales } from "./src/i18n/config";
+import { defaultLocale, localeMetadata, locales } from "./src/i18n/config";
 
 export default defineConfig({
   // Fetarute 官网默认按静态站点发布；需要账号、订单或后台能力时再评估 SSR。
@@ -20,6 +22,21 @@ export default defineConfig({
       redirectToDefaultLocale: false,
     },
   },
+  /**
+   * sitemap 只保留带语言前缀且已经发布正文的页面。
+   * 这个过滤器复用 discovery 白名单，避免 noindex 跳转页和将来的占位路由被静态构建器自动暴露。
+   */
+  integrations: [
+    sitemap({
+      filter: isIndexablePublicUrl,
+      i18n: {
+        defaultLocale,
+        locales: Object.fromEntries(
+          locales.map((locale) => [locale, localeMetadata[locale].languageTag]),
+        ),
+      },
+    }),
+  ],
   /**
    * 本地 Noto Sans 字体配置。
    *

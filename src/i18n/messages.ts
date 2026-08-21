@@ -235,7 +235,7 @@ const messages: Record<Locale, SiteMessages> = {
       joinDescription:
         "等服务器版本、地址、白名单或身份验证流程确定后，把加入流程写进指南，再决定是否需要独立页面。",
     },
-    socialImageAlt: "Fetarute 品牌图标",
+    socialImageAlt: "Fetarute 服联快线导视分享卡片",
   },
   "zh-Hant": {
     description: "Fetarute 是一個正在建設中的 Minecraft 伺服器官網。",
@@ -320,7 +320,7 @@ const messages: Record<Locale, SiteMessages> = {
       joinDescription:
         "待伺服器版本、位址、白名單或驗證流程確定後，把加入流程寫入指南，再決定是否需要獨立頁面。",
     },
-    socialImageAlt: "Fetarute 品牌圖示",
+    socialImageAlt: "Fetarute 服聯快線導視分享卡片",
   },
   en: {
     description:
@@ -407,7 +407,7 @@ const messages: Record<Locale, SiteMessages> = {
       joinDescription:
         "When the version, address, whitelist, or verification flow is confirmed, document joining in a guide before deciding whether it needs its own page.",
     },
-    socialImageAlt: "Fetarute brand mark",
+    socialImageAlt: "Fetarute Serverlink wayfinding share card",
   },
 };
 

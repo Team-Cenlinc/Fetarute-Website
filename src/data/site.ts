@@ -4,7 +4,7 @@ import {
   railwayLines,
   type RailwayLineColorShift,
   type RailwayLineKey,
-} from "./railway";
+} from "./railway.ts";
 
 /**
  * 官网基础信息的单一数据源。
@@ -15,8 +15,10 @@ export interface SiteInfo {
   name: string;
   /** 官网正式地址；canonical、社交卡片和结构化数据都从这里生成绝对 URL。 */
   url: string;
-  /** 默认社交分享图片；页面没有专属封面时使用品牌图标。 */
+  /** 默认横向社交分享图片；页面没有专属封面时作为 Open Graph 与 Twitter Card 的预览。 */
   socialImage: string;
+  /** 供 JSON-LD Organization 使用的方形品牌标记，不与横向社交预览图混用。 */
+  brandImage: string;
   /** Minecraft 服务器地址；未正式公开前保持占位。 */
   serverAddress: string;
 }
@@ -108,7 +110,8 @@ export interface HomeNavigationSignal {
 export const siteInfo: SiteInfo = {
   name: "Fetarute",
   url: "https://www.fetarute.org",
-  socialImage: "/web-app-manifest-512x512.png",
+  socialImage: "/fetarute-share-card.png",
+  brandImage: "/web-app-manifest-512x512.png",
   serverAddress: "play.fetarute.example",
 };
 
