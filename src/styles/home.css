@@ -16,6 +16,19 @@
   --home-arrival-bend-center-inset: clamp(20px, 1.615vw, 31px);
   /* --home-arrival-track-origin-x 是三段主线共用的左侧基准，弯道切点与直轨不再各自维护坐标。 */
   --home-arrival-track-origin-x: 9.32vw;
+  /* --home-arrival-track-top 决定横轨与弯轨的共同起点；英文标题更短时可单独收紧到导视的留白。 */
+  --home-arrival-track-top: 67.78svh;
+  /* --home-arrival-route-offset 是右侧线路导视相对站名容器的纵向基准，英文主站名以它对齐。 */
+  --home-arrival-route-offset: 4.35svh;
+  /* --home-arrival-copy-top 固定站名组的顶部锚点；导视移出标题流后仍能复用它保持桌面基线。 */
+  --home-arrival-copy-top: 26.48svh;
+  /* --home-arrival-route-top 与 --home-arrival-route-left 让桌面和窄屏共享同一枚导视牌，但可按各自线路构图独立落位。 */
+  --home-arrival-route-top: calc(var(--home-arrival-copy-top) + var(--home-arrival-route-offset));
+  --home-arrival-route-left: 74.48vw;
+  /* --home-arrival-route-right 仅在右锚定的窄屏构图中启用，确保不同语言的线路名仍完整留在视口内。 */
+  --home-arrival-route-right: auto;
+  /* --home-arrival-name-gap 只控制双语站名之间的光学距离；不同 locale 会按主站名字高覆盖。 */
+  --home-arrival-name-gap: clamp(12px, 1.2vw, 24px);
   /* --home-arrival-joint-overlap 仅让矩形轨道压住 SVG 端点 1px，消除子像素抗锯齿造成的留白。 */
   --home-arrival-joint-overlap: 1px;
   position: relative;
@@ -32,7 +45,10 @@
 .home-arrival__bend {
   position: absolute;
   z-index: 0;
-  top: calc(67.78svh + var(--home-arrival-track-half) - var(--home-arrival-bend-center-inset));
+  top: calc(
+    var(--home-arrival-track-top) + var(--home-arrival-track-half) -
+      var(--home-arrival-bend-center-inset)
+  );
   left: calc(
     var(--home-arrival-track-origin-x) + var(--home-arrival-track-half) -
       var(--home-arrival-bend-center-inset)
@@ -57,8 +73,9 @@
 
 .home-arrival__vertical-track {
   top: calc(
-    67.78svh + var(--home-arrival-track-half) - var(--home-arrival-bend-center-inset) +
-      var(--home-arrival-bend-size) - var(--home-arrival-joint-overlap)
+    var(--home-arrival-track-top) + var(--home-arrival-track-half) -
+      var(--home-arrival-bend-center-inset) + var(--home-arrival-bend-size) -
+      var(--home-arrival-joint-overlap)
   );
   bottom: 0;
   left: var(--home-arrival-track-origin-x);
@@ -66,7 +83,7 @@
 }
 
 .home-arrival__horizontal-track {
-  top: 67.78svh;
+  top: var(--home-arrival-track-top);
   right: 0;
   /* 由同一曲线端点推导横轨起点，确保每个 viewport 下都在 Bézier 切点处衔接。 */
   left: calc(
@@ -84,8 +101,18 @@
   align-self: start;
   justify-self: stretch;
   width: 100%;
-  gap: clamp(16px, 1.45vw, 28px);
-  margin-top: 26.48svh;
+  gap: 0;
+  margin-top: var(--home-arrival-copy-top);
+  text-align: center;
+}
+
+.home-arrival__name-lockup {
+  /* 双语站名共享这一中心锚点；间距只存在于组内，不能被右侧线路导视改变。 */
+  display: grid;
+  justify-self: stretch;
+  justify-items: center;
+  width: 100%;
+  gap: var(--home-arrival-name-gap);
   text-align: center;
 }
 
@@ -110,22 +137,39 @@
   white-space: nowrap;
 }
 
-/* 英文首站名较长，缩放字号并略向左让出右侧导视牌，而不是挤压字符。 */
+/* 英文主站名保持单行尺度；中文副站名缩小，横轨上移，站名组以右侧导视牌顶端重新落位。 */
+.home-arrival[data-home-arrival-locale="en"] {
+  --home-arrival-track-top: 64svh;
+  /* 英文主站名的字框较矮，副中文虽缩小仍需留出更清晰的双语层级。 */
+  --home-arrival-name-gap: clamp(12px, 1.1vw, 20px);
+}
+
 .home-arrival[data-home-arrival-locale="en"] .home-arrival__copy h1 {
-  font-size: clamp(54px, 5.4vw, 104px);
+  /* 英文站名去掉冠词后回到较自然的字宽，仍以中心锚点约束，不让字形右溢出破坏居中。 */
+  font-stretch: 75%;
+  font-size: clamp(60px, 6.67vw, 128px);
   letter-spacing: -0.025em;
 }
 
-.home-arrival[data-home-arrival-locale="en"] .home-arrival__copy {
-  transform: translateX(-4vw);
+.home-arrival[data-home-arrival-locale="en"] .home-arrival__copy p {
+  font-size: clamp(30px, 3.4vw, 64px);
+  line-height: 1.04;
+}
+
+@media (min-width: 761px) {
+  .home-arrival__name-lockup {
+    /* 桌面三语站名组均以右侧 SL01 导视的顶边为准，避免不同 locale 悬在导视牌上方。 */
+    margin-top: var(--home-arrival-route-offset);
+  }
 }
 
 .home-arrival__route {
   position: absolute;
   z-index: 2;
-  /* 相对标题容器保留 Figma 的 47px 垂直差：333 / 1080 - 286 / 1080。 */
-  top: 4.35svh;
-  left: 74.48vw;
+  /* 相对 Arrival 站台落位；桌面沿用标题与导视的既有垂直差，窄屏可改为弯轨内侧。 */
+  top: var(--home-arrival-route-top);
+  right: var(--home-arrival-route-right);
+  left: var(--home-arrival-route-left);
   display: flex;
   align-items: start;
   gap: clamp(12px, 0.94vw, 18px);
@@ -356,8 +400,19 @@
     --home-arrival-track-half: clamp(10px, 2.9vw, 15px);
     --home-arrival-bend-size: clamp(80px, 23.3vw, 120px);
     --home-arrival-bend-center-inset: var(--home-arrival-track-half);
-    /* 窄屏主线左基准仍由同一变量驱动，曲线、横轨与正文竖轨共用这一坐标。 */
+    /* 窄屏主线贴近左侧安全边，优先把横向空间留给下一站正文。 */
     --home-arrival-track-origin-x: 7vw;
+    /* 标题区独立停在上半屏；线路与导视作为下半屏的第二阅读层。 */
+    --home-arrival-copy-top: 32svh;
+    --home-arrival-track-top: 68svh;
+    /* 导视牌落在横轨下方与弯道外侧，不再由标题文字的高度推开。 */
+    --home-arrival-route-top: calc(
+      var(--home-arrival-track-top) + var(--home-arrival-track-width) + clamp(34px, 8vw, 42px)
+    );
+    --home-arrival-route-left: auto;
+    --home-arrival-route-right: clamp(12px, 3vw, 18px);
+    /* 窄屏使双语站名仍读作一个整体，但不压缩到两种字形相碰。 */
+    --home-arrival-name-gap: clamp(12px, 3.1vw, 16px);
     --home-arrival-train-width: clamp(72px, 18vw, 100px);
     --home-arrival-train-height: clamp(40px, 10vw, 48px);
     min-height: max(680px, 100svh);
@@ -365,9 +420,9 @@
 
   .home-arrival__copy {
     width: min(100% - 32px, 620px);
-    /* 窄屏恢复居中网格锚点，使站名与其下方线路导视同处 viewport 中轴。 */
+    /* 窄屏站名独立居中；下半屏导视不再参与这一列的流式排版。 */
     justify-self: center;
-    margin-top: 25svh;
+    margin-top: var(--home-arrival-copy-top);
   }
 
   .home-arrival__copy h1 {
@@ -381,8 +436,14 @@
     line-height: 1.04;
   }
 
-  .home-arrival[data-home-arrival-locale="en"] .home-arrival__copy {
-    transform: none;
+  .home-arrival[data-home-arrival-locale="en"] {
+    /* 手机英文主站名更小，给副中文保留清晰但不松散的光学间距。 */
+    --home-arrival-name-gap: clamp(10px, 2.8vw, 14px);
+  }
+
+  .home-arrival[data-home-arrival-locale="en"] .home-arrival__copy p {
+    font-size: clamp(23px, 6.8vw, 34px);
+    line-height: 1.05;
   }
 
   .home-arrival__copy p {
@@ -392,24 +453,30 @@
   }
 
   .home-arrival__route {
-    position: static;
-    justify-self: center;
-    margin-top: clamp(4px, 0.93svh, 10px);
+    position: absolute;
+    top: var(--home-arrival-route-top);
+    right: var(--home-arrival-route-right);
+    left: var(--home-arrival-route-left);
+    margin: 0;
   }
 
   .home-arrival__horizontal-track {
-    top: 77svh;
+    top: var(--home-arrival-track-top);
   }
 
   .home-arrival__vertical-track {
     top: calc(
-      77svh + var(--home-arrival-track-half) - var(--home-arrival-bend-center-inset) +
-        var(--home-arrival-bend-size) - var(--home-arrival-joint-overlap)
+      var(--home-arrival-track-top) + var(--home-arrival-track-half) -
+        var(--home-arrival-bend-center-inset) + var(--home-arrival-bend-size) -
+        var(--home-arrival-joint-overlap)
     );
   }
 
   .home-arrival__bend {
-    top: calc(77svh + var(--home-arrival-track-half) - var(--home-arrival-bend-center-inset));
+    top: calc(
+      var(--home-arrival-track-top) + var(--home-arrival-track-half) -
+        var(--home-arrival-bend-center-inset)
+    );
     width: var(--home-arrival-bend-size);
     height: var(--home-arrival-bend-size);
   }
@@ -437,7 +504,7 @@
   .home-introduction {
     /* 正文 station mark 与到达页采用同一窄屏轨宽比例，避免视觉上突然增粗。 */
     --home-introduction-track-width: clamp(20px, 5.8vw, 30px);
-    /* 窄屏沿用到达页的 7vw 主线起点，并改以单行标题盒为 station mark 对齐基准。 */
+    /* 窄屏与 Arrival 竖轨共用 7vw 轴线，使列车跨 section 时不产生横向断点并为正文让出宽度。 */
     --home-introduction-track-origin-x: 7vw;
     --home-introduction-copy-top: 20svh;
     --home-introduction-title-line-half: clamp(19.38px, 6.27vw, 24.51px);

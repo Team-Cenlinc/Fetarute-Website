@@ -366,9 +366,8 @@ const messages: Record<Locale, SiteMessages> = {
       title: "Welcome to Fetarute.",
       description: "Your story of exploration starts here.",
       departure: {
-        title: "The next stop begins here.",
-        description:
-          "Bring the journey pass to the reader to begin; click the empty space to skip this transition.",
+        title: "The trip begins here.",
+        description: "Tap your pass, or click empty space to continue.",
         passName: ["Fetarute", "TransitUnion"],
         readerNotice: "Please ensure you have a valid record before boarding.",
         readerWelcome: "Welcome to Fetarute",

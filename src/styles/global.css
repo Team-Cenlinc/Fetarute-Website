@@ -1323,8 +1323,14 @@ html.departure-gate--return-settling {
   transform: translateX(-50%);
 }
 
+.departure-gate[data-departure-locale="en"] .departure-gate__copy h2 {
+  /* 英文启程标题使用单行锚点，避免同一提示在宽度临界处产生不稳定的断行。 */
+  white-space: nowrap;
+}
+
 .departure-gate__copy p:last-child {
-  max-width: 32ch;
+  /* 英文说明可用更宽的两行阅读列，避免第三行落入下方 Validator 的起始区。 */
+  max-width: min(48ch, 100%);
   justify-self: center;
   margin-bottom: 0;
   color: var(--color-muted);
@@ -1542,7 +1548,8 @@ html.departure-gate--return-settling {
   font: inherit;
   padding: 0;
   pointer-events: auto;
-  transform: translate(-50%, -45%);
+  /* 桌面设备略向下让出标题说明区；Reader 的实体高度不能反向压住上方操作说明。 */
+  transform: translate(-50%, -37%);
   transition: transform 160ms var(--motion-header-standard-effects);
 }
 
@@ -1569,6 +1576,8 @@ html.departure-gate--return-settling {
 
 .departure-gate__reader-screen {
   position: relative;
+  /* 屏幕以自身的可用宽度决定信息密度；不能只按 viewport 推断，因为矮屏会先收窄整台 Validator。 */
+  container: departure-reader-screen / inline-size;
   display: grid;
   grid-template-rows: max-content minmax(0, 1fr) max-content;
   align-content: stretch;
@@ -1683,11 +1692,32 @@ html.departure-gate--return-settling {
 .departure-gate__reader-screen-idle-copy,
 .departure-gate__reader-screen-result-copy {
   z-index: 1;
-  max-width: 10ch;
+  /* 英文待机提示比中文长，允许在完整屏幕中均衡分行，避免四行文字挤占 NFC 标记的空间。 */
+  max-width: min(13ch, 100%);
   font-size: clamp(17px, 1.85vw, 25px);
   font-weight: 850;
   letter-spacing: -0.035em;
   line-height: 1.16;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+/* 紧凑桌面改用较小的屏内提示，而非留下没有动作说明的空白屏幕。 */
+@container departure-reader-screen (max-width: 180px) {
+  .departure-gate__reader-screen-idle-copy {
+    max-width: 100%;
+    font-size: clamp(14px, 12cqw, 18px);
+    line-height: 1.08;
+  }
+
+  .departure-gate__reader-screen-idle {
+    gap: 8px;
+    padding: 12px 4px;
+  }
+
+  .departure-gate__reader-screen-contactless {
+    width: clamp(40px, 32cqw, 52px);
+  }
 }
 
 .departure-gate__reader-screen-result {
@@ -1895,10 +1925,16 @@ html.departure-gate--return-settling {
   }
 }
 
-/* 矮屏桌面下移等比缩放后的设备，保证引导文案与读卡屏仍是两段独立信息。 */
+/* 矮屏桌面收小并下移 Reader，保证英文说明增至多行时仍与读卡屏保有可读间隔。 */
 @media (min-width: 1101px) and (max-height: 800px) {
   .departure-gate__reader {
-    top: 61%;
+    top: 59%;
+    width: clamp(230px, min(27vw, 38dvh), 380px);
+    transform: translate(-50%, -30%);
+  }
+
+  .departure-gate__reader:active {
+    transform: translate(-50%, -30%) scale(0.985);
   }
 }
 
@@ -1939,7 +1975,13 @@ html.departure-gate--return-settling {
 }
 
 .departure-gate__reader:active {
-  transform: translate(-50%, -45%) scale(0.985);
+  transform: translate(-50%, -37%) scale(0.985);
+}
+
+@media (min-width: 1101px) and (max-height: 800px) {
+  .departure-gate__reader:active {
+    transform: translate(-50%, -30%) scale(0.985);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3017,7 +3059,7 @@ html[data-launching] .launch-sequence {
   }
 }
 
-@media (max-width: 1100px) and (min-width: 761px) {
+@media (max-width: 1100px) and (min-width: 761px), (min-width: 1101px) and (max-height: 700px) {
   /* 中等宽度沿用小屏的右侧抽象 Validator，防止完整外壳与前景卡片在中线堆成一团。 */
   .departure-gate__pass {
     bottom: 6%;
@@ -3040,8 +3082,7 @@ html[data-launching] .launch-sequence {
   }
 
   .departure-gate__reader-sign,
-  .departure-gate__reader-screen-top,
-  .departure-gate__reader-screen-idle-copy {
+  .departure-gate__reader-screen-top {
     display: none;
   }
 

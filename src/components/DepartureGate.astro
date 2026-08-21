@@ -28,6 +28,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
 <section
   class="departure-gate"
   data-departure-gate
+  data-departure-locale={locale}
   data-state="armed"
   data-persist-session={shouldPersistDepartureSeen ? "true" : "false"}
   data-ready-status={messages.home.departure.readyStatus}

@@ -91,9 +91,19 @@ const { lineColor, lineCode, sequence, primaryName, secondaryName, isEnglishPrim
   }
 
   .railway-line-hint__names {
+    /* 两种语言的线路名都从同一条左边线起读，避免主副语言随字宽产生漂移。 */
     display: grid;
     gap: clamp(8px, 0.83vw, 16px);
+    justify-items: start;
     padding-top: 0;
+    text-align: left;
+  }
+
+  .railway-line-hint__names strong,
+  .railway-line-hint__names small {
+    display: block;
+    justify-self: stretch;
+    text-align: left;
   }
 
   .railway-line-hint__names strong {

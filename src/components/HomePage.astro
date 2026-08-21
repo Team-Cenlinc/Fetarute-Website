@@ -162,18 +162,20 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     <ServerlinkBend class="home-arrival__bend" data-home-arrival-bend aria-hidden="true" />
     <span class="home-arrival__horizontal-track" data-home-arrival-horizontal aria-hidden="true"></span>
     <div class="home-arrival__copy">
-      <h1 id="home-arrival-title">{homeArrivalPrimaryName}</h1>
-      <p>{homeArrivalSecondaryName}</p>
-      <RailwayLineHint
-        class="home-arrival__route"
-        lineColor={`var(${homeLineCssVariable})`}
-        lineCode={homeLine.code}
-        sequence="01"
-        primaryName={homeLinePrimaryName}
-        secondaryName={homeLineSecondaryName}
-        isEnglishPrimary={locale === "en"}
-      />
+      <div class="home-arrival__name-lockup">
+        <h1 id="home-arrival-title">{homeArrivalPrimaryName}</h1>
+        <p>{homeArrivalSecondaryName}</p>
+      </div>
     </div>
+    <RailwayLineHint
+      class="home-arrival__route"
+      lineColor={`var(${homeLineCssVariable})`}
+      lineCode={homeLine.code}
+      sequence="01"
+      primaryName={homeLinePrimaryName}
+      secondaryName={homeLineSecondaryName}
+      isEnglishPrimary={locale === "en"}
+    />
     <!-- 单一 SVG 列车段同时覆盖直轨和弯轨，列车进入弯道时自然弯曲而不会切换元素。 -->
     <svg class="home-arrival__train-visual" data-home-arrival-train-visual aria-hidden="true">
       <path data-home-arrival-train-visual-path fill="none" stroke="currentColor" stroke-linecap="butt" />

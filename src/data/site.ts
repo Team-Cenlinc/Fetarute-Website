@@ -156,7 +156,7 @@ export const wayfindingPrototype: WayfindingPrototype = {
   homeArrivalStop: {
     simplifiedChineseName: "启始湾",
     traditionalChineseName: "啟始灣",
-    englishName: "The Beginning Bay",
+    englishName: "Beginning Bay",
   },
   homeTrainColorShift: {
     hueDegrees: -31,
