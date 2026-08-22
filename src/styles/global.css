@@ -61,8 +61,6 @@
   --hero-inline-gutter: 7.5vw;
   /* 浮动导视牌的环境阴影由 palette 随外观模式同步。 */
   --shadow-floating: var(--palette-floating-shadow);
-  /* 站台场景遮罩使用中性黑灰，保障文案覆盖在实景上时仍可读。 */
-  --hero-scrim: var(--palette-hero-scrim);
   /* 启动动画站牌以独立阴影维持快速切换时的层级辨识。 */
   --shadow-launch: var(--palette-launch-shadow);
   /* 全屏站牌以快速起势、稳定停留收束信息，避免首屏快闪牺牲名称和线路码的辨识。 */
@@ -1049,11 +1047,7 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
 }
 
 .hero-section {
-  /* 前六个变量由 Landing 场景数据控制；反光色从已加载图片的标题覆盖区运行时取样，图片本身保持原始色调。 */
-  --hero-scene-scrim-start: 72%;
-  --hero-scene-scrim-middle: 35%;
-  --hero-scene-scrim-end: 2%;
-  --hero-scene-night-shade: 0%;
+  /* 文案投影由 Landing 场景数据控制；反光色从已加载图片的标题覆盖区运行时取样，图片本身保持原始色调。 */
   --hero-copy-shadow-blur: 14px;
   --hero-copy-shadow-opacity: 72%;
   /* SSR 首帧先用白色反光，运行时取色失败也不会削弱标题的可读性。 */
@@ -1066,36 +1060,6 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   overflow: hidden;
   background: var(--color-scene-fallback);
   padding: clamp(40px, 6vw, 96px) var(--hero-inline-gutter) clamp(44px, 11vh, 112px);
-}
-
-.hero-section::after {
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  background:
-    linear-gradient(
-      color-mix(in srgb, var(--hero-scrim) var(--hero-scene-night-shade), transparent),
-      color-mix(in srgb, var(--hero-scrim) var(--hero-scene-night-shade), transparent)
-    ),
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--hero-scrim) var(--hero-scene-scrim-start), transparent),
-      color-mix(in srgb, var(--hero-scrim) var(--hero-scene-scrim-middle), transparent) 58%,
-      color-mix(in srgb, var(--hero-scrim) var(--hero-scene-scrim-end), transparent)
-    );
-  content: "";
-}
-
-/* 深夜外观用一层中性顶罩收住日景的高光，避免明亮天空和水面破坏低照度阅读。 */
-html[data-appearance="dark"] .hero-section {
-  --hero-scene-night-shade: 28%;
-}
-
-/* 跟随系统时也要识别深色外观，不能只在用户手动选择“深色”后才压住日景高光。 */
-@media (prefers-color-scheme: dark) {
-  html:not([data-appearance]) .hero-section {
-    --hero-scene-night-shade: 28%;
-  }
 }
 
 .hero-scene {
@@ -3322,21 +3286,6 @@ html[data-launching] .launch-sequence {
   .hero-section {
     min-height: 100dvh;
     padding: 28px var(--hero-inline-gutter) 48px;
-  }
-
-  /* 窄屏文案锚在画面底部，因此把读取区改为纵向渐层；不依赖单张图片的左右亮度。 */
-  .hero-section::after {
-    background:
-      linear-gradient(
-        color-mix(in srgb, var(--hero-scrim) var(--hero-scene-night-shade), transparent),
-        color-mix(in srgb, var(--hero-scrim) var(--hero-scene-night-shade), transparent)
-      ),
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--hero-scrim) 8%, transparent),
-        color-mix(in srgb, var(--hero-scrim) 43%, transparent) 48%,
-        color-mix(in srgb, var(--hero-scrim) 88%, transparent)
-      );
   }
 
   .hero-copy {

@@ -45,7 +45,6 @@ const landingSceneImages = await Promise.all(
       id: scene.id,
       alt: messages.home.sceneAltById[scene.id],
       focalPoint: scene.focalPoint,
-      desktopScrim: scene.desktopScrim,
       copyShadow: scene.copyShadow,
       width: scene.image.width,
       height: scene.image.height,
@@ -89,7 +88,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     class="hero-section"
     id="home"
     aria-labelledby="hero-title"
-    style={`--hero-scene-scrim-start: ${defaultLandingScene.desktopScrim.start}; --hero-scene-scrim-middle: ${defaultLandingScene.desktopScrim.middle}; --hero-scene-scrim-end: ${defaultLandingScene.desktopScrim.end}; --hero-copy-shadow-blur: ${defaultLandingScene.copyShadow.blur}; --hero-copy-shadow-opacity: ${defaultLandingScene.copyShadow.opacity};`}
+    style={`--hero-copy-shadow-blur: ${defaultLandingScene.copyShadow.blur}; --hero-copy-shadow-opacity: ${defaultLandingScene.copyShadow.opacity};`}
   >
     <picture class="hero-scene" data-landing-scene-id={defaultLandingScene.id}>
       <source srcset={defaultLandingScene.avifSrc} type="image/avif" />
@@ -365,9 +364,6 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       sceneImage.alt = selectedScene.alt;
       sceneImage.style.objectPosition = selectedScene.focalPoint;
 
-      heroSection.style.setProperty("--hero-scene-scrim-start", selectedScene.desktopScrim.start);
-      heroSection.style.setProperty("--hero-scene-scrim-middle", selectedScene.desktopScrim.middle);
-      heroSection.style.setProperty("--hero-scene-scrim-end", selectedScene.desktopScrim.end);
       heroSection.style.setProperty("--hero-copy-shadow-blur", selectedScene.copyShadow.blur);
       heroSection.style.setProperty("--hero-copy-shadow-opacity", selectedScene.copyShadow.opacity);
 
