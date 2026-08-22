@@ -191,6 +191,15 @@ const messages: Record<Locale, SiteMessages> = {
     home: {
       sceneAltById: {
         "pyutocor-dusk": "Fetarute 的暮色铁路城市景观",
+        "survival-bayside": "Fetarute 生存服的海湾聚落",
+        "survival-fueya": "Fetarute 生存服中行驶于城市轨道上的列车",
+        "survival-kitariku-haixing-road-bridge": "Fetarute 生存服海星路大桥的日落景观",
+        "survival-kl-x-bridge": "Fetarute 生存服中跨越城区与水岸的蓝色桥梁",
+        "survival-port-pyutocor": "Fetarute 生存服的浦屿港与远处天际线",
+        "survival-pyutocor-day": "Fetarute 生存服的浦屿城白日天际线",
+        "survival-pyutocor-from-mountain": "从山麓远望 Fetarute 生存服的浦屿城市群",
+        "survival-pyutocor-railway-avenue": "Fetarute 生存服浦屿城黄昏时的铁路大道",
+        "survival-syuchun": "Fetarute 生存服的绣春水岸天际线",
       },
       title: "欢迎来到 Fetarute。",
       description: "在这里，开始属于你的探索故事。",
@@ -215,9 +224,9 @@ const messages: Record<Locale, SiteMessages> = {
         skippedStatus: "已略过检票。下一站：一座被连接起来的世界。",
       },
       introduction: {
-        title: "01·Fetarute 的创立与概览",
+        title: "01·从一条铁路开始",
         description:
-          "Fetarute 成立于 2017 年。从最初的 QQ 门户群出发，我们以铁路把地点、共同建设与每一次抵达连接起来。",
+          "2017 年，Fetarute 从一座 Forge 模组铁路服务器起步。后来，我们转向原版与插件，想看看原版特性能组成怎样的新世界；三个子服务器也由此在同一套世界观中相连。",
       },
       arrival: {
         trainTooltip: {
@@ -276,6 +285,15 @@ const messages: Record<Locale, SiteMessages> = {
     home: {
       sceneAltById: {
         "pyutocor-dusk": "Fetarute 的暮色鐵路城市景觀",
+        "survival-bayside": "Fetarute 生存服的海灣聚落",
+        "survival-fueya": "Fetarute 生存服中行駛於城市軌道上的列車",
+        "survival-kitariku-haixing-road-bridge": "Fetarute 生存服海星路大橋的日落景觀",
+        "survival-kl-x-bridge": "Fetarute 生存服中跨越城區與水岸的藍色橋樑",
+        "survival-port-pyutocor": "Fetarute 生存服的浦嶼港與遠處天際線",
+        "survival-pyutocor-day": "Fetarute 生存服的浦嶼城白日天際線",
+        "survival-pyutocor-from-mountain": "從山麓遠望 Fetarute 生存服的浦嶼城市群",
+        "survival-pyutocor-railway-avenue": "Fetarute 生存服浦嶼城黃昏時的鐵路大道",
+        "survival-syuchun": "Fetarute 生存服的繡春水岸天際線",
       },
       title: "歡迎來到 Fetarute。",
       description: "在這裡，開始屬於你的探索故事。",
@@ -300,9 +318,9 @@ const messages: Record<Locale, SiteMessages> = {
         skippedStatus: "已略過檢票。下一站：一座被連接起來的世界。",
       },
       introduction: {
-        title: "01·Fetarute 的創立與概覽",
+        title: "01·從一條鐵路開始",
         description:
-          "Fetarute 成立於 2017 年。從最初的 QQ 門戶群出發，我們以鐵路把地點、共同建設與每一次抵達連接起來。",
+          "2017 年，Fetarute 從一座 Forge 模組鐵路伺服器起步。後來，我們轉向原版與插件，想看看原版特性能組成怎樣的新世界；三個子伺服器也由此在同一套世界觀中相連。",
       },
       arrival: {
         trainTooltip: {
@@ -362,6 +380,17 @@ const messages: Record<Locale, SiteMessages> = {
     home: {
       sceneAltById: {
         "pyutocor-dusk": "Fetarute railway city at dusk",
+        "survival-bayside": "A bayside settlement on Fetarute Survival",
+        "survival-fueya": "A train travelling through a city on Fetarute Survival",
+        "survival-kitariku-haixing-road-bridge":
+          "Sunset at Haixing Road Bridge on Fetarute Survival",
+        "survival-kl-x-bridge": "A blue bridge across the city and waterfront on Fetarute Survival",
+        "survival-port-pyutocor": "Pyutocor Port and its distant skyline on Fetarute Survival",
+        "survival-pyutocor-day": "Pyutocor's daytime skyline on Fetarute Survival",
+        "survival-pyutocor-from-mountain": "Pyutocor seen from the foothills on Fetarute Survival",
+        "survival-pyutocor-railway-avenue":
+          "Railway Avenue in Pyutocor at dusk on Fetarute Survival",
+        "survival-syuchun": "Syuchun's waterfront skyline on Fetarute Survival",
       },
       title: "Welcome to Fetarute.",
       description: "Your story of exploration starts here.",
@@ -386,9 +415,9 @@ const messages: Record<Locale, SiteMessages> = {
         skippedStatus: "Validation skipped. Next stop: a world connected together.",
       },
       introduction: {
-        title: "01 · Fetarute's origin & overview",
+        title: "01 · It Started with a Railway",
         description:
-          "Founded in 2017, Fetarute began with a QQ gateway group. Railways connect its places, collective building, and every arrival along the way.",
+          "Founded in 2017, Fetarute began as a Forge-modded railway server. We later moved to Vanilla and plugins to see what new world Vanilla itself could make possible. That world grew into three connected servers.",
       },
       arrival: {
         trainTooltip: {
