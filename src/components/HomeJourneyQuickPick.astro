@@ -1,0 +1,363 @@
+---
+import { getRailwayLineTextColor } from "@/data/palette";
+import {
+  getHomeJourneySectionName,
+  type HomeJourneySection,
+  type HomeJourneySectionId,
+} from "@/data/home-journey";
+import { railwayLineByKey } from "@/data/railway";
+import type { Locale } from "@/i18n/config";
+
+/** 列车快选面板的属性。 */
+export interface Props {
+  /** 当前公开语言决定章节站名的显示字段。 */
+  locale: Locale;
+  /** 初次渲染时正在停靠的章节；客户端会在滚动时同步更新。 */
+  currentSectionId: HomeJourneySectionId;
+  /** 由首页导视数据提供的可选章节路线。 */
+  sections: readonly HomeJourneySection[];
+  /** 当前章节站名上方的短标签。 */
+  currentSectionLabel: string;
+  /** 仅供辅助技术识别下半部章节路线图的名称，不额外显示界面文案。 */
+  quickPickLabel: string;
+  /** 拼入每个章节链接无障碍名称的动作前缀。 */
+  goToSectionLabel: string;
+}
+
+const {
+  locale,
+  currentSectionId,
+  sections,
+  currentSectionLabel,
+  quickPickLabel,
+  goToSectionLabel,
+} = Astro.props;
+
+const renderedSections = sections.map((section) => {
+  const line = railwayLineByKey.get(section.lineKey);
+
+  if (!line) {
+    throw new Error(`首页章节快选引用了未录入的线路 ${section.lineKey}。`);
+  }
+
+  return {
+    ...section,
+    displayName: getHomeJourneySectionName(section, locale),
+    lineColor: line.color,
+    lineTextColor: getRailwayLineTextColor(line.color),
+  };
+});
+
+const currentSection = renderedSections.find((section) => section.id === currentSectionId);
+
+if (!currentSection) {
+  throw new Error(`首页章节快选找不到当前章节 ${currentSectionId}。`);
+}
+---
+
+<div
+  class="home-journey-quick-pick"
+  data-home-journey-picker
+  style={`--home-journey-current-line-color: ${currentSection.lineColor};`}
+>
+  <header class="home-journey-quick-pick__current">
+    <span>{currentSectionLabel}</span>
+    <strong data-home-journey-current-name>{currentSection.displayName}</strong>
+  </header>
+  <nav class="home-journey-quick-pick__map" aria-label={quickPickLabel}>
+    <ol>
+      {
+        renderedSections.map((section) => (
+          <li
+            class:list={{
+              "home-journey-quick-pick__stop": true,
+              "home-journey-quick-pick__stop--current": section.id === currentSectionId,
+            }}
+            data-home-journey-stop={section.id}
+            data-home-journey-line-color={section.lineColor}
+            style={`--home-journey-line-color: ${section.lineColor}; --home-journey-line-text-color: ${section.lineTextColor};`}
+          >
+            <a
+              href={`#${section.id}`}
+              data-home-journey-target
+              data-home-journey-section-id={section.id}
+              data-home-journey-target-id={section.id}
+              data-home-journey-section-name={section.displayName}
+              aria-current={section.id === currentSectionId ? "step" : undefined}
+              aria-label={`${goToSectionLabel}: ${section.displayName}`}
+            >
+              <span class="home-journey-quick-pick__stop-label">{section.displayName}</span>
+            </a>
+          </li>
+        ))
+      }
+      <li class="home-journey-quick-pick__terminus" aria-hidden="true"></li>
+    </ol>
+  </nav>
+</div>
+
+<style>
+  .home-journey-quick-pick {
+    /* 站点高度与行距组成章节图的基础节距；末端虚线也按同一比例缩放。 */
+    --home-journey-stop-height: 52px;
+    --home-journey-stop-gap: 20px;
+    /* 轨道、站点分支与终点虚线共用同一组比例，保持 Figma 的连续铁路语言。 */
+    --home-journey-map-inset: 12px;
+    --home-journey-track-left: 24px;
+    --home-journey-track-width: 28px;
+    --home-journey-branch-width: 28px;
+    --home-journey-branch-height: 28px;
+    --home-journey-branch-gap: 14px;
+    /* 末端以间隔轨段表示线路在章节图外的延伸，既是终点状态也不会伪造尚未存在的站点。 */
+    --home-journey-terminus-dash-height: 14px;
+    --home-journey-terminus-dash-gap: 13px;
+    --home-journey-terminus-height: 144px;
+    /* hover 仅作路线预览；暗色外观会提升该不透明度，避免亮色提示沉入地图底。 */
+    --home-journey-hover-fill-opacity: 0.18;
+    display: block;
+    overflow: hidden;
+    background: var(--palette-surface-raised);
+  }
+
+  .home-journey-quick-pick__current {
+    display: grid;
+    min-height: 96px;
+    align-content: start;
+    gap: 2px;
+    padding: 10px 14px 12px;
+    background: var(--palette-surface-raised);
+  }
+
+  .home-journey-quick-pick__current > span {
+    margin: 0;
+    color: var(--palette-text);
+    font-size: clamp(16px, 2.1vw, 24px);
+    font-weight: 800;
+    letter-spacing: -0.075em;
+    line-height: 1.08;
+  }
+
+  .home-journey-quick-pick__current strong {
+    color: var(--palette-text);
+    font-size: clamp(32px, 3.4vw, 42px);
+    font-weight: 800;
+    letter-spacing: -0.075em;
+    line-height: 0.98;
+  }
+
+  .home-journey-quick-pick__map {
+    position: relative;
+    min-height: 320px;
+    padding: var(--home-journey-map-inset);
+    background: var(--palette-journey-map);
+    isolation: isolate;
+  }
+
+  .home-journey-quick-pick__map ol {
+    position: relative;
+    display: grid;
+    gap: var(--home-journey-stop-gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .home-journey-quick-pick__map ol::before {
+    position: absolute;
+    top: calc(0px - var(--home-journey-map-inset));
+    bottom: var(--home-journey-terminus-height);
+    left: calc(var(--home-journey-track-left) - var(--home-journey-map-inset));
+    z-index: 0;
+    width: var(--home-journey-track-width);
+    background: var(--home-journey-current-line-color);
+    content: "";
+  }
+
+  .home-journey-quick-pick__stop {
+    position: relative;
+    z-index: 1;
+    min-height: var(--home-journey-stop-height);
+    padding-left: calc(
+      var(--home-journey-track-left) + var(--home-journey-track-width) +
+        var(--home-journey-branch-width) + var(--home-journey-branch-gap) - var(--home-journey-map-inset)
+    );
+  }
+
+  .home-journey-quick-pick__stop a {
+    position: relative;
+    z-index: 0;
+    display: inline-flex;
+    align-items: center;
+    isolation: isolate;
+    width: fit-content;
+    min-height: var(--home-journey-stop-height);
+    border: 0;
+    color: var(--palette-text);
+    font-size: clamp(26px, 2.7vw, 32px);
+    font-weight: 800;
+    letter-spacing: -0.075em;
+    line-height: 1;
+    text-decoration: none;
+    transition: color 180ms var(--motion-header-standard-effects);
+  }
+
+  .home-journey-quick-pick__stop-label {
+    position: relative;
+    z-index: 0;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--home-journey-stop-height);
+    padding-inline: 4px;
+    isolation: isolate;
+  }
+
+  .home-journey-quick-pick__stop a::before {
+    position: absolute;
+    top: 50%;
+    right: calc(100% + var(--home-journey-branch-gap));
+    width: var(--home-journey-branch-width);
+    height: var(--home-journey-branch-height);
+    background: var(--home-journey-line-color);
+    content: "";
+    transform: translateY(-50%);
+  }
+
+  .home-journey-quick-pick__stop-label::before {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    /* 浅色外观让 hover 线路色向深中性收敛，保留原色给已选中的正式站牌。 */
+    background: color-mix(in srgb, var(--home-journey-line-color) 84%, var(--palette-text));
+    clip-path: inset(0 100% 0 0);
+    content: "";
+    opacity: 0;
+    transition:
+      opacity 180ms var(--motion-header-standard-effects),
+      clip-path 260ms var(--motion-header-standard-spatial);
+  }
+
+  /* 手动深色外观把 hover 明显推向浅中性，并提高填充量，让路线预览在暗面可辨。 */
+  :global(html[data-appearance="dark"]) .home-journey-quick-pick {
+    --home-journey-hover-fill-opacity: 0.42;
+  }
+
+    :global(html[data-appearance="dark"])
+    .home-journey-quick-pick__stop:not(.home-journey-quick-pick__stop--current)
+    .home-journey-quick-pick__stop-label::before {
+    background: color-mix(in srgb, var(--home-journey-line-color) 55%, var(--palette-on-hero));
+  }
+
+  /* 跟随系统且系统为深色时，沿用与手动深色外观相同的明度策略。 */
+  @media (prefers-color-scheme: dark) {
+    :global(html:not([data-appearance])) .home-journey-quick-pick {
+      --home-journey-hover-fill-opacity: 0.42;
+    }
+
+    :global(html:not([data-appearance]))
+      .home-journey-quick-pick__stop:not(.home-journey-quick-pick__stop--current)
+      .home-journey-quick-pick__stop-label::before {
+      background: color-mix(in srgb, var(--home-journey-line-color) 55%, var(--palette-on-hero));
+    }
+  }
+
+  .home-journey-quick-pick__stop--current a {
+    color: var(--home-journey-line-text-color);
+  }
+
+  .home-journey-quick-pick__stop--current .home-journey-quick-pick__stop-label::before {
+    background: var(--home-journey-line-color);
+    clip-path: inset(0);
+    opacity: 1;
+  }
+
+  .home-journey-quick-pick__stop--current a::before {
+    width: var(--home-journey-branch-width);
+  }
+
+  /* 鼠标悬停先以低不透明度预览该章节线路色；确认选中后才变为完整站牌。 */
+  @media (hover: hover) and (pointer: fine) {
+    .home-journey-quick-pick__stop:not(.home-journey-quick-pick__stop--current)
+      a:hover
+      .home-journey-quick-pick__stop-label::before {
+      clip-path: inset(0);
+      opacity: var(--home-journey-hover-fill-opacity);
+    }
+  }
+
+  .home-journey-quick-pick__stop a:focus-visible .home-journey-quick-pick__stop-label::before {
+    clip-path: inset(0);
+    opacity: var(--home-journey-hover-fill-opacity);
+  }
+
+  .home-journey-quick-pick__stop a:focus-visible {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+
+  .home-journey-quick-pick__stop--current a:focus-visible {
+    color: var(--home-journey-line-text-color);
+  }
+
+  .home-journey-quick-pick__stop a:focus-visible {
+    outline: 2px solid var(--palette-text);
+    outline-offset: 3px;
+  }
+
+  .home-journey-quick-pick__terminus {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: var(--home-journey-track-width);
+    height: var(--home-journey-terminus-height);
+    /* 虚线与主轨同轴；分支宽度只服务站名，不能再次参与终点的横坐标。 */
+    margin-left: calc(var(--home-journey-track-left) - var(--home-journey-map-inset));
+    background: repeating-linear-gradient(
+      to bottom,
+      var(--home-journey-current-line-color) 0 var(--home-journey-terminus-dash-height),
+      transparent var(--home-journey-terminus-dash-height)
+        calc(var(--home-journey-terminus-dash-height) + var(--home-journey-terminus-dash-gap))
+    );
+  }
+
+  @media (max-width: 760px) {
+    .home-journey-quick-pick {
+      /* 小屏与触屏降低 item 节距，仍由同一套变量保持终点和末站的相对距离。 */
+      --home-journey-stop-height: 46px;
+      --home-journey-stop-gap: 18px;
+      --home-journey-map-inset: 10px;
+      --home-journey-track-left: 22px;
+      --home-journey-track-width: 24px;
+      --home-journey-branch-width: 24px;
+      --home-journey-branch-height: 24px;
+      --home-journey-branch-gap: 12px;
+      --home-journey-terminus-dash-height: 12px;
+      --home-journey-terminus-dash-gap: 12px;
+      --home-journey-terminus-height: 126px;
+    }
+
+    .home-journey-quick-pick__current {
+      min-height: 86px;
+      padding: 9px 12px 10px;
+    }
+
+    .home-journey-quick-pick__current strong {
+      font-size: clamp(30px, 8vw, 38px);
+    }
+
+    .home-journey-quick-pick__map {
+      min-height: 294px;
+    }
+
+    .home-journey-quick-pick__stop a {
+      font-size: clamp(25px, 7.2vw, 30px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-journey-quick-pick__stop a,
+    .home-journey-quick-pick__stop-label::before {
+      transition: none;
+    }
+  }
+</style>

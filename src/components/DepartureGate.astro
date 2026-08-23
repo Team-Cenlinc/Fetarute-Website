@@ -268,7 +268,24 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
       window.scrollTo({ top: targetScrollTop, behavior: "auto" });
     };
 
-    if (hasSeenDeparture) {
+    /** 深链目标在跑道收起后重新定位，确保固定页眉的 scroll margin 在最终文档高度上生效。 */
+    const restoreInitialAnchor = (target: HTMLElement) => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          target.scrollIntoView({ behavior: "auto", block: "start" });
+        });
+      });
+    };
+
+    const initialAnchorId = window.location.hash.slice(1);
+    const initialAnchorTarget = initialAnchorId ? document.getElementById(initialAnchorId) : null;
+
+    if (initialAnchorTarget instanceof HTMLElement) {
+      // URL 已明确指定站名章节时不要求先完成出发交互；否则深链会被 Guard 的跑道和对齐逻辑改写。
+      removeDepartureRunwayForSeenSession();
+      departureGate.remove();
+      restoreInitialAnchor(initialAnchorTarget);
+    } else if (hasSeenDeparture) {
       removeDepartureRunwayForSeenSession();
       departureGate.remove();
     } else if (stage && pass && reader && skip && status) {

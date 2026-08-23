@@ -1,0 +1,79 @@
+import { type RailwayLineKey } from "@/data/railway";
+import { wayfindingPrototype } from "@/data/site";
+import type { Locale } from "@/i18n/config";
+
+/** 首页可被列车快选定位的章节锚点；锚点直接使用站名的稳定英文 slug。 */
+export type HomeJourneySectionId = "beginning-bay" | "tri-server-joint";
+
+/** 首页导视使用的三语章节站名。 */
+export interface HomeJourneySectionName {
+  /** 简体中文路由中显示的章节站名。 */
+  simplifiedChineseName: string;
+  /** 繁体中文路由中显示的章节站名。 */
+  traditionalChineseName: string;
+  /** 英文路由中显示的章节站名。 */
+  englishName: string;
+}
+
+/**
+ * 两段首页章节路线之间的预留分界信息。
+ * 目前页面没有需要绘制的分界或换乘，因此所有现有章节均不填写；类型先固定线路、换乘状态与可选名称，后续新增实际段落时无需改写路线数据契约。
+ */
+export interface HomeJourneySectionBreak {
+  /** 分界后继续使用的线路；换乘时指向新线路，普通分段时可与当前线路相同。 */
+  lineKey: RailwayLineKey;
+  /** 是否需要在未来路线图中明确绘制换乘；不以线路色差自行推断。 */
+  isTransfer: boolean;
+  /** 需要展示分界名称时使用的三语名称；未提供时未来界面不应凭空补写站名。 */
+  name?: HomeJourneySectionName;
+}
+
+/**
+ * 首页列车快选中的一段章节路线。
+ * 这是一份叙事导视数据，不等同于 railway.ts 中的实体铁路车站；因此不会污染真实运营站序。
+ */
+export interface HomeJourneySection {
+  /** 供 URL、DOM section、客户端选中状态与数据属性共用的稳定站名锚点。 */
+  id: HomeJourneySectionId;
+  /** 章节所属线路；快选路线图从此字段读取当前真实线路的官方颜色。 */
+  lineKey: RailwayLineKey;
+  /** 章节站在各公开语言中使用的名称。 */
+  name: HomeJourneySectionName;
+  /** 本章节之后的路线分界；未填写即保持当前单线连续展示且不渲染任何分界元素。 */
+  breakAfter?: HomeJourneySectionBreak;
+}
+
+/**
+ * 首页当前已绘制的列车章节路线。
+ * 这里只登记已经存在的页面 section；类型同时预留线路分界契约，供后续新增实际章节时扩展。
+ * 当前没有换乘或分界数据，因此不填写 breakAfter，也不产生任何相关界面。
+ */
+export const homeJourneySections: readonly HomeJourneySection[] = [
+  {
+    id: "beginning-bay",
+    lineKey: wayfindingPrototype.homeLineKey,
+    name: wayfindingPrototype.homeArrivalStop,
+  },
+  {
+    id: "tri-server-joint",
+    lineKey: wayfindingPrototype.homeLineKey,
+    name: {
+      simplifiedChineseName: "三服汇",
+      traditionalChineseName: "三服匯",
+      englishName: "Tri-Server Joint",
+    },
+  },
+];
+
+/** 根据当前公开语言读取章节站名，避免组件自行散落三语字段选择规则。 */
+export function getHomeJourneySectionName(section: HomeJourneySection, locale: Locale): string {
+  if (locale === "zh-Hans") {
+    return section.name.simplifiedChineseName;
+  }
+
+  if (locale === "zh-Hant") {
+    return section.name.traditionalChineseName;
+  }
+
+  return section.name.englishName;
+}

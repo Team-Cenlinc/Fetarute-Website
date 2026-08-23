@@ -36,6 +36,8 @@
   z-index: 1;
   display: grid;
   min-height: 100svh;
+  /* 快选与站内锚点滚动后为固定顶部导航留出读取空间，避免站名或章节标题被压在导航下方。 */
+  scroll-margin-top: clamp(84px, 8vw, 120px);
   isolation: isolate;
   overflow: visible;
   background: var(--palette-canvas);
@@ -232,74 +234,25 @@
 .home-arrival__train-tooltip {
   position: fixed;
   z-index: 19;
-  top: calc(var(--home-route-train-y, 0px) + clamp(82px, 10.6svh, 118px));
-  left: clamp(
-    20px,
-    calc(var(--home-route-train-x, 0px) + var(--home-arrival-train-width) - 4px),
-    calc(100vw - 312px)
-  );
-  display: grid;
-  width: min(292px, calc(100vw - 40px));
-  gap: 14px;
+  /* --home-arrival-tooltip-top 与 --home-arrival-tooltip-left 由列车的实际 viewport 边界推导；优先贴近列车，空间不足时回退到左上安全区。 */
+  top: var(--home-arrival-tooltip-top, 20px);
+  left: var(--home-arrival-tooltip-left, 20px);
+  display: block;
+  width: min(320px, calc(100vw - 40px));
+  max-block-size: calc(100svh - 40px);
   border: 2px solid var(--palette-text);
   background: var(--palette-canvas);
   color: var(--palette-text);
-  padding: 16px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0;
   opacity: 0;
   pointer-events: none;
   transform: translateY(8px);
   transition:
     opacity 180ms var(--motion-header-standard-effects),
     transform 180ms var(--motion-header-standard-spatial);
-}
-
-.home-arrival__train-tooltip > p,
-.home-arrival__train-tooltip div,
-.home-arrival__train-tooltip span,
-.home-arrival__train-tooltip small {
-  margin: 0;
-}
-
-.home-arrival__train-tooltip > p,
-.home-arrival__train-tooltip div > span:first-child {
-  font-size: 11px;
-  font-weight: 850;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-}
-
-.home-arrival__train-tooltip > div {
-  display: grid;
-  gap: 5px;
-}
-
-.home-arrival__train-tooltip strong {
-  font-size: 23px;
-  letter-spacing: -0.055em;
-  line-height: 1.05;
-}
-
-.home-arrival__train-tooltip-next {
-  border-top: 1px solid color-mix(in srgb, var(--palette-text) 32%, transparent);
-  padding-top: 12px;
-}
-
-.home-arrival__train-tooltip-slots {
-  display: flex;
-  gap: 6px;
-}
-
-.home-arrival__train-tooltip-slots i {
-  display: block;
-  width: 28px;
-  height: 7px;
-  background: var(--home-arrival-line-color);
-}
-
-.home-arrival__train-tooltip small {
-  color: color-mix(in srgb, var(--palette-text) 64%, transparent);
-  font-size: 12px;
-  line-height: 1.4;
 }
 
 .home-arrival__train[data-route-visible="true"][data-tooltip-open="true"]
@@ -323,6 +276,8 @@
   z-index: 0;
   display: grid;
   min-height: 100svh;
+  /* 与到站 section 使用同一锚点留白，使路线图跳转后的章节标题完整落在固定导航之下。 */
+  scroll-margin-top: clamp(84px, 8vw, 120px);
   align-items: start;
   isolation: isolate;
   overflow: hidden;
@@ -484,21 +439,6 @@
   .home-arrival__train {
     width: var(--home-arrival-train-width);
     height: var(--home-arrival-train-height);
-  }
-
-  .home-arrival__train-tooltip {
-    left: clamp(
-      20px,
-      calc(var(--home-route-train-x, 0px) + var(--home-arrival-train-width) - 4px),
-      calc(100vw - 312px)
-    );
-  }
-
-  /* 列车驶入正文竖轨后，优先占用标题上方的留白，避免 Toolip 与正文标题发生层叠。 */
-  .home-arrival__train[data-route-segment="introduction"] + .home-arrival__train-tooltip {
-    top: max(84px, calc(var(--home-route-train-y, 0px) - 208px));
-    right: 20px;
-    left: auto;
   }
 
   .home-introduction {

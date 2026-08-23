@@ -258,6 +258,12 @@ const pageStructuredData = {
             // 动态偏好不依赖存储：用户要求减弱动态时，首屏必须立即可用且不短暂挂出启动层。
             const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+            // 深链的目的地优先于开场仪式；先跳过启动层，避免初始 hash 在正文布局尚未稳定时被重置到首屏。
+            if (window.location.hash.length > 1) {
+              document.documentElement.dataset.launchSkipped = "true";
+              return;
+            }
+
             if (prefersReducedMotion) {
               document.documentElement.dataset.launchSkipped = "true";
               return;

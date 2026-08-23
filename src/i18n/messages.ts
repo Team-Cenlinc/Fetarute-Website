@@ -10,18 +10,18 @@ interface HomeIntroductionMessage {
   description: string;
 }
 
-/** 开屏小列车 Tooltip 的可本地化信息架构。 */
+/** 开屏小列车章节快选窗的可本地化信息架构。 */
 interface HomeTrainTooltipMessage {
   /** 供键盘与触屏触发器使用的操作说明。 */
   triggerLabel: string;
   /** Tooltip 的短标题。 */
   title: string;
-  /** 当前所在地这一栏的标签。 */
-  currentLocationLabel: string;
-  /** 未来快选入口区域的标签。 */
-  nextStopsLabel: string;
-  /** 明确提示这是设计预留，不以空白槽位伪装成可用车站。 */
-  reservedHint: string;
+  /** 当前章节站名上方的短标签。 */
+  currentSectionLabel: string;
+  /** 下半部可点击章节路线图的名称。 */
+  quickPickLabel: string;
+  /** 每个章节链接在辅助技术中使用的动作前缀。 */
+  goToSectionLabel: string;
 }
 
 /** 首页开屏抵达画面中不属于铁路数据的界面文案。 */
@@ -230,11 +230,11 @@ const messages: Record<Locale, SiteMessages> = {
       },
       arrival: {
         trainTooltip: {
-          triggerLabel: "查看列车位置与下一站快选预留区域",
+          triggerLabel: "打开列车章节快选",
           title: "列车导览",
-          currentLocationLabel: "当前位置",
-          nextStopsLabel: "下一站快选",
-          reservedHint: "路线节点将在下一轮设计中开放。",
+          currentSectionLabel: "本站",
+          quickPickLabel: "章节路线",
+          goToSectionLabel: "前往章节",
         },
       },
       newsKicker: "NEWS",
@@ -324,11 +324,11 @@ const messages: Record<Locale, SiteMessages> = {
       },
       arrival: {
         trainTooltip: {
-          triggerLabel: "查看列車位置與下一站快選預留區域",
+          triggerLabel: "開啟列車章節快選",
           title: "列車導覽",
-          currentLocationLabel: "目前位置",
-          nextStopsLabel: "下一站快選",
-          reservedHint: "路線節點將在下一輪設計中開放。",
+          currentSectionLabel: "本站",
+          quickPickLabel: "章節路線",
+          goToSectionLabel: "前往章節",
         },
       },
       newsKicker: "NEWS",
@@ -421,11 +421,11 @@ const messages: Record<Locale, SiteMessages> = {
       },
       arrival: {
         trainTooltip: {
-          triggerLabel: "View the train position and reserved next-stop shortcuts",
+          triggerLabel: "Open the train section picker",
           title: "Train wayfinding",
-          currentLocationLabel: "Current location",
-          nextStopsLabel: "Next-stop shortcuts",
-          reservedHint: "Route stops will be added in the next design pass.",
+          currentSectionLabel: "This stop",
+          quickPickLabel: "Section route",
+          goToSectionLabel: "Go to section",
         },
       },
       newsKicker: "NEWS",

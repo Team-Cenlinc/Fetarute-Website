@@ -1,12 +1,14 @@
 ---
 import { getImage } from "astro:assets";
 import DepartureGate from "@/components/DepartureGate.astro";
+import HomeJourneyQuickPick from "@/components/HomeJourneyQuickPick.astro";
 import RailwayLineHint from "@/components/RailwayLineHint.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import "@/styles/home.css";
 // 保持 Figma 导出的原始 Bézier 作为内联 SVG，使可见弯轨与列车采样的几何完全一致。
 import ServerlinkBend from "@/assets/pages/home/serverlink-bend.svg";
 import { homeLandingScenes } from "@/data/home-landing";
+import { homeJourneySections } from "@/data/home-journey";
 import { getRailwayLineCssVariableName } from "@/data/palette";
 import { railwayLineByKey, shiftRailwayLineColor } from "@/data/railway";
 import { wayfindingPrototype } from "@/data/site";
@@ -382,9 +384,11 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
 
   <section
     class="home-arrival"
+    id="beginning-bay"
     data-home-arrival-route
     data-home-arrival-locale={locale}
     aria-labelledby="home-arrival-title"
+    tabindex="-1"
     style={`--home-arrival-line-color: var(${homeLineCssVariable}); --home-arrival-train-color: ${homeTrainColor};`}
   >
     <span class="home-arrival__vertical-track" data-home-arrival-vertical-track aria-hidden="true"></span>
@@ -415,20 +419,25 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       type="button"
       aria-label={messages.home.arrival.trainTooltip.triggerLabel}
       aria-controls="home-arrival-train-tooltip"
+      aria-haspopup="dialog"
       aria-expanded="false"
       disabled
     ></button>
-    <aside class="home-arrival__train-tooltip" id="home-arrival-train-tooltip" role="tooltip" aria-hidden="true">
-      <p>{messages.home.arrival.trainTooltip.title}</p>
-      <div>
-        <span>{messages.home.arrival.trainTooltip.currentLocationLabel}</span>
-        <strong>{homeArrivalPrimaryName}</strong>
-      </div>
-      <div class="home-arrival__train-tooltip-next">
-        <span>{messages.home.arrival.trainTooltip.nextStopsLabel}</span>
-        <span class="home-arrival__train-tooltip-slots" aria-hidden="true"><i></i><i></i><i></i></span>
-        <small>{messages.home.arrival.trainTooltip.reservedHint}</small>
-      </div>
+    <aside
+      class="home-arrival__train-tooltip"
+      id="home-arrival-train-tooltip"
+      role="dialog"
+      aria-label={messages.home.arrival.trainTooltip.title}
+      aria-hidden="true"
+    >
+      <HomeJourneyQuickPick
+        locale={locale}
+        currentSectionId="beginning-bay"
+        sections={homeJourneySections}
+        currentSectionLabel={messages.home.arrival.trainTooltip.currentSectionLabel}
+        quickPickLabel={messages.home.arrival.trainTooltip.quickPickLabel}
+        goToSectionLabel={messages.home.arrival.trainTooltip.goToSectionLabel}
+      />
     </aside>
   </section>
 
@@ -445,6 +454,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     const homeIntroductionRoute = document.querySelector<HTMLElement>("[data-home-introduction-route]");
     const homeIntroductionTrack = document.querySelector<HTMLElement>("[data-home-introduction-track]");
     const homeArrivalTrainTooltip = document.querySelector<HTMLElement>("#home-arrival-train-tooltip");
+    const homeJourneyPicker = document.querySelector<HTMLElement>("[data-home-journey-picker]");
 
     if (
       homeArrivalTrain &&
@@ -456,7 +466,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       homeArrivalTrainVisualPath &&
       homeIntroductionRoute &&
       homeIntroductionTrack &&
-      homeArrivalTrainTooltip
+      homeArrivalTrainTooltip &&
+      homeJourneyPicker
     ) {
       /** 将一条数值限制在页面进度范围，避免 overscroll 时列车离开已绘制的线路。 */
       const clampRouteProgress = (value: number) => Math.min(Math.max(value, 0), 1);
@@ -467,7 +478,73 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       const getDocumentTop = (element: HTMLElement) => element.getBoundingClientRect().top + window.scrollY;
       /** 减少动态时保留轨道关系，但列车不再随滚动更新位置。 */
       const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+      /** 固定顶部导航是路线图避让的第一条安全边界；未找到时仍以视口边距完成降级定位。 */
+      const siteHeader = document.querySelector<HTMLElement>(".site-header");
       let pendingRouteFrame: number | undefined;
+
+      /** 将快选窗的坐标限制在视口安全区内，避免窄屏或短视口出现负坐标。 */
+      const clampTooltipPosition = (value: number, minimum: number, maximum: number) =>
+        Math.min(Math.max(value, minimum), Math.max(minimum, maximum));
+      /**
+       * 根据列车和快选窗的真实边界决定弹窗方向。
+       * 优先将小型快选窗贴在列车的左右或上下；只有四周都无法完整容纳时才回退到导航下方的左上安全区。
+       */
+      const updateTrainTooltipPlacement = () => {
+        const tooltipEdge = 20;
+        const tooltipGap = 16;
+        const trainBounds = homeArrivalTrain.getBoundingClientRect();
+        const tooltipWidth = homeArrivalTrainTooltip.offsetWidth;
+        const tooltipHeight = homeArrivalTrainTooltip.offsetHeight;
+
+        if (!tooltipWidth || !tooltipHeight) {
+          return;
+        }
+
+        const headerBottom = siteHeader ? Math.max(0, siteHeader.getBoundingClientRect().bottom) : 0;
+        const safeTop = clampTooltipPosition(
+          headerBottom + 12,
+          tooltipEdge,
+          window.innerHeight - tooltipHeight - tooltipEdge,
+        );
+        const safeRight = window.innerWidth - tooltipEdge;
+        const safeBottom = window.innerHeight - tooltipEdge;
+        const maxLeft = safeRight - tooltipWidth;
+        const maxTop = safeBottom - tooltipHeight;
+        const canFitVertically = maxTop >= safeTop;
+        const canPlaceRight = trainBounds.right + tooltipGap + tooltipWidth <= safeRight;
+        const canPlaceLeft = trainBounds.left - tooltipGap - tooltipWidth >= tooltipEdge;
+        const canPlaceBelow = trainBounds.bottom + tooltipGap + tooltipHeight <= window.innerHeight - tooltipEdge;
+        const canPlaceAbove = trainBounds.top - tooltipGap - tooltipHeight >= safeTop;
+        let left = tooltipEdge;
+        let top = safeTop;
+        let placement = "corner";
+
+        if (canFitVertically && canPlaceRight) {
+          left = trainBounds.right + tooltipGap;
+          top = clampTooltipPosition(trainBounds.top + trainBounds.height / 2 - tooltipHeight / 2, safeTop, maxTop);
+          placement = "right";
+        } else if (canFitVertically && canPlaceLeft) {
+          left = trainBounds.left - tooltipGap - tooltipWidth;
+          top = clampTooltipPosition(trainBounds.top + trainBounds.height / 2 - tooltipHeight / 2, safeTop, maxTop);
+          placement = "left";
+        } else if (canPlaceAbove) {
+          left = clampTooltipPosition(trainBounds.left + trainBounds.width / 2 - tooltipWidth / 2, tooltipEdge, maxLeft);
+          top = trainBounds.top - tooltipGap - tooltipHeight;
+          placement = "above";
+        } else if (canPlaceBelow) {
+          left = clampTooltipPosition(trainBounds.left + trainBounds.width / 2 - tooltipWidth / 2, tooltipEdge, maxLeft);
+          top = trainBounds.bottom + tooltipGap;
+          placement = "below";
+        }
+
+        const arrivalBounds = homeArrivalRoute.getBoundingClientRect();
+        const coordinateLeft = reducedMotionQuery.matches ? left - arrivalBounds.left : left;
+        const coordinateTop = reducedMotionQuery.matches ? top - arrivalBounds.top : top;
+
+        homeArrivalTrainTooltip.style.setProperty("--home-arrival-tooltip-left", `${coordinateLeft}px`);
+        homeArrivalTrainTooltip.style.setProperty("--home-arrival-tooltip-top", `${coordinateTop}px`);
+        homeArrivalTrainTooltip.dataset.placement = placement;
+      };
 
       /**
        * 为减少动态偏好提供一个附着在到站横轨右端的静态列车。
@@ -494,6 +571,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         homeArrivalTrainVisual.dataset.routeVisible = "true";
         homeArrivalTrain.dataset.routeSegment = "static";
         homeArrivalTrain.disabled = false;
+        updateTrainTooltipPlacement();
       };
 
       /**
@@ -650,6 +728,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         );
         homeArrivalRoute.style.setProperty("--home-route-train-x", `${trainCenter.x - trainWidth / 2}px`);
         homeArrivalRoute.style.setProperty("--home-route-train-y", `${trainCenter.y - trainHeight / 2}px`);
+        updateTrainTooltipPlacement();
 
         if (!isRouteActive) {
           homeArrivalTrain.dataset.routeSegment = "ready";
@@ -663,11 +742,78 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         }
       };
 
-      /** 让鼠标、键盘与触屏共用同一个 Tooltip 状态，视觉与辅助技术不会在一次点击后分叉。 */
+      /** 让鼠标、键盘与触屏共用同一个章节快选窗状态，视觉与辅助技术不会在一次点击后分叉。 */
+      let isTrainTooltipPinned = false;
       const setTrainTooltipOpen = (isOpen: boolean) => {
+        if (!isOpen) {
+          isTrainTooltipPinned = false;
+        }
+
         homeArrivalTrain.dataset.tooltipOpen = String(isOpen);
         homeArrivalTrain.setAttribute("aria-expanded", String(isOpen));
         homeArrivalTrainTooltip.setAttribute("aria-hidden", String(!isOpen));
+
+        if (isOpen) {
+          window.requestAnimationFrame(updateTrainTooltipPlacement);
+        }
+      };
+      /** 同步路线图的章节高亮与上半部当前站名，滚动和点击不会显示两套位置状态。 */
+      const setActiveJourneySection = (sectionId: string) => {
+        const journeyLinks = Array.from(
+          homeJourneyPicker.querySelectorAll<HTMLAnchorElement>("[data-home-journey-target]"),
+        );
+        const currentLink = journeyLinks.find((link) => link.dataset.homeJourneySectionId === sectionId);
+
+        if (!currentLink) {
+          return;
+        }
+
+        const currentStop = currentLink.closest<HTMLElement>("[data-home-journey-stop]");
+        const currentLineColor = currentStop?.dataset.homeJourneyLineColor;
+
+        if (currentLineColor) {
+          homeJourneyPicker.style.setProperty("--home-journey-current-line-color", currentLineColor);
+        }
+
+        journeyLinks.forEach((link) => {
+          const isCurrent = link === currentLink;
+          const stop = link.closest<HTMLElement>("[data-home-journey-stop]");
+
+          if (isCurrent) {
+            link.setAttribute("aria-current", "step");
+          } else {
+            link.removeAttribute("aria-current");
+          }
+
+          stop?.classList.toggle("home-journey-quick-pick__stop--current", isCurrent);
+        });
+
+        const currentName = homeJourneyPicker.querySelector<HTMLElement>("[data-home-journey-current-name]");
+        const sectionName = currentLink.dataset.homeJourneySectionName;
+
+        if (currentName && sectionName) {
+          currentName.textContent = sectionName;
+        }
+
+        window.requestAnimationFrame(updateTrainTooltipPlacement);
+      };
+      /** 判断焦点或指针是否已进入可交互路线图，避免从列车移入快选窗时意外关闭。 */
+      const isInsideTrainDialog = (target: EventTarget | null) =>
+        target instanceof Node && homeArrivalTrainTooltip.contains(target);
+      /** 为列车与快选窗之间的短距离移动保留缓冲，让指针可自然进入下半部路线图。 */
+      let pendingTrainTooltipClose: number | undefined;
+      const cancelTrainTooltipClose = () => {
+        if (pendingTrainTooltipClose !== undefined) {
+          window.clearTimeout(pendingTrainTooltipClose);
+          pendingTrainTooltipClose = undefined;
+        }
+      };
+      const scheduleTrainTooltipClose = () => {
+        cancelTrainTooltipClose();
+        pendingTrainTooltipClose = window.setTimeout(() => {
+          setTrainTooltipOpen(false);
+          pendingTrainTooltipClose = undefined;
+        }, 120);
       };
       /** 细指针以悬停预览 Tooltip；粗指针则保留点击开关，避免触屏首点被 focus 事件反向关闭。 */
       const fineHoverQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
@@ -675,28 +821,57 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
 
       homeArrivalTrain.addEventListener("pointerenter", () => {
         if (fineHoverQuery.matches) {
+          cancelTrainTooltipClose();
           setTrainTooltipOpen(true);
         }
       });
       homeArrivalTrain.addEventListener("pointerleave", () => {
+        if (fineHoverQuery.matches && !isTrainTooltipPinned) {
+          scheduleTrainTooltipClose();
+        }
+      });
+      homeArrivalTrainTooltip.addEventListener("pointerenter", () => {
         if (fineHoverQuery.matches) {
-          setTrainTooltipOpen(false);
+          cancelTrainTooltipClose();
+          setTrainTooltipOpen(true);
+        }
+      });
+      homeArrivalTrainTooltip.addEventListener("pointerleave", () => {
+        if (fineHoverQuery.matches) {
+          isTrainTooltipPinned = false;
+          scheduleTrainTooltipClose();
         }
       });
       homeArrivalTrain.addEventListener("focus", () => setTrainTooltipOpen(true));
-      homeArrivalTrain.addEventListener("blur", () => setTrainTooltipOpen(false));
+      homeArrivalTrain.addEventListener("blur", (event) => {
+        if (!isInsideTrainDialog(event.relatedTarget)) {
+          setTrainTooltipOpen(false);
+        }
+      });
+      homeArrivalTrainTooltip.addEventListener("focusin", () => {
+        cancelTrainTooltipClose();
+        setTrainTooltipOpen(true);
+      });
+      homeArrivalTrainTooltip.addEventListener("focusout", (event) => {
+        if (event.relatedTarget !== homeArrivalTrain && !isInsideTrainDialog(event.relatedTarget)) {
+          setTrainTooltipOpen(false);
+        }
+      });
       homeArrivalTrain.addEventListener("pointerdown", (event) => {
         pendingTouchTooltipOpen =
           event.pointerType === "touch" ? homeArrivalTrain.dataset.tooltipOpen !== "true" : undefined;
       });
       homeArrivalTrain.addEventListener("click", () => {
         if (pendingTouchTooltipOpen !== undefined) {
+          isTrainTooltipPinned = pendingTouchTooltipOpen;
           setTrainTooltipOpen(pendingTouchTooltipOpen);
           pendingTouchTooltipOpen = undefined;
           return;
         }
 
-        setTrainTooltipOpen(true);
+        const shouldOpen = !isTrainTooltipPinned;
+        isTrainTooltipPinned = shouldOpen;
+        setTrainTooltipOpen(shouldOpen);
       });
 
       homeArrivalTrain.addEventListener("keydown", (event) => {
@@ -705,6 +880,94 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           homeArrivalTrain.blur();
         }
       });
+      homeArrivalTrainTooltip.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          setTrainTooltipOpen(false);
+          homeArrivalTrain.focus();
+        }
+      });
+
+      document.addEventListener("pointerdown", (event) => {
+        if (
+          event.target instanceof Node &&
+          !homeArrivalTrain.contains(event.target) &&
+          !homeArrivalTrainTooltip.contains(event.target)
+        ) {
+          setTrainTooltipOpen(false);
+        }
+      });
+
+      homeJourneyPicker.addEventListener("click", (event) => {
+        if (!(event.target instanceof Element)) {
+          return;
+        }
+
+        const journeyLink = event.target.closest<HTMLAnchorElement>("[data-home-journey-target]");
+
+        if (!journeyLink || !homeJourneyPicker.contains(journeyLink)) {
+          return;
+        }
+
+        const targetId = journeyLink.dataset.homeJourneyTargetId;
+        const sectionId = journeyLink.dataset.homeJourneySectionId;
+        const targetSection = targetId ? document.getElementById(targetId) : null;
+
+        if (!targetId || !sectionId || !targetSection) {
+          return;
+        }
+
+        event.preventDefault();
+        cancelTrainTooltipClose();
+        setActiveJourneySection(sectionId);
+        /** 先让新站牌的线路色完整展开，再开始章节滚动，保留一次可感知的选择反馈。 */
+        window.setTimeout(
+          () => {
+            setTrainTooltipOpen(false);
+            targetSection.focus({ preventScroll: true });
+            targetSection.scrollIntoView({
+              behavior: reducedMotionQuery.matches ? "auto" : "smooth",
+              block: "start",
+            });
+            window.history.pushState(null, "", `#${targetId}`);
+          },
+          reducedMotionQuery.matches ? 0 : 260,
+        );
+      });
+
+      const journeyTargets = Array.from(
+        homeJourneyPicker.querySelectorAll<HTMLAnchorElement>("[data-home-journey-target]"),
+      )
+        .map((link) => {
+          const targetId = link.dataset.homeJourneyTargetId;
+          const sectionId = link.dataset.homeJourneySectionId;
+          const target = targetId ? document.getElementById(targetId) : null;
+
+          return target && sectionId ? { sectionId, target } : null;
+        })
+        .filter((target): target is { sectionId: string; target: HTMLElement } => target !== null);
+
+      if ("IntersectionObserver" in window) {
+        const journeySectionObserver = new IntersectionObserver(
+          (entries) => {
+            const activeEntry = entries
+              .filter((entry) => entry.isIntersecting)
+              .sort((first, second) => second.intersectionRatio - first.intersectionRatio)[0];
+
+            const activeJourneyTarget = journeyTargets.find((target) => target.target === activeEntry?.target);
+
+            if (activeJourneyTarget) {
+              setActiveJourneySection(activeJourneyTarget.sectionId);
+            }
+          },
+          { rootMargin: "-20% 0px -55%", threshold: [0.1, 0.35, 0.65] },
+        );
+
+        journeyTargets.forEach(({ target }) => journeySectionObserver.observe(target));
+      }
+
+      /** 快选窗会随语言、字号和窄屏换行改变高度；尺寸变化后重新选取可完整容纳它的方向。 */
+      const tooltipPlacementObserver = new ResizeObserver(updateTrainTooltipPlacement);
+      tooltipPlacementObserver.observe(homeArrivalTrainTooltip);
 
       window.addEventListener(
         "scroll",
@@ -714,12 +977,16 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           }
 
           // 滚动后重新定位列车时收起卡片，避免悬浮信息与已离开的列车位置脱节。
+          cancelTrainTooltipClose();
           setTrainTooltipOpen(false);
           requestRouteTrainUpdate();
         },
         { passive: true },
       );
-      window.addEventListener("resize", requestRouteTrainUpdate);
+      window.addEventListener("resize", () => {
+        requestRouteTrainUpdate();
+        updateTrainTooltipPlacement();
+      });
       reducedMotionQuery.addEventListener("change", requestRouteTrainUpdate);
       requestRouteTrainUpdate();
     }
@@ -728,7 +995,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
   <section
     class="home-introduction"
     data-home-introduction-route
-    id="features"
+    id="tri-server-joint"
+    tabindex="-1"
     aria-labelledby="home-introduction-title"
     style={`--home-introduction-line-color: var(${homeLineCssVariable});`}
   >

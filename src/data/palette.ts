@@ -23,6 +23,8 @@ export interface InterfacePalette {
   surface: string;
   /** 需要与普通表面拉开一层的按钮悬停与启动站牌表面。 */
   surfaceRaised: string;
+  /** 列车章节图下半部的路线底色；与上半部的白色当前站牌保持明确材料分界。 */
+  journeyMap: string;
   /** 主信息与轮廓使用的高对比中性色。 */
   text: string;
   /** 长说明、次级标签使用的低对比中性色。 */
@@ -76,6 +78,7 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     canvas: "#F0F1F0",
     surface: "#FAFBFA",
     surfaceRaised: "#FCFDFC",
+    journeyMap: "#E0E0E0",
     text: "#1B2022",
     muted: "#626A6D",
     border: "#C9CED0",
@@ -102,6 +105,7 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     canvas: "#111416",
     surface: "#1A1E20",
     surfaceRaised: "#24292B",
+    journeyMap: "#1A1E20",
     text: "#EEF0EF",
     muted: "#B2B8B9",
     border: "#3D474A",
@@ -134,6 +138,7 @@ const interfacePaletteCssVariableByKey: Readonly<Record<keyof InterfacePalette, 
   canvas: "--palette-canvas",
   surface: "--palette-surface",
   surfaceRaised: "--palette-surface-raised",
+  journeyMap: "--palette-journey-map",
   text: "--palette-text",
   muted: "--palette-muted",
   border: "--palette-border",
