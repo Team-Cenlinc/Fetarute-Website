@@ -14,9 +14,9 @@ const canonicalUrl = new URL(defaultLocaleHref, siteInfo.url);
     <meta http-equiv="refresh" content={`0;url=${defaultLocaleHref}`} />
     <meta name="robots" content="noindex, follow" />
     <link rel="canonical" href={canonicalUrl} />
-    <title>Redirecting to Fetarute</title>
+    <title>Redirecting to {siteInfo.name}</title>
   </head>
   <body>
-    <a href={defaultLocaleHref}>Continue to Fetarute</a>
+    <a href={defaultLocaleHref}>Continue to {siteInfo.name}</a>
   </body>
 </html>

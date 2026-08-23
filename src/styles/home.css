@@ -36,8 +36,8 @@
   z-index: 1;
   display: grid;
   min-height: 100svh;
-  /* 快选与站内锚点滚动后为固定顶部导航留出读取空间，避免站名或章节标题被压在导航下方。 */
-  scroll-margin-top: clamp(84px, 8vw, 120px);
+  /* Arrival 的站名本身位于视口下方；锚点贴齐 section 顶部，避免上一屏实景残留在固定导航后方。 */
+  scroll-margin-top: 0;
   isolation: isolate;
   overflow: visible;
   background: var(--palette-canvas);
@@ -224,6 +224,14 @@
   outline: none;
 }
 
+/* 强制配色与高对比偏好不能只依赖列车变色表达焦点；此时恢复清晰的几何边界。 */
+@media (forced-colors: active), (prefers-contrast: more) {
+  .home-arrival__train:focus-visible {
+    outline: 3px solid currentColor;
+    outline-offset: 4px;
+  }
+}
+
 /* Hover、键盘焦点与展开状态只把列车向线路蓝紫略偏移，维持扁平导视的连续色带。 */
 .home-arrival:has(.home-arrival__train:hover) .home-arrival__train-visual,
 .home-arrival:has(.home-arrival__train:focus-visible) .home-arrival__train-visual,
@@ -232,6 +240,8 @@
 }
 
 .home-arrival__train-tooltip {
+  /* 脚本会按实测 Header 底边覆盖该上限；默认值保证首帧和无脚本样式仍不会超出视口。 */
+  --home-arrival-tooltip-content-max-block-size: calc(100svh - 44px);
   position: fixed;
   z-index: 19;
   /* --home-arrival-tooltip-top 与 --home-arrival-tooltip-left 由列车的实际 viewport 边界推导；优先贴近列车，空间不足时回退到左上安全区。 */
@@ -243,9 +253,7 @@
   border: 2px solid var(--palette-text);
   background: var(--palette-canvas);
   color: var(--palette-text);
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: hidden;
   padding: 0;
   opacity: 0;
   pointer-events: none;

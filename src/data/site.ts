@@ -29,9 +29,9 @@ export interface SiteInfo {
  */
 export interface PrimaryNavItem {
   /** 对应 i18n navigation 消息中的键名。 */
-  labelKey: "home" | "features" | "news" | "join";
+  labelKey: "home" | "features";
   /** 首页中可长期引用的章节锚点。 */
-  fragment: "home" | "tri-server-joint" | "news" | "join";
+  fragment: "home" | "tri-server-joint";
 }
 
 /** 出口菜单中可公开访问的外部服务类型；图标由 Header 按类型统一派生，避免数据层耦合视图资产。 */
@@ -122,8 +122,6 @@ export const siteInfo: SiteInfo = {
 export const primaryNavItems: readonly PrimaryNavItem[] = [
   { labelKey: "home", fragment: "home" },
   { labelKey: "features", fragment: "tri-server-joint" },
-  { labelKey: "news", fragment: "news" },
-  { labelKey: "join", fragment: "join" },
 ];
 
 /**

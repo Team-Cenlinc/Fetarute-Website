@@ -86,12 +86,10 @@ export interface SiteMessages {
   headerLabel: string;
   /** 固定顶部主导航的无障碍标签。 */
   navigationLabel: string;
-  /** 三个首页锚点对应的导航标签。 */
+  /** 当前两个首页章节锚点对应的导航标签。 */
   navigation: {
     home: string;
     features: string;
-    news: string;
-    join: string;
   };
   /** 顶栏语言切换链接组的无障碍标签。 */
   languageNavigationLabel: string;
@@ -137,11 +135,6 @@ export interface SiteMessages {
     introduction: HomeIntroductionMessage;
     /** 开屏抵达画面中小列车的 Tooltip 文案。 */
     arrival: HomeArrivalMessage;
-    newsKicker: string;
-    newsTitle: string;
-    joinKicker: string;
-    joinTitle: string;
-    joinDescription: string;
   };
   /** 默认社交分享图片的替代文本。 */
   socialImageAlt: string;
@@ -160,8 +153,6 @@ const messages: Record<Locale, SiteMessages> = {
     navigation: {
       home: "首页",
       features: "旅程",
-      news: "公告",
-      join: "加入",
     },
     languageNavigationLabel: "选择语言",
     serviceDeskLabel: "服务台",
@@ -237,12 +228,6 @@ const messages: Record<Locale, SiteMessages> = {
           goToSectionLabel: "前往章节",
         },
       },
-      newsKicker: "NEWS",
-      newsTitle: "公告内容已经接入集合",
-      joinKicker: "JOIN",
-      joinTitle: "下一步补齐真实服务器信息",
-      joinDescription:
-        "等服务器版本、地址、白名单或身份验证流程确定后，把加入流程写进指南，再决定是否需要独立页面。",
     },
     socialImageAlt: "Fetarute 服联快线导视分享卡片",
   },
@@ -254,8 +239,6 @@ const messages: Record<Locale, SiteMessages> = {
     navigation: {
       home: "首頁",
       features: "旅程",
-      news: "公告",
-      join: "加入",
     },
     languageNavigationLabel: "選擇語言",
     serviceDeskLabel: "服務台",
@@ -331,12 +314,6 @@ const messages: Record<Locale, SiteMessages> = {
           goToSectionLabel: "前往章節",
         },
       },
-      newsKicker: "NEWS",
-      newsTitle: "公告內容已接入集合",
-      joinKicker: "JOIN",
-      joinTitle: "下一步補齊真實伺服器資訊",
-      joinDescription:
-        "待伺服器版本、位址、白名單或驗證流程確定後，把加入流程寫入指南，再決定是否需要獨立頁面。",
     },
     socialImageAlt: "Fetarute 服聯快線導視分享卡片",
   },
@@ -349,8 +326,6 @@ const messages: Record<Locale, SiteMessages> = {
     navigation: {
       home: "Home",
       features: "Journey",
-      news: "News",
-      join: "Join",
     },
     languageNavigationLabel: "Choose language",
     serviceDeskLabel: "Service desk",
@@ -428,12 +403,6 @@ const messages: Record<Locale, SiteMessages> = {
           goToSectionLabel: "Go to section",
         },
       },
-      newsKicker: "NEWS",
-      newsTitle: "News is already connected to a collection",
-      joinKicker: "JOIN",
-      joinTitle: "Complete the real server details next",
-      joinDescription:
-        "When the version, address, whitelist, or verification flow is confirmed, document joining in a guide before deciding whether it needs its own page.",
     },
     socialImageAlt: "Fetarute Serverlink wayfinding share card",
   },

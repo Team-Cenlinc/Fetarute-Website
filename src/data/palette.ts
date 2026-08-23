@@ -4,7 +4,7 @@ import {
   type HexColor,
   type RailwayLine,
   type RailwayLineKey,
-} from "@/data/railway";
+} from "./railway.ts";
 
 /**
  * 界面外观模式。
@@ -65,8 +65,6 @@ export interface InterfacePalette {
   heroCopyReflectionFallback: string;
   /** 悬浮导视牌所需的环境阴影。 */
   floatingShadow: string;
-  /** 启动动画站牌的近距离阴影。 */
-  launchShadow: string;
 }
 
 /**
@@ -99,7 +97,6 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     heroCopyShadow: "rgb(0 0 0)",
     heroCopyReflectionFallback: "#FFFFFF",
     floatingShadow: "0 0 42px -18px rgb(12 15 16 / 0.35)",
-    launchShadow: "0 16px 45px rgb(12 15 16 / 0.16)",
   },
   dark: {
     canvas: "#111416",
@@ -126,7 +123,6 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     heroCopyShadow: "rgb(0 0 0)",
     heroCopyReflectionFallback: "#FFFFFF",
     floatingShadow: "0 0 58px -20px rgb(0 0 0 / 0.72)",
-    launchShadow: "0 16px 45px rgb(0 0 0 / 0.46)",
   },
 };
 
@@ -159,7 +155,6 @@ const interfacePaletteCssVariableByKey: Readonly<Record<keyof InterfacePalette, 
   heroCopyShadow: "--palette-hero-copy-shadow",
   heroCopyReflectionFallback: "--palette-hero-copy-reflection-fallback",
   floatingShadow: "--palette-floating-shadow",
-  launchShadow: "--palette-launch-shadow",
 };
 
 /**

@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
+import { interfacePalette } from "../src/data/palette.ts";
 import {
   getRailwayLineKey,
   railwayLineByKey,
@@ -10,6 +11,10 @@ import {
 
 const cardWidth = 1200;
 const cardHeight = 630;
+/** 固定分享卡沿用正式深色画布，避免导出脚本另存一份近似背景色。 */
+const shareCardScrimColor = interfacePalette.dark.canvas;
+/** Logo 使用全站首屏前景色，在图片遮罩上维持与官网一致的浅色品牌标记。 */
+const shareCardLogoColor = interfacePalette.light.onHero;
 
 /** 读取分享卡片必须存在的服联快线，缺失时在构建期明确失败而不生成伪造的主线色。 */
 function getRequiredPrimaryLine(): RailwayLine {
@@ -53,9 +58,9 @@ function createRibbonOverlaySvg(lines: readonly RailwayLine[]): Buffer {
     <svg xmlns="http://www.w3.org/2000/svg" width="${cardWidth}" height="${cardHeight}" viewBox="0 0 ${cardWidth} ${cardHeight}">
       <defs>
         <linearGradient id="share-card-scrim" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#111416" stop-opacity="0.62" />
-          <stop offset="0.5" stop-color="#111416" stop-opacity="0.4" />
-          <stop offset="1" stop-color="#111416" stop-opacity="0.62" />
+          <stop offset="0" stop-color="${shareCardScrimColor}" stop-opacity="0.62" />
+          <stop offset="0.5" stop-color="${shareCardScrimColor}" stop-opacity="0.4" />
+          <stop offset="1" stop-color="${shareCardScrimColor}" stop-opacity="0.62" />
         </linearGradient>
       </defs>
       <rect width="${cardWidth}" height="${cardHeight}" fill="url(#share-card-scrim)" />
@@ -77,7 +82,7 @@ async function buildSocialCard(): Promise<void> {
     new URL("../src/assets/fetarute-branding/fetarute-logo.svg", import.meta.url),
   );
   const outputPath = fileURLToPath(new URL("../public/fetarute-share-card.png", import.meta.url));
-  const logoSvg = (await readFile(logoPath, "utf8")).replaceAll("currentColor", "#F4F6F5");
+  const logoSvg = (await readFile(logoPath, "utf8")).replaceAll("currentColor", shareCardLogoColor);
   const logoPng = await sharp(Buffer.from(logoSvg)).resize({ width: 458 }).png().toBuffer();
 
   await sharp(landingScenePath)

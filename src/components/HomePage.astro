@@ -4,6 +4,7 @@ import DepartureGate from "@/components/DepartureGate.astro";
 import HomeJourneyQuickPick from "@/components/HomeJourneyQuickPick.astro";
 import RailwayLineHint from "@/components/RailwayLineHint.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import "@/styles/home-shell.css";
 import "@/styles/home.css";
 // 保持 Figma 导出的原始 Bézier 作为内联 SVG，使可见弯轨与列车采样的几何完全一致。
 import ServerlinkBend from "@/assets/pages/home/serverlink-bend.svg";
@@ -12,8 +13,7 @@ import { homeJourneySections } from "@/data/home-journey";
 import { getRailwayLineCssVariableName } from "@/data/palette";
 import { railwayLineByKey, shiftRailwayLineColor } from "@/data/railway";
 import { wayfindingPrototype } from "@/data/site";
-import { getLocalizedNews } from "@/i18n/content";
-import { localeMetadata, type Locale } from "@/i18n/config";
+import { type Locale } from "@/i18n/config";
 import { getMessages } from "@/i18n/messages";
 
 /**
@@ -27,10 +27,6 @@ export interface Props {
 
 const { locale } = Astro.props;
 const messages = getMessages(locale);
-const newsItems = await getLocalizedNews(locale);
-const dateFormatter = new Intl.DateTimeFormat(localeMetadata[locale].languageTag, {
-  dateStyle: "long",
-});
 
 /**
  * 为每张受控实景生成可由浏览器延迟选择的两种现代格式。
@@ -92,20 +88,23 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     aria-labelledby="hero-title"
     style={`--hero-copy-shadow-blur: ${defaultLandingScene.copyShadow.blur}; --hero-copy-shadow-opacity: ${defaultLandingScene.copyShadow.opacity};`}
   >
-    <picture class="hero-scene" data-landing-scene-id={defaultLandingScene.id}>
-      <source srcset={defaultLandingScene.avifSrc} type="image/avif" />
-      <img
-        data-landing-scene-image
-        src={defaultLandingScene.webpSrc}
-        width={defaultLandingScene.width}
-        height={defaultLandingScene.height}
-        alt={defaultLandingScene.alt}
-        loading="eager"
-        fetchpriority="high"
-        decoding="async"
-        style={`object-position: ${defaultLandingScene.focalPoint};`}
-      />
-    </picture>
+    <!-- 脚本先在离线 picture 中装入最终随机场景，再一次性挂载；浏览器不会抢先请求默认图。 -->
+    <picture class="hero-scene" data-landing-scene-id={defaultLandingScene.id}></picture>
+    <noscript>
+      <picture class="hero-scene">
+        <source srcset={defaultLandingScene.avifSrc} type="image/avif" />
+        <img
+          src={defaultLandingScene.webpSrc}
+          width={defaultLandingScene.width}
+          height={defaultLandingScene.height}
+          alt={defaultLandingScene.alt}
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          style={`object-position: ${defaultLandingScene.focalPoint};`}
+        />
+      </picture>
+    </noscript>
     <div class="hero-copy">
       <h1 id="hero-title">
         <span class="hero-title__base">{messages.home.title}</span>
@@ -118,8 +117,6 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
   <script is:inline define:vars={{ landingSceneImages }}>
     (() => {
       const sceneElement = document.querySelector("[data-landing-scene-id]");
-      const sceneImage = sceneElement?.querySelector("[data-landing-scene-image]");
-      const avifSource = sceneElement?.querySelector('source[type="image/avif"]');
       const heroSection = sceneElement?.closest(".hero-section");
       const heroTitle = heroSection?.querySelector("#hero-title");
       /** 同一标签页只记录上一张 Landing 实景，既保留随机性，又避免连续刷新恰好重复时误以为没有生效。 */
@@ -127,11 +124,68 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
 
       if (
         !(sceneElement instanceof HTMLElement) ||
-        !(sceneImage instanceof HTMLImageElement) ||
         !(heroSection instanceof HTMLElement) ||
         !(heroTitle instanceof HTMLElement)
       ) {
         return;
+      }
+
+      /** 使用密码学随机源避免刷新时固定落在同一张图；旧浏览器安全回退至 Math.random。 */
+      const getRandomIndex = (length) => {
+        if (length <= 1) {
+          return 0;
+        }
+
+        if (window.crypto?.getRandomValues) {
+          const values = new Uint32Array(1);
+          window.crypto.getRandomValues(values);
+          return Math.floor((values[0] / 2 ** 32) * length);
+        }
+
+        return Math.floor(Math.random() * length);
+      };
+
+      const getPreviousSceneId = () => {
+        try {
+          return window.sessionStorage.getItem(landingSceneSessionKey);
+        } catch {
+          // 隐私模式或受限嵌入上下文不能访问 storage 时，退回普通随机即可。
+          return null;
+        }
+      };
+      const previousSceneId = getPreviousSceneId();
+      const selectableScenes = landingSceneImages.filter((scene) => scene.id !== previousSceneId);
+      const selectedScene = selectableScenes[getRandomIndex(selectableScenes.length)];
+
+      if (!selectedScene) {
+        return;
+      }
+
+      const selectedSource = document.createElement("source");
+      selectedSource.type = "image/avif";
+
+      const sceneImage = document.createElement("img");
+      sceneImage.dataset.landingSceneImage = "";
+      sceneImage.width = selectedScene.width;
+      sceneImage.height = selectedScene.height;
+      sceneImage.alt = selectedScene.alt;
+      sceneImage.loading = "eager";
+      sceneImage.fetchPriority = "high";
+      sceneImage.decoding = "async";
+      sceneImage.style.objectPosition = selectedScene.focalPoint;
+
+      sceneElement.dataset.landingSceneId = selectedScene.id;
+      sceneElement.replaceChildren(selectedSource, sceneImage);
+      // 先把无地址节点挂入 picture，再登记 AVIF 与回退地址，避免游离 img 抢先发出 WebP 请求。
+      selectedSource.srcset = selectedScene.avifSrc;
+      sceneImage.src = selectedScene.webpSrc;
+      heroSection.style.setProperty("--hero-copy-shadow-blur", selectedScene.copyShadow.blur);
+      heroSection.style.setProperty("--hero-copy-shadow-opacity", selectedScene.copyShadow.opacity);
+
+      try {
+        window.sessionStorage.setItem(landingSceneSessionKey, selectedScene.id);
+      } catch {
+        // 读取失败时已经正常随机；写入失败只意味着下一次刷新可能再次抽到同一张。
       }
 
       /** 将 CSS object-position 的关键词或百分比统一为可参与 cover 裁切计算的 0-1 锚点。 */
@@ -315,65 +369,19 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
 
       window.addEventListener(
         "pagehide",
-        () => {
+        (event) => {
           window.cancelAnimationFrame(titleReflectionFrame);
-          titleReflectionResizeObserver?.disconnect();
+          if (!event.persisted) {
+            titleReflectionResizeObserver?.disconnect();
+          }
         },
-        { once: true },
       );
 
-      /** 使用密码学随机源避免刷新时固定落在同一张图；旧浏览器安全回退至 Math.random。 */
-      const getRandomIndex = (length) => {
-        if (length <= 1) {
-          return 0;
+      window.addEventListener("pageshow", (event) => {
+        if (event.persisted) {
+          scheduleTitleReflectionColorUpdate();
         }
-
-        if (window.crypto?.getRandomValues) {
-          const values = new Uint32Array(1);
-          window.crypto.getRandomValues(values);
-          return Math.floor((values[0] / 2 ** 32) * length);
-        }
-
-        return Math.floor(Math.random() * length);
-      };
-
-      const getPreviousSceneId = () => {
-        try {
-          return window.sessionStorage.getItem(landingSceneSessionKey);
-        } catch {
-          // 隐私模式或受限嵌入上下文不能访问 storage 时，退回普通随机即可。
-          return null;
-        }
-      };
-      const previousSceneId = getPreviousSceneId();
-      const selectableScenes = landingSceneImages.filter(
-        (scene) => scene.id !== previousSceneId,
-      );
-      const selectedScene = selectableScenes[getRandomIndex(selectableScenes.length)];
-
-      if (!selectedScene) {
-        return;
-      }
-
-      if (avifSource instanceof HTMLSourceElement) {
-        avifSource.srcset = selectedScene.avifSrc;
-      }
-
-      sceneElement.dataset.landingSceneId = selectedScene.id;
-      sceneImage.src = selectedScene.webpSrc;
-      sceneImage.width = selectedScene.width;
-      sceneImage.height = selectedScene.height;
-      sceneImage.alt = selectedScene.alt;
-      sceneImage.style.objectPosition = selectedScene.focalPoint;
-
-      heroSection.style.setProperty("--hero-copy-shadow-blur", selectedScene.copyShadow.blur);
-      heroSection.style.setProperty("--hero-copy-shadow-opacity", selectedScene.copyShadow.opacity);
-
-      try {
-        window.sessionStorage.setItem(landingSceneSessionKey, selectedScene.id);
-      } catch {
-        // 读取失败时已经正常随机；写入失败只意味着下一次刷新可能再次抽到同一张。
-      }
+      });
 
       void updateTitleReflectionColor();
     })();
@@ -455,6 +463,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     const homeIntroductionTrack = document.querySelector<HTMLElement>("[data-home-introduction-track]");
     const homeArrivalTrainTooltip = document.querySelector<HTMLElement>("#home-arrival-train-tooltip");
     const homeJourneyPicker = document.querySelector<HTMLElement>("[data-home-journey-picker]");
+    const homeJourneyMap = document.querySelector<HTMLElement>("[data-home-journey-map]");
 
     if (
       homeArrivalTrain &&
@@ -467,7 +476,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       homeIntroductionRoute &&
       homeIntroductionTrack &&
       homeArrivalTrainTooltip &&
-      homeJourneyPicker
+      homeJourneyPicker &&
+      homeJourneyMap
     ) {
       /** 将一条数值限制在页面进度范围，避免 overscroll 时列车离开已绘制的线路。 */
       const clampRouteProgress = (value: number) => Math.min(Math.max(value, 0), 1);
@@ -493,6 +503,22 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         const tooltipEdge = 20;
         const tooltipGap = 16;
         const trainBounds = homeArrivalTrain.getBoundingClientRect();
+        const headerBottom = siteHeader ? Math.max(0, siteHeader.getBoundingClientRect().bottom) : 0;
+        const preferredSafeTop = Math.max(tooltipEdge, headerBottom + 12);
+        const tooltipStyle = window.getComputedStyle(homeArrivalTrainTooltip);
+        const tooltipBorderBlockSize =
+          (Number.parseFloat(tooltipStyle.borderTopWidth) || 0) +
+          (Number.parseFloat(tooltipStyle.borderBottomWidth) || 0);
+        const tooltipContentMaxBlockSize = Math.max(
+          0,
+          window.innerHeight - preferredSafeTop - tooltipEdge - tooltipBorderBlockSize,
+        );
+
+        homeArrivalTrainTooltip.style.setProperty(
+          "--home-arrival-tooltip-content-max-block-size",
+          `${tooltipContentMaxBlockSize}px`,
+        );
+
         const tooltipWidth = homeArrivalTrainTooltip.offsetWidth;
         const tooltipHeight = homeArrivalTrainTooltip.offsetHeight;
 
@@ -500,9 +526,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           return;
         }
 
-        const headerBottom = siteHeader ? Math.max(0, siteHeader.getBoundingClientRect().bottom) : 0;
         const safeTop = clampTooltipPosition(
-          headerBottom + 12,
+          preferredSafeTop,
           tooltipEdge,
           window.innerHeight - tooltipHeight - tooltipEdge,
         );
@@ -887,6 +912,33 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         }
       });
 
+      /**
+       * 只允许下半路线图消费纵向滚轮；到达边界或指针停在本站栏时阻断滚动链，避免文档被带离当前列车。
+       * 缩放手势继续交给浏览器，不能为了滚动隔离而禁用用户的页面缩放。
+       */
+      const containTrainTooltipWheel = (event: WheelEvent) => {
+        if (event.ctrlKey) {
+          return;
+        }
+
+        const isInsideJourneyMap = event.target instanceof Node && homeJourneyMap.contains(event.target);
+
+        if (!isInsideJourneyMap) {
+          event.preventDefault();
+          return;
+        }
+
+        const isAtStart = homeJourneyMap.scrollTop <= 0;
+        const isAtEnd =
+          homeJourneyMap.scrollTop + homeJourneyMap.clientHeight >= homeJourneyMap.scrollHeight - 1;
+
+        if ((event.deltaY < 0 && isAtStart) || (event.deltaY > 0 && isAtEnd)) {
+          event.preventDefault();
+        }
+      };
+
+      homeArrivalTrainTooltip.addEventListener("wheel", containTrainTooltipWheel, { passive: false });
+
       document.addEventListener("pointerdown", (event) => {
         if (
           event.target instanceof Node &&
@@ -1006,35 +1058,5 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       <h2 id="home-introduction-title">{messages.home.introduction.title}</h2>
       <p>{messages.home.introduction.description}</p>
     </div>
-  </section>
-
-  <section class="content-section" id="news" aria-labelledby="news-title">
-    <div class="section-heading">
-      <p class="section-label">{messages.home.newsKicker}</p>
-      <h2 id="news-title">{messages.home.newsTitle}</h2>
-    </div>
-    <ol class="news-list">
-      {
-        newsItems.map((entry) => (
-          <li>
-            <time datetime={entry.data.publishedAt.toISOString()}>
-              {dateFormatter.format(entry.data.publishedAt)}
-            </time>
-            <div>
-              <h3>{entry.data.title}</h3>
-              <p>{entry.data.description}</p>
-            </div>
-          </li>
-        ))
-      }
-    </ol>
-  </section>
-
-  <section class="content-section join-section" id="join" aria-labelledby="join-title">
-    <div class="section-heading">
-      <p class="section-label">{messages.home.joinKicker}</p>
-      <h2 id="join-title">{messages.home.joinTitle}</h2>
-    </div>
-    <p>{messages.home.joinDescription}</p>
   </section>
 </BaseLayout>

@@ -64,7 +64,7 @@ if (!currentSection) {
     <span>{currentSectionLabel}</span>
     <strong data-home-journey-current-name>{currentSection.displayName}</strong>
   </header>
-  <nav class="home-journey-quick-pick__map" aria-label={quickPickLabel}>
+  <nav class="home-journey-quick-pick__map" data-home-journey-map aria-label={quickPickLabel}>
     <ol>
       {
         renderedSections.map((section) => (
@@ -98,6 +98,8 @@ if (!currentSection) {
 
 <style>
   .home-journey-quick-pick {
+    /* 完整面板由 96px 本站栏与 320px 路线图组成；短视口只压缩下方可滚动路线图。 */
+    --home-journey-picker-block-size: 416px;
     /* 站点高度与行距组成章节图的基础节距；末端虚线也按同一比例缩放。 */
     --home-journey-stop-height: 52px;
     --home-journey-stop-gap: 20px;
@@ -114,7 +116,13 @@ if (!currentSection) {
     --home-journey-terminus-height: 144px;
     /* hover 仅作路线预览；暗色外观会提升该不透明度，避免亮色提示沉入地图底。 */
     --home-journey-hover-fill-opacity: 0.18;
-    display: block;
+    display: grid;
+    grid-template-rows: max-content minmax(0, 1fr);
+    block-size: min(
+      var(--home-journey-picker-block-size),
+      var(--home-arrival-tooltip-content-max-block-size, var(--home-journey-picker-block-size))
+    );
+    min-block-size: 0;
     overflow: hidden;
     background: var(--palette-surface-raised);
   }
@@ -126,6 +134,7 @@ if (!currentSection) {
     gap: 2px;
     padding: 10px 14px 12px;
     background: var(--palette-surface-raised);
+    touch-action: pinch-zoom;
   }
 
   .home-journey-quick-pick__current > span {
@@ -147,7 +156,10 @@ if (!currentSection) {
 
   .home-journey-quick-pick__map {
     position: relative;
-    min-height: 320px;
+    min-block-size: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: var(--home-journey-map-inset);
     background: var(--palette-journey-map);
     isolation: isolate;
@@ -322,6 +334,8 @@ if (!currentSection) {
 
   @media (max-width: 760px) {
     .home-journey-quick-pick {
+      /* 小屏完整高度由 86px 本站栏与 294px 路线图组成，仍只允许下半区在受限高度内收缩。 */
+      --home-journey-picker-block-size: 380px;
       /* 小屏与触屏降低 item 节距，仍由同一套变量保持终点和末站的相对距离。 */
       --home-journey-stop-height: 46px;
       --home-journey-stop-gap: 18px;
@@ -344,11 +358,6 @@ if (!currentSection) {
     .home-journey-quick-pick__current strong {
       font-size: clamp(30px, 8vw, 38px);
     }
-
-    .home-journey-quick-pick__map {
-      min-height: 294px;
-    }
-
     .home-journey-quick-pick__stop a {
       font-size: clamp(25px, 7.2vw, 30px);
     }
