@@ -275,22 +275,34 @@
   --home-introduction-track-width: clamp(34px, 3.23vw, 62px);
   /* --home-introduction-track-origin-x 是主轨与站标共用的横向起点，轨宽封顶后仍能无缝相接。 */
   --home-introduction-track-origin-x: 9.32vw;
+  /* --home-introduction-content-origin-x 让正文与首图共用同一版心，避免画廊看起来从另一列半途开始。 */
+  --home-introduction-content-origin-x: 17.76vw;
   /* 标题与 station mark 取同一行盒中心，避免不同 viewport 下站标向下漂移。 */
   --home-introduction-copy-top: 4.63svh;
   --home-introduction-title-line-half: clamp(24.51px, 2.85vw, 54.72px);
   --home-introduction-track-half: clamp(17px, 1.615vw, 31px);
+  /* --home-introduction-opening-end-space 只隔开正文与首张图片，避免用整屏高度制造无方向感的空白。 */
+  --home-introduction-opening-end-space: clamp(72px, 10svh, 140px);
   position: relative;
   /* 正文作为独立低层画布，让跨站列车与 Tooltip 能完整覆盖其上的文字。 */
   z-index: 0;
-  display: grid;
+  display: block;
+  width: 100%;
+  min-width: 0;
   min-height: 100svh;
-  /* 与到站 section 使用同一锚点留白，使路线图跳转后的章节标题完整落在固定导航之下。 */
-  scroll-margin-top: clamp(84px, 8vw, 120px);
-  align-items: start;
+  /* 深链按紧凑 Header 的真实底缘留白，避免 120px 完整态占位把首张图片额外推离视口。 */
+  scroll-margin-top: 96px;
   isolation: isolate;
-  overflow: hidden;
+  overflow: visible;
   background: var(--palette-canvas);
   color: var(--palette-text);
+}
+
+.home-introduction__opening {
+  position: relative;
+  display: grid;
+  align-items: start;
+  padding-bottom: var(--home-introduction-opening-end-space);
 }
 
 .home-introduction__track,
@@ -301,10 +313,13 @@
 }
 
 .home-introduction__track {
+  /* sticky 图片会横穿主轨；线路必须作为持续进度层覆盖卡片，而不是被场景遮断。 */
+  z-index: 2;
   top: 0;
   bottom: 0;
   left: var(--home-introduction-track-origin-x);
   width: var(--home-introduction-track-width);
+  pointer-events: none;
 }
 
 .home-introduction__branch {
@@ -324,7 +339,7 @@
   display: grid;
   gap: clamp(16px, 1.75vw, 34px);
   margin-top: var(--home-introduction-copy-top);
-  margin-left: 17.76vw;
+  margin-left: var(--home-introduction-content-origin-x);
   padding-right: clamp(24px, 6vw, 120px);
 }
 
@@ -344,6 +359,180 @@
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.35;
+}
+
+.home-gallery {
+  /* --home-gallery-scroll-distance 由真实轨道宽度生成纵向行程；无脚本时保持 0，不制造空白页面。 */
+  --home-gallery-scroll-distance: 0px;
+  /* --home-gallery-offset 只记录当前水平位移，浏览器原生 scrollY 始终是唯一输入。 */
+  --home-gallery-offset: 0px;
+  /* 首卡沿用正文版心；左侧仍由正文版心之前的空间承载 Serverlink 轨道与列车。 */
+  --home-gallery-leading-space: var(--home-introduction-content-origin-x);
+  /* --home-gallery-header-safe-top 覆盖桌面 Header 完整展开态底缘与 12px 呼吸区，矮屏也不能让图片钻到导航下方。 */
+  --home-gallery-header-safe-top: 136px;
+  /* --home-gallery-viewport-bottom-space 保留卡片底缘与视口的最小间隔，短视口通过缩短图片而不是向上挤压。 */
+  --home-gallery-viewport-bottom-space: 20px;
+  /* Figma 中卡片为 1372×861；双重约束让桌面宽高比变化时仍完整落在视口内。 */
+  --home-gallery-card-block-size: min(
+    79.72svh,
+    calc(71.46vw / 1.5935),
+    max(
+      1px,
+      calc(100svh - var(--home-gallery-header-safe-top) - var(--home-gallery-viewport-bottom-space))
+    )
+  );
+  --home-gallery-card-inline-size: min(71.46vw, calc(var(--home-gallery-card-block-size) * 1.5935));
+  /* --home-gallery-stage-top 优先保留原有居中构图；空间不足时切到 Header 安全线。 */
+  --home-gallery-stage-top: max(
+    var(--home-gallery-header-safe-top),
+    calc((100svh - var(--home-gallery-card-block-size)) / 2)
+  );
+  /* 尾部留白让最后一张停在与首张相同的左侧锚点，而不是贴住视口右缘。 */
+  --home-gallery-trailing-space: max(
+    24px,
+    calc(100vw - var(--home-gallery-leading-space) - var(--home-gallery-card-inline-size))
+  );
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  /* 负向抵消 stage 顶部定位，使首图仍紧随 opening，而不是因 Header 安全区制造额外文档空白。 */
+  margin-top: calc(var(--home-gallery-stage-top) * -1);
+}
+
+.home-gallery__stage {
+  display: flex;
+  box-sizing: border-box;
+  height: 100svh;
+  align-items: flex-start;
+  padding-top: var(--home-gallery-stage-top);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: inline mandatory;
+  scrollbar-color: var(--home-introduction-line-color) transparent;
+  scrollbar-width: thin;
+}
+
+.home-gallery__track {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  gap: clamp(24px, 2.6vw, 50px);
+  margin: 0;
+  padding: 0 0 0 var(--home-gallery-leading-space);
+  list-style: none;
+  transform: translate3d(var(--home-gallery-offset), 0, 0);
+}
+
+.home-gallery__item {
+  flex: 0 0 var(--home-gallery-card-inline-size);
+  scroll-snap-align: start;
+}
+
+.home-gallery__item:last-of-type {
+  /* overflow 会忽略容器尾端 padding；把停靠留白计入最后一个真实列表项，脚本才能量到完整距离。 */
+  flex-basis: calc(var(--home-gallery-card-inline-size) + var(--home-gallery-trailing-space));
+}
+
+.home-gallery__figure {
+  position: relative;
+  width: var(--home-gallery-card-inline-size);
+  height: var(--home-gallery-card-block-size);
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--radius-gallery-scene);
+  background: var(--color-scene-fallback);
+  color: var(--color-on-hero);
+  isolation: isolate;
+  transform-origin: center left;
+}
+
+.home-gallery__picture,
+.home-gallery__picture img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.home-gallery__picture {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+}
+
+.home-gallery__picture::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--color-gallery-scrim) 0%, transparent 46%);
+  content: "";
+  pointer-events: none;
+}
+
+.home-gallery__picture img {
+  object-fit: cover;
+}
+
+.home-gallery__caption {
+  position: absolute;
+  top: 12.54%;
+  left: 8.31%;
+  display: grid;
+  max-width: 76%;
+  gap: clamp(8px, 0.93svh, 10px);
+  filter: drop-shadow(var(--shadow-gallery-copy));
+  transition:
+    opacity 180ms var(--motion-header-standard-effects),
+    transform 240ms var(--motion-header-standard-spatial);
+}
+
+.home-gallery[data-home-gallery-caption-ready="true"]
+  .home-gallery__item:not([data-home-gallery-caption-visible="true"])
+  .home-gallery__caption {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.home-gallery__kicker,
+.home-gallery__title {
+  display: block;
+}
+
+.home-gallery__kicker {
+  font-size: clamp(18px, 1.67vw, 32px);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.15;
+}
+
+.home-gallery__title {
+  font-size: clamp(38px, 3.33vw, 64px);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.home-gallery[data-home-gallery-enhanced="true"] {
+  height: calc(100svh + var(--home-gallery-scroll-distance));
+}
+
+.home-gallery[data-home-gallery-enhanced="true"] .home-gallery__stage {
+  position: sticky;
+  top: 0;
+  overflow: clip;
+  scroll-snap-type: none;
+  scrollbar-width: none;
+}
+
+.home-gallery[data-home-gallery-enhanced="true"] .home-gallery__track {
+  will-change: transform;
+}
+
+/* 横轴输入已由 Gallery 精确换算；短暂关闭根节点 smooth，避免每个 wheel delta 重启一条补间动画。 */
+html[data-home-gallery-horizontal-input] {
+  scroll-behavior: auto;
 }
 
 @media (max-width: 1100px) and (min-width: 761px) {
@@ -454,10 +643,17 @@
     --home-introduction-track-width: clamp(20px, 5.8vw, 30px);
     /* 窄屏与 Arrival 竖轨共用 7vw 轴线，使列车跨 section 时不产生横向断点并为正文让出宽度。 */
     --home-introduction-track-origin-x: 7vw;
+    /* 窄屏正文与图片列共享 branch 右缘后的安全起点，维持单一纵向阅读轴。 */
+    --home-introduction-content-origin-x: calc(
+      var(--home-introduction-track-origin-x) + var(--home-introduction-track-width) +
+        var(--home-introduction-track-width) + clamp(8px, 2vw, 16px)
+    );
     --home-introduction-copy-top: 20svh;
     --home-introduction-title-line-half: clamp(19.38px, 6.27vw, 24.51px);
     --home-introduction-track-half: clamp(10px, 2.9vw, 15px);
+    --home-introduction-opening-end-space: clamp(48px, 8svh, 72px);
     min-height: max(680px, 100svh);
+    scroll-margin-top: 84px;
   }
 
   .home-introduction__track {
@@ -476,10 +672,7 @@
   .home-introduction__copy {
     /* 保留 branch 右缘后的导视留白，避免小屏的站名编号压到 station mark。 */
     margin-top: var(--home-introduction-copy-top);
-    margin-left: calc(
-      var(--home-introduction-track-origin-x) + var(--home-introduction-track-width) +
-        var(--home-introduction-track-width) + clamp(8px, 2vw, 16px)
-    );
+    margin-left: var(--home-introduction-content-origin-x);
     padding-right: 24px;
   }
 
@@ -490,6 +683,75 @@
 
   .home-introduction__copy p {
     font-size: clamp(19px, 5vw, 28px);
+  }
+
+  .home-gallery {
+    /* 小屏改用原生纵向图片列；当前项沿轨道放大，前后项缩小，不再把纵向手势翻译成横移。 */
+    --home-gallery-leading-space: var(--home-introduction-content-origin-x);
+    --home-gallery-card-inline-size: 70vw;
+    --home-gallery-card-block-size: min(48svh, 420px);
+    /* 小屏首图在 Gallery 起点进入 Header 下方安全区，列车也从这一锚点开始累计进度。 */
+    --home-gallery-stage-top: 100px;
+    height: auto;
+    /* 抵消安全区占用的文档高度，让图片区域仍紧随上一段正文。 */
+    margin-top: calc(var(--home-gallery-stage-top) * -1);
+  }
+
+  .home-gallery__stage,
+  .home-gallery[data-home-gallery-enhanced="true"] .home-gallery__stage {
+    position: static;
+    display: block;
+    height: auto;
+    padding-top: var(--home-gallery-stage-top);
+    overflow: visible;
+  }
+
+  .home-gallery__track {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    align-items: start;
+    gap: clamp(20px, 4svh, 36px);
+    padding: clamp(16px, 4svh, 32px) 0 clamp(96px, 18svh, 160px) var(--home-gallery-leading-space);
+    transform: none;
+  }
+
+  .home-gallery__item,
+  .home-gallery__item:last-of-type {
+    width: var(--home-gallery-card-inline-size);
+    min-height: var(--home-gallery-card-block-size);
+    transform: none;
+  }
+
+  .home-gallery__figure {
+    border-radius: var(--radius-gallery-scene-mobile);
+    opacity: 0.58;
+    filter: saturate(0.72) brightness(0.82);
+    transform: scale(0.72);
+    transition:
+      opacity 220ms var(--motion-header-standard-effects),
+      filter 220ms var(--motion-header-standard-effects),
+      transform 320ms var(--motion-header-standard-spatial);
+  }
+
+  .home-gallery__item[data-home-gallery-caption-visible="true"] .home-gallery__figure {
+    opacity: 1;
+    filter: none;
+    transform: scale(1);
+  }
+
+  .home-gallery__caption {
+    top: clamp(28px, 8%, 48px);
+    left: clamp(24px, 8%, 42px);
+    max-width: calc(100% - 48px);
+  }
+
+  .home-gallery__kicker {
+    font-size: clamp(17px, 4.8vw, 22px);
+  }
+
+  .home-gallery__title {
+    font-size: clamp(30px, 8.4vw, 42px);
   }
 }
 
@@ -510,6 +772,30 @@
   .home-arrival__train-visual,
   .home-arrival__train,
   .home-arrival__train-tooltip {
+    transition: none;
+  }
+
+  /* 图片回顾取消 scroll 映射；桌面可横向操作，小屏继续沿原生纵向图片列阅读。 */
+  .home-gallery,
+  .home-gallery[data-home-gallery-enhanced="true"] {
+    height: auto;
+  }
+
+  .home-gallery[data-home-gallery-enhanced="true"] .home-gallery__stage {
+    position: static;
+    overflow-x: auto;
+    scroll-snap-type: inline mandatory;
+  }
+
+  .home-gallery__track {
+    transform: none;
+  }
+
+  .home-gallery__caption {
+    transition: none;
+  }
+
+  .home-gallery__figure {
     transition: none;
   }
 }

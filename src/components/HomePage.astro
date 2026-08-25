@@ -8,6 +8,7 @@ import "@/styles/home-shell.css";
 import "@/styles/home.css";
 // 保持 Figma 导出的原始 Bézier 作为内联 SVG，使可见弯轨与列车采样的几何完全一致。
 import ServerlinkBend from "@/assets/pages/home/serverlink-bend.svg";
+import { homeGalleryScenes } from "@/data/home-gallery";
 import { homeLandingScenes } from "@/data/home-landing";
 import { homeJourneySections } from "@/data/home-journey";
 import { getRailwayLineCssVariableName } from "@/data/palette";
@@ -48,6 +49,32 @@ const landingSceneImages = await Promise.all(
       height: scene.image.height,
       avifSrc: avif.src,
       webpSrc: webp.src,
+    };
+  }),
+);
+
+/**
+ * Gallery 截图在 SSG 阶段统一生成现代格式，并把可见标题与替代文本绑定到同一稳定 scene id。
+ * 输出宽度封顶 1920px，足以覆盖 Figma 桌面卡片而不会让 2560px 原图进入每位访客的下载路径。
+ */
+const gallerySceneImages = await Promise.all(
+  homeGalleryScenes.map(async (scene) => {
+    const width = Math.min(scene.image.width, 1920);
+    const height = Math.round((scene.image.height / scene.image.width) * width);
+    const [avif, webp] = await Promise.all([
+      getImage({ src: scene.image, format: "avif", width }),
+      getImage({ src: scene.image, format: "webp", width }),
+    ]);
+    const sceneMessage = messages.home.gallery.sceneById[scene.id];
+
+    return {
+      id: scene.id,
+      focalPoint: scene.focalPoint,
+      width,
+      height,
+      avifSrc: avif.src,
+      webpSrc: webp.src,
+      ...sceneMessage,
     };
   }),
 );
@@ -461,6 +488,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     );
     const homeIntroductionRoute = document.querySelector<HTMLElement>("[data-home-introduction-route]");
     const homeIntroductionTrack = document.querySelector<HTMLElement>("[data-home-introduction-track]");
+    const homeGalleryRoute = document.querySelector<HTMLElement>("[data-home-gallery]");
+    const homeGalleryFirstFigure = document.querySelector<HTMLElement>(".home-gallery__figure");
     const homeArrivalTrainTooltip = document.querySelector<HTMLElement>("#home-arrival-train-tooltip");
     const homeJourneyPicker = document.querySelector<HTMLElement>("[data-home-journey-picker]");
     const homeJourneyMap = document.querySelector<HTMLElement>("[data-home-journey-map]");
@@ -475,6 +504,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       homeArrivalTrainVisualPath &&
       homeIntroductionRoute &&
       homeIntroductionTrack &&
+      homeGalleryRoute &&
+      homeGalleryFirstFigure &&
       homeArrivalTrainTooltip &&
       homeJourneyPicker &&
       homeJourneyMap
@@ -488,9 +519,10 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       const getDocumentTop = (element: HTMLElement) => element.getBoundingClientRect().top + window.scrollY;
       /** 减少动态时保留轨道关系，但列车不再随滚动更新位置。 */
       const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+      /** 桌面读取 sticky 图片的视口位置；小屏则读取原生图片列的稳定文档间距。 */
+      const desktopRouteGalleryQuery = window.matchMedia("(min-width: 761px)");
       /** 固定顶部导航是路线图避让的第一条安全边界；未找到时仍以视口边距完成降级定位。 */
       const siteHeader = document.querySelector<HTMLElement>(".site-header");
-      let pendingRouteFrame: number | undefined;
 
       /** 将快选窗的坐标限制在视口安全区内，避免窄屏或短视口出现负坐标。 */
       const clampTooltipPosition = (value: number, minimum: number, maximum: number) =>
@@ -604,8 +636,6 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
        * 前段沿横轨行进，中段取自 Figma 弯轨的 Bézier，后段与下一节垂直轨道共同向下推进。
        */
       const updateRouteTrain = () => {
-        pendingRouteFrame = undefined;
-
         if (reducedMotionQuery.matches) {
           renderReducedMotionTrain();
           return;
@@ -733,10 +763,58 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           trainTailDistance = horizontalTrainEntryLength + curveLength + verticalLength * segmentProgress;
         } else {
           homeArrivalTrain.dataset.routeSegment = "introduction";
-          const segmentProgress =
-            (progress - introductionTrackStartProgress) / (1 - introductionTrackStartProgress);
+          const introductionTrackStartScrollY =
+            arrivalTop +
+            arrivalJourneyLength * (introductionTrackStartProgress / introductionStartRouteProgress);
+          const homeGalleryTop = getDocumentTop(homeGalleryRoute);
+          const homeGalleryScrollRange = Math.max(1, homeGalleryRoute.offsetHeight - window.innerHeight);
+          const homeGalleryProgress = clampRouteProgress(
+            (window.scrollY - homeGalleryTop) / homeGalleryScrollRange,
+          );
+          /**
+           * 列车从首图顶边开始并随 Gallery 的同一 0→1 进度走到图底；
+           * 桌面读取 sticky 视口位置，小屏读取文档坐标，起点都必须避开紧凑 Header。
+           */
+          const headerBottom = siteHeader ? Math.max(0, siteHeader.getBoundingClientRect().bottom) : 0;
+          const galleryBounds = homeGalleryRoute.getBoundingClientRect();
+          const galleryCardTop = desktopRouteGalleryQuery.matches
+            ? Math.max(
+                0,
+                homeGalleryFirstFigure.getBoundingClientRect().top - Math.max(0, galleryBounds.top),
+              )
+            : Math.max(0, getDocumentTop(homeGalleryFirstFigure) - homeGalleryTop);
+          const galleryTrainStartTop = Math.max(galleryCardTop, headerBottom + 12);
+          const galleryTrainStartCenterY = galleryTrainStartTop + trainHeight / 2;
+          const galleryTrainEndCenterY = Math.max(
+            galleryTrainStartCenterY,
+            galleryCardTop + homeGalleryFirstFigure.offsetHeight - trainHeight / 2 - 20,
+          );
+          const galleryTrainCenterY =
+            window.scrollY < homeGalleryTop
+              ? galleryTrainStartCenterY + homeGalleryTop - window.scrollY
+              : interpolateRoutePosition(
+                  galleryTrainStartCenterY,
+                  galleryTrainEndCenterY,
+                  homeGalleryProgress,
+                );
+          const introductionTargetCenterY = galleryTrainCenterY;
+          const introductionTailDistanceBeforeStart = interpolateRoutePosition(
+            0,
+            introductionTargetCenterY + trainWidth / 2,
+            clampRouteProgress(
+              (window.scrollY - introductionTrackStartScrollY) /
+                Math.max(1, introductionTop - introductionTrackStartScrollY),
+            ),
+          );
+          const introductionTailDistance =
+            window.scrollY < introductionTop
+              ? introductionTailDistanceBeforeStart
+              : window.scrollY - introductionTop + introductionTargetCenterY + trainWidth / 2;
           trainTailDistance =
-            horizontalTrainEntryLength + curveLength + verticalLength + introductionLength * segmentProgress;
+            horizontalTrainEntryLength +
+            curveLength +
+            verticalLength +
+            Math.min(Math.max(0, introductionTailDistance), introductionLength);
         }
 
         const maxTrainTailDistance = Math.max(0, journeyLength - trainWidth);
@@ -753,18 +831,18 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         );
         homeArrivalRoute.style.setProperty("--home-route-train-x", `${trainCenter.x - trainWidth / 2}px`);
         homeArrivalRoute.style.setProperty("--home-route-train-y", `${trainCenter.y - trainHeight / 2}px`);
-        updateTrainTooltipPlacement();
+        if (homeArrivalTrain.dataset.tooltipOpen === "true") {
+          updateTrainTooltipPlacement();
+        }
 
         if (!isRouteActive) {
           homeArrivalTrain.dataset.routeSegment = "ready";
         }
       };
 
-      /** 将高频滚动事件收束到下一帧，保证 overlay 与页面滚动在同一绘制节拍更新。 */
+      /** scroll 事件本身已与浏览器绘制对齐；同一回调内更新列车，避免 overlay 再迟一帧追赶轨道。 */
       const requestRouteTrainUpdate = () => {
-        if (pendingRouteFrame === undefined) {
-          pendingRouteFrame = window.requestAnimationFrame(updateRouteTrain);
-        }
+        updateRouteTrain();
       };
 
       /** 让鼠标、键盘与触屏共用同一个章节快选窗状态，视觉与辅助技术不会在一次点击后分叉。 */
@@ -1053,10 +1131,244 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     style={`--home-introduction-line-color: var(${homeLineCssVariable});`}
   >
     <span class="home-introduction__track" data-home-introduction-track aria-hidden="true"></span>
-    <span class="home-introduction__branch" aria-hidden="true"></span>
-    <div class="home-introduction__copy">
-      <h2 id="home-introduction-title">{messages.home.introduction.title}</h2>
-      <p>{messages.home.introduction.description}</p>
+    <div class="home-introduction__opening">
+      <span class="home-introduction__branch" aria-hidden="true"></span>
+      <div class="home-introduction__copy">
+        <h2 id="home-introduction-title">{messages.home.introduction.title}</h2>
+        <p>{messages.home.introduction.description}</p>
+      </div>
+    </div>
+    <div
+      class="home-gallery"
+      data-home-gallery
+      role="region"
+      aria-label={messages.home.gallery.label}
+    >
+      <div class="home-gallery__stage" data-home-gallery-stage>
+        <ol class="home-gallery__track" data-home-gallery-track>
+          {
+            gallerySceneImages.map((scene, index) => (
+              <li
+                class="home-gallery__item"
+                data-home-gallery-item
+                data-home-gallery-caption-visible={index === 0 ? "true" : undefined}
+              >
+                <figure class="home-gallery__figure">
+                  <picture class="home-gallery__picture">
+                    <source srcset={scene.avifSrc} type="image/avif" />
+                    <img
+                      src={scene.webpSrc}
+                      width={scene.width}
+                      height={scene.height}
+                      alt={scene.alt}
+                      loading="lazy"
+                      decoding="async"
+                      style={`object-position: ${scene.focalPoint};`}
+                    />
+                  </picture>
+                  <figcaption class="home-gallery__caption">
+                    <span class="home-gallery__kicker">{scene.kicker}</span>
+                    <span class="home-gallery__title">{scene.title}</span>
+                  </figcaption>
+                </figure>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
     </div>
   </section>
+
+  <script>
+    const homeGallery = document.querySelector<HTMLElement>("[data-home-gallery]");
+    const homeGalleryStage = document.querySelector<HTMLElement>("[data-home-gallery-stage]");
+    const homeGalleryTrack = document.querySelector<HTMLElement>("[data-home-gallery-track]");
+    const homeGalleryItems = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-home-gallery-item]"),
+    );
+
+    if (homeGallery && homeGalleryStage && homeGalleryTrack && homeGalleryItems.length > 0) {
+      /** Gallery 只在桌面映射横向轨道；小屏保留单一纵向阅读轴。 */
+      const reducedGalleryMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const desktopGalleryQuery = window.matchMedia("(min-width: 761px)");
+      let homeGalleryScrollDistance = 0;
+      /** 横轴输入静默后恢复全站 smooth；连续 wheel 期间只允许一份计时器拥有清理权。 */
+      let horizontalInputReleaseTimer: number | undefined;
+
+      /** 将滚动进度限制在首尾图片之间，避免浏览器弹性滚动把图片带出轨道。 */
+      const clampHomeGalleryProgress = (value: number) => Math.min(Math.max(value, 0), 1);
+      /** 获取 Gallery 在文档中的稳定起点，避免 sticky 后的 viewport 坐标参与进度计算。 */
+      const getHomeGalleryDocumentTop = () => homeGallery.getBoundingClientRect().top + window.scrollY;
+
+      /** 非受控模式按当前阅读轴取得图片中心；小屏比较纵向位置，桌面回退列表比较横向位置。 */
+      const getHomeGalleryItemCenter = (item: HTMLElement) => {
+        const figure = item.querySelector<HTMLElement>(".home-gallery__figure");
+        const bounds = (figure ?? item).getBoundingClientRect();
+
+        return desktopGalleryQuery.matches
+          ? bounds.left + bounds.width / 2
+          : bounds.top + bounds.height / 2;
+      };
+
+      /** 只标记当前焦点图片；桌面直接由等距进度取索引，小屏按视口纵向中心选择。 */
+      const updateHomeGalleryActiveItem = (controlledProgress?: number) => {
+        const activeItem =
+          controlledProgress === undefined
+            ? homeGalleryItems.reduce((closestItem, item) => {
+                const viewportCenter = desktopGalleryQuery.matches
+                  ? window.innerWidth / 2
+                  : window.innerHeight / 2;
+                const itemDistance = Math.abs(getHomeGalleryItemCenter(item) - viewportCenter);
+                const closestDistance = Math.abs(getHomeGalleryItemCenter(closestItem) - viewportCenter);
+
+                return itemDistance < closestDistance ? item : closestItem;
+              })
+            : homeGalleryItems[
+                Math.min(
+                  homeGalleryItems.length - 1,
+                  Math.round(controlledProgress * (homeGalleryItems.length - 1)),
+                )
+              ];
+
+        homeGalleryItems.forEach((item) => {
+          if (item === activeItem) {
+            item.dataset.homeGalleryCaptionVisible = "true";
+          } else {
+            delete item.dataset.homeGalleryCaptionVisible;
+          }
+        });
+      };
+
+      /** 把当前纵向阅读距离同步映射为水平位移，并公开 pinned 状态给 Header 保持稳定。 */
+      const updateHomeGalleryProgress = () => {
+        if (homeGallery.dataset.homeGalleryEnhanced !== "true") {
+          document.documentElement.removeAttribute("data-home-gallery-pinned");
+          updateHomeGalleryActiveItem();
+          return;
+        }
+
+        const scrollRange = Math.max(1, homeGallery.offsetHeight - window.innerHeight);
+        const galleryTop = getHomeGalleryDocumentTop();
+        const progress = clampHomeGalleryProgress(
+          (window.scrollY - galleryTop) / scrollRange,
+        );
+        const galleryBounds = homeGallery.getBoundingClientRect();
+        const stageBounds = homeGalleryStage.getBoundingClientRect();
+        const isGalleryPinned =
+          Math.abs(stageBounds.top) <= 1 &&
+          galleryBounds.top <= 0 &&
+          galleryBounds.bottom >= window.innerHeight;
+
+        document.documentElement.toggleAttribute("data-home-gallery-pinned", isGalleryPinned);
+        homeGallery.style.setProperty(
+          "--home-gallery-offset",
+          `${-homeGalleryScrollDistance * progress}px`,
+        );
+        updateHomeGalleryActiveItem(progress);
+      };
+
+      /**
+       * 以真实轨道宽度决定 Gallery 需要的纵向行程。
+       * 无脚本或减少动态时不启用增强状态，桌面保留横向列表，小屏继续使用纵向列表。
+       */
+      const measureHomeGallery = () => {
+        homeGalleryScrollDistance = Math.max(0, homeGalleryTrack.scrollWidth - homeGalleryStage.clientWidth);
+        const shouldEnhance =
+          desktopGalleryQuery.matches &&
+          !reducedGalleryMotionQuery.matches &&
+          homeGalleryScrollDistance > 0;
+
+        homeGallery.style.setProperty(
+          "--home-gallery-scroll-distance",
+          `${homeGalleryScrollDistance}px`,
+        );
+        homeGallery.dataset.homeGalleryEnhanced = String(shouldEnhance);
+        homeGallery.dataset.homeGalleryCaptionReady = "true";
+
+        if (shouldEnhance) {
+          // 从减少动态切回受控模式时清除用户先前的原生横向位置，避免 scrollLeft 与 transform 叠加。
+          homeGalleryStage.scrollLeft = 0;
+        } else {
+          homeGallery.style.setProperty("--home-gallery-offset", "0px");
+        }
+
+        updateHomeGalleryProgress();
+      };
+
+      /**
+       * Gallery 固定时只接管明确以横轴为主的触控板输入。
+       * 直接写入滚动根节点可绕过全局 smooth 行为；纵轴主导的手势仍完整交给浏览器。
+       */
+      const applyHomeGalleryHorizontalProgress = (event: WheelEvent) => {
+        if (
+          event.ctrlKey ||
+          reducedGalleryMotionQuery.matches ||
+          homeGallery.dataset.homeGalleryEnhanced !== "true" ||
+          Math.abs(event.deltaX) <= Math.max(0.5, Math.abs(event.deltaY))
+        ) {
+          return;
+        }
+
+        const galleryBounds = homeGallery.getBoundingClientRect();
+        const stageBounds = homeGalleryStage.getBoundingClientRect();
+        const isGalleryPinned =
+          Math.abs(stageBounds.top) <= 1 &&
+          galleryBounds.top <= 0 &&
+          galleryBounds.bottom >= window.innerHeight;
+
+        if (!isGalleryPinned) {
+          return;
+        }
+
+        const deltaScale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
+        const scrollingElement = document.scrollingElement;
+
+        if (!scrollingElement) {
+          return;
+        }
+
+        const galleryTop = getHomeGalleryDocumentTop();
+        const galleryEnd = galleryTop + Math.max(1, homeGallery.offsetHeight - window.innerHeight);
+        const nextScrollTop = Math.min(
+          galleryEnd,
+          Math.max(galleryTop, scrollingElement.scrollTop + event.deltaX * deltaScale),
+        );
+
+        event.preventDefault();
+        document.documentElement.dataset.homeGalleryHorizontalInput = "true";
+        window.clearTimeout(horizontalInputReleaseTimer);
+        horizontalInputReleaseTimer = window.setTimeout(() => {
+          horizontalInputReleaseTimer = undefined;
+          document.documentElement.removeAttribute("data-home-gallery-horizontal-input");
+        }, 80);
+        scrollingElement.scrollTop = nextScrollTop;
+        updateHomeGalleryProgress();
+      };
+
+      const homeGalleryResizeObserver = new ResizeObserver(measureHomeGallery);
+      homeGalleryResizeObserver.observe(homeGalleryStage);
+      homeGalleryResizeObserver.observe(homeGalleryTrack);
+
+      window.addEventListener("scroll", updateHomeGalleryProgress, { passive: true });
+      window.addEventListener("resize", measureHomeGallery);
+      homeGalleryStage.addEventListener("scroll", updateHomeGalleryProgress, { passive: true });
+      homeGalleryStage.addEventListener("wheel", applyHomeGalleryHorizontalProgress, {
+        passive: false,
+      });
+      reducedGalleryMotionQuery.addEventListener("change", measureHomeGallery);
+      desktopGalleryQuery.addEventListener("change", measureHomeGallery);
+      window.addEventListener("pageshow", measureHomeGallery);
+      window.addEventListener("pagehide", (event) => {
+        document.documentElement.removeAttribute("data-home-gallery-pinned");
+        document.documentElement.removeAttribute("data-home-gallery-horizontal-input");
+        window.clearTimeout(horizontalInputReleaseTimer);
+
+        if (!event.persisted) {
+          homeGalleryResizeObserver.disconnect();
+        }
+      });
+
+      measureHomeGallery();
+    }
+  </script>
 </BaseLayout>

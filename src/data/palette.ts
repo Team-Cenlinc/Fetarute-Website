@@ -61,6 +61,10 @@ export interface InterfacePalette {
   onHero: string;
   /** 首屏文字投影使用的中性阴影色，场景只可调整模糊与不透明度。 */
   heroCopyShadow: string;
+  /** 图片 Gallery 的文字区域遮罩，保证实景明暗变化时标题仍可辨识。 */
+  galleryScrim: string;
+  /** 图片 Gallery 标题使用的环境投影，避免页面样式散落半透明黑色。 */
+  galleryCopyShadow: string;
   /** 图片取样前与取样失败时使用的首屏文字反光回退色。 */
   heroCopyReflectionFallback: string;
   /** 悬浮导视牌所需的环境阴影。 */
@@ -95,6 +99,8 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     sceneFallback: "#171B1D",
     onHero: "#F4F6F5",
     heroCopyShadow: "rgb(0 0 0)",
+    galleryScrim: "rgb(0 0 0 / 0.48)",
+    galleryCopyShadow: "0 2px 10px rgb(0 0 0 / 0.42)",
     heroCopyReflectionFallback: "#FFFFFF",
     floatingShadow: "0 0 42px -18px rgb(12 15 16 / 0.35)",
   },
@@ -121,6 +127,8 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     sceneFallback: "#0D1011",
     onHero: "#F4F6F5",
     heroCopyShadow: "rgb(0 0 0)",
+    galleryScrim: "rgb(0 0 0 / 0.48)",
+    galleryCopyShadow: "0 2px 10px rgb(0 0 0 / 0.42)",
     heroCopyReflectionFallback: "#FFFFFF",
     floatingShadow: "0 0 58px -20px rgb(0 0 0 / 0.72)",
   },
@@ -153,6 +161,8 @@ const interfacePaletteCssVariableByKey: Readonly<Record<keyof InterfacePalette, 
   sceneFallback: "--palette-scene-fallback",
   onHero: "--palette-on-hero",
   heroCopyShadow: "--palette-hero-copy-shadow",
+  galleryScrim: "--palette-gallery-scrim",
+  galleryCopyShadow: "--palette-gallery-copy-shadow",
   heroCopyReflectionFallback: "--palette-hero-copy-reflection-fallback",
   floatingShadow: "--palette-floating-shadow",
 };

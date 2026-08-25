@@ -55,6 +55,10 @@
   --color-on-hero: var(--palette-on-hero);
   /* 场景标题的投影只能使用 palette 中性阴影，避免每张图片各自携带黑色值。 */
   --color-hero-copy-shadow: var(--palette-hero-copy-shadow);
+  /* Gallery 实景遮罩由 palette 提供，避免局部样式直接写半透明黑色。 */
+  --color-gallery-scrim: var(--palette-gallery-scrim);
+  /* Gallery 标题投影由 palette 随外观模式统一输出。 */
+  --shadow-gallery-copy: var(--palette-gallery-copy-shadow);
   /* 图片尚未完成取样时，标题反光退回纯白而不影响首屏文字辨识。 */
   --color-hero-copy-reflection-fallback: var(--palette-hero-copy-reflection-fallback);
   /* 浮动导视牌的环境阴影由 palette 随外观模式同步。 */
@@ -83,6 +87,10 @@
   --duration-header-reduced-feedback: 120ms;
   /* 方正小圆角用于导视牌和内容模块，避免页面同时出现多套形状语言。 */
   --radius-panel: 10px;
+  /* 桌面 Gallery 使用与大幅实景比例匹配的连续圆角。 */
+  --radius-gallery-scene: clamp(32px, 6.56vw, 126px);
+  /* 小屏 Gallery 收紧圆角上限，避免窄卡片看起来过度胶囊化。 */
+  --radius-gallery-scene-mobile: clamp(28px, 9vw, 48px);
   font-family: var(--font-fetarute-ui);
   color: var(--color-text);
   background: var(--color-background);

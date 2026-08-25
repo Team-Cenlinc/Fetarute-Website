@@ -404,10 +404,14 @@ const appearanceOptions = [
   const compactHeaderScrollThreshold = 160;
   /** 小于此差值的滚动抖动不改变模式，触控板慢速停靠时仍保持稳定。 */
   const compactHeaderScrollDirectionThreshold = 8;
+  /** Gallery 固定期间保持紧凑导视，横轴映射的反向位移不能被误读成返回页面上方。 */
+  const homeGalleryPinnedAttribute = "data-home-gallery-pinned";
   let lastHeaderScrollPosition = window.scrollY;
   let compactHeaderAnimationFrame: number | undefined;
   /** 首次同步只校准锚点或历史记录带来的初始状态，不把页面加载误读成一次用户触发的收缩。 */
   let hasSyncedCompactHeaderState = false;
+  /** DepartureGate 会在两帧后恢复深链位置；这段窗口内忽略中间滚动方向，避免最终锚点被误判成上滑。 */
+  let isInitialAnchorLayoutSettling = false;
   /** 最近一次有效滚动方向；阅读模式依赖这一连续语义，不再用单帧位置覆盖用户刚刚的上滑意图。 */
   let compactHeaderScrollDirection: "up" | "down" | undefined;
   /** 当前方向已累计的位移；向下只有达到滞后距离后才重新收束 Header。 */
@@ -468,6 +472,16 @@ const appearanceOptions = [
     const scrollDelta = currentScrollPosition - lastHeaderScrollPosition;
     const nextScrollDirection = scrollDelta > 0 ? "down" : scrollDelta < 0 ? "up" : undefined;
     const isNearPageStart = currentScrollPosition < compactHeaderScrollThreshold;
+    const isHomeGalleryPinned = document.documentElement.hasAttribute(homeGalleryPinnedAttribute);
+
+    if (isInitialAnchorLayoutSettling) {
+      setHeaderLayoutState(true, false, false);
+      lastHeaderScrollPosition = currentScrollPosition;
+      compactHeaderScrollDirection = undefined;
+      compactHeaderScrollDirectionDistance = 0;
+      compactHeaderAnimationFrame = undefined;
+      return;
+    }
 
     if (nextScrollDirection) {
       if (nextScrollDirection === compactHeaderScrollDirection) {
@@ -480,6 +494,11 @@ const appearanceOptions = [
 
     if (isNearPageStart) {
       setHeaderLayoutState(false, false, hasSyncedCompactHeaderState);
+      cancelCompactHeaderHoverContract();
+      compactHeaderScrollDirection = undefined;
+      compactHeaderScrollDirectionDistance = 0;
+    } else if (isHomeGalleryPinned) {
+      setHeaderLayoutState(true, false, hasSyncedCompactHeaderState);
       cancelCompactHeaderHoverContract();
       compactHeaderScrollDirection = undefined;
       compactHeaderScrollDirectionDistance = 0;
@@ -508,6 +527,32 @@ const appearanceOptions = [
     }
 
     compactHeaderAnimationFrame = window.requestAnimationFrame(syncCompactHeader);
+  }
+
+  /** 深链首帧先采用紧凑 Header，再在浏览器完成锚点恢复后无动画校准，避免完整态短暂闪现。 */
+  function initializeCompactHeaderState() {
+    const initialAnchorId = window.location.hash.slice(1);
+    const startsInsideNarrative = initialAnchorId !== "" && initialAnchorId !== "home";
+
+    if (!startsInsideNarrative) {
+      syncCompactHeader();
+      return;
+    }
+
+    isInitialAnchorLayoutSettling = true;
+    setHeaderLayoutState(true, false, false);
+    hasSyncedCompactHeaderState = true;
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          lastHeaderScrollPosition = window.scrollY;
+          compactHeaderScrollDirection = undefined;
+          compactHeaderScrollDirectionDistance = 0;
+          isInitialAnchorLayoutSettling = false;
+          setHeaderLayoutState(window.scrollY >= compactHeaderScrollThreshold, false, false);
+        });
+      });
+    });
   }
 
   /** 清除待执行的 hover 收束，防止指针回到 Header 时仍被过期计时器折回窄条。 */
@@ -1110,6 +1155,6 @@ const appearanceOptions = [
   siteHeader?.addEventListener("pointerenter", expandCompactHeaderOnHover);
   siteHeader?.addEventListener("pointerleave", scheduleCompactHeaderHoverContract);
 
-  syncCompactHeader();
+  initializeCompactHeaderState();
   window.addEventListener("scroll", scheduleCompactHeaderSync, { passive: true });
 </script>

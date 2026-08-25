@@ -272,7 +272,13 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
     const restoreInitialAnchor = (target: HTMLElement) => {
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => {
+          // 全站 smooth 不能接管初始深链；否则补间末端的反向校正会让 Header 误判成用户上滑。
+          const previousScrollBehavior = root.style.scrollBehavior;
+          root.style.scrollBehavior = "auto";
           target.scrollIntoView({ behavior: "auto", block: "start" });
+          window.requestAnimationFrame(() => {
+            root.style.scrollBehavior = previousScrollBehavior;
+          });
         });
       });
     };

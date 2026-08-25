@@ -1,4 +1,5 @@
 import type { Locale } from "@/i18n/config";
+import type { HomeGallerySceneId } from "@/data/home-gallery";
 import type { HomeLandingSceneId } from "@/data/home-landing";
 import type { ExternalDestination } from "@/data/site";
 
@@ -28,6 +29,24 @@ interface HomeTrainTooltipMessage {
 interface HomeArrivalMessage {
   /** 由小列车触发的路线信息提示窗文案。 */
   trainTooltip: HomeTrainTooltipMessage;
+}
+
+/** Gallery 单张图片的可见标题与无障碍说明。 */
+interface HomeGallerySceneMessage {
+  /** 图片标题上方的时期或服务器归属。 */
+  kicker: string;
+  /** 叠放在图片左上角的场景名称。 */
+  title: string;
+  /** 不重复标题、同时说明画面主体的替代文本。 */
+  alt: string;
+}
+
+/** “从一条铁路开始”之后的响应式图片回顾文案。 */
+interface HomeGalleryMessage {
+  /** 无可见总标题时供辅助技术辨识 Gallery 区域的名称。 */
+  label: string;
+  /** 每张受控图片按稳定 scene id 关联的三语文案。 */
+  sceneById: Readonly<Record<HomeGallerySceneId, HomeGallerySceneMessage>>;
 }
 
 /**
@@ -135,6 +154,8 @@ export interface SiteMessages {
     introduction: HomeIntroductionMessage;
     /** 开屏抵达画面中小列车的 Tooltip 文案。 */
     arrival: HomeArrivalMessage;
+    /** 正文之后由原生滚动控制的响应式图片回顾。 */
+    gallery: HomeGalleryMessage;
   };
   /** 默认社交分享图片的替代文本。 */
   socialImageAlt: string;
@@ -228,6 +249,26 @@ const messages: Record<Locale, SiteMessages> = {
           goToSectionLabel: "前往章节",
         },
       },
+      gallery: {
+        label: "铁路回顾图片廊",
+        sceneById: {
+          "early-fetarute-syapole-city": {
+            kicker: "旧创造服 · 旧主城",
+            title: "上浦市风光",
+            alt: "旧创造服旧主城中绿荫环绕的上浦市街景",
+          },
+          "pyutocor-spawn-bay": {
+            kicker: "生存服",
+            title: "蒲塘桥风光",
+            alt: "蒲塘桥高架铁路与城市天际线",
+          },
+          "huayuan-lobby-center": {
+            kicker: "大厅服",
+            title: "旧服连快线华园站",
+            alt: "旧服连快线列车停靠在华园站站台旁",
+          },
+        },
+      },
     },
     socialImageAlt: "Fetarute 服联快线导视分享卡片",
   },
@@ -312,6 +353,26 @@ const messages: Record<Locale, SiteMessages> = {
           currentSectionLabel: "本站",
           quickPickLabel: "章節路線",
           goToSectionLabel: "前往章節",
+        },
+      },
+      gallery: {
+        label: "鐵路回顧圖片廊",
+        sceneById: {
+          "early-fetarute-syapole-city": {
+            kicker: "舊創造服 · 舊主城",
+            title: "上浦市風光",
+            alt: "舊創造服舊主城中綠蔭環繞的上浦市街景",
+          },
+          "pyutocor-spawn-bay": {
+            kicker: "生存服",
+            title: "蒲塘橋風光",
+            alt: "蒲塘橋高架鐵路與城市天際線",
+          },
+          "huayuan-lobby-center": {
+            kicker: "大廳服",
+            title: "舊服聯快線華園站",
+            alt: "舊服聯快線列車停靠在華園站月台旁",
+          },
         },
       },
     },
@@ -401,6 +462,26 @@ const messages: Record<Locale, SiteMessages> = {
           currentSectionLabel: "This stop",
           quickPickLabel: "Section route",
           goToSectionLabel: "Go to section",
+        },
+      },
+      gallery: {
+        label: "Railway retrospective gallery",
+        sceneById: {
+          "early-fetarute-syapole-city": {
+            kicker: "OLD CREATIVE · SPAWN POINT CITY",
+            title: "Syapole Cityscape",
+            alt: "A tree-lined Syapole streetscape in the old Creative server's Spawn Point City",
+          },
+          "pyutocor-spawn-bay": {
+            kicker: "SURVIVAL",
+            title: "Pyutocor",
+            alt: "Pyutocor's elevated railway and city skyline",
+          },
+          "huayuan-lobby-center": {
+            kicker: "LOBBY",
+            title: "Old Serverlink · Huayuan Station",
+            alt: "An old Serverlink train stopped beside the platform at Huayuan Station",
+          },
         },
       },
     },
