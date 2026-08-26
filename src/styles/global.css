@@ -165,7 +165,7 @@ main.main--full-bleed {
   display: grid;
   /* 桌面导视牌以视口的 85% 流动铺开，40px 仅作为窄视口的安全边距而非宽度上限。 */
   width: min(85vw, calc(100% - 40px));
-  min-height: clamp(96px, 7vw, 104px);
+  min-height: clamp(88px, 6.25vw, 96px);
   transform: translateX(-50%);
   /* 导视列仅随内容与固定内边距取宽，宽屏余量留在品牌与中间留白，避免右侧色块横向膨胀。 */
   grid-template-columns:
@@ -247,7 +247,7 @@ html[data-header-layout-initializing] .site-header {
   justify-items: end;
   /* 以 Header 内侧底边为线路底牌基线；由标题半行高、半行距、实心圆半高与边框共同反推所需下移量。 */
   --home-nav-indicator-bottom-offset: calc(
-    clamp(48px, 3.5vw, 52px) - clamp(13.52px, 1.3vw, 18.72px) - clamp(4px, 0.35vw, 5px) -
+    clamp(44px, 3.125vw, 48px) - clamp(13.52px, 1.3vw, 18.72px) - clamp(4px, 0.35vw, 5px) -
       clamp(8px, 0.75vw, 10px) - 3px
   );
   color: var(--color-text);

@@ -1,11 +1,11 @@
 import type { ImageMetadata } from "astro";
-import earlyFetaruteSyapoleCity from "@/assets/pages/home/beginning-bay/early-fetarute-syapole-city.png";
 import huayuanLobbyCenter from "@/assets/pages/home/beginning-bay/huayuan-lobby-center.png";
+import kaihinShukukaiStation from "@/assets/pages/home/beginning-bay/kaihin-shukukai-station.webp";
 import pyutocorSpawnBay from "@/assets/pages/home/beginning-bay/pyutocor-spawn-bay.png";
 
 /** 首页铁路回顾 Gallery 的稳定图片身份，用于关联素材、三语说明与替代文本。 */
 export type HomeGallerySceneId =
-  "early-fetarute-syapole-city" | "pyutocor-spawn-bay" | "huayuan-lobby-center";
+  "kaihin-shukukai-station" | "pyutocor-spawn-bay" | "huayuan-lobby-center";
 
 /** 一张由纵向阅读进度带过视口的铁路回顾图片。 */
 export interface HomeGalleryScene {
@@ -19,13 +19,13 @@ export interface HomeGalleryScene {
 
 /**
  * “从一条铁路开始”之后的受控图片顺序。
- * 第一张与 Figma 67:259 使用同一原图；后两张按旧服连快线华园站、蒲塘桥的阅读顺序展开。
+ * 第一张展示创造服海滨宿海站；后两张按旧服连快线华园站、蒲塘桥的阅读顺序展开。
  */
 export const homeGalleryScenes: readonly HomeGalleryScene[] = [
   {
-    id: "early-fetarute-syapole-city",
-    image: earlyFetaruteSyapoleCity,
-    focalPoint: "center center",
+    id: "kaihin-shukukai-station",
+    image: kaihinShukukaiStation,
+    focalPoint: "60% center",
   },
   {
     id: "huayuan-lobby-center",

@@ -238,7 +238,7 @@ const messages: Record<Locale, SiteMessages> = {
       introduction: {
         title: "01·从一条铁路开始",
         description:
-          "2017 年，Fetarute 从一座 Forge 模组铁路服务器起步。后来，我们转向原版与插件，想看看原版特性能组成怎样的新世界；三个子服务器也由此在同一套世界观中相连。",
+          "2017 年，Fetarute 从一座 Forge 模组铁路服务器起步。后来，承载世界的方式从模组转向原版与插件，铁路却一直留在旅程里。眼前的三处风景，来自如今彼此相连的三个子服务器；沿着服联快线继续前行，我们会在下一站认识它们。",
       },
       arrival: {
         trainTooltip: {
@@ -252,10 +252,10 @@ const messages: Record<Locale, SiteMessages> = {
       gallery: {
         label: "铁路回顾图片廊",
         sceneById: {
-          "early-fetarute-syapole-city": {
-            kicker: "旧创造服 · 旧主城",
-            title: "上浦市风光",
-            alt: "旧创造服旧主城中绿荫环绕的上浦市街景",
+          "kaihin-shukukai-station": {
+            kicker: "创造服",
+            title: "抵达海滨宿海",
+            alt: "创造服海滨宿海站的站牌与高架站体",
           },
           "pyutocor-spawn-bay": {
             kicker: "生存服",
@@ -344,7 +344,7 @@ const messages: Record<Locale, SiteMessages> = {
       introduction: {
         title: "01·從一條鐵路開始",
         description:
-          "2017 年，Fetarute 從一座 Forge 模組鐵路伺服器起步。後來，我們轉向原版與插件，想看看原版特性能組成怎樣的新世界；三個子伺服器也由此在同一套世界觀中相連。",
+          "2017 年，Fetarute 從一座 Forge 模組鐵路伺服器起步。後來，承載世界的方式從模組轉向原版與插件，鐵路卻一直留在旅程裡。眼前的三處風景，來自如今彼此相連的三個子伺服器；沿著服聯快線繼續前行，我們會在下一站認識它們。",
       },
       arrival: {
         trainTooltip: {
@@ -358,10 +358,10 @@ const messages: Record<Locale, SiteMessages> = {
       gallery: {
         label: "鐵路回顧圖片廊",
         sceneById: {
-          "early-fetarute-syapole-city": {
-            kicker: "舊創造服 · 舊主城",
-            title: "上浦市風光",
-            alt: "舊創造服舊主城中綠蔭環繞的上浦市街景",
+          "kaihin-shukukai-station": {
+            kicker: "創造服",
+            title: "抵達海濱宿海",
+            alt: "創造服海濱宿海站的站牌與高架站體",
           },
           "pyutocor-spawn-bay": {
             kicker: "生存服",
@@ -453,7 +453,7 @@ const messages: Record<Locale, SiteMessages> = {
       introduction: {
         title: "01 · It Started with a Railway",
         description:
-          "Founded in 2017, Fetarute began as a Forge-modded railway server. We later moved to Vanilla and plugins to see what new world Vanilla itself could make possible. That world grew into three connected servers.",
+          "Fetarute began in 2017 as a Forge-modded railway server. The way we built its world later shifted from mods to Vanilla and plugins, but the railway remained part of the journey. The three scenes ahead come from the three servers now connected by Serverlink; at the next stop, we’ll meet each of them.",
       },
       arrival: {
         trainTooltip: {
@@ -467,10 +467,10 @@ const messages: Record<Locale, SiteMessages> = {
       gallery: {
         label: "Railway retrospective gallery",
         sceneById: {
-          "early-fetarute-syapole-city": {
-            kicker: "OLD CREATIVE · SPAWN POINT CITY",
-            title: "Syapole Cityscape",
-            alt: "A tree-lined Syapole streetscape in the old Creative server's Spawn Point City",
+          "kaihin-shukukai-station": {
+            kicker: "CREATIVE",
+            title: "Arriving at Kaihin-Shukukai",
+            alt: "The Kaihin-Shukukai station sign and elevated station structures in the Creative server",
           },
           "pyutocor-spawn-bay": {
             kicker: "SURVIVAL",
