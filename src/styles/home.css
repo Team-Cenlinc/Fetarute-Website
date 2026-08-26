@@ -178,7 +178,7 @@
 }
 
 .home-arrival__train-visual {
-  /* 单一路径承载列车实体：0% 时已在起始锚点候车，进入弯道时自然变形为对应弧段。 */
+  /* 单一路径承载列车实体：进入弯道时，车体按同一条 Bézier 自然弯曲而不切换元素。 */
   position: fixed;
   z-index: 18;
   inset: 0;
@@ -188,7 +188,7 @@
   color: var(--home-arrival-train-color);
   opacity: 0;
   pointer-events: none;
-  transition: color 150ms var(--motion-header-standard-effects);
+  transition: color 180ms var(--motion-header-standard-effects);
   visibility: hidden;
 }
 
@@ -198,7 +198,7 @@
 }
 
 .home-arrival__train {
-  /* 透明按钮仅负责 Tooltip 和键盘焦点，视觉列车由相邻 SVG 路径统一绘制。 */
+  /* 透明按钮只负责 Tooltip 和键盘焦点；视觉车体由相邻 SVG 路径统一绘制。 */
   position: fixed;
   z-index: 19;
   top: 0;
@@ -232,7 +232,7 @@
   }
 }
 
-/* Hover、键盘焦点与展开状态只把列车向线路蓝紫略偏移，维持扁平导视的连续色带。 */
+/* Hover、键盘焦点与展开状态只把弯曲车体向线路蓝紫略偏移，维持扁平导视的连续色带。 */
 .home-arrival:has(.home-arrival__train:hover) .home-arrival__train-visual,
 .home-arrival:has(.home-arrival__train:focus-visible) .home-arrival__train-visual,
 .home-arrival:has(.home-arrival__train[data-tooltip-open="true"]) .home-arrival__train-visual {
@@ -323,13 +323,13 @@
 }
 
 .home-introduction__branch {
-  /* 站标左缘直接贴住竖轨右缘，标题行盒中心决定其垂直坐标。 */
+  /* 站标向竖轨内覆盖 1px 并等量补回宽度，消除 Safari 子像素缝且保持右缘与标题版心不变。 */
   top: calc(
     var(--home-introduction-copy-top) + var(--home-introduction-title-line-half) -
       var(--home-introduction-track-half)
   );
-  left: calc(var(--home-introduction-track-origin-x) + var(--home-introduction-track-width));
-  width: var(--home-introduction-track-width);
+  left: calc(var(--home-introduction-track-origin-x) + var(--home-introduction-track-width) - 1px);
+  width: calc(var(--home-introduction-track-width) + 1px);
   height: var(--home-introduction-track-width);
 }
 
@@ -666,7 +666,6 @@ html[data-home-gallery-horizontal-input] {
       var(--home-introduction-copy-top) + var(--home-introduction-title-line-half) -
         var(--home-introduction-track-half)
     );
-    left: calc(var(--home-introduction-track-origin-x) + var(--home-introduction-track-width));
   }
 
   .home-introduction__copy {

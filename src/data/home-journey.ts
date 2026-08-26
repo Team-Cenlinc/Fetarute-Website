@@ -39,6 +39,8 @@ export interface HomeJourneySection {
   lineKey: RailwayLineKey;
   /** 章节站在各公开语言中使用的名称。 */
   name: HomeJourneySectionName;
+  /** 站牌使用的真实行程序号；它包含未独立进入快选列表的叙事中间站。 */
+  sequence: string;
   /** 本章节之后的路线分界；未填写即保持当前单线连续展示且不渲染任何分界元素。 */
   breakAfter?: HomeJourneySectionBreak;
 }
@@ -53,6 +55,7 @@ export const homeJourneySections: readonly HomeJourneySection[] = [
     id: "beginning-bay",
     lineKey: wayfindingPrototype.homeLineKey,
     name: wayfindingPrototype.homeArrivalStop,
+    sequence: "01",
   },
   {
     id: "tri-server-joint",
@@ -62,6 +65,7 @@ export const homeJourneySections: readonly HomeJourneySection[] = [
       traditionalChineseName: "三服匯",
       englishName: "Tri-Server Joint",
     },
+    sequence: "03",
   },
 ];
 
@@ -76,4 +80,20 @@ export function getHomeJourneySectionName(section: HomeJourneySection, locale: L
   }
 
   return section.name.englishName;
+}
+
+/** 按当前语言返回站牌的主副站名，保证满屏站牌与快选列表使用同一份三语数据。 */
+export function getHomeJourneySectionNames(
+  section: HomeJourneySection,
+  locale: Locale,
+): readonly [primaryName: string, secondaryName: string] {
+  if (locale === "en") {
+    return [section.name.englishName, section.name.simplifiedChineseName];
+  }
+
+  if (locale === "zh-Hant") {
+    return [section.name.traditionalChineseName, section.name.englishName];
+  }
+
+  return [section.name.simplifiedChineseName, section.name.englishName];
 }

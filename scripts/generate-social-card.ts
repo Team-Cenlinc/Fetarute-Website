@@ -76,7 +76,7 @@ function createRibbonOverlaySvg(lines: readonly RailwayLine[]): Buffer {
  */
 async function buildSocialCard(): Promise<void> {
   const landingScenePath = fileURLToPath(
-    new URL("../src/assets/pages/home/landing/pyutocor-dusk.png", import.meta.url),
+    new URL("../src/assets/pages/home/landing/survival-pyutocor-dusk.png", import.meta.url),
   );
   const logoPath = fileURLToPath(
     new URL("../src/assets/fetarute-branding/fetarute-logo.svg", import.meta.url),

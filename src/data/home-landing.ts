@@ -1,5 +1,5 @@
 import type { ImageMetadata } from "astro";
-import pyutocorDuskScene from "@/assets/pages/home/landing/pyutocor-dusk.png";
+import pyutocorDuskScene from "@/assets/pages/home/landing/survival-pyutocor-dusk.png";
 import survivalBaysideScene from "@/assets/pages/home/landing/survival-bayside.jpg";
 import survivalFueyaScene from "@/assets/pages/home/landing/survival-fueya.jpg";
 import survivalKitarikuHaixingRoadBridgeScene from "@/assets/pages/home/landing/survival-kitariku-haixing-rd-bridge.jpg";

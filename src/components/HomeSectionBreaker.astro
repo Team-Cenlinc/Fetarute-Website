@@ -1,0 +1,390 @@
+---
+import RailwayLineHint from "@/components/RailwayLineHint.astro";
+// 复用 Figma 原始 Bézier，通过轴向翻转组成从左侧入线、向右侧出线的连续换边轨道。
+import ServerlinkBend from "@/assets/pages/home/serverlink-bend.svg";
+import type { HomeJourneySectionId } from "@/data/home-journey";
+import type { Locale } from "@/i18n/config";
+
+/** 首页章节之间的满屏站牌属性。 */
+export interface Props {
+  /** 稳定章节锚点，同时供快选路线图和 URL fragment 定位。 */
+  id: HomeJourneySectionId;
+  /** 当前语言用于切换主副站名字号策略。 */
+  locale: Locale;
+  /** 当前语言中承担主标题的站名。 */
+  primaryName: string;
+  /** 与主标题互补的第二语言站名。 */
+  secondaryName: string;
+  /** 由铁路领域数据注入的线路色 CSS 值。 */
+  lineColor: string;
+  /** 与全页行进列车一致的受控浅色，避免静态到站标记被误读为轨道加粗。 */
+  trainColor: string;
+  /** 线路缩写，例如 Serverlink 的 SL。 */
+  lineCode: string;
+  /** 当前站在导视中的真实序号，例如 03。 */
+  sequence: string;
+  /** 当前语言优先展示的线路名称。 */
+  linePrimaryName: string;
+  /** 与主线路名互补的第二语言名称。 */
+  lineSecondaryName: string;
+}
+
+const {
+  id,
+  locale,
+  primaryName,
+  secondaryName,
+  lineColor,
+  trainColor,
+  lineCode,
+  sequence,
+  linePrimaryName,
+  lineSecondaryName,
+} = Astro.props;
+const titleId = `${id}-title`;
+---
+
+<section
+  class="home-section-breaker"
+  id={id}
+  data-home-section-breaker-route
+  data-home-section-breaker-locale={locale}
+  tabindex="-1"
+  aria-labelledby={titleId}
+  style={`--home-section-breaker-line-color: ${lineColor}; --home-section-breaker-train-color: ${trainColor};`}
+>
+  <div class="home-section-breaker__stage" data-home-section-breaker-stage>
+    <span class="home-section-breaker__left-track" data-home-section-breaker-left-track aria-hidden="true"></span>
+    <ServerlinkBend
+      class="home-section-breaker__left-bend"
+      data-home-section-breaker-left-bend
+      aria-hidden="true"
+    />
+    <span
+      class="home-section-breaker__horizontal-track"
+      data-home-section-breaker-horizontal-track
+      aria-hidden="true"
+    ></span>
+    <ServerlinkBend
+      class="home-section-breaker__right-bend"
+      data-home-section-breaker-right-bend
+      aria-hidden="true"
+    />
+    <span class="home-section-breaker__right-track" data-home-section-breaker-right-track aria-hidden="true"></span>
+    <span class="home-section-breaker__train" data-home-section-breaker-static-train aria-hidden="true"></span>
+
+    <div class="home-section-breaker__copy">
+      <h2 id={titleId}>{primaryName}</h2>
+      <p>{secondaryName}</p>
+    </div>
+
+    <RailwayLineHint
+      class="home-section-breaker__route"
+      lineColor={lineColor}
+      lineCode={lineCode}
+      sequence={sequence}
+      primaryName={linePrimaryName}
+      secondaryName={lineSecondaryName}
+      isEnglishPrimary={locale === "en"}
+    />
+  </div>
+</section>
+
+<style>
+  .home-section-breaker {
+    /* 轨宽与弯轨尺寸沿用 Serverlink 站牌比例，保证上一段左轨和下一段右轨可在 section 边界无缝续接。 */
+    --home-section-breaker-track-width: clamp(34px, 3.23vw, 62px);
+    --home-section-breaker-track-half: clamp(17px, 1.615vw, 31px);
+    --home-section-breaker-bend-size: clamp(162px, 12.97vw, 249px);
+    /* 原始弯轨 viewBox 为 249×250；单独保留真实高度，避免压成正方形后在水平接缝产生约 1px 台阶。 */
+    --home-section-breaker-bend-height: calc(var(--home-section-breaker-bend-size) * 250 / 249);
+    --home-section-breaker-bend-inset: var(--home-section-breaker-track-half);
+    /* 两条竖轨分别继承上一段与下一段的页面轴线；中间横轨只负责完成换边。 */
+    --home-section-breaker-left-origin-x: 9.32vw;
+    --home-section-breaker-right-origin-x: 86.41vw;
+    --home-section-breaker-track-top: 67.78svh;
+    /* 站名与线路牌沿用 Figma 70:2 的阅读锚点，不让换边轨道挤压文字组。 */
+    --home-section-breaker-copy-top: 26.48svh;
+    --home-section-breaker-route-top: 30.83svh;
+    --home-section-breaker-route-left: 74.48vw;
+    --home-section-breaker-route-right: auto;
+    --home-section-breaker-name-gap: clamp(12px, 1.2vw, 24px);
+    /* 1px 重叠遮住 SVG 与矩形轨道交界处的子像素缝隙。 */
+    --home-section-breaker-joint-overlap: 1px;
+    /* 到站列车保持 Figma 中 200×100 的封顶尺寸，只作为本张站牌的静态位置标记。 */
+    --home-section-breaker-train-width: clamp(116px, 10.42vw, 200px);
+    --home-section-breaker-train-height: clamp(58px, 9.26svh, 100px);
+    /* 桌面滚动行程由列车尚未走完的真实路径长度注入；默认 0 保证无脚本时仍是一张完整站牌。 */
+    --home-section-breaker-scroll-distance: 0px;
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    height: calc(100svh + var(--home-section-breaker-scroll-distance));
+    min-height: 100svh;
+    scroll-margin-top: 0;
+    background: var(--palette-canvas);
+    color: var(--palette-text);
+  }
+
+  .home-section-breaker__stage {
+    position: sticky;
+    top: 0;
+    display: grid;
+    width: 100%;
+    height: 100svh;
+    min-width: 0;
+    isolation: isolate;
+    overflow: clip;
+    background: var(--palette-canvas);
+  }
+
+  .home-section-breaker__left-track,
+  .home-section-breaker__horizontal-track,
+  .home-section-breaker__right-track,
+  .home-section-breaker__train {
+    position: absolute;
+    display: block;
+    background: var(--home-section-breaker-line-color);
+  }
+
+  .home-section-breaker__left-track {
+    top: 0;
+    left: var(--home-section-breaker-left-origin-x);
+    width: var(--home-section-breaker-track-width);
+    height: calc(
+      var(--home-section-breaker-track-top) + var(--home-section-breaker-track-half) -
+        var(--home-section-breaker-bend-height) + var(--home-section-breaker-bend-inset) +
+        var(--home-section-breaker-joint-overlap)
+    );
+  }
+
+  .home-section-breaker__left-bend,
+  .home-section-breaker__right-bend {
+    position: absolute;
+    display: block;
+    width: var(--home-section-breaker-bend-size);
+    height: var(--home-section-breaker-bend-height);
+    color: var(--home-section-breaker-line-color);
+  }
+
+  .home-section-breaker__left-bend {
+    top: calc(
+      var(--home-section-breaker-track-top) + var(--home-section-breaker-track-half) -
+        var(--home-section-breaker-bend-height) + var(--home-section-breaker-bend-inset)
+    );
+    left: calc(
+      var(--home-section-breaker-left-origin-x) + var(--home-section-breaker-track-half) -
+        var(--home-section-breaker-bend-inset)
+    );
+    transform: scaleY(-1);
+  }
+
+  .home-section-breaker__horizontal-track {
+    top: var(--home-section-breaker-track-top);
+    right: calc(
+      100vw - var(--home-section-breaker-right-origin-x) -
+        var(--home-section-breaker-track-half) + var(--home-section-breaker-bend-size) -
+        var(--home-section-breaker-bend-inset) - var(--home-section-breaker-joint-overlap)
+    );
+    left: calc(
+      var(--home-section-breaker-left-origin-x) + var(--home-section-breaker-track-half) -
+        var(--home-section-breaker-bend-inset) + var(--home-section-breaker-bend-size) -
+        var(--home-section-breaker-joint-overlap)
+    );
+    height: var(--home-section-breaker-track-width);
+  }
+
+  .home-section-breaker__right-bend {
+    top: calc(
+      var(--home-section-breaker-track-top) + var(--home-section-breaker-track-half) -
+        var(--home-section-breaker-bend-inset)
+    );
+    left: calc(
+      var(--home-section-breaker-right-origin-x) + var(--home-section-breaker-track-half) -
+        var(--home-section-breaker-bend-size) + var(--home-section-breaker-bend-inset)
+    );
+    transform: scaleX(-1);
+  }
+
+  .home-section-breaker__right-track {
+    top: calc(
+      var(--home-section-breaker-track-top) + var(--home-section-breaker-track-half) -
+        var(--home-section-breaker-bend-inset) + var(--home-section-breaker-bend-height) -
+        var(--home-section-breaker-joint-overlap)
+    );
+    bottom: 0;
+    left: var(--home-section-breaker-right-origin-x);
+    width: var(--home-section-breaker-track-width);
+  }
+
+  .home-section-breaker__left-bend path,
+  .home-section-breaker__right-bend path {
+    stroke: currentColor;
+  }
+
+  .home-section-breaker__train {
+    top: calc(
+      var(--home-section-breaker-track-top) +
+        (var(--home-section-breaker-track-width) - var(--home-section-breaker-train-height)) / 2
+    );
+    left: 26.15vw;
+    width: var(--home-section-breaker-train-width);
+    height: var(--home-section-breaker-train-height);
+    background: var(--home-section-breaker-train-color);
+  }
+
+  .home-section-breaker[data-route-enhanced="true"] .home-section-breaker__train {
+    /* 滚动脚本接管后由全页 SVG 车体覆盖同一位置；静态块只保留给无脚本与减少动态。 */
+    visibility: hidden;
+  }
+
+  .home-section-breaker__copy {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    align-self: start;
+    justify-items: center;
+    gap: var(--home-section-breaker-name-gap);
+    width: 100%;
+    margin-top: var(--home-section-breaker-copy-top);
+    text-align: center;
+  }
+
+  .home-section-breaker__copy h2,
+  .home-section-breaker__copy p {
+    max-width: calc(100% - 32px);
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  .home-section-breaker__copy h2 {
+    font-size: clamp(76px, 10.42vw, 200px);
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 0.98;
+  }
+
+  .home-section-breaker__copy p {
+    font-family: var(--font-fetarute-display), var(--font-fetarute-sans-sc);
+    font-size: clamp(42px, 5.21vw, 100px);
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1;
+  }
+
+  .home-section-breaker[data-home-section-breaker-locale="en"] {
+    --home-section-breaker-name-gap: clamp(12px, 1.1vw, 20px);
+  }
+
+  .home-section-breaker[data-home-section-breaker-locale="en"] .home-section-breaker__copy h2 {
+    font-size: clamp(62px, 7.4vw, 142px);
+    line-height: 1;
+  }
+
+  .home-section-breaker[data-home-section-breaker-locale="en"] .home-section-breaker__copy p {
+    font-size: clamp(50px, 6.25vw, 120px);
+  }
+
+  :global(.home-section-breaker__route) {
+    position: absolute;
+    z-index: 1;
+    top: var(--home-section-breaker-route-top);
+    right: var(--home-section-breaker-route-right);
+    left: var(--home-section-breaker-route-left);
+  }
+
+  @media (max-width: 1100px) and (min-width: 761px) {
+    .home-section-breaker {
+      --home-section-breaker-route-left: auto;
+      --home-section-breaker-route-right: clamp(24px, 4vw, 48px);
+    }
+  }
+
+  @media (max-width: 760px) {
+    .home-section-breaker {
+      --home-section-breaker-track-width: clamp(20px, 5.8vw, 30px);
+      --home-section-breaker-track-half: clamp(10px, 2.9vw, 15px);
+      --home-section-breaker-bend-size: clamp(80px, 23.3vw, 120px);
+      --home-section-breaker-left-origin-x: 7vw;
+      /* 小屏按 Figma 70:19 保留单一左轨；换边属于桌面网格，不应挤进窄屏阅读轴。 */
+      --home-section-breaker-content-left: max(
+        calc(var(--home-section-breaker-left-origin-x) + var(--home-section-breaker-track-width) + 18px),
+        20.9vw
+      );
+      --home-section-breaker-copy-top: 38.15svh;
+      --home-section-breaker-route-top: 66.2svh;
+      --home-section-breaker-route-left: var(--home-section-breaker-content-left);
+      --home-section-breaker-route-right: auto;
+      --home-section-breaker-train-width: clamp(72px, 18vw, 100px);
+      --home-section-breaker-train-height: clamp(40px, 10vw, 48px);
+      height: max(680px, 100svh);
+      min-height: max(680px, 100svh);
+    }
+
+    .home-section-breaker__stage {
+      position: relative;
+      height: 100%;
+      min-height: inherit;
+    }
+
+    .home-section-breaker__left-track {
+      height: 100%;
+    }
+
+    .home-section-breaker__left-bend,
+    .home-section-breaker__right-bend,
+    .home-section-breaker__horizontal-track,
+    .home-section-breaker__right-track,
+    .home-section-breaker__train {
+      display: none;
+    }
+
+    .home-section-breaker__left-bend,
+    .home-section-breaker__right-bend {
+      /* SVG 源文件自带 display 内联样式；visibility 才能在不改写设计资产时可靠关闭两枚桌面弯轨。 */
+      visibility: hidden;
+    }
+
+    .home-section-breaker__copy {
+      justify-items: start;
+      width: calc(100% - var(--home-section-breaker-content-left) - 16px);
+      margin-left: var(--home-section-breaker-content-left);
+      text-align: left;
+    }
+
+    .home-section-breaker__copy h2 {
+      max-width: 100%;
+      font-size: clamp(58px, 19.4vw, 98px);
+      white-space: normal;
+    }
+
+    .home-section-breaker__copy p {
+      max-width: 100%;
+      font-size: clamp(25px, 9.7vw, 48px);
+      white-space: normal;
+    }
+
+    .home-section-breaker[data-home-section-breaker-locale="en"] .home-section-breaker__copy h2 {
+      font-size: clamp(38px, 10.5vw, 58px);
+    }
+
+    .home-section-breaker[data-home-section-breaker-locale="en"] .home-section-breaker__copy p {
+      font-size: clamp(40px, 12vw, 64px);
+    }
+
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-section-breaker {
+      --home-section-breaker-scroll-distance: 0px !important;
+    }
+
+    .home-section-breaker__stage {
+      position: relative;
+    }
+
+    .home-section-breaker * {
+      transition: none !important;
+    }
+  }
+</style>
