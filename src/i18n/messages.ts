@@ -28,6 +28,8 @@ interface HomeTrainTooltipMessage {
   quickPickLabel: string;
   /** 每个章节链接在辅助技术中使用的动作前缀。 */
   goToSectionLabel: string;
+  /** 固定打开后用于明确关闭快选面板的按钮名称。 */
+  closeLabel: string;
 }
 
 /** 首页开屏抵达画面中不属于铁路数据的界面文案。 */
@@ -308,12 +310,13 @@ const messages: Record<Locale, SiteMessages> = {
       arrival: {
         trainTooltip: {
           triggerLabel: "打开列车章节快选",
-          hoverHint: "悬停列车，查看旅程导航",
-          tapHint: "轻触列车，查看旅程导航",
+          hoverHint: "悬停预览；点击固定旅程导航",
+          tapHint: "轻触列车，打开旅程导航",
           title: "列车导览",
           currentSectionLabel: "本站",
           quickPickLabel: "章节路线",
           goToSectionLabel: "前往章节",
+          closeLabel: "关闭列车导览",
         },
       },
       gallery: {
@@ -462,12 +465,13 @@ const messages: Record<Locale, SiteMessages> = {
       arrival: {
         trainTooltip: {
           triggerLabel: "開啟列車章節快選",
-          hoverHint: "懸停列車，查看旅程導覽",
-          tapHint: "輕觸列車，查看旅程導覽",
+          hoverHint: "懸停預覽；點擊固定旅程導覽",
+          tapHint: "輕觸列車，開啟旅程導覽",
           title: "列車導覽",
           currentSectionLabel: "本站",
           quickPickLabel: "章節路線",
           goToSectionLabel: "前往章節",
+          closeLabel: "關閉列車導覽",
         },
       },
       gallery: {
@@ -619,12 +623,13 @@ const messages: Record<Locale, SiteMessages> = {
       arrival: {
         trainTooltip: {
           triggerLabel: "Open the train section picker",
-          hoverHint: "Hover over the train for journey navigation",
-          tapHint: "Tap the train for journey navigation",
+          hoverHint: "Hover to preview; click to pin journey navigation",
+          tapHint: "Tap the train to open journey navigation",
           title: "Train wayfinding",
           currentSectionLabel: "This stop",
           quickPickLabel: "Section route",
           goToSectionLabel: "Go to section",
+          closeLabel: "Close train wayfinding",
         },
       },
       gallery: {

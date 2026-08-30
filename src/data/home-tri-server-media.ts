@@ -39,6 +39,9 @@ export type HomeTriServerImageSets = Readonly<
 /** 允许图片归类器识别的固定子目录；未知目录会被忽略，避免素材误入错误服务器。 */
 const homeTriServerIds: readonly HomeTriServerId[] = ["creative", "lobby", "survival"];
 
+/** 三服汇 Carousel 每张图片的自动停留时间；组件与计时进度条共享同一节奏。 */
+export const homeTriServerCarouselAutoplayIntervalMs = 6000;
+
 /** 场景文件名中的常用缩写映射，避免自动标题把交通设施缩写显示成普通单词。 */
 const homeTriServerSceneTokenLabel: Readonly<Record<string, string>> = {
   br: "Bridge",
@@ -58,6 +61,25 @@ export function getHomeTriServerSceneLabel(filename: string): string {
         `${token.charAt(0).toUpperCase()}${token.slice(1)}`,
     )
     .join(" ");
+}
+
+/**
+ * 返回自动轮播的下一张序号；多图到达末张后回到首张，单图与空集合保持在零。
+ * 手动箭头继续使用既有边界，不与自动循环的回绕语义混用。
+ */
+export function getHomeTriServerCarouselAutoplayNextIndex(
+  currentIndex: number,
+  slideCount: number,
+): number {
+  const safeSlideCount = Math.max(0, Math.floor(slideCount));
+
+  if (safeSlideCount <= 1) {
+    return 0;
+  }
+
+  const safeCurrentIndex = Math.min(Math.max(0, Math.floor(currentIndex)), safeSlideCount - 1);
+
+  return (safeCurrentIndex + 1) % safeSlideCount;
 }
 
 /**

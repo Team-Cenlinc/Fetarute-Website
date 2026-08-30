@@ -1,4 +1,5 @@
 ---
+import xIcon from "@phosphor-icons/core/assets/regular/x.svg?raw";
 import { getRailwayLineTextColor } from "@/data/palette";
 import {
   getHomeJourneySectionName,
@@ -22,6 +23,8 @@ export interface Props {
   quickPickLabel: string;
   /** 拼入每个章节链接无障碍名称的动作前缀。 */
   goToSectionLabel: string;
+  /** 固定打开后用于明确关闭快选面板的按钮名称。 */
+  closeLabel: string;
 }
 
 const {
@@ -31,6 +34,7 @@ const {
   currentSectionLabel,
   quickPickLabel,
   goToSectionLabel,
+  closeLabel,
 } = Astro.props;
 
 const renderedSections = sections.map((section) => {
@@ -63,6 +67,9 @@ if (!currentSection) {
   <header class="home-journey-quick-pick__current">
     <span>{currentSectionLabel}</span>
     <strong data-home-journey-current-name>{currentSection.displayName}</strong>
+    <button class="home-journey-quick-pick__close" data-home-journey-close type="button" aria-label={closeLabel}>
+      <span set:html={xIcon} aria-hidden="true" />
+    </button>
   </header>
   <nav class="home-journey-quick-pick__map" data-home-journey-map aria-label={quickPickLabel}>
     <ol>
@@ -128,13 +135,47 @@ if (!currentSection) {
   }
 
   .home-journey-quick-pick__current {
+    position: relative;
     display: grid;
     min-height: 96px;
     align-content: start;
     gap: 2px;
-    padding: 10px 14px 12px;
+    padding: 10px 64px 12px 14px;
     background: var(--palette-surface-raised);
     touch-action: pinch-zoom;
+  }
+
+  .home-journey-quick-pick__close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border: 2px solid transparent;
+    background: transparent;
+    color: var(--palette-text);
+    cursor: pointer;
+    transition:
+      border-color 160ms var(--motion-header-standard-effects),
+      background-color 160ms var(--motion-header-standard-effects);
+  }
+
+  .home-journey-quick-pick__close:hover {
+    background: color-mix(in srgb, var(--palette-text) 10%, transparent);
+  }
+
+  .home-journey-quick-pick__close:focus-visible {
+    border-color: currentColor;
+    outline: none;
+  }
+
+  .home-journey-quick-pick__close span,
+  .home-journey-quick-pick__close :global(svg) {
+    display: block;
+    width: 22px;
+    height: 22px;
   }
 
   .home-journey-quick-pick__current > span {

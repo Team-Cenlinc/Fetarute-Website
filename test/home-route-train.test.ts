@@ -1,0 +1,46 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  getHomeSectionBreakerEntryPathStartY,
+  getHomeSectionBreakerScrollDistance,
+} from "../src/data/home-route-train.ts";
+
+test("首弯入口从弯道上方顺向接入，弯曲车体不会在折返点自我覆盖", () => {
+  assert.equal(
+    getHomeSectionBreakerEntryPathStartY({
+      galleryTrainTailY: 509,
+      curveStartY: 469,
+      trainLength: 150,
+    }),
+    319,
+  );
+});
+
+test("Gallery 已在首弯上方时保留原始交接点，不额外拉长入口", () => {
+  assert.equal(
+    getHomeSectionBreakerEntryPathStartY({
+      galleryTrainTailY: 100,
+      curveStartY: 469,
+      trainLength: 150,
+    }),
+    100,
+  );
+});
+
+test("Section Breaker 把剩余路径压缩到可读的原生滚动行程", () => {
+  assert.ok(
+    Math.abs(
+      getHomeSectionBreakerScrollDistance({
+        remainingPathDistance: 1684,
+        viewportHeight: 900,
+      }) - 990,
+    ) < 0.01,
+  );
+  assert.equal(
+    getHomeSectionBreakerScrollDistance({
+      remainingPathDistance: 0,
+      viewportHeight: 900,
+    }),
+    0,
+  );
+});
