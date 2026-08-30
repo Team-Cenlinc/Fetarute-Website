@@ -69,7 +69,7 @@ src/
   pages/             Astro 页面路由
   styles/            全局样式和品牌变量
   content.config.ts  内容集合 schema
-test/                   Node 原生测试，覆盖公开收录与发现文件的输出边界
+test/                   Node 原生测试，覆盖发现文件输出与首页静态数据约定
 ```
 
 ## 内容维护

@@ -1,0 +1,2087 @@
+---
+import { getImage } from "astro:assets";
+import arrowLeftIcon from "@phosphor-icons/core/assets/regular/arrow-left.svg?raw";
+import arrowRightIcon from "@phosphor-icons/core/assets/regular/arrow-right.svg?raw";
+import arrowSquareOutIcon from "@phosphor-icons/core/assets/regular/arrow-square-out.svg?raw";
+import circleNotchIcon from "@phosphor-icons/core/assets/regular/circle-notch.svg?raw";
+import mapTrifoldIcon from "@phosphor-icons/core/assets/regular/map-trifold.svg?raw";
+import xIcon from "@phosphor-icons/core/assets/regular/x.svg?raw";
+import {
+  getHomeSceneryOutputWidths,
+  homeSceneryImageQuality,
+  homeTriServerImageWidths,
+} from "@/data/home-image-output";
+import { homeTriServerDefinitions } from "@/data/home-tri-server";
+import type { Locale } from "@/i18n/config";
+import { getMessages } from "@/i18n/messages";
+
+/** 三服汇连续介绍区的属性。 */
+export interface Props {
+  /** 当前公开语言；服务器内容与 Carousel 操作提示都由它切换。 */
+  locale: Locale;
+  /** 从正式 Serverlink 线路数据注入的主线颜色。 */
+  lineColor: string;
+}
+
+const { locale, lineColor } = Astro.props;
+const triServerMessages = getMessages(locale).home.triServer;
+
+/** 将 Carousel 序号写入本地化模板，避免客户端为首次渲染重复一套格式规则。 */
+const formatSlideStatus = (current: number, total: number) =>
+  triServerMessages.slideStatusTemplate
+    .replace("{current}", String(current))
+    .replace("{total}", String(total));
+
+/**
+ * 三服图片在构建阶段生成响应式 AVIF 与 WebP；空目录不会触发任何图片处理。
+ * 480/960/1600px 候选分别覆盖移动端、常规桌面和高密度车窗，浏览器按 sizes 自行选择。
+ */
+const triServerItems = await Promise.all(
+  homeTriServerDefinitions.map(async (server) => {
+    const images = await Promise.all(
+      server.images.map(async (image, index) => {
+        const outputWidths = getHomeSceneryOutputWidths(
+          image.source.width,
+          1600,
+          homeTriServerImageWidths,
+        );
+        const width = outputWidths.at(-1) ?? Math.min(image.source.width, 1600);
+        const height = Math.round((image.source.height / image.source.width) * width);
+        const [avifOutputs, webpOutputs] = await Promise.all([
+          Promise.all(
+            outputWidths.map((outputWidth) =>
+              getImage({
+                src: image.source,
+                format: "avif",
+                width: outputWidth,
+                quality: homeSceneryImageQuality.avif,
+              }),
+            ),
+          ),
+          Promise.all(
+            outputWidths.map((outputWidth) =>
+              getImage({
+                src: image.source,
+                format: "webp",
+                width: outputWidth,
+                quality: homeSceneryImageQuality.webp,
+              }),
+            ),
+          ),
+        ]);
+        const webp = webpOutputs.at(-1);
+
+        if (!webp) {
+          throw new Error(`三服汇图片 ${image.filename} 没有生成可用的 WebP 输出。`);
+        }
+
+        return {
+          ...image,
+          index,
+          width,
+          height,
+          avifSrcset: avifOutputs
+            .map((output, outputIndex) => `${output.src} ${outputWidths[outputIndex]}w`)
+            .join(", "),
+          webpSrc: webp.src,
+          webpSrcset: webpOutputs
+            .map((output, outputIndex) => `${output.src} ${outputWidths[outputIndex]}w`)
+            .join(", "),
+        };
+      }),
+    );
+
+    return {
+      ...server,
+      images,
+      message: triServerMessages.serverById[server.id],
+    };
+  }),
+);
+---
+
+<section
+  class="home-tri-server"
+  data-home-tri-server
+  data-home-tri-server-locale={locale}
+  aria-label={triServerMessages.label}
+  style={`--home-tri-server-line-color: ${lineColor};`}
+>
+  <span class="home-tri-server__line" data-home-tri-server-track aria-hidden="true"></span>
+
+  <div class="home-tri-server__stage">
+    <div class="home-tri-server__window" data-home-tri-server-desktop-media-host>
+      <div
+        class="home-tri-server__server-loading"
+        data-home-tri-server-server-loading
+        data-loading-label={triServerMessages.serverLoadingLabel}
+        data-error-label={triServerMessages.imageLoadErrorLabel}
+        role="status"
+        aria-live="polite"
+        hidden
+      >
+        <span aria-hidden="true" set:html={circleNotchIcon} />
+        <span data-home-tri-server-server-loading-copy>{triServerMessages.serverLoadingLabel}</span>
+      </div>
+    </div>
+  </div>
+
+  <ol class="home-tri-server__story">
+    {
+      triServerItems.map((server, index) => {
+        const mapFrameTitle = `${server.message.name} ${triServerMessages.mapFrameLabel}`;
+
+        return (
+          <li
+            class="home-tri-server__stop"
+            data-home-tri-server-stop={server.id}
+            data-active={index === 0 ? "true" : "false"}
+          >
+            <div class="home-tri-server__world">
+              <div class="home-tri-server__copy">
+                {index === 0 && <p class="home-tri-server__lead">{triServerMessages.lead}</p>}
+                <div class="home-tri-server__heading">
+                  <h3>{server.message.name}</h3>
+                  <span class="home-tri-server__station-marker" aria-hidden="true"></span>
+                </div>
+                <p class="home-tri-server__tagline">{server.message.tagline}</p>
+                <p class="home-tri-server__description">{server.message.description}</p>
+              </div>
+              <div
+                class="home-tri-server__mobile-media-host"
+                data-home-tri-server-mobile-media-host={server.id}
+              ></div>
+              <div class="home-tri-server__map-card" data-home-tri-server-map-card={server.id}>
+                <div class="home-tri-server__map-card-intro">
+                  <div class="home-tri-server__map-copy">
+                    <h4>
+                      <span class="home-tri-server__map-copy-desktop">{triServerMessages.mapCardTitle}</span>
+                      <span class="home-tri-server__map-copy-mobile">{triServerMessages.mapExternalCardTitle}</span>
+                    </h4>
+                    <p>
+                      <span class="home-tri-server__map-copy-desktop">{triServerMessages.mapCardDescription}</span>
+                      <span class="home-tri-server__map-copy-mobile">{triServerMessages.mapExternalCardDescription}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  class="home-tri-server__map-launch"
+                  type="button"
+                  data-home-tri-server-map-launch={server.id}
+                  data-map-href={server.mapHref}
+                  data-map-frame-title={mapFrameTitle}
+                  data-map-launch-label={triServerMessages.mapLaunchLabel}
+                  data-map-close-label={triServerMessages.mapCloseLabel}
+                  aria-pressed="false"
+                >
+                  <span data-home-tri-server-map-launch-label>{triServerMessages.mapLaunchLabel}</span>
+                  <span class="home-tri-server__map-launch-icon" aria-hidden="true">
+                    <span data-map-button-icon="launch" set:html={mapTrifoldIcon} />
+                    <span data-map-button-icon="close" set:html={xIcon} hidden />
+                  </span>
+                </button>
+                <a
+                  class="home-tri-server__map-external"
+                  href={server.mapHref}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <span>{triServerMessages.mapExternalLabel}</span>
+                  <span aria-hidden="true" set:html={arrowSquareOutIcon} />
+                </a>
+              </div>
+            </div>
+          </li>
+        );
+      })
+    }
+  </ol>
+
+  <div class="home-tri-server__media-source" data-home-tri-server-media-source>
+    {
+      triServerItems.map((server) => {
+        const imageSlideCount = Math.max(1, server.images.length);
+
+        return (
+          <article
+            class="home-tri-server__media-panel"
+            data-home-tri-server-media-panel={server.id}
+            data-active-slide="0"
+            aria-label={`${server.message.name} · ${triServerMessages.label}`}
+          >
+            <div class="home-tri-server__media-viewport">
+              <div
+                class="home-tri-server__carousel"
+                data-home-tri-server-carousel
+                tabindex="0"
+                role="region"
+                aria-roledescription="carousel"
+                aria-label={server.message.name}
+              >
+                <ol class="home-tri-server__slides" data-home-tri-server-slides>
+                  {server.images.length > 0 ? (
+                    server.images.map((image) => (
+                      <li class="home-tri-server__slide" data-home-tri-server-slide>
+                        <picture class="home-tri-server__picture">
+                          <source
+                            srcset={image.avifSrcset}
+                            sizes="(max-width: 1023px) calc(79vw - 16px), (max-width: 1100px) 47vw, 44vw"
+                            type="image/avif"
+                          />
+                          <img
+                            src={image.webpSrc}
+                            srcset={image.webpSrcset}
+                            sizes="(max-width: 1023px) calc(79vw - 16px), (max-width: 1100px) 47vw, 44vw"
+                            width={image.width}
+                            height={image.height}
+                            alt={`${server.message.imageAltPrefix}：${image.sceneLabel}`}
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </picture>
+                      </li>
+                    ))
+                  ) : (
+                    <li
+                      class="home-tri-server__slide home-tri-server__slide--placeholder"
+                      data-home-tri-server-slide
+                    >
+                      <div class="home-tri-server__placeholder">
+                        <strong>{triServerMessages.placeholderTitle}</strong>
+                        <span>{triServerMessages.placeholderHint}</span>
+                      </div>
+                    </li>
+                  )}
+                </ol>
+              </div>
+
+              <div
+                class="home-tri-server__image-loading"
+                data-home-tri-server-image-loading
+                data-loading-label={triServerMessages.imageLoadingLabel}
+                data-error-label={triServerMessages.imageLoadErrorLabel}
+                role="status"
+                aria-live="polite"
+                hidden
+              >
+                <span aria-hidden="true" set:html={circleNotchIcon} />
+                <span data-home-tri-server-image-loading-copy>{triServerMessages.imageLoadingLabel}</span>
+              </div>
+
+              <div class="home-tri-server__map-overlay" data-home-tri-server-map-overlay hidden>
+                <div class="home-tri-server__map-stage">
+                  <div
+                    class="home-tri-server__map-loading"
+                    data-home-tri-server-map-loading
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <span class="home-tri-server__map-loading-icon" aria-hidden="true" set:html={mapTrifoldIcon} />
+                    <strong>{triServerMessages.mapLoadingTitle}</strong>
+                    <span>{triServerMessages.mapLoadingDescription}</span>
+                    <div class="home-tri-server__map-loading-skeleton" aria-hidden="true">
+                      <i></i><i></i><i></i>
+                    </div>
+                  </div>
+                  <div class="home-tri-server__map-frame" data-home-tri-server-map-frame></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="home-tri-server__media-footer">
+              <div class="home-tri-server__controls">
+                <button
+                  type="button"
+                  data-home-tri-server-previous
+                  aria-label={triServerMessages.previousSlideLabel}
+                  disabled
+                >
+                  <span aria-hidden="true" set:html={arrowLeftIcon} />
+                </button>
+                <span
+                  data-home-tri-server-slide-status
+                  data-slide-status-template={triServerMessages.slideStatusTemplate}
+                  aria-live="polite"
+                >
+                  {formatSlideStatus(1, imageSlideCount)}
+                </span>
+                <button
+                  type="button"
+                  data-home-tri-server-next
+                  aria-label={triServerMessages.nextSlideLabel}
+                  disabled={imageSlideCount <= 1}
+                >
+                  <span aria-hidden="true" set:html={arrowRightIcon} />
+                </button>
+              </div>
+              <a
+                class="home-tri-server__media-map-external"
+                href={server.mapHref}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span>{triServerMessages.mapExternalLabel}</span>
+                <span aria-hidden="true" set:html={arrowSquareOutIcon} />
+              </a>
+            </div>
+          </article>
+        );
+      })
+    }
+  </div>
+</section>
+
+<script>
+  import {
+    prepareHomeTriServerImage,
+    shuffleHomeTriServerItems,
+  } from "@/data/home-tri-server-media";
+
+  const homeTriServer = document.querySelector<HTMLElement>("[data-home-tri-server]");
+
+  if (homeTriServer) {
+    const desktopTriServerQuery = window.matchMedia("(min-width: 1024px)");
+    const reducedTriServerMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const desktopMediaHost = homeTriServer.querySelector<HTMLElement>(
+      "[data-home-tri-server-desktop-media-host]",
+    );
+    const serverLoading = homeTriServer.querySelector<HTMLElement>(
+      "[data-home-tri-server-server-loading]",
+    );
+    const serverLoadingCopy = serverLoading?.querySelector<HTMLElement>(
+      "[data-home-tri-server-server-loading-copy]",
+    );
+    const serverStops = Array.from(
+      homeTriServer.querySelectorAll<HTMLElement>("[data-home-tri-server-stop]"),
+    );
+    const mediaPanels = Array.from(
+      homeTriServer.querySelectorAll<HTMLElement>("[data-home-tri-server-media-panel]"),
+    );
+    const mobileMediaHostById = new Map(
+      Array.from(
+        homeTriServer.querySelectorAll<HTMLElement>("[data-home-tri-server-mobile-media-host]"),
+      ).map((host) => [host.dataset.homeTriServerMobileMediaHost, host]),
+    );
+    const mapLaunchButtonById = new Map(
+      Array.from(
+        homeTriServer.querySelectorAll<HTMLButtonElement>("[data-home-tri-server-map-launch]"),
+      ).map((button) => [button.dataset.homeTriServerMapLaunch, button]),
+    );
+    const preparePanelForDisplayById = new Map<string, () => Promise<boolean>>();
+    let activeServerId = serverStops[0]?.dataset.homeTriServerStop;
+    let requestedServerId = activeServerId;
+    let pendingActiveServerFrame = 0;
+    let activeServerRequest = 0;
+    let pendingActiveServerPromise: Promise<boolean> | undefined;
+    let serverLoadingResetTimer = 0;
+    let activeServerTransitionTimer = 0;
+    let activeServerTransitionSerial = 0;
+    let settleActiveServerTransition: ((didComplete: boolean) => void) | undefined;
+
+    /**
+     * 取消尚未完成的桌面换景，并恢复唯一活动面板。
+     * 快速滚过多个服务器时必须先清理旧动画，否则两个目标面板可能同时停留在车窗里。
+     */
+    const cancelActiveServerTransition = () => {
+      activeServerTransitionSerial += 1;
+      window.clearTimeout(activeServerTransitionTimer);
+      activeServerTransitionTimer = 0;
+
+      const settleTransition = settleActiveServerTransition;
+      settleActiveServerTransition = undefined;
+
+      mediaPanels.forEach((panel) => {
+        delete panel.dataset.serverTransition;
+        panel.hidden = panel.dataset.homeTriServerMediaPanel !== activeServerId;
+      });
+
+      settleTransition?.(false);
+    };
+
+    /** 让桌面服务器切换的等待与失败反馈复用同一状态胶囊，旧车窗始终留在原位。 */
+    const setServerLoadingState = (state: "idle" | "loading" | "error") => {
+      window.clearTimeout(serverLoadingResetTimer);
+
+      if (!serverLoading || !serverLoadingCopy) {
+        return;
+      }
+
+      serverLoading.hidden = state === "idle";
+      serverLoading.dataset.state = state;
+      serverLoadingCopy.textContent =
+        state === "error"
+          ? (serverLoading.dataset.errorLabel ?? "")
+          : (serverLoading.dataset.loadingLabel ?? "");
+
+      if (state === "error") {
+        serverLoadingResetTimer = window.setTimeout(() => setServerLoadingState("idle"), 1800);
+      }
+    };
+
+    /** 同步地图卡片的启动与退出状态，让文字、图标和辅助技术表达同一个动作。 */
+    const setMapCardState = (panel: HTMLElement, isOpen: boolean) => {
+      const serverId = panel.dataset.homeTriServerMediaPanel;
+      const launchButton = serverId ? mapLaunchButtonById.get(serverId) : undefined;
+      const card = serverId
+        ? homeTriServer.querySelector<HTMLElement>(`[data-home-tri-server-map-card="${serverId}"]`)
+        : undefined;
+      const label = launchButton?.querySelector<HTMLElement>(
+        "[data-home-tri-server-map-launch-label]",
+      );
+      const launchIcon = launchButton?.querySelector<HTMLElement>(
+        '[data-map-button-icon="launch"]',
+      );
+      const closeIcon = launchButton?.querySelector<HTMLElement>('[data-map-button-icon="close"]');
+
+      if (!launchButton || !label) {
+        return;
+      }
+
+      label.textContent = isOpen
+        ? (launchButton.dataset.mapCloseLabel ?? "")
+        : (launchButton.dataset.mapLaunchLabel ?? "");
+      launchButton.setAttribute("aria-pressed", String(isOpen));
+      launchIcon?.toggleAttribute("hidden", isOpen);
+      closeIcon?.toggleAttribute("hidden", !isOpen);
+      card?.toggleAttribute("data-map-open", isOpen);
+    };
+
+    /** 关闭按需创建的 iframe，释放地图切片与事件监听，并把焦点还给启动卡。 */
+    const closeInteractiveMap = (panel: HTMLElement, restoreFocus = false) => {
+      const overlay = panel.querySelector<HTMLElement>("[data-home-tri-server-map-overlay]");
+      const frameHost = panel.querySelector<HTMLElement>("[data-home-tri-server-map-frame]");
+      const loading = panel.querySelector<HTMLElement>("[data-home-tri-server-map-loading]");
+      const serverId = panel.dataset.homeTriServerMediaPanel;
+      const launchButton = serverId ? mapLaunchButtonById.get(serverId) : undefined;
+
+      if (!overlay || !frameHost) {
+        return;
+      }
+
+      frameHost.replaceChildren();
+      overlay.hidden = true;
+      loading?.removeAttribute("hidden");
+      delete panel.dataset.mapInteractive;
+      delete panel.dataset.mapLoadState;
+      setMapCardState(panel, false);
+
+      if (restoreFocus) {
+        launchButton?.focus();
+      }
+    };
+
+    /** 提交当前文本站和桌面车窗；调用前必须确认目标面板首帧已经可绘制。 */
+    const commitActiveServer = (serverId: string) => {
+      activeServerId = serverId;
+      requestedServerId = serverId;
+      homeTriServer.dataset.activeServer = serverId;
+
+      serverStops.forEach((stop) => {
+        stop.dataset.active = String(stop.dataset.homeTriServerStop === serverId);
+      });
+
+      let shouldMoveFocus = false;
+      let activePanel: HTMLElement | undefined;
+
+      mediaPanels.forEach((panel) => {
+        const isActive = panel.dataset.homeTriServerMediaPanel === serverId;
+
+        if (!isActive) {
+          shouldMoveFocus ||= panel.contains(document.activeElement);
+          closeInteractiveMap(panel);
+        } else {
+          activePanel = panel;
+        }
+
+        panel.hidden = !isActive;
+      });
+
+      if (shouldMoveFocus) {
+        activePanel
+          ?.querySelector<HTMLElement>("[data-home-tri-server-carousel]")
+          ?.focus({ preventScroll: true });
+      }
+    };
+
+    /**
+     * 在目标首图可绘制后交接桌面车窗：旧景先加速退场，新景稍后减速落位。
+     * 移动端和减少动态偏好继续即时提交，避免为原生纵向阅读增加不必要的运动。
+     */
+    const transitionActiveServer = (serverId: string, requestId: number): Promise<boolean> => {
+      const previousPanel = mediaPanels.find(
+        (panel) => panel.dataset.homeTriServerMediaPanel === activeServerId,
+      );
+      const nextPanel = mediaPanels.find(
+        (panel) => panel.dataset.homeTriServerMediaPanel === serverId,
+      );
+
+      if (
+        !desktopTriServerQuery.matches ||
+        reducedTriServerMotionQuery.matches ||
+        !previousPanel ||
+        !nextPanel
+      ) {
+        commitActiveServer(serverId);
+        return Promise.resolve(true);
+      }
+
+      cancelActiveServerTransition();
+      const previousIndex = mediaPanels.indexOf(previousPanel);
+      const nextIndex = mediaPanels.indexOf(nextPanel);
+      const direction = nextIndex >= previousIndex ? "forward" : "backward";
+      const transitionSerial = activeServerTransitionSerial;
+
+      nextPanel.hidden = false;
+      previousPanel.dataset.serverTransition = `leaving-${direction}`;
+      nextPanel.dataset.serverTransition = `entering-${direction}`;
+
+      return new Promise((resolve) => {
+        settleActiveServerTransition = resolve;
+        // CSS 换景最长 360ms；额外 20ms 只用于确保最终 hidden 状态落在动画完成之后。
+        activeServerTransitionTimer = window.setTimeout(() => {
+          if (
+            transitionSerial !== activeServerTransitionSerial ||
+            requestId !== activeServerRequest
+          ) {
+            resolve(false);
+            return;
+          }
+
+          activeServerTransitionTimer = 0;
+          settleActiveServerTransition = undefined;
+          commitActiveServer(serverId);
+          mediaPanels.forEach((panel) => delete panel.dataset.serverTransition);
+          resolve(true);
+        }, 380);
+      });
+    };
+
+    /**
+     * 切换服务器前等待目标车窗的当前图片完成解码。
+     * 小屏同时展示三组媒体，无需隐藏面板；桌面则保留旧车窗并显示等待反馈。
+     */
+    const setActiveServer = (serverId: string | undefined): Promise<boolean> => {
+      if (!serverId) {
+        return Promise.resolve(false);
+      }
+
+      if (!desktopTriServerQuery.matches) {
+        if (serverId !== activeServerId) {
+          activeServerId = serverId;
+          requestedServerId = serverId;
+          homeTriServer.dataset.activeServer = serverId;
+          serverStops.forEach((stop) => {
+            stop.dataset.active = String(stop.dataset.homeTriServerStop === serverId);
+          });
+        }
+
+        return Promise.resolve(true);
+      }
+
+      if (serverId === requestedServerId && pendingActiveServerPromise) {
+        return pendingActiveServerPromise;
+      }
+
+      if (serverId === activeServerId) {
+        cancelActiveServerTransition();
+        requestedServerId = serverId;
+        activeServerRequest += 1;
+        pendingActiveServerPromise = undefined;
+        setServerLoadingState("idle");
+        return Promise.resolve(true);
+      }
+
+      cancelActiveServerTransition();
+      requestedServerId = serverId;
+      const requestId = ++activeServerRequest;
+      const preparePanel = preparePanelForDisplayById.get(serverId);
+      setServerLoadingState("loading");
+
+      let serverRequestPromise: Promise<boolean>;
+      serverRequestPromise = (preparePanel?.() ?? Promise.resolve(true))
+        .then((isReady) => {
+          if (requestId !== activeServerRequest || requestedServerId !== serverId) {
+            return false;
+          }
+
+          if (!isReady) {
+            requestedServerId = activeServerId;
+            setServerLoadingState("error");
+            return false;
+          }
+
+          setServerLoadingState("idle");
+          return transitionActiveServer(serverId, requestId);
+        })
+        .then((didComplete) => {
+          if (pendingActiveServerPromise === serverRequestPromise) {
+            pendingActiveServerPromise = undefined;
+          }
+
+          return didComplete;
+        });
+
+      pendingActiveServerPromise = serverRequestPromise;
+      return serverRequestPromise;
+    };
+
+    /** 用列车中心选择当前子服务器；列车未进站时回退正文阅读线，不修正原生滚动位置。 */
+    const updateActiveServerFromScroll = () => {
+      window.cancelAnimationFrame(pendingActiveServerFrame);
+      pendingActiveServerFrame = window.requestAnimationFrame(() => {
+        const routeTrain = document.querySelector<HTMLElement>(
+          '[data-home-arrival-train][data-route-segment="tri-server"]',
+        );
+        const routeTrainBounds = routeTrain?.getBoundingClientRect();
+        // 三服汇换景以列车中心为阅读线；列车尚未进入本节时才回退到固定正文阅读线。
+        const readingLine =
+          routeTrainBounds && routeTrain?.dataset.routeVisible === "true"
+            ? routeTrainBounds.top + routeTrainBounds.height / 2
+            : Math.max(120, window.innerHeight * 0.34);
+        const stopAtReadingLine = serverStops.find((stop) => {
+          const bounds = stop.getBoundingClientRect();
+          return bounds.top <= readingLine && bounds.bottom > readingLine;
+        });
+        const activeStop = stopAtReadingLine ?? serverStops.reduce((closestStop, stop) => {
+          const distance = Math.abs(stop.getBoundingClientRect().top + stop.offsetHeight / 2 - readingLine);
+          const closestDistance = Math.abs(
+            closestStop.getBoundingClientRect().top + closestStop.offsetHeight / 2 - readingLine,
+          );
+
+          return distance < closestDistance ? stop : closestStop;
+        }, serverStops[0]);
+
+        void setActiveServer(activeStop?.dataset.homeTriServerStop);
+      });
+    };
+
+    /** 将同一份媒体面板放到桌面 sticky 车窗或小屏对应正文下方，避免重复图片请求。 */
+    const syncMediaPlacement = () => {
+      cancelActiveServerTransition();
+      mediaPanels.forEach((panel) => closeInteractiveMap(panel));
+      activeServerRequest += 1;
+      pendingActiveServerPromise = undefined;
+      requestedServerId = activeServerId;
+      setServerLoadingState("idle");
+
+      if (desktopTriServerQuery.matches && desktopMediaHost) {
+        mediaPanels.forEach((panel) => desktopMediaHost.append(panel));
+        mediaPanels.forEach((panel) => {
+          panel.hidden = panel.dataset.homeTriServerMediaPanel !== activeServerId;
+        });
+
+        const prepareActivePanel = activeServerId
+          ? preparePanelForDisplayById.get(activeServerId)
+          : undefined;
+
+        if (prepareActivePanel) {
+          const requestId = activeServerRequest;
+          setServerLoadingState("loading");
+          void prepareActivePanel().then(() => {
+            if (requestId === activeServerRequest) {
+              setServerLoadingState("idle");
+            }
+          });
+        }
+      } else {
+        mediaPanels.forEach((panel) => {
+          const serverId = panel.dataset.homeTriServerMediaPanel;
+          const mobileHost = serverId ? mobileMediaHostById.get(serverId) : undefined;
+
+          if (mobileHost) {
+            mobileHost.append(panel);
+            panel.hidden = false;
+          }
+        });
+      }
+
+      updateActiveServerFromScroll();
+    };
+
+    mediaPanels.forEach((panel) => {
+      const carousel = panel.querySelector<HTMLElement>("[data-home-tri-server-carousel]");
+      const slides = shuffleHomeTriServerItems(
+        Array.from(panel.querySelectorAll<HTMLElement>("[data-home-tri-server-slide]")),
+      );
+      const previousButton = panel.querySelector<HTMLButtonElement>("[data-home-tri-server-previous]");
+      const nextButton = panel.querySelector<HTMLButtonElement>("[data-home-tri-server-next]");
+      const status = panel.querySelector<HTMLElement>("[data-home-tri-server-slide-status]");
+      const imageLoading = panel.querySelector<HTMLElement>(
+        "[data-home-tri-server-image-loading]",
+      );
+      const imageLoadingCopy = imageLoading?.querySelector<HTMLElement>(
+        "[data-home-tri-server-image-loading-copy]",
+      );
+      const serverId = panel.dataset.homeTriServerMediaPanel;
+      const launchButton = serverId ? mapLaunchButtonById.get(serverId) : undefined;
+      let pendingCarouselFrame = 0;
+      let carouselScrollSettleTimer = 0;
+      let imageLoadRequest = 0;
+      let imageLoadResetTimer = 0;
+      let isImageLoading = false;
+
+      if (!carousel || !previousButton || !nextButton || !status || slides.length === 0) {
+        return;
+      }
+
+      const slidesList = panel.querySelector<HTMLOListElement>("[data-home-tri-server-slides]");
+
+      if (slidesList && slides.length > 1) {
+        slidesList.append(...slides);
+      }
+
+      /** 翻页请求期间锁住两个方向，避免重复点击启动相互竞争的图片解码。 */
+      const updateCarouselControlState = (index: number) => {
+        previousButton.disabled = isImageLoading || index === 0;
+        nextButton.disabled = isImageLoading || index === slides.length - 1;
+      };
+
+      /** 在车窗右下角同步 loading/error/idle；当前图片始终保留到目标帧可绘制为止。 */
+      const setImageLoadState = (state: "idle" | "loading" | "error") => {
+        window.clearTimeout(imageLoadResetTimer);
+        isImageLoading = state === "loading";
+        panel.dataset.imageLoadState = state;
+        panel.setAttribute("aria-busy", String(isImageLoading));
+        updateCarouselControlState(Number(panel.dataset.activeSlide ?? 0));
+
+        if (!imageLoading || !imageLoadingCopy) {
+          return;
+        }
+
+        imageLoading.hidden = state === "idle";
+        imageLoadingCopy.textContent =
+          state === "error"
+            ? (imageLoading.dataset.errorLabel ?? "")
+            : (imageLoading.dataset.loadingLabel ?? "");
+      };
+
+      /** 更新公开序号、控制边界与状态文案；Carousel 不循环回绕。 */
+      const setSlideIndex = (index: number, shouldScroll: boolean) => {
+        const nextIndex = Math.min(Math.max(index, 0), slides.length - 1);
+        const slideStatusTemplate = status.dataset.slideStatusTemplate ?? "{current} / {total}";
+
+        panel.dataset.activeSlide = String(nextIndex);
+        updateCarouselControlState(nextIndex);
+        status.textContent = slideStatusTemplate
+          .replace("{current}", String(nextIndex + 1))
+          .replace("{total}", String(slides.length));
+
+        if (shouldScroll) {
+          carousel.scrollTo({
+            left: slides[nextIndex]?.offsetLeft ?? 0,
+            behavior: reducedTriServerMotionQuery.matches ? "auto" : "smooth",
+          });
+        }
+      };
+
+      /** 等待指定图片完成 decode，并统一维护 loading/error 状态。 */
+      const prepareSlideIndex = async (index: number) => {
+        const targetImage = slides[index]?.querySelector<HTMLImageElement>("img");
+
+        if (!targetImage || (targetImage.complete && targetImage.naturalWidth > 0)) {
+          return true;
+        }
+
+        const requestId = ++imageLoadRequest;
+        setImageLoadState("loading");
+        const isReady = await prepareHomeTriServerImage(targetImage);
+
+        if (requestId !== imageLoadRequest) {
+          return false;
+        }
+
+        setImageLoadState(isReady ? "idle" : "error");
+
+        if (!isReady) {
+          imageLoadResetTimer = window.setTimeout(() => setImageLoadState("idle"), 1800);
+        }
+
+        return isReady;
+      };
+
+      /** 用户请求新页时先完成目标图片 decode；失败时恢复到当前可用图片。 */
+      const requestSlideIndex = async (index: number, shouldScroll = true) => {
+        const currentIndex = Number(panel.dataset.activeSlide ?? 0);
+        const nextIndex = Math.min(Math.max(index, 0), slides.length - 1);
+
+        if (isImageLoading || nextIndex === currentIndex) {
+          return;
+        }
+
+        const isReady = await prepareSlideIndex(nextIndex);
+
+        if (isReady) {
+          setSlideIndex(nextIndex, shouldScroll);
+          return;
+        }
+
+        if (!shouldScroll) {
+          setSlideIndex(currentIndex, true);
+        }
+      };
+
+      /** 原生拖动稳定后再请求最近图片，触屏与按钮共享同一 decode 门控。 */
+      const updateSlideIndexFromScroll = () => {
+        window.cancelAnimationFrame(pendingCarouselFrame);
+        window.clearTimeout(carouselScrollSettleTimer);
+        pendingCarouselFrame = window.requestAnimationFrame(() => {
+          carouselScrollSettleTimer = window.setTimeout(() => {
+            const carouselCenter = carousel.scrollLeft + carousel.clientWidth / 2;
+            const activeIndex = slides.reduce((closestIndex, slide, index) => {
+              const center = slide.offsetLeft + slide.offsetWidth / 2;
+              const closestSlide = slides[closestIndex];
+              const closestCenter = closestSlide.offsetLeft + closestSlide.offsetWidth / 2;
+
+              return Math.abs(center - carouselCenter) < Math.abs(closestCenter - carouselCenter)
+                ? index
+                : closestIndex;
+            }, 0);
+
+            void requestSlideIndex(activeIndex, false);
+          }, 96);
+        });
+      };
+
+      previousButton.addEventListener("click", () => {
+        void requestSlideIndex(Number(panel.dataset.activeSlide ?? 0) - 1);
+      });
+      nextButton.addEventListener("click", () => {
+        void requestSlideIndex(Number(panel.dataset.activeSlide ?? 0) + 1);
+      });
+      carousel.addEventListener("scroll", updateSlideIndexFromScroll, { passive: true });
+      carousel.addEventListener("keydown", (event) => {
+        if (event.target !== carousel) {
+          return;
+        }
+
+        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+          event.preventDefault();
+          void requestSlideIndex(
+            Number(panel.dataset.activeSlide ?? 0) + (event.key === "ArrowLeft" ? -1 : 1),
+          );
+        }
+      });
+
+      if (serverId) {
+        preparePanelForDisplayById.set(serverId, () =>
+          prepareSlideIndex(Number(panel.dataset.activeSlide ?? 0)),
+        );
+      }
+
+      launchButton?.addEventListener("click", async () => {
+        if (!desktopTriServerQuery.matches || !serverId) {
+          return;
+        }
+
+        if (panel.dataset.mapInteractive === "true") {
+          closeInteractiveMap(panel);
+          return;
+        }
+
+        if (!(await setActiveServer(serverId))) {
+          return;
+        }
+
+        const mapHref = launchButton.dataset.mapHref;
+        const mapFrameTitle = launchButton.dataset.mapFrameTitle;
+        const overlay = panel.querySelector<HTMLElement>("[data-home-tri-server-map-overlay]");
+        const frameHost = panel.querySelector<HTMLElement>("[data-home-tri-server-map-frame]");
+        const loading = panel.querySelector<HTMLElement>("[data-home-tri-server-map-loading]");
+
+        if (!mapHref || !mapFrameTitle || !overlay || !frameHost || !loading) {
+          return;
+        }
+
+        const iframe = document.createElement("iframe");
+        const mapLoadStartedAt = performance.now();
+        iframe.src = mapHref;
+        iframe.title = mapFrameTitle;
+        iframe.loading = "eager";
+        iframe.referrerPolicy = "strict-origin-when-cross-origin";
+        iframe.allow = "fullscreen";
+        iframe.addEventListener(
+          "load",
+          () => {
+            const remainingLoadingTime = Math.max(0, 480 - (performance.now() - mapLoadStartedAt));
+
+            window.setTimeout(() => {
+              if (!iframe.isConnected) {
+                return;
+              }
+
+              loading.hidden = true;
+              panel.dataset.mapLoadState = "ready";
+            }, remainingLoadingTime);
+          },
+          { once: true },
+        );
+        overlay.hidden = false;
+        panel.dataset.mapInteractive = "true";
+        panel.dataset.mapLoadState = "loading";
+        setMapCardState(panel, true);
+        frameHost.replaceChildren(iframe);
+      });
+      panel.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && panel.dataset.mapInteractive === "true") {
+          event.preventDefault();
+          closeInteractiveMap(panel, true);
+        }
+      });
+
+      setSlideIndex(0, false);
+    });
+
+    if (activeServerId) {
+      homeTriServer.dataset.activeServer = activeServerId;
+    }
+
+    window.addEventListener("scroll", updateActiveServerFromScroll, { passive: true });
+    window.addEventListener("resize", updateActiveServerFromScroll);
+    desktopTriServerQuery.addEventListener("change", syncMediaPlacement);
+    window.addEventListener("pagehide", () => {
+      cancelActiveServerTransition();
+      mediaPanels.forEach((panel) => closeInteractiveMap(panel));
+      window.cancelAnimationFrame(pendingActiveServerFrame);
+      window.clearTimeout(serverLoadingResetTimer);
+    });
+
+    syncMediaPlacement();
+  }
+</script>
+
+<style>
+  .home-tri-server {
+    /* 线路轴线与上一段 Section Breaker 的桌面右轨完全一致，避免章节边界重新起线。 */
+    --home-tri-server-track-origin-x: 86.41vw;
+    /* 轨宽继续消费 Serverlink 的响应式比例；线路实际颜色只由组件属性注入。 */
+    --home-tri-server-track-width: clamp(34px, 3.23vw, 62px);
+    /* 桌面正文列右缘固定在 82vw；站标据此跨出文案列并精确接入右轨。 */
+    --home-tri-server-copy-right-x: 82vw;
+    /* 文案右侧安全距让字形停在站标之前，heading 外壳会单独补回这段宽度。 */
+    --home-tri-server-copy-rail-safe: clamp(36px, 3vw, 44px);
+    /* 车窗高度保留视口四周的留白；短横屏可继续缩短，避免外置控制被裁出视口。 */
+    --home-tri-server-window-height: clamp(280px, 68svh, 680px);
+    /* 展示窗以视口中线为轴，88px 下限只负责避让展开 Header。 */
+    --home-tri-server-window-top: max(
+      88px,
+      calc((100svh - var(--home-tri-server-window-height)) / 2)
+    );
+    /* 快速、标准与强调三档时长覆盖反馈、换景和大面积显隐，避免每个控件各自发明节奏。 */
+    --duration-home-tri-server-quick: 180ms;
+    --duration-home-tri-server-standard: 320ms;
+    --duration-home-tri-server-emphasized: 480ms;
+    /* 循环加载只共享节拍，不参与内容面板的进出时序。 */
+    --duration-home-tri-server-loading-cycle: 1.2s;
+    /* 离场、入场和内容跟随分别使用收束的三组空间曲线。 */
+    --motion-home-tri-server-exit: cubic-bezier(0.3, 0, 1, 1);
+    --motion-home-tri-server-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+    --motion-home-tri-server-settle: cubic-bezier(0.2, 0, 0, 1);
+    position: relative;
+    min-height: 300svh;
+    background: var(--color-background);
+    color: var(--color-text);
+  }
+
+  .home-tri-server__line {
+    position: absolute;
+    z-index: 0;
+    top: -1px;
+    bottom: 0;
+    left: var(--home-tri-server-track-origin-x);
+    width: var(--home-tri-server-track-width);
+    background: var(--home-tri-server-line-color);
+  }
+
+  .home-tri-server__stage {
+    position: sticky;
+    z-index: 1;
+    top: 0;
+    height: 100svh;
+    pointer-events: none;
+  }
+
+  .home-tri-server__window {
+    position: absolute;
+    top: var(--home-tri-server-window-top);
+    left: 5.5vw;
+    width: 44vw;
+    height: var(--home-tri-server-window-height);
+    overflow: visible;
+    pointer-events: auto;
+  }
+
+  .home-tri-server__story {
+    position: relative;
+    z-index: 2;
+    margin: -100svh 0 0;
+    padding: 0;
+    list-style: none;
+    pointer-events: none;
+  }
+
+  .home-tri-server__stop {
+    position: relative;
+    display: grid;
+    min-height: 100svh;
+    grid-template-columns: 55vw minmax(0, 27vw) 1fr;
+    align-items: center;
+    pointer-events: none;
+  }
+
+  .home-tri-server__world {
+    grid-column: 2;
+    justify-self: end;
+    width: 100%;
+    max-width: 520px;
+    pointer-events: auto;
+  }
+
+  .home-tri-server__copy {
+    width: 100%;
+    padding-right: var(--home-tri-server-copy-rail-safe);
+    text-align: right;
+  }
+
+  .home-tri-server__lead {
+    margin: 0 0 clamp(48px, 8svh, 88px);
+    color: var(--color-text);
+    font-size: clamp(15px, 1.05vw, 20px);
+    font-weight: 540;
+    line-height: 1.7;
+  }
+
+  .home-tri-server__heading {
+    position: relative;
+    margin-right: calc(var(--home-tri-server-copy-rail-safe) * -1);
+    padding-right: var(--home-tri-server-copy-rail-safe);
+  }
+
+  .home-tri-server__station-marker {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    left: calc(
+      100% + var(--home-tri-server-track-origin-x) - var(--home-tri-server-copy-right-x) -
+        var(--home-tri-server-track-width)
+    );
+    width: calc(var(--home-tri-server-track-width) + 1px);
+    height: var(--home-tri-server-track-width);
+    background: var(--home-tri-server-line-color);
+    transform: translateY(-50%);
+  }
+
+  .home-tri-server__copy h3 {
+    margin: 0;
+    font-size: clamp(46px, 4.35vw, 82px);
+    font-weight: 760;
+    letter-spacing: -0.04em;
+    line-height: 0.94;
+  }
+
+  .home-tri-server__tagline {
+    margin: clamp(8px, 1.2svh, 14px) 0 0;
+    font-size: clamp(18px, 1.34vw, 26px);
+    font-weight: 690;
+    letter-spacing: -0.018em;
+    line-height: 1.24;
+  }
+
+  .home-tri-server__description {
+    margin: clamp(20px, 2.6svh, 28px) 0 0;
+    color: var(--color-text);
+    font-size: clamp(15px, 0.96vw, 18px);
+    font-weight: 480;
+    line-height: 1.7;
+  }
+
+  .home-tri-server__mobile-media-host,
+  .home-tri-server__media-source {
+    display: none;
+  }
+
+  .home-tri-server__media-panel {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+  }
+
+  @media (min-width: 1024px) {
+    .home-tri-server__media-panel {
+      position: absolute;
+      inset: 0;
+    }
+
+    .home-tri-server__media-panel[data-server-transition] {
+      transform-origin: center;
+      will-change: opacity, transform;
+    }
+
+    .home-tri-server__media-panel[data-server-transition^="leaving-"] {
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .home-tri-server__media-panel[data-server-transition^="entering-"] {
+      z-index: 2;
+    }
+
+    .home-tri-server__media-panel[data-server-transition="leaving-forward"] {
+      animation: home-tri-server-panel-leave-forward var(--duration-home-tri-server-quick)
+        var(--motion-home-tri-server-exit) both;
+    }
+
+    .home-tri-server__media-panel[data-server-transition="entering-forward"] {
+      animation: home-tri-server-panel-enter-forward var(--duration-home-tri-server-standard)
+        var(--motion-home-tri-server-enter) 40ms both;
+    }
+
+    .home-tri-server__media-panel[data-server-transition="leaving-backward"] {
+      animation: home-tri-server-panel-leave-backward var(--duration-home-tri-server-quick)
+        var(--motion-home-tri-server-exit) both;
+    }
+
+    .home-tri-server__media-panel[data-server-transition="entering-backward"] {
+      animation: home-tri-server-panel-enter-backward var(--duration-home-tri-server-standard)
+        var(--motion-home-tri-server-enter) 40ms both;
+    }
+
+    .home-tri-server__media-panel[data-server-transition^="entering-"]
+      .home-tri-server__media-footer {
+      animation: home-tri-server-controls-enter var(--duration-home-tri-server-standard)
+        var(--motion-home-tri-server-settle) 80ms both;
+    }
+  }
+
+  @keyframes home-tri-server-panel-leave-forward {
+    to {
+      opacity: 0;
+      transform: translateY(-10px) scale(0.995);
+    }
+  }
+
+  @keyframes home-tri-server-panel-enter-forward {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(1.006);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes home-tri-server-panel-leave-backward {
+    to {
+      opacity: 0;
+      transform: translateY(10px) scale(0.995);
+    }
+  }
+
+  @keyframes home-tri-server-panel-enter-backward {
+    from {
+      opacity: 0;
+      transform: translateY(-14px) scale(1.006);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes home-tri-server-controls-enter {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .home-tri-server__media-viewport {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-gallery-scene);
+    transition: border-radius var(--duration-home-tri-server-emphasized)
+      var(--motion-header-standard-spatial);
+  }
+
+  .home-tri-server__media-panel[data-map-interactive="true"]
+    .home-tri-server__media-viewport {
+    border-radius: var(--radius-map-frame);
+  }
+
+  .home-tri-server__server-loading {
+    position: absolute;
+    z-index: 6;
+    right: clamp(12px, 1.2vw, 18px);
+    bottom: clamp(12px, 1.2vw, 18px);
+    display: flex;
+    min-height: 40px;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 13px;
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+    box-shadow: var(--shadow-feedback);
+    color: var(--color-text);
+    font-size: 13px;
+    font-weight: 620;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .home-tri-server__server-loading[hidden] {
+    display: none;
+  }
+
+  .home-tri-server__server-loading > span:first-child {
+    display: grid;
+    width: 18px;
+    height: 18px;
+    place-items: center;
+    animation: home-tri-server-image-loading var(--duration-home-tri-server-loading-cycle) linear
+      infinite;
+  }
+
+  .home-tri-server__server-loading > span:first-child :global(svg) {
+    width: 18px;
+    height: 18px;
+  }
+
+  .home-tri-server__server-loading[data-state="error"] > span:first-child {
+    animation: none;
+  }
+
+  .home-tri-server__carousel {
+    position: relative;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: inherit;
+    background: var(--color-surface);
+    outline: none;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+    scroll-snap-type: x mandatory;
+  }
+
+  .home-tri-server__carousel::-webkit-scrollbar {
+    display: none;
+  }
+
+  .home-tri-server__carousel:focus-visible {
+    box-shadow: inset 0 0 0 3px var(--color-action);
+  }
+
+  .home-tri-server__slides {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .home-tri-server__slide {
+    position: relative;
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+  }
+
+  .home-tri-server__picture,
+  .home-tri-server__picture img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .home-tri-server__picture img {
+    object-fit: cover;
+  }
+
+  .home-tri-server__image-loading {
+    position: absolute;
+    z-index: 3;
+    right: clamp(12px, 1.2vw, 18px);
+    bottom: clamp(12px, 1.2vw, 18px);
+    display: flex;
+    min-height: 40px;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 13px;
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+    box-shadow: var(--shadow-feedback);
+    color: var(--color-text);
+    font-size: 13px;
+    font-weight: 620;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .home-tri-server__image-loading[hidden] {
+    display: none;
+  }
+
+  .home-tri-server__image-loading > span:first-child {
+    display: grid;
+    width: 18px;
+    height: 18px;
+    place-items: center;
+    animation: home-tri-server-image-loading var(--duration-home-tri-server-loading-cycle) linear
+      infinite;
+  }
+
+  .home-tri-server__image-loading > span:first-child :global(svg) {
+    display: block;
+    width: 18px;
+    height: 18px;
+  }
+
+  .home-tri-server__media-panel[data-image-load-state="loading"]
+    .home-tri-server__carousel {
+    pointer-events: none;
+  }
+
+  .home-tri-server__media-panel[data-image-load-state="error"]
+    .home-tri-server__image-loading > span:first-child {
+    animation: none;
+  }
+
+  @keyframes home-tri-server-image-loading {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  .home-tri-server__slide--placeholder {
+    background: var(--color-surface);
+  }
+
+  .home-tri-server__placeholder {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    align-content: end;
+    justify-items: end;
+    gap: 10px;
+    padding: clamp(28px, 3.2vw, 60px);
+    text-align: right;
+  }
+
+  .home-tri-server__placeholder strong {
+    font-size: clamp(24px, 2vw, 38px);
+    font-weight: 720;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+  }
+
+  .home-tri-server__placeholder > span:last-child {
+    max-width: 32rem;
+    color: var(--color-text);
+    font-weight: 500;
+    line-height: 1.6;
+  }
+
+  .home-tri-server__map-card {
+    display: grid;
+    width: 100%;
+    gap: 14px;
+    padding: clamp(18px, 1.4vw, 22px);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-panel);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-surface-inset);
+    text-align: right;
+    margin-top: clamp(28px, 4svh, 42px);
+    transition:
+      background-color var(--duration-home-tri-server-emphasized)
+        var(--motion-header-standard-effects),
+      transform var(--duration-home-tri-server-emphasized)
+        var(--motion-header-standard-spatial);
+  }
+
+  .home-tri-server__map-card[data-map-open] {
+    background: var(--color-surface-raised);
+  }
+
+  .home-tri-server__map-card-intro {
+    display: block;
+  }
+
+  .home-tri-server__map-copy {
+    min-width: 0;
+  }
+
+  .home-tri-server__map-copy-mobile {
+    display: none;
+  }
+
+  .home-tri-server__map-copy h4 {
+    margin: 0;
+    font-size: clamp(15px, 1vw, 17px);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+  }
+
+  .home-tri-server__map-copy p {
+    margin: 6px 0 0;
+    color: var(--color-text);
+    font-size: clamp(12px, 0.78vw, 14px);
+    font-weight: 470;
+    line-height: 1.55;
+  }
+
+  .home-tri-server__map-launch,
+  .home-tri-server__map-external {
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    border-radius: calc(var(--radius-panel) * 0.58);
+    font: inherit;
+    font-weight: 650;
+  }
+
+  .home-tri-server__map-launch {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 34px;
+    gap: 10px;
+    padding: 5px 5px 5px 16px;
+    border: 1px solid var(--color-action);
+    background: var(--color-action);
+    color: var(--color-action-text);
+    cursor: pointer;
+    text-align: right;
+    white-space: nowrap;
+    transition:
+      filter var(--duration-home-tri-server-standard) var(--motion-header-standard-effects),
+      transform var(--duration-home-tri-server-quick) var(--motion-header-standard-spatial);
+  }
+
+  .home-tri-server__map-launch:hover,
+  .home-tri-server__map-launch:focus-visible {
+    filter: brightness(1.08);
+  }
+
+  .home-tri-server__map-launch:active {
+    transform: scale(0.985);
+  }
+
+  .home-tri-server__map-launch-icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: calc(var(--radius-panel) * 0.42);
+    background: color-mix(in srgb, var(--color-action-text) 14%, transparent);
+    transition: transform var(--duration-home-tri-server-standard)
+      var(--motion-header-standard-spatial);
+  }
+
+  .home-tri-server__map-launch:hover .home-tri-server__map-launch-icon {
+    transform: translateX(1px);
+  }
+
+  .home-tri-server__map-launch-icon > span {
+    display: grid;
+  }
+
+  .home-tri-server__map-launch-icon > span[hidden] {
+    display: none;
+  }
+
+  .home-tri-server__map-launch-icon :global(svg) {
+    width: 18px;
+    height: 18px;
+  }
+
+  .home-tri-server__map-external {
+    display: none;
+    grid-template-columns: minmax(0, 1fr) 34px;
+    gap: 10px;
+    padding: 5px 5px 5px 16px;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text);
+    text-align: right;
+    text-decoration: none;
+    transition:
+      background-color var(--duration-home-tri-server-quick)
+        var(--motion-header-standard-effects),
+      border-color var(--duration-home-tri-server-quick)
+        var(--motion-header-standard-effects),
+      transform var(--duration-home-tri-server-quick) var(--motion-header-standard-spatial);
+  }
+
+  .home-tri-server__map-external:focus-visible,
+  .home-tri-server__media-map-external:focus-visible {
+    outline: 2px solid var(--color-action);
+    outline-offset: 2px;
+  }
+
+  @media (hover: hover) {
+    .home-tri-server__map-external:hover,
+    .home-tri-server__media-map-external:hover {
+      border-color: var(--color-action);
+      background: color-mix(in srgb, var(--color-action) 9%, transparent);
+    }
+  }
+
+  .home-tri-server__map-external:active {
+    background: color-mix(in srgb, var(--color-action) 15%, transparent);
+    transform: translateY(1px);
+  }
+
+  .home-tri-server__map-external span:last-child {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: calc(var(--radius-panel) * 0.42);
+    background: var(--color-surface-raised);
+  }
+
+  .home-tri-server__map-external span:last-child :global(svg) {
+    width: 18px;
+    height: 18px;
+  }
+
+  .home-tri-server__map-overlay {
+    position: absolute;
+    z-index: 4;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    background: var(--color-surface);
+  }
+
+  .home-tri-server__media-panel[data-map-interactive="true"]
+    .home-tri-server__map-overlay {
+    animation: home-tri-server-map-reveal var(--duration-home-tri-server-emphasized)
+      var(--motion-header-standard-spatial) both;
+  }
+
+  .home-tri-server__map-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .home-tri-server__map-loading {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 10px;
+    padding: 28px;
+    background: var(--color-surface);
+    text-align: center;
+  }
+
+  .home-tri-server__map-loading[hidden] {
+    display: none;
+  }
+
+  .home-tri-server__map-loading-icon {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 6px;
+    place-items: center;
+    border-radius: calc(var(--radius-panel) * 0.7);
+    background: var(--color-surface-raised);
+  }
+
+  .home-tri-server__map-loading-icon :global(svg) {
+    width: 26px;
+    height: 26px;
+  }
+
+  .home-tri-server__map-loading strong {
+    font-size: clamp(18px, 1.5vw, 26px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .home-tri-server__map-loading > span:nth-child(3) {
+    max-width: 27rem;
+    color: var(--color-text);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .home-tri-server__map-loading-skeleton {
+    display: grid;
+    width: min(260px, 72%);
+    height: 5px;
+    grid-template-columns: 1.1fr 0.65fr 1.4fr;
+    gap: 5px;
+    margin-top: 12px;
+  }
+
+  .home-tri-server__map-loading-skeleton i {
+    border-radius: var(--radius-pill);
+    background: var(--color-border);
+    animation: home-tri-server-map-loading var(--duration-home-tri-server-loading-cycle)
+      var(--motion-header-standard-effects) infinite;
+  }
+
+  .home-tri-server__map-loading-skeleton i:nth-child(2) {
+    animation-delay: 120ms;
+  }
+
+  .home-tri-server__map-loading-skeleton i:nth-child(3) {
+    animation-delay: 240ms;
+  }
+
+  @keyframes home-tri-server-map-loading {
+    0%,
+    100% {
+      opacity: 0.3;
+    }
+
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes home-tri-server-map-reveal {
+    0%,
+    28% {
+      opacity: 0;
+      transform: scale(1.008);
+    }
+
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .home-tri-server__map-frame {
+    width: 100%;
+    height: 100%;
+  }
+
+  .home-tri-server__map-frame :global(iframe) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  .home-tri-server__media-footer {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    display: grid;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .home-tri-server__controls,
+  .home-tri-server__media-map-external {
+    grid-area: 1 / 1;
+    display: grid;
+    width: 100%;
+    height: 56px;
+    transition:
+      opacity var(--duration-home-tri-server-standard) var(--motion-header-standard-effects),
+      transform var(--duration-home-tri-server-emphasized)
+        var(--motion-header-standard-spatial);
+  }
+
+  .home-tri-server__controls {
+    width: fit-content;
+    max-width: 100%;
+    grid-template-columns: 44px max-content 44px;
+    align-items: center;
+    column-gap: 6px;
+    justify-self: center;
+  }
+
+  .home-tri-server__media-map-external {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 10px;
+    padding-inline: clamp(8px, 1.4vw, 20px);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--color-text);
+    font-size: clamp(16px, 1.18vw, 18px);
+    font-weight: 680;
+    opacity: 0;
+    pointer-events: none;
+    text-align: right;
+    text-decoration: none;
+    transform: translateY(5px);
+    transition:
+      background-color var(--duration-home-tri-server-quick)
+        var(--motion-header-standard-effects),
+      border-color var(--duration-home-tri-server-quick)
+        var(--motion-header-standard-effects),
+      opacity var(--duration-home-tri-server-standard) var(--motion-header-standard-effects),
+      transform var(--duration-home-tri-server-emphasized)
+        var(--motion-header-standard-spatial);
+  }
+
+  .home-tri-server__media-map-external span:last-child {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border-radius: calc(var(--radius-panel) * 0.5);
+    background: var(--color-surface);
+  }
+
+  .home-tri-server__media-map-external span:last-child :global(svg) {
+    width: 20px;
+    height: 20px;
+  }
+
+  .home-tri-server__media-panel[data-map-interactive="true"] .home-tri-server__controls {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-5px);
+  }
+
+  .home-tri-server__media-panel[data-map-interactive="true"]
+    .home-tri-server__media-map-external {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .home-tri-server__media-panel[data-map-interactive="true"]
+    .home-tri-server__media-map-external:active {
+    background: color-mix(in srgb, var(--color-action) 15%, transparent);
+    transform: translateY(1px);
+  }
+
+  .home-tri-server__controls button {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-self: center;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+    transition:
+      opacity var(--duration-home-tri-server-quick) var(--motion-header-standard-effects);
+  }
+
+  .home-tri-server__controls button::before {
+    position: absolute;
+    z-index: -1;
+    inset: 2px;
+    border-radius: 50%;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-control);
+    content: "";
+    opacity: 0;
+    transform: scale(0.82);
+    transition:
+      box-shadow var(--duration-home-tri-server-quick) var(--motion-header-standard-effects),
+      opacity var(--duration-home-tri-server-quick) var(--motion-header-standard-effects),
+      transform var(--duration-home-tri-server-quick) var(--motion-header-standard-spatial);
+  }
+
+  .home-tri-server__controls button:focus-visible {
+    outline: 2px solid var(--color-action);
+    outline-offset: 2px;
+    opacity: 1;
+  }
+
+  .home-tri-server__controls button:focus-visible::before {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  @media (hover: hover) {
+    .home-tri-server__controls button:hover:not(:disabled) {
+      opacity: 1;
+    }
+
+    .home-tri-server__controls button:hover:not(:disabled)::before {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .home-tri-server__controls button:active:not(:disabled)::before {
+    box-shadow: var(--shadow-control-pressed);
+    transform: scale(0.92);
+  }
+
+  .home-tri-server__controls button:disabled {
+    cursor: default;
+    opacity: 0.3;
+  }
+
+  .home-tri-server__controls button > span {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    place-items: center;
+    line-height: 0;
+  }
+
+  .home-tri-server__controls button :global(svg) {
+    display: block;
+    width: 22px;
+    height: 22px;
+  }
+
+  .home-tri-server__controls > span {
+    min-width: 72px;
+    padding-inline: 4px;
+    color: var(--color-text);
+    font-family: var(--font-fetarute-ui);
+    font-size: 13px;
+    font-weight: 560;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 1100px) and (min-width: 1024px) {
+    .home-tri-server__window {
+      left: 4vw;
+      width: 47vw;
+    }
+
+    .home-tri-server__stop {
+      grid-template-columns: 53vw minmax(0, 29vw) 1fr;
+    }
+
+    .home-tri-server__copy h3 {
+      font-size: clamp(42px, 5.2vw, 64px);
+    }
+  }
+
+  @media (min-width: 1024px) and (max-height: 680px) {
+    .home-tri-server__stop {
+      align-items: start;
+      padding-block: 88px 24px;
+    }
+
+    .home-tri-server__lead {
+      margin-bottom: clamp(24px, 4svh, 36px);
+    }
+
+    .home-tri-server__description {
+      margin-top: 14px;
+      line-height: 1.55;
+    }
+
+    .home-tri-server__map-card {
+      gap: 10px;
+      margin-top: 18px;
+      padding: 16px;
+    }
+  }
+
+  @media (max-width: 1023px) {
+    .home-tri-server {
+      /* 与紧凑 Header 共用平板断点，避免中等宽度仍保留右轨双栏而挤压正文。 */
+      --home-tri-server-track-origin-x: 7vw;
+      --home-tri-server-track-width: clamp(20px, 5.8vw, 30px);
+      /* 正文起点必须完整跨过轨宽、同宽站标与字形安全距，不能只按轨道右缘预留一段短引线。 */
+      --home-tri-server-content-left: calc(
+        var(--home-tri-server-track-origin-x) + var(--home-tri-server-track-width) * 2 + 1px +
+          clamp(12px, 1.6vw, 16px)
+      );
+      /* 小屏正文从左轨内侧起笔，车站标从轨道向正文方向伸出。 */
+      --home-tri-server-copy-rail-safe: 0px;
+      min-height: 0;
+    }
+
+    .home-tri-server__stage {
+      position: relative;
+      height: 0;
+    }
+
+    .home-tri-server__window {
+      display: none;
+    }
+
+    .home-tri-server__story {
+      margin-top: 0;
+    }
+
+    .home-tri-server__stop {
+      display: block;
+      min-height: 0;
+      padding: clamp(88px, 14svh, 132px) 16px clamp(112px, 18svh, 168px)
+        var(--home-tri-server-content-left);
+    }
+
+    .home-tri-server__world {
+      /* 单轨布局必须始终从线路内容侧起笔，不能让 max-width 的剩余空间沿用桌面右对齐。 */
+      justify-self: start;
+      width: 100%;
+      max-width: 38rem;
+    }
+
+    .home-tri-server__copy {
+      width: 100%;
+      padding-right: 0;
+      text-align: left;
+    }
+
+    .home-tri-server__heading {
+      margin-right: 0;
+      padding-right: 0;
+    }
+
+    .home-tri-server__station-marker {
+      left: calc(
+        var(--home-tri-server-track-origin-x) + var(--home-tri-server-track-width) -
+          var(--home-tri-server-content-left)
+      );
+    }
+
+    .home-tri-server__lead {
+      margin-bottom: clamp(52px, 9svh, 78px);
+      font-size: clamp(15px, 4.1vw, 18px);
+    }
+
+    .home-tri-server__copy h3 {
+      font-size: clamp(46px, 14.5vw, 74px);
+    }
+
+    .home-tri-server__tagline {
+      margin-top: 10px;
+      font-size: clamp(20px, 5.8vw, 28px);
+    }
+
+    .home-tri-server__description {
+      margin-top: 20px;
+      font-size: clamp(15px, 4.15vw, 18px);
+    }
+
+    .home-tri-server__mobile-media-host {
+      display: block;
+      width: 100%;
+      margin-top: clamp(36px, 7svh, 56px);
+      pointer-events: auto;
+    }
+
+    .home-tri-server__media-panel {
+      height: auto;
+    }
+
+    .home-tri-server__media-viewport {
+      height: auto;
+      border-radius: var(--radius-gallery-scene-mobile);
+    }
+
+    .home-tri-server__carousel {
+      height: auto;
+      aspect-ratio: 4 / 3;
+    }
+
+    .home-tri-server__media-footer {
+      position: static;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .home-tri-server__controls {
+      height: 44px;
+    }
+
+    .home-tri-server__map-card {
+      width: 100%;
+      margin-top: 10px;
+      text-align: left;
+    }
+
+    .home-tri-server__map-copy-desktop {
+      display: none;
+    }
+
+    .home-tri-server__map-copy-mobile {
+      display: inline;
+    }
+
+    .home-tri-server__map-launch {
+      display: none;
+    }
+
+    .home-tri-server__map-external {
+      display: grid;
+      min-height: 44px;
+      text-align: left;
+    }
+
+    .home-tri-server__media-map-external {
+      display: none;
+    }
+
+    .home-tri-server__placeholder {
+      padding: clamp(24px, 7vw, 40px);
+    }
+
+  }
+
+  @media (min-width: 761px) and (max-width: 1023px) {
+    .home-tri-server__world {
+      max-width: min(44rem, calc(100vw - var(--home-tri-server-content-left) - 24px));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-tri-server__media-viewport {
+      transition: none;
+    }
+
+    .home-tri-server__carousel {
+      scroll-behavior: auto;
+    }
+
+    .home-tri-server__media-panel[data-map-interactive="true"]
+      .home-tri-server__map-overlay {
+      animation: none;
+    }
+
+    .home-tri-server__image-loading > span:first-child {
+      animation: none;
+    }
+
+    .home-tri-server__server-loading > span:first-child {
+      animation: none;
+    }
+
+    .home-tri-server__media-panel,
+    .home-tri-server__media-footer,
+    .home-tri-server__controls button,
+    .home-tri-server__stop {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+</style>

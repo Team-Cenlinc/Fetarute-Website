@@ -32,13 +32,11 @@
   /* --home-arrival-joint-overlap 仅让矩形轨道压住 SVG 端点 1px，消除子像素抗锯齿造成的留白。 */
   --home-arrival-joint-overlap: 1px;
   position: relative;
-  /* 列车是跨车站的 fixed overlay；提升这一隔离层后，进入正文站时不会被后续 section 的底色盖住。 */
-  z-index: 1;
+  /* 列车与 Tooltip 是跨 section 的 fixed overlay；此处不能创建局部 stacking context，否则后续图片会反压到浮层上。 */
   display: grid;
   min-height: 100svh;
   /* Arrival 的站名本身位于视口下方；锚点贴齐 section 顶部，避免上一屏实景残留在固定导航后方。 */
   scroll-margin-top: 0;
-  isolation: isolate;
   overflow: visible;
   background: var(--palette-canvas);
   color: var(--palette-text);
@@ -158,7 +156,7 @@
   line-height: 1.04;
 }
 
-@media (min-width: 761px) {
+@media (min-width: 1024px) {
   .home-arrival__name-lockup {
     /* 桌面三语站名组均以右侧 SL01 导视的顶边为准，避免不同 locale 悬在导视牌上方。 */
     margin-top: var(--home-arrival-route-offset);
@@ -219,6 +217,61 @@
   visibility: visible;
 }
 
+.home-arrival__train-hint {
+  /* 提示贴近候车端，并在列车离站前段同步位移后淡出，使说明与可操作对象保持空间连续。 */
+  position: absolute;
+  z-index: 2;
+  top: calc(
+    var(--home-arrival-track-top) + var(--home-arrival-track-width) + clamp(22px, 3svh, 34px)
+  );
+  right: clamp(28px, 5vw, 96px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: color-mix(in srgb, var(--palette-text) 72%, transparent);
+  font-family: var(--font-fetarute-ui);
+  font-size: clamp(14px, 1.05vw, 17px);
+  font-weight: 560;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+  opacity: 0;
+  transform: translateY(5px);
+  transition:
+    opacity 220ms var(--motion-header-standard-effects),
+    transform 280ms var(--motion-header-standard-spatial);
+}
+
+.home-arrival:has(.home-arrival__train[data-route-visible="true"]) .home-arrival__train-hint {
+  /* 跟随列车离站的前一小段后淡出，让操作提示与可操作对象保持空间连续。 */
+  opacity: var(--home-arrival-train-hint-opacity, 1);
+  transform: translate3d(var(--home-arrival-train-hint-shift-x, 0px), 0, 0);
+}
+
+.home-arrival:has(.home-arrival__train[data-tooltip-open="true"]) .home-arrival__train-hint {
+  opacity: 0;
+  transform: translateY(3px);
+}
+
+.home-arrival__train-hint-icon {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  place-items: center;
+}
+
+.home-arrival__train-hint-icon :is(svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.home-arrival__train-hint-icon--touch,
+.home-arrival__train-hint-copy--touch {
+  display: none;
+}
+
 .home-arrival__train:focus-visible {
   /* 列车本身承担焦点反馈；不再叠加会打断轨道节奏的黑色矩形轮廓。 */
   outline: none;
@@ -243,7 +296,8 @@
   /* 脚本会按实测 Header 底边覆盖该上限；默认值保证首帧和无脚本样式仍不会超出视口。 */
   --home-arrival-tooltip-content-max-block-size: calc(100svh - 44px);
   position: fixed;
-  z-index: 19;
+  /* Tooltip 覆盖页面内容与固定 Header，不会在三服汇图片或地图层下方消失。 */
+  z-index: 21;
   /* --home-arrival-tooltip-top 与 --home-arrival-tooltip-left 由列车的实际 viewport 边界推导；优先贴近列车，空间不足时回退到左上安全区。 */
   top: var(--home-arrival-tooltip-top, 20px);
   left: var(--home-arrival-tooltip-left, 20px);
@@ -264,7 +318,7 @@
 }
 
 .home-arrival__train[data-route-visible="true"][data-tooltip-open="true"]
-  + .home-arrival__train-tooltip {
+  ~ .home-arrival__train-tooltip {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
@@ -535,14 +589,14 @@ html[data-home-gallery-horizontal-input] {
   scroll-behavior: auto;
 }
 
-@media (max-width: 1100px) and (min-width: 761px) {
+@media (max-width: 1100px) and (min-width: 1024px) {
   .home-arrival__route {
     left: auto;
     right: clamp(24px, 4vw, 48px);
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1023px) {
   .home-arrival {
     /*
      * 249:62 是 Figma 弯轨 viewBox 与描边宽的固定比例；弯道尺寸必须按此缩放，
@@ -636,6 +690,19 @@ html[data-home-gallery-horizontal-input] {
   .home-arrival__train {
     width: var(--home-arrival-train-width);
     height: var(--home-arrival-train-height);
+  }
+
+  .home-arrival__train-hint {
+    /* 窄屏先给出操作提示，再让列车从下方经过；避免提示与站牌在横轨下方争夺同一阅读层。 */
+    top: calc(var(--home-arrival-track-top) - clamp(58px, 15vw, 72px));
+    right: clamp(24px, 6vw, 32px);
+    max-width: min(72vw, 280px);
+    gap: 8px;
+    font-size: clamp(13px, 3.6vw, 15px);
+    text-align: right;
+    transition:
+      opacity 90ms linear,
+      transform 90ms linear;
   }
 
   .home-introduction {
@@ -754,22 +821,26 @@ html[data-home-gallery-horizontal-input] {
   }
 }
 
+@media (hover: none), (pointer: coarse) {
+  .home-arrival__train-hint-icon--pointer,
+  .home-arrival__train-hint-copy--pointer {
+    display: none;
+  }
+
+  .home-arrival__train-hint-icon--touch {
+    display: grid;
+  }
+
+  .home-arrival__train-hint-copy--touch {
+    display: inline;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  /* 静态列车改以到站 section 为坐标系，随文档自然离开视窗而不再跟随 scroll 驱动位移。 */
+  /* 减少动态保留固定视口列车与 Tooltip，但取消过渡和 scroll 驱动位移。 */
   .home-arrival__train-visual,
   .home-arrival__train,
-  .home-arrival__train-tooltip {
-    position: absolute;
-  }
-
-  .home-arrival__train-visual {
-    width: 100%;
-    height: 100%;
-  }
-
-  /* 减少动态保留颜色反馈与 Tooltip 内容，但取消过渡与 scroll 驱动的列车运动。 */
-  .home-arrival__train-visual,
-  .home-arrival__train,
+  .home-arrival__train-hint,
   .home-arrival__train-tooltip {
     transition: none;
   }

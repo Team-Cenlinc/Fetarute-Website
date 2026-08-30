@@ -63,6 +63,14 @@
   --color-hero-copy-reflection-fallback: var(--palette-hero-copy-reflection-fallback);
   /* 浮动导视牌的环境阴影由 palette 随外观模式同步。 */
   --shadow-floating: var(--palette-floating-shadow);
+  /* 图片与地图等待反馈使用独立环境阴影，避免组件重新计算透明黑白。 */
+  --shadow-feedback: var(--palette-feedback-shadow);
+  /* 实体卡片的内缘高光随外观模式切换，不在局部样式猜测页面底色。 */
+  --shadow-surface-inset: var(--palette-surface-inset-shadow);
+  /* Carousel 圆形控制的 hover 与 focus 阴影由 palette 统一。 */
+  --shadow-control: var(--palette-control-shadow);
+  /* Carousel 圆形控制按下时使用更短、更紧的统一阴影。 */
+  --shadow-control-pressed: var(--palette-control-pressed-shadow);
   /* Header 的颜色、背景与透明度状态层使用标准缓动，确保高频反馈克制且立即可辨。 */
   --motion-header-standard-effects: ease;
   /* 菜单揭示、图标显隐和启动后的 Header 入场快速起势、无回弹，维持实体导视牌的方向感。 */
@@ -91,6 +99,10 @@
   --radius-gallery-scene: clamp(32px, 6.56vw, 126px);
   /* 小屏 Gallery 收紧圆角上限，避免窄卡片看起来过度胶囊化。 */
   --radius-gallery-scene-mobile: clamp(28px, 9vw, 48px);
+  /* 交互地图适配直角地图 UI，仅保留设备边缘所需的小圆角。 */
+  --radius-map-frame: clamp(18px, 1.7vw, 28px);
+  /* 状态胶囊需要稳定闭合，不与内容卡片的方正圆角混用。 */
+  --radius-pill: 999px;
   font-family: var(--font-fetarute-ui);
   color: var(--color-text);
   background: var(--color-background);

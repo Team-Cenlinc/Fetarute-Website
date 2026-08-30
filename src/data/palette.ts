@@ -69,6 +69,14 @@ export interface InterfacePalette {
   heroCopyReflectionFallback: string;
   /** 悬浮导视牌所需的环境阴影。 */
   floatingShadow: string;
+  /** 图片或地图等待状态悬浮提示使用的环境阴影。 */
+  feedbackShadow: string;
+  /** 实体卡片内缘用于区分页面底色的轻微高光。 */
+  surfaceInsetShadow: string;
+  /** Carousel 圆形控制在 hover 与 focus 时使用的环境阴影。 */
+  controlShadow: string;
+  /** Carousel 控制按下时收紧的环境阴影。 */
+  controlPressedShadow: string;
 }
 
 /**
@@ -103,6 +111,10 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     galleryCopyShadow: "0 2px 10px rgb(0 0 0 / 0.42)",
     heroCopyReflectionFallback: "#FFFFFF",
     floatingShadow: "0 0 42px -18px rgb(12 15 16 / 0.35)",
+    feedbackShadow: "0 8px 24px rgb(27 32 34 / 0.14)",
+    surfaceInsetShadow: "inset 0 1px 0 rgb(240 241 240 / 0.64)",
+    controlShadow: "0 5px 15px rgb(27 32 34 / 0.12)",
+    controlPressedShadow: "0 2px 7px rgb(27 32 34 / 0.1)",
   },
   dark: {
     canvas: "#111416",
@@ -131,6 +143,10 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     galleryCopyShadow: "0 2px 10px rgb(0 0 0 / 0.42)",
     heroCopyReflectionFallback: "#FFFFFF",
     floatingShadow: "0 0 58px -20px rgb(0 0 0 / 0.72)",
+    feedbackShadow: "0 8px 24px rgb(0 0 0 / 0.55)",
+    surfaceInsetShadow: "inset 0 1px 0 rgb(238 240 239 / 0.08)",
+    controlShadow: "0 5px 15px rgb(0 0 0 / 0.45)",
+    controlPressedShadow: "0 2px 7px rgb(0 0 0 / 0.35)",
   },
 };
 
@@ -165,6 +181,10 @@ const interfacePaletteCssVariableByKey: Readonly<Record<keyof InterfacePalette, 
   galleryCopyShadow: "--palette-gallery-copy-shadow",
   heroCopyReflectionFallback: "--palette-hero-copy-reflection-fallback",
   floatingShadow: "--palette-floating-shadow",
+  feedbackShadow: "--palette-feedback-shadow",
+  surfaceInsetShadow: "--palette-surface-inset-shadow",
+  controlShadow: "--palette-control-shadow",
+  controlPressedShadow: "--palette-control-pressed-shadow",
 };
 
 /**
