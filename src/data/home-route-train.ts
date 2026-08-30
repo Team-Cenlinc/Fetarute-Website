@@ -16,6 +16,16 @@ export interface HomeSectionBreakerScrollDistanceOptions {
   viewportHeight: number;
 }
 
+/** 列车沿线路渐变区改变派生色所需的标准化参数。 */
+export interface HomeTrainColorTransitionOptions {
+  /** 列车在当前轨段中的 0→1 行进进度。 */
+  routeProgress: number;
+  /** 线路色开始离开进入线路的轨段进度。 */
+  transitionStart: number;
+  /** 线路色完全进入离开线路的轨段进度。 */
+  transitionEnd: number;
+}
+
 /**
  * 保证首弯入口从上方向下顺向进入 Bézier，并为整段弯曲车体保留至少一个车长的直轨。
  * Gallery 交接点已经更高时保持原位，避免为了修复首弯而无条件拉长滚动路线。
@@ -39,4 +49,18 @@ export const getHomeSectionBreakerScrollDistance = ({
   const maximumViewportDistance = Math.max(0, viewportHeight) * 1.1;
 
   return Math.min(compressedPathDistance, maximumViewportDistance);
+};
+
+/**
+ * 把轨段进度映射为 0→1 的列车换色进度。
+ * 起止点之外保持对应线路的完整派生色，过渡区内线性混合，避免颜色在站界突然跳变。
+ */
+export const getHomeTrainColorTransitionProgress = ({
+  routeProgress,
+  transitionStart,
+  transitionEnd,
+}: HomeTrainColorTransitionOptions) => {
+  const transitionLength = Math.max(Number.EPSILON, transitionEnd - transitionStart);
+
+  return Math.min(Math.max((routeProgress - transitionStart) / transitionLength, 0), 1);
 };

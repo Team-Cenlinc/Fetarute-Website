@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   getHomeSectionBreakerEntryPathStartY,
   getHomeSectionBreakerScrollDistance,
+  getHomeTrainColorTransitionProgress,
 } from "../src/data/home-route-train.ts";
 
 test("首弯入口从弯道上方顺向接入，弯曲车体不会在折返点自我覆盖", () => {
@@ -43,4 +44,15 @@ test("Section Breaker 把剩余路径压缩到可读的原生滚动行程", () =
     }),
     0,
   );
+});
+
+test("换乘列车只在线路渐变区内从进入线路平滑偏色到离开线路", () => {
+  const options = { transitionStart: 0.32, transitionEnd: 0.72 };
+
+  assert.equal(getHomeTrainColorTransitionProgress({ ...options, routeProgress: 0.2 }), 0);
+  assert.ok(
+    Math.abs(getHomeTrainColorTransitionProgress({ ...options, routeProgress: 0.52 }) - 0.5) <
+      0.001,
+  );
+  assert.equal(getHomeTrainColorTransitionProgress({ ...options, routeProgress: 0.9 }), 1);
 });

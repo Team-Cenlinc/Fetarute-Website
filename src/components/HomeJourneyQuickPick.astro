@@ -57,12 +57,43 @@ const currentSection = renderedSections.find((section) => section.id === current
 if (!currentSection) {
   throw new Error(`首页章节快选找不到当前章节 ${currentSectionId}。`);
 }
+
+const firstSection = renderedSections[0];
+const lastSection = renderedSections.at(-1);
+const transferStation = renderedSections
+  .map((section, index) => {
+    if (!section.transferFrom) {
+      return null;
+    }
+
+    const incomingLine = railwayLineByKey.get(section.transferFrom.lineKey);
+    const outgoingLine = railwayLineByKey.get(section.lineKey);
+
+    if (!incomingLine || !outgoingLine) {
+      throw new Error(`首页章节快选中的换乘站 ${section.id} 引用了未录入的线路。`);
+    }
+
+    return {
+      sectionIndex: index,
+    };
+  })
+  .find((station) => station !== null);
+
+if (!firstSection || !lastSection) {
+  throw new Error("首页章节快选至少需要一个章节。");
+}
+
+/**
+ * --home-journey-start/end-line-color 分别绘制换乘前后的轨道色；
+ * --home-journey-transfer-station-index 把线路接缝定位到换乘胶囊所在的章节行。
+ */
+const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection.lineColor}; --home-journey-start-line-color: ${firstSection.lineColor}; --home-journey-end-line-color: ${lastSection.lineColor}; --home-journey-transfer-station-index: ${transferStation?.sectionIndex ?? renderedSections.length};`;
 ---
 
 <div
   class="home-journey-quick-pick"
   data-home-journey-picker
-  style={`--home-journey-current-line-color: ${currentSection.lineColor};`}
+  style={quickPickRouteStyle}
 >
   <header class="home-journey-quick-pick__current">
     <span>{currentSectionLabel}</span>
@@ -79,6 +110,7 @@ if (!currentSection) {
             class:list={{
               "home-journey-quick-pick__stop": true,
               "home-journey-quick-pick__stop--current": section.id === currentSectionId,
+              "home-journey-quick-pick__stop--transfer": Boolean(section.transferFrom),
             }}
             data-home-journey-stop={section.id}
             data-home-journey-line-color={section.lineColor}
@@ -95,6 +127,15 @@ if (!currentSection) {
             >
               <span class="home-journey-quick-pick__stop-label">{section.displayName}</span>
             </a>
+            {
+              section.transferFrom && (
+                <span
+                  class="home-journey-quick-pick__transfer-station"
+                  data-home-journey-transfer
+                  aria-hidden="true"
+                />
+              )
+            }
           </li>
         ))
       }
@@ -121,6 +162,16 @@ if (!currentSection) {
     --home-journey-terminus-dash-height: 14px;
     --home-journey-terminus-dash-gap: 13px;
     --home-journey-terminus-height: 144px;
+    /* 换乘胶囊横跨两段线路的接缝；尺寸按 Figma 58:98 缩放到现有 Tooltip 轨宽。 */
+    --home-journey-transfer-marker-width: 58px;
+    --home-journey-transfer-marker-height: 26px;
+    --home-journey-transfer-marker-border-width: 3px;
+    /* 轨道从地图 inset 外开始绘制，因此换色坐标需补回 inset，才能与胶囊中心真正同轴。 */
+    --home-journey-transfer-track-offset: calc(
+      var(--home-journey-map-inset) + var(--home-journey-transfer-station-index) *
+        (var(--home-journey-stop-height) + var(--home-journey-stop-gap)) +
+        var(--home-journey-stop-height) / 2
+    );
     /* hover 仅作路线预览；暗色外观会提升该不透明度，避免亮色提示沉入地图底。 */
     --home-journey-hover-fill-opacity: 0.18;
     display: grid;
@@ -200,10 +251,16 @@ if (!currentSection) {
     min-block-size: 0;
     overflow-x: hidden;
     overflow-y: auto;
+    /* 保留滚轮、触控与键盘滚动，只移除会挤占 Tooltip 视觉边界的系统滚动条侧栏。 */
+    scrollbar-width: none;
     overscroll-behavior: contain;
     padding: var(--home-journey-map-inset);
     background: var(--palette-journey-map);
     isolation: isolate;
+  }
+
+  .home-journey-quick-pick__map::-webkit-scrollbar {
+    display: none;
   }
 
   .home-journey-quick-pick__map ol {
@@ -222,8 +279,30 @@ if (!currentSection) {
     left: calc(var(--home-journey-track-left) - var(--home-journey-map-inset));
     z-index: 0;
     width: var(--home-journey-track-width);
-    background: var(--home-journey-current-line-color);
+    background: linear-gradient(
+      to bottom,
+      var(--home-journey-start-line-color) 0 var(--home-journey-transfer-track-offset),
+      var(--home-journey-end-line-color) var(--home-journey-transfer-track-offset) 100%
+    );
     content: "";
+  }
+
+  .home-journey-quick-pick__transfer-station {
+    position: absolute;
+    z-index: 3;
+    top: 50%;
+    left: calc(
+      var(--home-journey-track-left) - var(--home-journey-map-inset) +
+        var(--home-journey-track-width) / 2
+    );
+    width: var(--home-journey-transfer-marker-width);
+    height: var(--home-journey-transfer-marker-height);
+    border: var(--home-journey-transfer-marker-border-width) solid var(--palette-text);
+    border-radius: 999px;
+    background: var(--palette-surface-raised);
+    list-style: none;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
   }
 
   .home-journey-quick-pick__stop {
@@ -275,6 +354,12 @@ if (!currentSection) {
     transform: translateY(-50%);
   }
 
+  /* 换乘胶囊已经承担本站的 station mark；同岸不再叠加普通矩形分支与站名底色。 */
+  .home-journey-quick-pick__stop--transfer a::before,
+  .home-journey-quick-pick__stop--transfer .home-journey-quick-pick__stop-label::before {
+    display: none;
+  }
+
   .home-journey-quick-pick__stop-label::before {
     position: absolute;
     inset: 0;
@@ -315,6 +400,10 @@ if (!currentSection) {
 
   .home-journey-quick-pick__stop--current a {
     color: var(--home-journey-line-text-color);
+  }
+
+  .home-journey-quick-pick__stop--current.home-journey-quick-pick__stop--transfer a {
+    color: var(--palette-text);
   }
 
   .home-journey-quick-pick__stop--current .home-journey-quick-pick__stop-label::before {
@@ -367,7 +456,7 @@ if (!currentSection) {
     margin-left: calc(var(--home-journey-track-left) - var(--home-journey-map-inset));
     background: repeating-linear-gradient(
       to bottom,
-      var(--home-journey-current-line-color) 0 var(--home-journey-terminus-dash-height),
+      var(--home-journey-end-line-color) 0 var(--home-journey-terminus-dash-height),
       transparent var(--home-journey-terminus-dash-height)
         calc(var(--home-journey-terminus-dash-height) + var(--home-journey-terminus-dash-gap))
     );
@@ -389,6 +478,8 @@ if (!currentSection) {
       --home-journey-terminus-dash-height: 12px;
       --home-journey-terminus-dash-gap: 12px;
       --home-journey-terminus-height: 126px;
+      --home-journey-transfer-marker-width: 50px;
+      --home-journey-transfer-marker-height: 24px;
     }
 
     .home-journey-quick-pick__current {

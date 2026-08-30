@@ -8,6 +8,8 @@ export interface Props {
   lineColor: string;
   /** 色块左上角展示的线路缩写，例如 SL。 */
   lineCode: string;
+  /** 色块上的文字色；浅色线路可由 palette 对比度规则注入深色前景。 */
+  textColor?: string;
   /** 色块右下角展示的序号，例如 01。 */
   sequence: string;
   /** 当前语言中应优先阅读的线路名称。 */
@@ -20,14 +22,23 @@ export interface Props {
   class?: string;
 }
 
-const { lineColor, lineCode, sequence, primaryName, secondaryName, isEnglishPrimary, class: className } = Astro.props;
+const {
+  lineColor,
+  lineCode,
+  textColor = "var(--palette-on-hero)",
+  sequence,
+  primaryName,
+  secondaryName,
+  isEnglishPrimary,
+  class: className,
+} = Astro.props;
 ---
 
 <div
   class:list={["railway-line-hint", className]}
   data-line-code={lineCode}
   data-primary-language={isEnglishPrimary ? "en" : "zh"}
-  style={`--railway-line-hint-color: ${lineColor};`}
+  style={`--railway-line-hint-color: ${lineColor}; --railway-line-hint-text-color: ${textColor};`}
 >
   <span class="railway-line-hint__badge">
     <span class="railway-line-hint__code">{lineCode}</span>
@@ -41,7 +52,7 @@ const { lineColor, lineCode, sequence, primaryName, secondaryName, isEnglishPrim
 
 <style>
   .railway-line-hint {
-    /* --railway-line-hint-color 始终来自线路领域数据，色块不维护额外的页面级色值。 */
+    /* --railway-line-hint-color 读取官方线路色；--railway-line-hint-text-color 读取 palette 推导的对比前景色。 */
     display: flex;
     align-items: start;
     gap: clamp(12px, 0.94vw, 18px);
@@ -55,7 +66,7 @@ const { lineColor, lineCode, sequence, primaryName, secondaryName, isEnglishPrim
     width: clamp(76px, 7.24vw, 139px);
     aspect-ratio: 1;
     background: var(--railway-line-hint-color);
-    color: var(--palette-on-hero);
+    color: var(--railway-line-hint-text-color);
     font-size: clamp(32px, 3.33vw, 64px);
     font-weight: 500;
     line-height: 1;

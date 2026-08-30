@@ -183,7 +183,7 @@
   width: 100vw;
   height: 100svh;
   overflow: visible;
-  color: var(--home-arrival-train-color);
+  color: var(--home-route-train-color, var(--home-arrival-train-color));
   opacity: 0;
   pointer-events: none;
   transition: color 180ms var(--motion-header-standard-effects);
@@ -215,6 +215,12 @@
 .home-arrival__train[data-route-visible="true"] {
   pointer-events: auto;
   visibility: visible;
+}
+
+.home-arrival__train[data-transfer-controls-active="true"] {
+  /* 同岸桌面由两班真实站台列车接管交互；全局透明锚点只保留 Tooltip 状态桥接，不重复进入焦点序列。 */
+  pointer-events: none;
+  visibility: hidden;
 }
 
 .home-arrival__train-hint {
@@ -285,11 +291,15 @@
   }
 }
 
-/* Hover、键盘焦点与展开状态只把弯曲车体向线路蓝紫略偏移，维持扁平导视的连续色带。 */
+/* Hover、键盘焦点与展开状态只把弯曲车体向当前路段线路色略偏移，换乘后不会被拉回 SL。 */
 .home-arrival:has(.home-arrival__train:hover) .home-arrival__train-visual,
 .home-arrival:has(.home-arrival__train:focus-visible) .home-arrival__train-visual,
 .home-arrival:has(.home-arrival__train[data-tooltip-open="true"]) .home-arrival__train-visual {
-  color: color-mix(in oklch, var(--home-arrival-train-color) 88%, var(--home-arrival-line-color));
+  color: color-mix(
+    in oklch,
+    var(--home-route-train-color, var(--home-arrival-train-color)) 88%,
+    var(--home-route-line-color, var(--home-arrival-line-color))
+  );
 }
 
 .home-arrival__train-tooltip {

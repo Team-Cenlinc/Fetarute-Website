@@ -1,9 +1,9 @@
-import { type RailwayLineKey } from "@/data/railway";
-import { wayfindingPrototype } from "@/data/site";
-import type { Locale } from "@/i18n/config";
+import type { Locale } from "../i18n/config.ts";
+import { getRailwayLineKey, type RailwayLineKey } from "./railway.ts";
+import { wayfindingPrototype } from "./site.ts";
 
 /** 首页可被列车快选定位的章节锚点；锚点直接使用站名的稳定英文 slug。 */
-export type HomeJourneySectionId = "beginning-bay" | "tri-server-joint";
+export type HomeJourneySectionId = "beginning-bay" | "tri-server-joint" | "shared-shore";
 
 /** 首页导视使用的三语章节站名。 */
 export interface HomeJourneySectionName {
@@ -28,6 +28,14 @@ export interface HomeJourneySectionBreak {
   name?: HomeJourneySectionName;
 }
 
+/** 首页叙事换乘站在另一条线路上的服务记录。 */
+export interface HomeJourneyTransferService {
+  /** 换乘前进入本站的线路；正式线路名称与颜色仍从 railway.ts 读取。 */
+  lineKey: RailwayLineKey;
+  /** 本叙事站在进入线路上的站序，例如服联快线的 07。 */
+  sequence: string;
+}
+
 /**
  * 首页列车快选中的一段章节路线。
  * 这是一份叙事导视数据，不等同于 railway.ts 中的实体铁路车站；因此不会污染真实运营站序。
@@ -41,14 +49,22 @@ export interface HomeJourneySection {
   name: HomeJourneySectionName;
   /** 站牌使用的真实行程序号；它包含未独立进入快选列表的叙事中间站。 */
   sequence: string;
+  /** 换乘站的进入线路服务；当前 lineKey 与 sequence 则表示离站后继续阅读的线路。 */
+  transferFrom?: HomeJourneyTransferService;
   /** 本章节之后的路线分界；未填写即保持当前单线连续展示且不渲染任何分界元素。 */
   breakAfter?: HomeJourneySectionBreak;
 }
 
+/** “同岸”只属于首页叙事导视，不进入实体铁路车站表。 */
+const sharedShoreName: HomeJourneySectionName = {
+  simplifiedChineseName: "同岸",
+  traditionalChineseName: "同岸",
+  englishName: "Shared Shore",
+};
+
 /**
  * 首页当前已绘制的列车章节路线。
- * 这里只登记已经存在的页面 section；类型同时预留线路分界契约，供后续新增实际章节时扩展。
- * 当前没有换乘或分界数据，因此不填写 breakAfter，也不产生任何相关界面。
+ * 这里只登记已经存在的页面 section；“同岸”负责把服联快线的服务器叙事换乘到湾岸支线的玩家叙事。
  */
 export const homeJourneySections: readonly HomeJourneySection[] = [
   {
@@ -66,6 +82,16 @@ export const homeJourneySections: readonly HomeJourneySection[] = [
       englishName: "Tri-Server Joint",
     },
     sequence: "03",
+  },
+  {
+    id: "shared-shore",
+    lineKey: getRailwayLineKey("SURN", "BS"),
+    name: sharedShoreName,
+    sequence: "05",
+    transferFrom: {
+      lineKey: wayfindingPrototype.homeLineKey,
+      sequence: "07",
+    },
   },
 ];
 
