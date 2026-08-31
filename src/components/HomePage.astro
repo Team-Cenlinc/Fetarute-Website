@@ -1578,39 +1578,27 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       };
 
       /**
-       * Section Breaker 解除 sticky 后，左右章节的竖轨会在视口内首尾相接。
-       * 这段把同一 SVG 车体从底部带到三服汇中线，避免隐藏一整屏后再从顶部重新生成。
+       * Section Breaker 退出后直接等待三服汇首站进入视口，不再用额外交接进度追车。
+       * 首站尚未进入时停在底部安全区；进入后只跟随其真实视口位置，保持车身可点击。
        */
-      const renderSectionBreakerHandoffTrain = (
-        handoffProgress: number,
-        trainWidth: number,
-        trainHeight: number,
-      ) => {
-        const breakerTrackBounds = homeSectionBreakerRightTrack.getBoundingClientRect();
+      const renderTriServerEntryTrain = (trainWidth: number, trainHeight: number) => {
         const triServerTrackBounds = homeTriServerTrack.getBoundingClientRect();
-        const trackX = interpolateRoutePosition(
-          breakerTrackBounds.left + breakerTrackBounds.width / 2,
-          triServerTrackBounds.left + triServerTrackBounds.width / 2,
-          handoffProgress,
-        );
-        const trainCenterY = interpolateRoutePosition(
+        const firstMarkerBounds = homeTriServerStopMarkers[0]?.getBoundingClientRect();
+        const firstMarkerCenterY = firstMarkerBounds
+          ? firstMarkerBounds.top + firstMarkerBounds.height / 2
+          : getRouteBottomTrainCenterY(trainWidth);
+        const trainCenterY = Math.min(
           getRouteBottomTrainCenterY(trainWidth),
-          getTriServerEntryTrainCenterY(trainWidth),
-          handoffProgress,
+          Math.max(getRouteTopTrainCenterY(trainWidth), firstMarkerCenterY),
         );
-        const routeStartY = getRouteViewportTop() - trainWidth;
-        const routeEndY = getRouteViewportBottom() + trainWidth;
 
-        homeArrivalTrainVisualPath.setAttribute(
-          "d",
-          `M${trackX} ${routeStartY} L${trackX} ${routeEndY}`,
+        renderViewportVerticalTrain(
+          triServerTrackBounds.left + triServerTrackBounds.width / 2,
+          trainCenterY,
+          trainWidth,
+          trainHeight,
+          "tri-server-entry",
         );
-        homeArrivalTrainVisualPath.setAttribute("stroke-width", String(trainHeight));
-        const journeyLength = homeArrivalTrainVisualPath.getTotalLength();
-        const trainTailDistance = trainCenterY - routeStartY - trainWidth / 2;
-
-        homeArrivalTrain.dataset.routeSegment = "section-to-tri-server";
-        renderTrainOnCurrentPath(journeyLength, trainTailDistance, trainWidth, trainHeight);
       };
 
       /**
@@ -1886,11 +1874,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           (window.scrollY - sectionBreakerRevealStart) / sectionBreakerJourneyLength;
         const isSectionBreakerPhase =
           sectionBreakerRevealProgress >= 0 && window.scrollY < sectionBreakerJourneyEnd;
-        const sectionBreakerHandoffLength = Math.max(1, triServerTop - sectionBreakerJourneyEnd);
-        const sectionBreakerHandoffProgress = clampRouteProgress(
-          (window.scrollY - sectionBreakerJourneyEnd) / sectionBreakerHandoffLength,
-        );
-        const isSectionBreakerHandoffPhase =
+        const isTriServerEntryPhase =
           window.scrollY >= sectionBreakerJourneyEnd && window.scrollY < triServerTop;
         const isTriServerPhase =
           window.scrollY >= triServerTop &&
@@ -1927,7 +1911,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           isTransferToCommunityPhase ||
           isTransferBreakerPhase ||
           isTriServerPhase ||
-          isSectionBreakerHandoffPhase ||
+          isTriServerEntryPhase ||
           isReadyRouteActive ||
           (rawProgress >= 0 && (isSectionBreakerPhase || rawProgress <= 1));
         // 视觉列车与透明按钮使用同一 active 契约；只要候车端进入视口，就必须能打开 Tooltip。
@@ -2140,12 +2124,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           return;
         }
 
-        if (isSectionBreakerHandoffPhase) {
-          renderSectionBreakerHandoffTrain(
-            sectionBreakerHandoffProgress,
-            trainWidth,
-            trainHeight,
-          );
+        if (isTriServerEntryPhase) {
+          renderTriServerEntryTrain(trainWidth, trainHeight);
           return;
         }
 
