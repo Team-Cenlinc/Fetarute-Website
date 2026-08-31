@@ -302,6 +302,7 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
     border: 0;
     background: var(--home-transfer-incoming-train-color);
     cursor: pointer;
+    touch-action: manipulation;
   }
 
   .home-transfer-breaker__train--outgoing {
@@ -316,6 +317,7 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
     border: 0;
     background: var(--home-transfer-outgoing-train-color);
     cursor: pointer;
+    touch-action: manipulation;
   }
 
   .home-transfer-breaker__train:focus-visible {
@@ -323,9 +325,14 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
     filter: brightness(0.92) saturate(1.08);
   }
 
-  .home-transfer-breaker__train:hover,
+  .home-transfer-breaker__train:not(:disabled):hover,
+  .home-transfer-breaker__train:not(:disabled):active,
   .home-transfer-breaker__train[data-tooltip-open="true"] {
     filter: brightness(0.92) saturate(1.08);
+  }
+
+  .home-transfer-breaker__train:disabled {
+    cursor: default;
   }
 
   @media (forced-colors: active), (prefers-contrast: more) {
@@ -339,6 +346,12 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
   .home-transfer-breaker[data-route-enhanced="true"][data-active-train="approaching"]
     .home-transfer-breaker__train--incoming {
     /* 进站阶段由全局 SVG 列车驶到 Figma 的蓝车位置，抵达后再无缝交还静态站台列车。 */
+    visibility: hidden;
+  }
+
+  .home-transfer-breaker[data-route-enhanced="true"][data-active-train="departing"]
+    .home-transfer-breaker__train--outgoing {
+    /* 离站阶段由全局 SVG 列车从同一位置接管，隐藏静态副本避免出现重影。 */
     visibility: hidden;
   }
 

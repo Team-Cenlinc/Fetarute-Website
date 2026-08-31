@@ -354,9 +354,8 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
     transform: translateY(-50%);
   }
 
-  /* 换乘胶囊已经承担本站的 station mark；同岸不再叠加普通矩形分支与站名底色。 */
-  .home-journey-quick-pick__stop--transfer a::before,
-  .home-journey-quick-pick__stop--transfer .home-journey-quick-pick__stop-label::before {
+  /* 换乘胶囊已经承担本站的 station mark；同岸不再叠加普通矩形分支。 */
+  .home-journey-quick-pick__stop--transfer a::before {
     display: none;
   }
 
@@ -380,7 +379,9 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
   }
 
     :global(html[data-appearance="dark"])
-    .home-journey-quick-pick__stop:not(.home-journey-quick-pick__stop--current)
+    .home-journey-quick-pick__stop:not(.home-journey-quick-pick__stop--current):not(
+      .home-journey-quick-pick__stop--transfer
+    )
     .home-journey-quick-pick__stop-label::before {
     background: color-mix(in srgb, var(--home-journey-line-color) 55%, var(--palette-on-hero));
   }
@@ -392,7 +393,9 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
     }
 
     :global(html:not([data-appearance]))
-      .home-journey-quick-pick__stop:not(.home-journey-quick-pick__stop--current)
+      .home-journey-quick-pick__stop:not(.home-journey-quick-pick__stop--current):not(
+        .home-journey-quick-pick__stop--transfer
+      )
       .home-journey-quick-pick__stop-label::before {
       background: color-mix(in srgb, var(--home-journey-line-color) 55%, var(--palette-on-hero));
     }
@@ -406,7 +409,19 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
     color: var(--palette-text);
   }
 
-  .home-journey-quick-pick__stop--current .home-journey-quick-pick__stop-label::before {
+  /* 换乘站不借用任一线路色：默认保留中性文字，悬停或聚焦时再以文字色反转标签。 */
+  .home-journey-quick-pick__stop--transfer .home-journey-quick-pick__stop-label::before {
+    background: var(--palette-text);
+  }
+
+  .home-journey-quick-pick__stop--current.home-journey-quick-pick__stop--transfer
+    .home-journey-quick-pick__stop-label::before {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+  }
+
+  .home-journey-quick-pick__stop--current:not(.home-journey-quick-pick__stop--transfer)
+    .home-journey-quick-pick__stop-label::before {
     background: var(--home-journey-line-color);
     clip-path: inset(0);
     opacity: 1;
@@ -424,6 +439,17 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
       clip-path: inset(0);
       opacity: var(--home-journey-hover-fill-opacity);
     }
+
+    .home-journey-quick-pick__stop--transfer a:hover {
+      color: var(--palette-surface-raised);
+    }
+
+    .home-journey-quick-pick__stop--transfer
+      a:hover
+      .home-journey-quick-pick__stop-label::before {
+      clip-path: inset(0);
+      opacity: 1;
+    }
   }
 
   .home-journey-quick-pick__stop a:focus-visible .home-journey-quick-pick__stop-label::before {
@@ -439,6 +465,18 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
 
   .home-journey-quick-pick__stop--current a:focus-visible {
     color: var(--home-journey-line-text-color);
+  }
+
+  .home-journey-quick-pick__stop--transfer a:focus-visible,
+  .home-journey-quick-pick__stop--current.home-journey-quick-pick__stop--transfer a:focus-visible {
+    color: var(--palette-surface-raised);
+  }
+
+  .home-journey-quick-pick__stop--transfer
+    a:focus-visible
+    .home-journey-quick-pick__stop-label::before {
+    clip-path: inset(0);
+    opacity: 1;
   }
 
   .home-journey-quick-pick__stop a:focus-visible {

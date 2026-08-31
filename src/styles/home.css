@@ -186,7 +186,6 @@
   color: var(--home-route-train-color, var(--home-arrival-train-color));
   opacity: 0;
   pointer-events: none;
-  transition: color 180ms var(--motion-header-standard-effects);
   visibility: hidden;
 }
 
@@ -208,7 +207,11 @@
   background: transparent;
   cursor: pointer;
   pointer-events: none;
-  transform: translate3d(var(--home-route-train-x, 0px), var(--home-route-train-y, 0px), 0);
+  touch-action: manipulation;
+  /* 两个 hit-scale 变量按整段车身路径扩展按钮包围盒，使横轨、竖轨和弯轨都覆盖完整车身。 */
+  transform: translate3d(var(--home-route-train-x, 0px), var(--home-route-train-y, 0px), 0)
+    scale(var(--home-route-train-hit-scale-x, 1), var(--home-route-train-hit-scale-y, 1));
+  transform-origin: left top;
   visibility: hidden;
 }
 
@@ -217,7 +220,8 @@
   visibility: visible;
 }
 
-.home-arrival__train[data-transfer-controls-active="true"] {
+.home-arrival__train[data-transfer-controls-active="true"][data-route-segment="transfer-incoming-platform"],
+.home-arrival__train[data-transfer-controls-active="true"][data-route-segment="transfer-outgoing-platform"] {
   /* 同岸桌面由两班真实站台列车接管交互；全局透明锚点只保留 Tooltip 状态桥接，不重复进入焦点序列。 */
   pointer-events: none;
   visibility: hidden;
@@ -312,7 +316,8 @@
   top: var(--home-arrival-tooltip-top, 20px);
   left: var(--home-arrival-tooltip-left, 20px);
   display: block;
-  width: min(320px, calc(100vw - 40px));
+  /* inline-size 由 visual viewport 实测宽度注入，地址栏、缩放和软键盘出现后仍保留两侧安全区。 */
+  width: var(--home-arrival-tooltip-inline-size, min(320px, calc(100vw - 40px)));
   max-block-size: calc(100svh - 40px);
   border: 2px solid var(--palette-text);
   background: var(--palette-canvas);

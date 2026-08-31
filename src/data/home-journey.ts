@@ -95,6 +95,13 @@ export const homeJourneySections: readonly HomeJourneySection[] = [
   },
 ];
 
+/** 把受控首页章节转换为 fragment，供点击跳转与被动滚动共享同一套稳定 URL。 */
+export function getHomeJourneySectionHash(
+  sectionId: HomeJourneySectionId,
+): `#${HomeJourneySectionId}` {
+  return `#${sectionId}`;
+}
+
 /** 根据当前公开语言读取章节站名，避免组件自行散落三语字段选择规则。 */
 export function getHomeJourneySectionName(section: HomeJourneySection, locale: Locale): string {
   if (locale === "zh-Hans") {

@@ -8,7 +8,7 @@ Fetarute 服务器官网 · 新版
 - TypeScript：使用 Astro strict 配置。
 - Astro Content Collections：管理公告和指南内容。
 - `@astrojs/sitemap`：从已发布的三语页面生成 sitemap，并与 robots.txt 共用收录边界。
-- Sharp：在构建期把既有 Logo、首页场景和铁路数据合成为稳定的社交预览 PNG。
+- Sharp：生成稳定的社交预览 PNG，并把已确认玩家的公开 Minecraft 皮肤预缓存为本地头像。
 - npm + Node 24：`.nvmrc` 和 `package.json#engines` 已固定到 Node 24 系列。
 
 ## 开发命令
@@ -29,6 +29,12 @@ git diff --check
 
 ```sh
 npm run social-card:build
+```
+
+同岸故事加入或更新玩家头像时，传入 Java 版玩家名，从 Mojang 公开档案刷新本地缓存：
+
+```sh
+npm run avatar:cache -- Acatine Hot945
 ```
 
 GitHub Actions 会在 pull request 和 `main` 推送时执行字体子集一致性检查，并运行同一条
@@ -54,6 +60,7 @@ npm run build:with-fonts
 public/                 浏览器图标、Web App Manifest 与构建生成的社交分享卡等需原样发布的品牌文件
 fonts-source/           完整字体源文件，仅用于本地生成子集，不直接发布
 scripts/
+  cache-minecraft-avatars.ts  从 Mojang 公开皮肤生成同岸故事使用的方形本地头像
   font-subset/          Node-only 字符抽取与 woff2 子集生成脚本
   generate-social-card.ts  用既有 Logo、首页场景与铁路数据生成分享卡 PNG
 src/
