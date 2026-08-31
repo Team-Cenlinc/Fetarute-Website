@@ -2662,16 +2662,17 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           (target): target is { sectionId: HomeJourneySectionId; target: HTMLElement } => target !== null,
         );
 
-      /** 被动滚动只替换当前 history entry，避免每经过一站都污染浏览器返回路径。 */
-      const replaceActiveJourneySectionHash = (sectionId: HomeJourneySectionId) => {
+      /** 被动滚动只替换当前 history entry；未抵达首站时以空 fragment 表示 Landing。 */
+      const replaceActiveJourneySectionHash = (sectionId?: HomeJourneySectionId) => {
         if (isTrainTooltipNavigationSuppressed) {
           return;
         }
 
-        const nextHash = getHomeJourneySectionHash(sectionId);
+        const nextHash = sectionId ? getHomeJourneySectionHash(sectionId) : "";
 
         if (window.location.hash !== nextHash) {
-          window.history.replaceState(window.history.state, "", nextHash);
+          const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
+          window.history.replaceState(window.history.state, "", nextUrl);
         }
       };
 
@@ -2679,19 +2680,26 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       const updateActiveJourneySectionFromScroll = (shouldSyncHash = false) => {
         const readingLineDocumentY =
           window.scrollY + getRouteViewportTop() + getRouteViewportHeight() / 2;
-        const activeJourneyTarget = journeyTargets.reduce(
+        const activeJourneyTarget = journeyTargets.reduce<
+          (typeof journeyTargets)[number] | undefined
+        >(
           (activeTarget, candidateTarget) =>
             getDocumentTop(candidateTarget.target) <= readingLineDocumentY
               ? candidateTarget
               : activeTarget,
-          journeyTargets[0],
+          undefined,
         );
 
-        if (activeJourneyTarget) {
-          setActiveJourneySection(activeJourneyTarget.sectionId);
+        if (!activeJourneyTarget) {
           if (shouldSyncHash) {
-            replaceActiveJourneySectionHash(activeJourneyTarget.sectionId);
+            replaceActiveJourneySectionHash();
           }
+          return;
+        }
+
+        setActiveJourneySection(activeJourneyTarget.sectionId);
+        if (shouldSyncHash) {
+          replaceActiveJourneySectionHash(activeJourneyTarget.sectionId);
         }
       };
 
