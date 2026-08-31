@@ -103,9 +103,9 @@ const titleId = `${id}-title`;
     --home-section-breaker-left-origin-x: 9.32vw;
     --home-section-breaker-right-origin-x: 86.41vw;
     --home-section-breaker-track-top: 67.78svh;
-    /* 站名与线路牌沿用 Figma 70:2 的阅读锚点，不让换边轨道挤压文字组。 */
-    --home-section-breaker-copy-top: 26.48svh;
-    --home-section-breaker-route-top: 30.83svh;
+    /* 桌面站名与 Line Hint 共用同一顶边，延续启示湾的站牌对齐关系。 */
+    --home-section-breaker-copy-top: 30.83svh;
+    --home-section-breaker-route-top: var(--home-section-breaker-copy-top);
     --home-section-breaker-route-left: 74.48vw;
     --home-section-breaker-route-right: auto;
     --home-section-breaker-name-gap: clamp(12px, 1.2vw, 24px);
