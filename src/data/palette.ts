@@ -61,6 +61,14 @@ export interface InterfacePalette {
   onHero: string;
   /** 首屏文字投影使用的中性阴影色，场景只可调整模糊与不透明度。 */
   heroCopyShadow: string;
+  /** 首屏字形阴影共用的位移，使紧轮廓与环境层保持同一受光方向。 */
+  heroCopyShadowOffset: string;
+  /** 首屏字形紧轮廓阴影的模糊半径，用于从亮色实景中分离文字边缘。 */
+  heroCopyEdgeShadowBlur: string;
+  /** 首屏字形紧轮廓阴影相对场景不透明度的缩放比例。 */
+  heroCopyEdgeShadowIntensity: string;
+  /** 首屏字形环境阴影相对场景不透明度的缩放比例。 */
+  heroCopyAmbientShadowIntensity: string;
   /** 图片 Gallery 的文字区域遮罩，保证实景明暗变化时标题仍可辨识。 */
   galleryScrim: string;
   /** 图片 Gallery 标题使用的环境投影，避免页面样式散落半透明黑色。 */
@@ -107,6 +115,10 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     sceneFallback: "#171B1D",
     onHero: "#F4F6F5",
     heroCopyShadow: "rgb(0 0 0)",
+    heroCopyShadowOffset: "0 2px",
+    heroCopyEdgeShadowBlur: "2px",
+    heroCopyEdgeShadowIntensity: "26%",
+    heroCopyAmbientShadowIntensity: "62%",
     galleryScrim: "rgb(0 0 0 / 0.48)",
     galleryCopyShadow: "0 2px 10px rgb(0 0 0 / 0.42)",
     heroCopyReflectionFallback: "#FFFFFF",
@@ -139,6 +151,10 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     sceneFallback: "#0D1011",
     onHero: "#F4F6F5",
     heroCopyShadow: "rgb(0 0 0)",
+    heroCopyShadowOffset: "0 2px",
+    heroCopyEdgeShadowBlur: "2px",
+    heroCopyEdgeShadowIntensity: "26%",
+    heroCopyAmbientShadowIntensity: "62%",
     galleryScrim: "rgb(0 0 0 / 0.48)",
     galleryCopyShadow: "0 2px 10px rgb(0 0 0 / 0.42)",
     heroCopyReflectionFallback: "#FFFFFF",
@@ -177,6 +193,10 @@ const interfacePaletteCssVariableByKey: Readonly<Record<keyof InterfacePalette, 
   sceneFallback: "--palette-scene-fallback",
   onHero: "--palette-on-hero",
   heroCopyShadow: "--palette-hero-copy-shadow",
+  heroCopyShadowOffset: "--palette-hero-copy-shadow-offset",
+  heroCopyEdgeShadowBlur: "--palette-hero-copy-edge-shadow-blur",
+  heroCopyEdgeShadowIntensity: "--palette-hero-copy-edge-shadow-intensity",
+  heroCopyAmbientShadowIntensity: "--palette-hero-copy-ambient-shadow-intensity",
   galleryScrim: "--palette-gallery-scrim",
   galleryCopyShadow: "--palette-gallery-copy-shadow",
   heroCopyReflectionFallback: "--palette-hero-copy-reflection-fallback",

@@ -68,10 +68,33 @@ html[data-launching] .site-header {
   gap: clamp(16px, 1.5vw, 22px);
   max-width: min(720px, 66vw);
   color: var(--color-on-hero);
+  /* 两层阴影都压低到轮廓级：保留亮场景上的分离度，不让暗色成为文字的主视觉。 */
   filter: drop-shadow(
-    0 2px var(--hero-copy-shadow-blur)
-      color-mix(in srgb, var(--color-hero-copy-shadow) var(--hero-copy-shadow-opacity), transparent)
-  );
+      var(--palette-hero-copy-shadow-offset) var(--palette-hero-copy-edge-shadow-blur)
+        color-mix(
+          in srgb,
+          color-mix(
+              in srgb,
+              var(--color-hero-copy-shadow) var(--hero-copy-shadow-opacity),
+              transparent
+            )
+            var(--palette-hero-copy-edge-shadow-intensity),
+          transparent
+        )
+    )
+    drop-shadow(
+      var(--palette-hero-copy-shadow-offset) var(--hero-copy-shadow-blur)
+        color-mix(
+          in srgb,
+          color-mix(
+              in srgb,
+              var(--color-hero-copy-shadow) var(--hero-copy-shadow-opacity),
+              transparent
+            )
+            var(--palette-hero-copy-ambient-shadow-intensity),
+          transparent
+        )
+    );
 }
 
 /* 到站标题约束为视窗高度的五分之一，让城市与铁路始终保留为首屏主视觉。 */
@@ -84,6 +107,22 @@ html[data-launching] .site-header {
   letter-spacing: -0.032em;
   line-height: 1;
   text-wrap: balance;
+}
+
+/* 高亮乳白填充只保留少量实景透色；细亮边模拟磨砂玻璃的受光边缘。 */
+.hero-title__base {
+  color: transparent;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--color-on-hero) 99%, transparent) 0%,
+    color-mix(in srgb, var(--color-on-hero) 88%, transparent) 72%,
+    color-mix(in srgb, var(--color-on-hero) 96%, transparent) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0.7px color-mix(in srgb, var(--color-on-hero) 97%, transparent);
+  paint-order: stroke fill;
 }
 
 /* 反光层只复用标题字形的上半部，以场景主光色轻触文字，不将实景挖空成不可控的透明蒙版。 */
@@ -100,14 +139,14 @@ html[data-launching] .site-header {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  opacity: 0.58;
+  opacity: 0.42;
   pointer-events: none;
   user-select: none;
 }
 
 /* 深夜模式保留反光材质但收低亮度，避免彩色高光与夜间阅读争夺注意力。 */
 html[data-appearance="dark"] .hero-title__reflection {
-  opacity: 0.42;
+  opacity: 0.32;
 }
 
 /* 英文站名的词宽高于中日韩文，使用更宽的行长与稍收字号保持两行到站节奏。 */
@@ -146,11 +185,21 @@ h3 {
 .hero-description {
   max-width: 540px;
   margin-bottom: 0;
-  color: color-mix(in srgb, var(--color-on-hero) 86%, transparent);
+  color: transparent;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-on-hero) 100%, transparent),
+    color-mix(in srgb, var(--color-on-hero) 92%, transparent)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
   font-size: clamp(18px, min(1.9vw, 2.7dvh), 22px);
   font-weight: 580;
   letter-spacing: -0.015em;
   line-height: 1.4;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0.35px color-mix(in srgb, var(--color-on-hero) 94%, transparent);
+  paint-order: stroke fill;
 }
 
 /*
@@ -1958,5 +2007,20 @@ html[data-launching] .launch-sequence {
 
   .launch-sequence__brand svg {
     width: min(84vw, 630px);
+  }
+}
+
+/* 高对比偏好不依赖透明材质表达标题与说明，直接恢复为场景上的实体前景色。 */
+@media (prefers-contrast: more), (forced-colors: active) {
+  .hero-title__base,
+  .hero-description {
+    color: var(--color-on-hero);
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    -webkit-text-stroke: 0;
+  }
+
+  .hero-title__reflection {
+    display: none;
   }
 }
