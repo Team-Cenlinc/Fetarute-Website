@@ -164,8 +164,9 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
     --home-transfer-bend-inset: var(--home-transfer-track-half);
     --home-transfer-left-origin-x: 9.32vw;
     --home-transfer-right-origin-x: 86.41vw;
-    --home-transfer-incoming-track-top: 60.56svh;
-    --home-transfer-outgoing-track-top: 67.78svh;
+    /* 两条横向线路中心相隔 10svh，在桌面轨宽下保留约四分之三轨宽的换乘净空。 */
+    --home-transfer-incoming-track-top: 59.17svh;
+    --home-transfer-outgoing-track-top: 69.17svh;
     --home-transfer-copy-top: 26.48svh;
     --home-transfer-name-gap: clamp(12px, 1.2vw, 24px);
     --home-transfer-joint-overlap: 1px;
