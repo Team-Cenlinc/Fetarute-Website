@@ -3,7 +3,7 @@ import { getRailwayLineKey, type RailwayLineKey } from "./railway.ts";
 import { wayfindingPrototype } from "./site.ts";
 
 /** 首页可被列车快选定位的章节锚点；锚点直接使用站名的稳定英文 slug。 */
-export type HomeJourneySectionId = "beginning-bay" | "tri-server-joint" | "shared-shore";
+export type HomeJourneySectionId = "beginning-bay" | "tri-server-joint" | "shared-shore" | "onward";
 
 /** 首页导视使用的三语章节站名。 */
 export interface HomeJourneySectionName {
@@ -62,9 +62,16 @@ const sharedShoreName: HomeJourneySectionName = {
   englishName: "Shared Shore",
 };
 
+/** “续行”作为首页收尾换乘站，只表达继续探索，不进入实体铁路车站表。 */
+const onwardName: HomeJourneySectionName = {
+  simplifiedChineseName: "续行",
+  traditionalChineseName: "續行",
+  englishName: "Onward",
+};
+
 /**
  * 首页当前已绘制的列车章节路线。
- * 这里只登记已经存在的页面 section；“同岸”负责把服联快线的服务器叙事换乘到湾岸支线的玩家叙事。
+ * 这里只登记已经存在的页面 section；“同岸”把服务器叙事换乘到玩家叙事，“续行”再把阅读方向交给探索线。
  */
 export const homeJourneySections: readonly HomeJourneySection[] = [
   {
@@ -91,6 +98,16 @@ export const homeJourneySections: readonly HomeJourneySection[] = [
     transferFrom: {
       lineKey: wayfindingPrototype.homeLineKey,
       sequence: "07",
+    },
+  },
+  {
+    id: "onward",
+    lineKey: getRailwayLineKey("SURC", "DS"),
+    name: onwardName,
+    sequence: "01",
+    transferFrom: {
+      lineKey: getRailwayLineKey("SURN", "BS"),
+      sequence: "11",
     },
   },
 ];

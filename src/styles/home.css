@@ -332,8 +332,7 @@
     transform 180ms var(--motion-header-standard-spatial);
 }
 
-.home-arrival__train[data-route-visible="true"][data-tooltip-open="true"]
-  ~ .home-arrival__train-tooltip {
+.home-arrival__train[data-tooltip-open="true"] ~ .home-arrival__train-tooltip {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);

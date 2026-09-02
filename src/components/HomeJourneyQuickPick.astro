@@ -60,34 +60,52 @@ if (!currentSection) {
 
 const firstSection = renderedSections[0];
 const lastSection = renderedSections.at(-1);
-const transferStation = renderedSections
-  .map((section, index) => {
-    if (!section.transferFrom) {
-      return null;
-    }
 
-    const incomingLine = railwayLineByKey.get(section.transferFrom.lineKey);
-    const outgoingLine = railwayLineByKey.get(section.lineKey);
+renderedSections.forEach((section) => {
+  if (!section.transferFrom) {
+    return;
+  }
 
-    if (!incomingLine || !outgoingLine) {
-      throw new Error(`首页章节快选中的换乘站 ${section.id} 引用了未录入的线路。`);
-    }
+  const incomingLine = railwayLineByKey.get(section.transferFrom.lineKey);
 
-    return {
-      sectionIndex: index,
-    };
-  })
-  .find((station) => station !== null);
+  if (!incomingLine) {
+    throw new Error(`首页章节快选中的换乘站 ${section.id} 引用了未录入的进入线路。`);
+  }
+});
 
 if (!firstSection || !lastSection) {
   throw new Error("首页章节快选至少需要一个章节。");
 }
 
 /**
- * --home-journey-start/end-line-color 分别绘制换乘前后的轨道色；
- * --home-journey-transfer-station-index 把线路接缝定位到换乘胶囊所在的章节行。
+ * 把章节索引转换为对应 station mark 中心的 CSS 长度，让每次线路换色都与换乘胶囊同轴。
  */
-const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection.lineColor}; --home-journey-start-line-color: ${firstSection.lineColor}; --home-journey-end-line-color: ${lastSection.lineColor}; --home-journey-transfer-station-index: ${transferStation?.sectionIndex ?? renderedSections.length};`;
+const getSectionTrackOffset = (sectionIndex: number): string =>
+  `calc(var(--home-journey-map-inset) + ${sectionIndex} * (var(--home-journey-stop-height) + var(--home-journey-stop-gap)) + var(--home-journey-stop-height) / 2)`;
+
+/**
+ * 从章节顺序生成任意次数的线路换色；同色章节保持连续，换乘章节才在 station mark 中心建立硬接缝。
+ */
+const getRouteTrackGradient = (): string => {
+  const gradientStops = [`${firstSection.lineColor} 0`];
+  let previousLineColor = firstSection.lineColor;
+
+  renderedSections.slice(1).forEach((section, renderedIndex) => {
+    if (section.lineColor === previousLineColor) {
+      return;
+    }
+
+    const sectionIndex = renderedIndex + 1;
+    const trackOffset = getSectionTrackOffset(sectionIndex);
+    gradientStops.push(`${previousLineColor} ${trackOffset}`, `${section.lineColor} ${trackOffset}`);
+    previousLineColor = section.lineColor;
+  });
+
+  gradientStops.push(`${previousLineColor} 100%`);
+  return `linear-gradient(to bottom, ${gradientStops.join(", ")})`;
+};
+
+const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection.lineColor}; --home-journey-route-gradient: ${getRouteTrackGradient()};`;
 ---
 
 <div
@@ -166,12 +184,8 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
     --home-journey-transfer-marker-width: 58px;
     --home-journey-transfer-marker-height: 26px;
     --home-journey-transfer-marker-border-width: 3px;
-    /* 轨道从地图 inset 外开始绘制，因此换色坐标需补回 inset，才能与胶囊中心真正同轴。 */
-    --home-journey-transfer-track-offset: calc(
-      var(--home-journey-map-inset) + var(--home-journey-transfer-station-index) *
-        (var(--home-journey-stop-height) + var(--home-journey-stop-gap)) +
-        var(--home-journey-stop-height) / 2
-    );
+    /* --home-journey-route-gradient 由全部章节线路生成，使多次换乘都在对应 station mark 中心完成换色。 */
+    --home-journey-route-gradient: var(--home-journey-current-line-color);
     /* hover 仅作路线预览；暗色外观会提升该不透明度，避免亮色提示沉入地图底。 */
     --home-journey-hover-fill-opacity: 0.18;
     display: grid;
@@ -279,11 +293,7 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
     left: calc(var(--home-journey-track-left) - var(--home-journey-map-inset));
     z-index: 0;
     width: var(--home-journey-track-width);
-    background: linear-gradient(
-      to bottom,
-      var(--home-journey-start-line-color) 0 var(--home-journey-transfer-track-offset),
-      var(--home-journey-end-line-color) var(--home-journey-transfer-track-offset) 100%
-    );
+    background: var(--home-journey-route-gradient);
     content: "";
   }
 
@@ -433,7 +443,9 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
 
   /* 鼠标悬停先以低不透明度预览该章节线路色；确认选中后才变为完整站牌。 */
   @media (hover: hover) and (pointer: fine) {
-    .home-journey-quick-pick__stop:not(.home-journey-quick-pick__stop--current)
+    .home-journey-quick-pick__stop:not(.home-journey-quick-pick__stop--current):not(
+        .home-journey-quick-pick__stop--transfer
+      )
       a:hover
       .home-journey-quick-pick__stop-label::before {
       clip-path: inset(0);
