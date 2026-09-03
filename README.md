@@ -1,92 +1,28 @@
-# Fetarute-Website
+# Fetarute
 
-Fetarute 服务器官网 · 新版
+![Fetarute 服联快线导视与三座相连的世界](public/fetarute-share-card.png)
 
-## 技术栈
+Fetarute 是一个自 2017 年起持续建设的 Minecraft 社区。它从一座 Forge 模组铁路服务器起步；后来，承载世界的方式从模组转向原版与插件，铁路仍然留在每一次相遇、建设与出发之间。
 
-- Astro SSG：默认静态生成，适合 Minecraft 服务器官网、公告、规则和指南。
-- TypeScript：使用 Astro strict 配置。
-- Astro Content Collections：管理公告和指南内容。
-- `@astrojs/sitemap`：从已发布的三语页面生成 sitemap，并与 robots.txt 共用收录边界。
-- Sharp：生成稳定的社交预览 PNG，并把已确认玩家的公开 Minecraft 皮肤预缓存为本地头像。
-- npm + Node 24：`.nvmrc` 和 `package.json#engines` 已固定到 Node 24 系列。
+今天的 Fetarute 由三个彼此相连的世界组成。服连快线（Serverlink）穿行其间，让它们保有不同的生活方式，也始终能够彼此抵达。
 
-## 开发命令
+## 三个世界，一段旅程
 
-```sh
-npm install
-npm run dev
-```
+- **创造服**延续 Fetarute 的轨交城建传统。人们在这里规划街区、铺设线路，把交通设施、城市与建筑群从设想变成可以抵达的地方。
+- **大厅服**是创造服与生存服之间的中转枢纽。高楼与空岛保存着过去的痕迹，也让每一次到达都有重新选择方向的机会。
+- **生存服**让铁路随着共同生活自然延伸。资源、聚落与远方被线路连接，每一次探索和建设都会在世界里留下新的路径。
 
-常规验证：
+铁路没有让三个世界变得相同，而是让它们能够彼此抵达。Fetarute 也不只由建筑与风景组成：讨论一条线路、一起完成一次试车、维护熟悉的街区，都是这个世界继续生长的方式。
 
-```sh
-npm run check
-git diff --check
-```
+## 从这里出发
 
-社交分享卡会在普通构建前自动生成；需要单独更新时运行：
+- [Fetarute 官网](https://fetarute.org)
+- [Fetarute Wiki](https://wiki.fetarute.org)
+- [生存服地图](https://map.survival.fetarute.org)
+- [大厅服地图](https://map.lobby.fetarute.org)
+- [创造服地图](https://map.creative.fetarute.org)
 
-```sh
-npm run social-card:build
-```
+第一次来到 Fetarute，可以加入
+**QQ 门户群：517248890**，告诉我们你想看的世界、想走的线路，或想认识的人。
 
-同岸故事加入或更新玩家头像时，传入 Java 版玩家名，从 Mojang 公开档案刷新本地缓存：
-
-```sh
-npm run avatar:cache -- Acatine Hot945
-```
-
-GitHub Actions 会在 pull request 和 `main` 推送时执行字体子集一致性检查，并运行同一条
-`npm run check`，其中包含 Prettier、Astro 类型检查与静态构建。
-
-本地 `git commit` 会由 Husky 先格式化暂存文件，再执行字体子集一致性检查与
-`npm run check`；若子集产物有更新，需将生成的文件一并暂存后重新提交。
-
-字体子集化：
-
-```sh
-npm run font:extract
-npm run font:subset
-npm run build:with-fonts
-```
-
-完整字体源文件放在 `fonts-source/`，生成的 woff2 放在 `src/assets/fonts/`。普通 `npm run build`
-不依赖完整字体；具体放置与更新步骤见 [`docs/font-subset.md`](docs/font-subset.md)。
-
-## 目录结构
-
-```text
-public/                 浏览器图标、Web App Manifest 与构建生成的社交分享卡等需原样发布的品牌文件
-fonts-source/           完整字体源文件，仅用于本地生成子集，不直接发布
-scripts/
-  cache-minecraft-avatars.ts  从 Mojang 公开皮肤生成同岸故事使用的方形本地头像
-  font-subset/          Node-only 字符抽取与 woff2 子集生成脚本
-  generate-social-card.ts  用既有 Logo、首页场景与铁路数据生成分享卡 PNG
-src/
-  assets/
-    fonts/            生成的浏览器 woff2 字体子集
-    pages/
-      home/           首页场景图等按页面归类的源图片；构建时生成 AVIF/WebP
-  components/        可复用 Astro 组件
-  content/           公告、指南等内容
-  data/              站点级静态数据
-  i18n/              公开语言、文案、内容查询与本地化链接
-  layouts/           页面布局
-  lib/               全站共享的轻量浏览器行为
-  pages/             Astro 页面路由
-  styles/            全局样式和品牌变量
-  content.config.ts  内容集合 schema
-test/                   Node 原生测试，覆盖发现文件、全站页面行为与首页静态数据约定
-```
-
-## 内容维护
-
-- 公告：`src/content/news/`
-- 指南：`src/content/guides/`
-- 站点名称、服务器地址、品牌图片与语言无关的主导航结构：`src/data/site.ts`
-- 公开语言、普通界面文案、各语言 SEO 描述与本地化链接：`src/i18n/`
-- 公告和指南需在 frontmatter 标明 `locale` 与 `translationKey`，同一内容的翻译共用关联键。
-
-当前三语首页已实现启动导视、出发验票、随机实景 Arrival、服联快线章节、响应式铁路图片 Gallery、同岸社群故事与续行出发厅。Gallery 在桌面将纵向阅读进度映射为横向浏览，在小屏改为带当前焦点变化的原生纵向图片列；续行只公开已确认的 QQ 门户群加入入口。公告与指南内容仍保留在 Content
-Collections 中，但首页暂不展示公告列表。
+如果你正在维护 Fetarute 官网，请阅读[网站开发与发布指南](docs/development.md)。
