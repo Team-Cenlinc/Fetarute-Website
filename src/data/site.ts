@@ -64,6 +64,26 @@ export interface ExternalDestinationMenu {
   maps: readonly ExternalDestination[];
 }
 
+/** 续行出发厅已经确认并可公开使用的加入入口。 */
+export interface OnwardEntryPoints {
+  /** QQ 门户群的公开群号；续行帮助牌与复制交互必须消费同一事实来源。 */
+  qqPortalGroupNumber: string;
+}
+
+/** 续行 PIDS 可直接抵达的目的地身份；只收录已有真实地图坐标或正式入口的地点。 */
+export type OnwardDestinationKey = "putangBridge" | "lobbyMap" | "creativeMap";
+
+/**
+ * 续行 PIDS 的一条可抵达记录。
+ * href 必须是能够直接打开目标位置的 BlueMap 地址；尚无坐标的服务器入口保留原地图首页。
+ */
+export interface OnwardDestination {
+  /** 供三语站名表与测试稳定引用的身份键。 */
+  key: OnwardDestinationKey;
+  /** 点击“查看地图”后打开的精确地点或服务器地图入口。 */
+  href: string;
+}
+
 /**
  * 首页主视觉与导视装饰共用的配置。
  * 配置只存复合线路身份键，线路名称、站序和颜色始终从铁路数据模型读取，避免页面配置复制线路事实。
@@ -126,7 +146,7 @@ export const primaryNavItems: readonly PrimaryNavItem[] = [
 
 /**
  * 从官网离开后仍能继续了解或探索 Fetarute 的正式服务。
- * 社群和联系入口不放入 Header，后续由 Footer 承接；这里仅保留知识库与世界地图这两类探索工具。
+ * QQ 联系入口不放入 Header，而由续行首次到访帮助承接；这里仅保留知识库与世界地图两类探索工具。
  */
 export const externalDestinations: ExternalDestinationMenu = {
   wiki: { key: "wiki", href: "https://wiki.fetarute.org", icon: "wiki" },
@@ -135,6 +155,24 @@ export const externalDestinations: ExternalDestinationMenu = {
     { key: "lobbyMap", href: "https://map.lobby.fetarute.org", icon: "map" },
     { key: "creativeMap", href: "https://map.creative.fetarute.org", icon: "map" },
   ],
+};
+
+/**
+ * 续行 PIDS 优先展示真实站名；蒲塘桥使用 BlueMap 可分享坐标直达。
+ * 大厅与创造服尚未提供具体站点坐标，因此暂时保留服务器地图入口而不虚构站名。
+ */
+export const onwardDestinations: readonly OnwardDestination[] = [
+  {
+    key: "putangBridge",
+    href: "https://map.survival.fetarute.org/#Towny:-620:41:823:390:0.84:0.83:0:0:perspective",
+  },
+  { key: "lobbyMap", href: "https://map.lobby.fetarute.org" },
+  { key: "creativeMap", href: "https://map.creative.fetarute.org" },
+];
+
+/** 续行已确认并允许首页公开的 QQ 门户群号。 */
+export const onwardEntryPoints: OnwardEntryPoints = {
+  qqPortalGroupNumber: "517248890",
 };
 
 /**

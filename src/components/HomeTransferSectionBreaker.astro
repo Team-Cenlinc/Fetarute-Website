@@ -71,6 +71,7 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
   data-home-transfer-section-id={id}
   data-home-transfer-breaker-locale={locale}
   data-home-transfer-composition={composition}
+  data-train-visual-owner="local"
   data-home-transfer-incoming-line-code={incomingLine.code}
   data-home-transfer-incoming-line-color={incomingLine.color}
   data-home-transfer-incoming-train-color={incomingTrainColor}
@@ -358,15 +359,15 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
     }
   }
 
-  .home-transfer-breaker[data-route-enhanced="true"][data-active-train="approaching"]
+  .home-transfer-breaker[data-route-enhanced="true"][data-train-visual-owner="global-incoming"]
     .home-transfer-breaker__train--incoming {
-    /* 进站阶段由全局 SVG 列车驶到 Figma 的蓝车位置，抵达后再无缝交还静态站台列车。 */
+    /* 全局 SVG 正在代画进站车时隐藏同一班本地车；Tooltip 选择不会再改变这个所有权。 */
     visibility: hidden;
   }
 
-  .home-transfer-breaker[data-route-enhanced="true"][data-active-train="departing"]
+  .home-transfer-breaker[data-route-enhanced="true"][data-train-visual-owner="global-outgoing"]
     .home-transfer-breaker__train--outgoing {
-    /* 离站阶段由全局 SVG 列车从同一位置接管，隐藏静态副本避免出现重影。 */
+    /* 全局 SVG 正在代画离站车时隐藏同一班本地车，避免 hover 让静态副本重新出现。 */
     visibility: hidden;
   }
 

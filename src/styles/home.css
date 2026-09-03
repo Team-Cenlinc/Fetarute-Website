@@ -298,7 +298,9 @@
 /* Hover、键盘焦点与展开状态只把弯曲车体向当前路段线路色略偏移，换乘后不会被拉回 SL。 */
 .home-arrival:has(.home-arrival__train:hover) .home-arrival__train-visual,
 .home-arrival:has(.home-arrival__train:focus-visible) .home-arrival__train-visual,
-.home-arrival:has(.home-arrival__train[data-tooltip-open="true"]) .home-arrival__train-visual {
+.home-arrival:has(.home-arrival__train[data-tooltip-open="true"][data-tooltip-visual-active="true"])
+  .home-arrival__train-visual {
+  /* 本地换乘车打开共享 Tooltip 时不染色全局路径车；两班车保持各自线路状态。 */
   color: color-mix(
     in oklch,
     var(--home-route-train-color, var(--home-arrival-train-color)) 88%,
@@ -309,6 +311,10 @@
 .home-arrival__train-tooltip {
   /* 脚本会按实测 Header 底边覆盖该上限；默认值保证首帧和无脚本样式仍不会超出视口。 */
   --home-arrival-tooltip-content-max-block-size: calc(100svh - 44px);
+  /* 中文四站以 232px 紧凑成组；脚本仍会把宽度限制在真实 visual viewport 内。 */
+  --home-arrival-tooltip-preferred-inline-size: 232px;
+  /* 小屏让弹窗贴近车身，维持列车与快选窗是一组控件的空间关系。 */
+  --home-arrival-tooltip-anchor-gap: 8px;
   position: fixed;
   /* Tooltip 覆盖页面内容与固定 Header，不会在三服汇图片或地图层下方消失。 */
   z-index: 21;
@@ -330,6 +336,22 @@
   transition:
     opacity 180ms var(--motion-header-standard-effects),
     transform 180ms var(--motion-header-standard-spatial);
+}
+
+.home-arrival__train-tooltip[data-home-arrival-tooltip-locale="en"] {
+  /* 英文最长站名需要略宽行盒，但不沿用中文之外的无意义空白。 */
+  --home-arrival-tooltip-preferred-inline-size: 300px;
+}
+
+@media (min-width: 761px) {
+  .home-arrival__train-tooltip {
+    /* 桌面列车尺寸更大，保留一档稍宽的光学间距，仍比原来的 16px 更紧。 */
+    --home-arrival-tooltip-anchor-gap: 12px;
+  }
+
+  .home-arrival__train-tooltip[data-home-arrival-tooltip-locale="en"] {
+    --home-arrival-tooltip-preferred-inline-size: 328px;
+  }
 }
 
 .home-arrival__train[data-tooltip-open="true"] ~ .home-arrival__train-tooltip {

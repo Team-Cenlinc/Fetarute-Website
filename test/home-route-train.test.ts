@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   getHomeMobileTransferTrainState,
+  getHomeOnwardContentTrainProgress,
+  getHomeOnwardDepartureBoardState,
+  getHomeOnwardFooterTrainProgress,
   getHomeOnwardTrainChoreography,
   getHomeSectionBreakerEntryPathStartY,
   getHomeSectionBreakerScrollDistance,
@@ -11,6 +14,40 @@ import {
   getHomeTrainTooltipPlacement,
   getHomeVerticalTrainBottomCenterY,
 } from "../src/data/home-route-train.ts";
+
+test("续行列车进入 PIDS 后保持停驻，把离站行程交给 Footer", () => {
+  const options = {
+    contentTop: 1000,
+    boardJourneyTop: 1800,
+  };
+
+  assert.equal(getHomeOnwardContentTrainProgress({ ...options, scrollY: 1000 }), 0);
+  assert.equal(getHomeOnwardContentTrainProgress({ ...options, scrollY: 1400 }), 0.39);
+  assert.equal(getHomeOnwardContentTrainProgress({ ...options, scrollY: 1800 }), 0.78);
+  assert.equal(getHomeOnwardContentTrainProgress({ ...options, scrollY: 2500 }), 0.78);
+  assert.equal(getHomeOnwardContentTrainProgress({ ...options, scrollY: 3100 }), 0.78);
+  assert.equal(getHomeOnwardContentTrainProgress({ ...options, scrollY: 3500 }), 0.78);
+});
+
+test("Footer 可见行程把停驻列车连续带到视口底部", () => {
+  assert.equal(getHomeOnwardFooterTrainProgress(0.78, 0), 0.78);
+  assert.equal(getHomeOnwardFooterTrainProgress(0.78, 0.5), 0.89);
+  assert.equal(getHomeOnwardFooterTrainProgress(0.78, 1), 1);
+  assert.equal(getHomeOnwardFooterTrainProgress(0.78, -1), 0.78);
+  assert.equal(getHomeOnwardFooterTrainProgress(0.78, 2), 1);
+});
+
+test("独立续行内容页先展示目的地 PIDS，再交给首次到访帮助", () => {
+  assert.equal(getHomeOnwardDepartureBoardState(0), "destinations");
+  assert.equal(getHomeOnwardDepartureBoardState(0.61), "destinations");
+  assert.equal(getHomeOnwardDepartureBoardState(0.62), "help");
+  assert.equal(getHomeOnwardDepartureBoardState(1), "help");
+});
+
+test("减少动态时仍保留 PIDS 两页的可达性，只停用空间位移", () => {
+  assert.equal(getHomeOnwardDepartureBoardState(0), "destinations");
+  assert.equal(getHomeOnwardDepartureBoardState(1), "help");
+});
 
 test("续行先让湾岸列车减速进站，短暂停顿后再让探索列车加速离站", () => {
   assert.deepEqual(getHomeOnwardTrainChoreography(0), {

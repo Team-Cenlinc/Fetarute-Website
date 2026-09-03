@@ -6,7 +6,7 @@ import type {
 import type { HomeGallerySceneId } from "@/data/home-gallery";
 import type { HomeLandingSceneId } from "@/data/home-landing";
 import type { HomeTriServerId } from "@/data/home-tri-server-media";
-import type { ExternalDestination } from "@/data/site";
+import type { ExternalDestination, OnwardDestinationKey } from "@/data/site";
 
 /** 首页首段章节的可本地化正文。 */
 interface HomeIntroductionMessage {
@@ -162,6 +162,58 @@ interface HomeCommunityMessage {
   closingDescription: string;
 }
 
+/** “续行”出发厅的邀请、PIDS 与外部导视文案。 */
+interface HomeOnwardMessage {
+  /** 没有独立可见总标题时供辅助技术辨识出发厅。 */
+  label: string;
+  /** 邀请正文上方帮助首次到访者快速定位自己的短标签。 */
+  invitationKicker: string;
+  /** 把首页抵达叙事收束为下一步选择的短邀请。 */
+  invitation: string;
+  /** 左侧推荐目的地 PIDS 的无障碍名称。 */
+  destinationBoardLabel: string;
+  /** PIDS 第一列的站台标题。 */
+  platformColumn: string;
+  /** PIDS 第二列的目的地标题。 */
+  destinationColumn: string;
+  /** PIDS 第三列的操作标题。 */
+  actionColumn: string;
+  /** 每一行地图目的地使用的短操作。 */
+  openMapLabel: string;
+  /** PIDS 底部明确告诉读者继续向下滚动会进入首次到访帮助。 */
+  destinationTicker: string;
+  /** 左侧 PIDS 第二状态的首次到访帮助标题。 */
+  helpTitle: string;
+  /** 说明 QQ 门户群如何承接新玩家问题的正文。 */
+  helpDescription: string;
+  /** QQ 门户群入口的正式显示名称。 */
+  qqPortalGroupLabel: string;
+  /** QQ 群号按钮的默认复制动作。 */
+  copyQqGroupLabel: string;
+  /** QQ 群号成功写入剪贴板后的短反馈。 */
+  copiedQqGroupLabel: string;
+  /** 浏览器拒绝剪贴板访问时的可操作失败提示。 */
+  copyQqGroupFailedLabel: string;
+  /** QQ 门户群二维码的可见说明与替代文本。 */
+  qqQrCodeLabel: string;
+  /** 右侧固定导视牌的区域名称。 */
+  serviceGuideLabel: string;
+  /** 右侧方向牌上的 Wiki 短名；完整服务名仍保留在链接的无障碍说明中。 */
+  wikiLabel: string;
+  /** 导视牌末尾提示后续还会继续增加目的地的施工中悬念。 */
+  moreComingLabel: string;
+}
+
+/** 首页页尾的收束文案与返回入口。 */
+interface HomeFooterMessage {
+  /** 把官网浏览重新交还给玩家选择的收束标题。 */
+  title: string;
+  /** 说明页面结束但世界探索仍继续的短句。 */
+  description: string;
+  /** 返回首页起点链接的可见文案。 */
+  restartLabel: string;
+}
+
 /**
  * 首页「出发检票遮罩」的可本地化文案。
  * 读者以验票或主动略过两种明确选择进入第一叙事站，不能把遮罩误读为普通内容区块。
@@ -239,6 +291,8 @@ export interface SiteMessages {
   onlineMapLabel: string;
   /** 外部服务的本地化显示名称；URL 与服务类型仍集中维护在 site.ts。 */
   externalDestinationLabels: Readonly<Record<ExternalDestination["key"], string>>;
+  /** 续行 PIDS 的可抵达站名；与精确 BlueMap 地址分离，避免链接事实散落进文案。 */
+  onwardDestinationLabels: Readonly<Record<OnwardDestinationKey, string>>;
   /** 新标签页链接追加给读屏用户的副作用说明。 */
   externalLinkNewTabHint: string;
   /** 服务导视中外观设置这一组的标签。 */
@@ -273,6 +327,10 @@ export interface SiteMessages {
     triServer: HomeTriServerMessage;
     /** 同岸以一个主故事、一个纪念片段和一个页面随机片段介绍玩家社群。 */
     community: HomeCommunityMessage;
+    /** 续行以目的地 PIDS、服务导视和 QQ 帮助结束首页旅程。 */
+    onward: HomeOnwardMessage;
+    /** 第二次下滚后出现的站点页尾。 */
+    footer: HomeFooterMessage;
   };
   /** 默认社交分享图片的替代文本。 */
   socialImageAlt: string;
@@ -304,6 +362,11 @@ const messages: Record<Locale, SiteMessages> = {
       creativeMap: "创造服",
       survivalMap: "生存服",
       lobbyMap: "大厅",
+    },
+    onwardDestinationLabels: {
+      putangBridge: "蒲塘桥",
+      lobbyMap: "大厅世界",
+      creativeMap: "创造世界",
     },
     externalLinkNewTabHint: "在新标签页打开",
     appearanceNavigationLabel: "外观",
@@ -540,6 +603,33 @@ const messages: Record<Locale, SiteMessages> = {
         closingDescription:
           "首页只停靠在少数片段。还有许多建设、维护、带路与记录，等待在未来的社区页被继续读到；列车也将从这里驶向下一程。",
       },
+      onward: {
+        label: "续行出发厅",
+        invitationKicker: "第一次来到 Fetarute？",
+        invitation: "在这里到站，也从这里出发。选一个感兴趣的世界，下一段旅程即刻启程。",
+        destinationBoardLabel: "推荐目的地",
+        platformColumn: "站台",
+        destinationColumn: "目的地",
+        actionColumn: "出发",
+        openMapLabel: "查看地图",
+        destinationTicker: "还没有想好去哪里？向下滚动，查看首次到访帮助。",
+        helpTitle: "还没有想好去哪里？",
+        helpDescription:
+          "前往 Fetarute QQ 门户群，告诉我们你想看的世界、想走的线路，或想认识的人。",
+        qqPortalGroupLabel: "QQ 门户群",
+        copyQqGroupLabel: "复制群号",
+        copiedQqGroupLabel: "已复制",
+        copyQqGroupFailedLabel: "复制失败，请手动选择群号",
+        qqQrCodeLabel: "扫码加入 QQ 门户群",
+        serviceGuideLabel: "继续了解 Fetarute",
+        wikiLabel: "Wiki",
+        moreComingLabel: "更多内容施工中",
+      },
+      footer: {
+        title: "页面到站，探索继续。",
+        description: "回到起点再走一次，或继续前往下一段旅程。",
+        restartLabel: "返回起点",
+      },
     },
     socialImageAlt: "Fetarute 服联快线导视分享卡片",
   },
@@ -564,6 +654,11 @@ const messages: Record<Locale, SiteMessages> = {
       creativeMap: "創造服",
       survivalMap: "生存服",
       lobbyMap: "大廳",
+    },
+    onwardDestinationLabels: {
+      putangBridge: "蒲塘橋",
+      lobbyMap: "大廳世界",
+      creativeMap: "創造世界",
     },
     externalLinkNewTabHint: "在新分頁開啟",
     appearanceNavigationLabel: "外觀",
@@ -800,6 +895,33 @@ const messages: Record<Locale, SiteMessages> = {
         closingDescription:
           "首頁只停靠在少數片段。還有許多建設、維護、帶路與記錄，等待在未來的社群頁被繼續讀到；列車也將從這裡駛向下一程。",
       },
+      onward: {
+        label: "續行出發廳",
+        invitationKicker: "第一次來到 Fetarute？",
+        invitation: "在這裡到站，也從這裡出發。選一個感興趣的世界，下一段旅程即刻啟程。",
+        destinationBoardLabel: "推薦目的地",
+        platformColumn: "月台",
+        destinationColumn: "目的地",
+        actionColumn: "出發",
+        openMapLabel: "查看地圖",
+        destinationTicker: "還沒有想好去哪裡？向下捲動，查看首次到訪幫助。",
+        helpTitle: "還沒有想好去哪裡？",
+        helpDescription:
+          "前往 Fetarute QQ 門戶群，告訴我們你想看的世界、想走的路線，或想認識的人。",
+        qqPortalGroupLabel: "QQ 門戶群",
+        copyQqGroupLabel: "複製群號",
+        copiedQqGroupLabel: "已複製",
+        copyQqGroupFailedLabel: "複製失敗，請手動選取群號",
+        qqQrCodeLabel: "掃碼加入 QQ 門戶群",
+        serviceGuideLabel: "繼續了解 Fetarute",
+        wikiLabel: "Wiki",
+        moreComingLabel: "更多內容施工中",
+      },
+      footer: {
+        title: "頁面到站，探索繼續。",
+        description: "回到起點再走一次，或繼續前往下一段旅程。",
+        restartLabel: "返回起點",
+      },
     },
     socialImageAlt: "Fetarute 服聯快線導視分享卡片",
   },
@@ -825,6 +947,11 @@ const messages: Record<Locale, SiteMessages> = {
       creativeMap: "Creative",
       survivalMap: "Survival",
       lobbyMap: "Lobby",
+    },
+    onwardDestinationLabels: {
+      putangBridge: "Putang Bridge",
+      lobbyMap: "Lobby world",
+      creativeMap: "Creative world",
     },
     externalLinkNewTabHint: "opens in a new tab",
     appearanceNavigationLabel: "Appearance",
@@ -1070,6 +1197,34 @@ const messages: Record<Locale, SiteMessages> = {
         closingTitle: "These are only a few stops along Fetarute's journey.",
         closingDescription:
           "The homepage pauses at only a few fragments. More stories of building, maintaining, guiding and recording will continue on a future Community page, while the train moves on from here.",
+      },
+      onward: {
+        label: "Onward departure hall",
+        invitationKicker: "New to Fetarute?",
+        invitation:
+          "Arrive here, then set out again. Choose a world that interests you—the next journey starts now.",
+        destinationBoardLabel: "Recommended destinations",
+        platformColumn: "Bay",
+        destinationColumn: "Destination",
+        actionColumn: "Depart",
+        openMapLabel: "View map",
+        destinationTicker: "Not sure where to go yet? Scroll down for first-visit help.",
+        helpTitle: "Not sure where to go yet?",
+        helpDescription:
+          "Visit the Fetarute QQ Portal Group and tell us which world, route or people you would like to discover.",
+        qqPortalGroupLabel: "QQ Portal Group",
+        copyQqGroupLabel: "Copy group number",
+        copiedQqGroupLabel: "Copied",
+        copyQqGroupFailedLabel: "Copy failed; select the group number manually",
+        qqQrCodeLabel: "Scan to join the QQ Portal Group",
+        serviceGuideLabel: "Continue exploring Fetarute",
+        wikiLabel: "Wiki",
+        moreComingLabel: "More coming soon",
+      },
+      footer: {
+        title: "The page ends. Discovery continues.",
+        description: "Return to the beginning, or continue toward the next journey.",
+        restartLabel: "Return to the beginning",
       },
     },
     socialImageAlt: "Fetarute Serverlink wayfinding share card",

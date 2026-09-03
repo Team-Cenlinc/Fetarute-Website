@@ -1,0 +1,1402 @@
+---
+import qqPortalGroupQr from "@/assets/pages/home/qq-portal-group-qr.svg?raw";
+import arrowSquareOutIcon from "@phosphor-icons/core/assets/bold/arrow-square-out-bold.svg?raw";
+import arrowUpRightIcon from "@phosphor-icons/core/assets/bold/arrow-up-right-bold.svg?raw";
+import bookOpenTextIcon from "@phosphor-icons/core/assets/bold/book-open-text-bold.svg?raw";
+import caretDoubleDownIcon from "@phosphor-icons/core/assets/bold/caret-double-down-bold.svg?raw";
+import checkIcon from "@phosphor-icons/core/assets/bold/check-bold.svg?raw";
+import copyIcon from "@phosphor-icons/core/assets/bold/copy-bold.svg?raw";
+import hardHatIcon from "@phosphor-icons/core/assets/bold/hard-hat-bold.svg?raw";
+import mouseScrollIcon from "@phosphor-icons/core/assets/bold/mouse-scroll-bold.svg?raw";
+import usersThreeIcon from "@phosphor-icons/core/assets/bold/users-three-bold.svg?raw";
+import { externalDestinations, onwardDestinations, onwardEntryPoints } from "@/data/site";
+import type { Locale } from "@/i18n/config";
+import { getMessages } from "@/i18n/messages";
+
+/** 首页“续行”内容页属性；线路色从正式铁路数据注入，语言控制整页导视。 */
+export interface Props {
+  /** 当前静态路由语言，保证三种公开版本拥有一致的 PIDS 和入口说明。 */
+  locale: Locale;
+  /** 从“续行”出站线路数据导出的轨道色，不能在组件内重新猜测。 */
+  lineColor: string;
+}
+
+const { locale, lineColor } = Astro.props;
+const messages = getMessages(locale);
+const onwardMessages = messages.home.onward;
+const qqPortalGroupNumber = onwardEntryPoints.qqPortalGroupNumber;
+const titleId = "home-onward-content-title";
+---
+
+<section
+  class="home-onward"
+  data-home-onward-content
+  data-home-onward-locale={locale}
+  data-home-onward-board-state="destinations"
+  aria-labelledby={titleId}
+  style={`--home-onward-line-color: ${lineColor};`}
+>
+  <!-- 探索线从前一段 Section Breaker 的右侧竖轨原位接续，并在低矮页尾继续贯穿到底。 -->
+  <span class="home-onward__route-track" data-home-onward-route-track aria-hidden="true"></span>
+
+  <header class="home-onward__introduction">
+    <span class="home-onward__station-marker" aria-hidden="true"></span>
+    <div class="home-onward__introduction-copy">
+      <p>{onwardMessages.invitationKicker}</p>
+      <h2 id={titleId}>{onwardMessages.invitation}</h2>
+    </div>
+  </header>
+
+  <div class="home-onward__journey" data-home-onward-journey>
+    <div class="home-onward__stage">
+      <!-- 桌面支撑柱从 PIDS 背后落到底边；小屏改由探索线本身直接承托两块导视。 -->
+      <span class="home-onward__pids-support" aria-hidden="true"></span>
+
+      <div class="home-onward__board-area">
+        <div class="home-onward__board-shell">
+          <div class="home-onward__board-screen">
+            <section
+              class="home-onward__board home-onward__board--destinations"
+              data-home-onward-destination-board
+              aria-label={onwardMessages.destinationBoardLabel}
+            >
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">{onwardMessages.platformColumn}</th>
+                  <th scope="col">{onwardMessages.destinationColumn}</th>
+                  <th scope="col">{onwardMessages.actionColumn}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {
+                  onwardDestinations.map((destination, index) => {
+                    const destinationLabel = messages.onwardDestinationLabels[destination.key];
+
+                    return (
+                      <tr>
+                        <td>{String(index + 1)}</td>
+                        <td>{destinationLabel}</td>
+                        <td>
+                          <a
+                            href={destination.href}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`${destinationLabel} · ${onwardMessages.openMapLabel} (${messages.externalLinkNewTabHint})`}
+                          >
+                            <span>{onwardMessages.openMapLabel}</span>
+                            <span aria-hidden="true" set:html={arrowSquareOutIcon}></span>
+                          </a>
+                        </td>
+                      </tr>
+                    );
+                  })
+                }
+              </tbody>
+            </table>
+            <button
+              class="home-onward__ticker"
+              type="button"
+              data-home-onward-scroll-hint
+            >
+              <span aria-hidden="true" set:html={mouseScrollIcon}></span>
+              <span>{onwardMessages.destinationTicker}</span>
+              <span
+                class="home-onward__ticker-arrow"
+                aria-hidden="true"
+                set:html={caretDoubleDownIcon}
+              ></span>
+            </button>
+            </section>
+
+            <section
+              class="home-onward__board home-onward__board--help"
+              data-home-onward-help-board
+              aria-label={onwardMessages.helpTitle}
+              aria-hidden="true"
+              inert
+            >
+            <div class="home-onward__help-content">
+              <div class="home-onward__help-copy">
+                <p class="home-onward__help-title">{onwardMessages.helpTitle}</p>
+                <p>{onwardMessages.helpDescription}</p>
+              </div>
+              <button
+                class="home-onward__qq-copy"
+                type="button"
+                data-home-onward-copy-qq
+                data-copy-value={qqPortalGroupNumber}
+                data-copy-label={onwardMessages.copyQqGroupLabel}
+                data-copied-label={onwardMessages.copiedQqGroupLabel}
+                data-copy-failed-label={onwardMessages.copyQqGroupFailedLabel}
+              >
+                <span
+                  class="home-onward__qq-copy-icon"
+                  aria-hidden="true"
+                  set:html={usersThreeIcon}
+                ></span>
+                <span class="home-onward__qq-copy-meta">
+                  <small>{onwardMessages.qqPortalGroupLabel}</small>
+                  <strong>{qqPortalGroupNumber}</strong>
+                </span>
+                <span class="home-onward__qq-copy-action">
+                  <span
+                    class="home-onward__qq-copy-action-icon home-onward__qq-copy-action-icon--copy"
+                    aria-hidden="true"
+                    set:html={copyIcon}
+                  ></span>
+                  <span
+                    class="home-onward__qq-copy-action-icon home-onward__qq-copy-action-icon--done"
+                    aria-hidden="true"
+                    set:html={checkIcon}
+                  ></span>
+                  <span data-home-onward-copy-label>{onwardMessages.copyQqGroupLabel}</span>
+                </span>
+              </button>
+              <p
+                class="home-onward__copy-feedback"
+                role="status"
+                aria-live="polite"
+                data-home-onward-copy-feedback
+              ></p>
+            </div>
+            <div class="home-onward__qr">
+              <span
+                class="home-onward__qr-code"
+                role="img"
+                aria-label={onwardMessages.qqQrCodeLabel}
+                set:html={qqPortalGroupQr}
+              ></span>
+              <span>{onwardMessages.qqQrCodeLabel}</span>
+            </div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <aside class="home-onward__guide">
+        <nav class="home-onward__service-links" aria-label={onwardMessages.serviceGuideLabel}>
+          <a
+            class="home-onward__service-link home-onward__service-link--wiki"
+            href={externalDestinations.wiki.href}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`${messages.externalDestinationLabels.wiki} (${messages.externalLinkNewTabHint})`}
+          >
+            <span class="home-onward__service-icon" aria-hidden="true" set:html={bookOpenTextIcon}></span>
+            <span class="home-onward__service-copy">{onwardMessages.wikiLabel}</span>
+            <span class="home-onward__service-arrow" aria-hidden="true" set:html={arrowUpRightIcon}></span>
+          </a>
+          <div
+            class="home-onward__service-link home-onward__service-link--future"
+            aria-disabled="true"
+          >
+            <span class="home-onward__service-icon" aria-hidden="true" set:html={hardHatIcon}></span>
+            <span class="home-onward__service-copy">{onwardMessages.moreComingLabel}</span>
+          </div>
+        </nav>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { getHomeOnwardDepartureBoardState } from "@/data/home-route-train";
+
+  /** 把每个续行内容页自己的滚动行程映射到 PIDS 状态，不借用前一段 Section Breaker 的列车进度。 */
+  const initialiseHomeOnwardContent = (section: HTMLElement) => {
+    const journey = section.querySelector<HTMLElement>("[data-home-onward-journey]");
+    const stage = section.querySelector<HTMLElement>(".home-onward__stage");
+    const destinationBoard = section.querySelector<HTMLElement>(
+      "[data-home-onward-destination-board]",
+    );
+    const helpBoard = section.querySelector<HTMLElement>("[data-home-onward-help-board]");
+    const scrollHint = section.querySelector<HTMLButtonElement>("[data-home-onward-scroll-hint]");
+    const copyQqButton = section.querySelector<HTMLButtonElement>("[data-home-onward-copy-qq]");
+    const copyQqLabel = copyQqButton?.querySelector<HTMLElement>(
+      "[data-home-onward-copy-label]",
+    );
+    const copyFeedback = section.querySelector<HTMLElement>(
+      "[data-home-onward-copy-feedback]",
+    );
+
+    if (!journey || !stage || !destinationBoard || !helpBoard) {
+      return;
+    }
+
+    /* 给 PIDS 硬切留出可感知的一拍，再把持续中的滚轮、触摸或按键输入交还原生滚动。 */
+    const continuousScrollFallbackDelay = 260;
+    let frameRequest: number | undefined;
+    let copyResetTimer: number | undefined;
+    let wheelReleaseTimer: number | undefined;
+    let touchReleaseTimer: number | undefined;
+    let keyboardReleaseTimer: number | undefined;
+    let manuallyRequestedHelp = false;
+    let wheelGestureConsumed = false;
+    let touchGestureConsumed = false;
+    let touchStartY: number | undefined;
+    let keyboardGestureConsumed = false;
+
+    /** 同一帧只写一次状态，并让隐藏的 PIDS 退出辅助技术与键盘焦点树。 */
+    const render = () => {
+      frameRequest = undefined;
+      const journeyRect = journey.getBoundingClientRect();
+      const scrollDistance = Math.max(1, journey.offsetHeight - window.innerHeight);
+      const progress = Math.min(Math.max(-journeyRect.top / scrollDistance, 0), 1);
+      if (journeyRect.top > 1) {
+        manuallyRequestedHelp = false;
+      }
+      const boardState = manuallyRequestedHelp
+        ? "help"
+        : getHomeOnwardDepartureBoardState(progress);
+      const showsDestinations = boardState === "destinations";
+
+      section.dataset.homeOnwardBoardState = boardState;
+      destinationBoard.setAttribute("aria-hidden", String(!showsDestinations));
+      destinationBoard.inert = !showsDestinations;
+      helpBoard.setAttribute("aria-hidden", String(showsDestinations));
+      helpBoard.inert = showsDestinations;
+    };
+
+    /** 滚动与尺寸变化合并到下一绘制帧，避免连续布局读写。 */
+    const requestRender = () => {
+      if (frameRequest !== undefined) {
+        return;
+      }
+
+      frameRequest = window.requestAnimationFrame(render);
+    };
+
+    /** 提示按钮只替换固定 PIDS 内部内容；页面仍停在原位，随后由原生滚动进入 Footer。 */
+    const scrollToHelp = () => {
+      manuallyRequestedHelp = true;
+      requestRender();
+    };
+
+    /** 使用临时输入框兼容不提供 Clipboard API，或明确拒绝写入权限的浏览器。 */
+    const copyTextWithLegacyField = (value: string) => {
+      const field = document.createElement("textarea");
+      field.value = value;
+      field.setAttribute("readonly", "");
+      field.style.position = "fixed";
+      field.style.opacity = "0";
+      document.body.append(field);
+      field.select();
+      const legacyCopy = Reflect.get(document, "execCommand");
+      const copied =
+        typeof legacyCopy === "function" && Reflect.apply(legacyCopy, document, ["copy"]);
+      field.remove();
+      return copied;
+    };
+
+    /** 在安全上下文优先使用 Clipboard API；权限拒绝时仍尝试兼容复制。 */
+    const copyText = async (value: string) => {
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(value);
+          return true;
+        } catch {
+          return copyTextWithLegacyField(value);
+        }
+      }
+
+      return copyTextWithLegacyField(value);
+    };
+
+    /** 把行和页单位换算为像素，保证鼠标滚轮与触控板使用同一进入判定。 */
+    const getWheelDeltaY = (event: WheelEvent) => {
+      if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+        return event.deltaY * 16;
+      }
+
+      if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+        return event.deltaY * window.innerHeight;
+      }
+
+      return event.deltaY;
+    };
+
+    /** 判断向下输入是否已经抵达固定舞台；尚未进入时不干预页面原生滚动。 */
+    const shouldRevealHelp = (intendedScroll: number) => {
+      if (
+        intendedScroll <= 0 ||
+        section.dataset.homeOnwardBoardState !== "destinations"
+      ) {
+        return false;
+      }
+
+      const journeyRect = journey.getBoundingClientRect();
+      const stageRect = stage.getBoundingClientRect();
+      const stageIsPinned = stageRect.top <= 1 && stageRect.bottom >= window.innerHeight - 1;
+      const reachesStage = journeyRect.top > 0 && intendedScroll >= journeyRect.top;
+      return stageIsPinned || reachesStage;
+    };
+
+    /** 若同一次输入跨过舞台起点，就精确停在 PIDS，而不是把余量带进 Footer。 */
+    const settleAtJourneyStart = () => {
+      const journeyTop = journey.getBoundingClientRect().top;
+      if (journeyTop <= 0) {
+        return;
+      }
+
+      const scrollElement = document.scrollingElement ?? document.documentElement;
+      scrollElement.scrollTop += journeyTop;
+    };
+
+    /** 固定停留只覆盖 PIDS 翻页瞬间；持续输入超过该窗口后恢复原生滚动。 */
+    const scheduleWheelRelease = () => {
+      if (wheelReleaseTimer !== undefined) {
+        window.clearTimeout(wheelReleaseTimer);
+      }
+
+      wheelReleaseTimer = window.setTimeout(() => {
+        wheelGestureConsumed = false;
+        wheelReleaseTimer = undefined;
+      }, continuousScrollFallbackDelay);
+    };
+
+    /** 第一次向下滚只翻 PIDS 内容，并短暂吞掉惯性以留下清楚的换页拍点。 */
+    const handleWheel = (event: WheelEvent) => {
+      const deltaY = getWheelDeltaY(event);
+      if (deltaY <= 0) {
+        return;
+      }
+
+      if (wheelGestureConsumed) {
+        event.preventDefault();
+        return;
+      }
+
+      if (!shouldRevealHelp(deltaY)) {
+        return;
+      }
+
+      event.preventDefault();
+      settleAtJourneyStart();
+      wheelGestureConsumed = true;
+      scrollToHelp();
+      scheduleWheelRelease();
+    };
+
+    /** 一次手指滑动先翻一页 PIDS；持续滑动超过换页拍点后恢复原生位移。 */
+    const handleTouchStart = (event: TouchEvent) => {
+      if (touchReleaseTimer !== undefined) {
+        window.clearTimeout(touchReleaseTimer);
+        touchReleaseTimer = undefined;
+      }
+
+      touchStartY = event.touches[0]?.clientY;
+      touchGestureConsumed = false;
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const currentY = event.touches[0]?.clientY;
+      if (touchStartY === undefined || currentY === undefined) {
+        return;
+      }
+
+      const intendedScroll = touchStartY - currentY;
+      if (intendedScroll <= 0) {
+        return;
+      }
+
+      if (touchGestureConsumed) {
+        event.preventDefault();
+        return;
+      }
+
+      if (!shouldRevealHelp(intendedScroll)) {
+        return;
+      }
+
+      event.preventDefault();
+      settleAtJourneyStart();
+      touchGestureConsumed = true;
+      scrollToHelp();
+      touchReleaseTimer = window.setTimeout(() => {
+        touchGestureConsumed = false;
+        touchReleaseTimer = undefined;
+      }, continuousScrollFallbackDelay);
+    };
+
+    const handleTouchEnd = () => {
+      if (touchReleaseTimer !== undefined) {
+        window.clearTimeout(touchReleaseTimer);
+        touchReleaseTimer = undefined;
+      }
+
+      touchStartY = undefined;
+      touchGestureConsumed = false;
+    };
+
+    /** 键盘翻页沿用同一短暂停留，并避开链接、按钮与输入控件。 */
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        target.closest("a, button, input, textarea, select, [contenteditable='true']")
+      ) {
+        return;
+      }
+
+      const intendedScroll =
+        event.key === "ArrowDown"
+          ? 40
+          : event.key === "PageDown" || event.key === " "
+            ? window.innerHeight * 0.8
+            : 0;
+      if (intendedScroll <= 0) {
+        return;
+      }
+
+      if (keyboardGestureConsumed) {
+        event.preventDefault();
+        return;
+      }
+
+      if (!shouldRevealHelp(intendedScroll)) {
+        return;
+      }
+
+      event.preventDefault();
+      settleAtJourneyStart();
+      keyboardGestureConsumed = true;
+      scrollToHelp();
+      keyboardReleaseTimer = window.setTimeout(() => {
+        keyboardGestureConsumed = false;
+        keyboardReleaseTimer = undefined;
+      }, continuousScrollFallbackDelay);
+    };
+
+    const handleKeyUp = () => {
+      if (keyboardReleaseTimer !== undefined) {
+        window.clearTimeout(keyboardReleaseTimer);
+        keyboardReleaseTimer = undefined;
+      }
+
+      keyboardGestureConsumed = false;
+    };
+
+    /** 同步复制按钮图标、可见反馈与数据状态，并在短暂确认后恢复默认文案。 */
+    const setCopyState = (state: "idle" | "copied" | "failed") => {
+      if (!copyQqButton || !copyQqLabel || !copyFeedback) {
+        return;
+      }
+
+      const label =
+        state === "copied"
+          ? copyQqButton.dataset.copiedLabel
+          : state === "failed"
+            ? copyQqButton.dataset.copyFailedLabel
+            : copyQqButton.dataset.copyLabel;
+
+      copyQqButton.dataset.copyState = state;
+      copyQqLabel.textContent = label ?? "";
+      copyFeedback.textContent = state === "idle" ? "" : (label ?? "");
+    };
+
+    scrollHint?.addEventListener("click", scrollToHelp);
+    copyQqButton?.addEventListener("click", async () => {
+      if (copyResetTimer !== undefined) {
+        window.clearTimeout(copyResetTimer);
+      }
+
+      try {
+        const copied = await copyText(copyQqButton.dataset.copyValue ?? "");
+        setCopyState(copied ? "copied" : "failed");
+      } catch {
+        setCopyState("failed");
+      }
+
+      copyResetTimer = window.setTimeout(() => setCopyState("idle"), 2400);
+    });
+
+    window.addEventListener("scroll", requestRender, { passive: true });
+    window.addEventListener("wheel", handleWheel, { passive: false });
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", handleTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", handleTouchEnd, { passive: true });
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("resize", requestRender);
+    window.addEventListener("pageshow", requestRender);
+    requestRender();
+  };
+
+  document
+    .querySelectorAll<HTMLElement>("[data-home-onward-content]")
+    .forEach(initialiseHomeOnwardContent);
+</script>
+
+<style>
+  .home-onward {
+    /* 固定行程先呈现两个 PIDS 拍点，再把连续或分段的后续输入交给 Footer。 */
+    --home-onward-scroll-distance: clamp(1020px, 150svh, 1420px);
+    --home-onward-track-width: clamp(36px, 3.23vw, 62px);
+    /* 右轨变量表示直轨左边缘，并复用开放弯轨的 4.01613:1 比例；clamp 生效时仍与上段精确接缝。 */
+    --home-onward-right-track-x: calc(
+      77.71vw + var(--home-onward-track-width) * 3.01613
+    );
+    /* PIDS 灰壳保留独立安装面；内容屏幕仍用一致内距，柱子在留白处与牌体建立承托关系。 */
+    --home-onward-board-left: 7.92%;
+    --home-onward-board-width: min(36.51vw, 701px);
+    --home-onward-pids-inset: clamp(18px, 1.67vw, 32px);
+    /* 三行目的地与底部提示刚好组成一屏，避免 PIDS 因空白而显得像整块墙面。 */
+    --home-onward-board-screen-size: clamp(224px, 26svh, 246px);
+    /* 支柱仍从壳体下缘自然长出，但安装留白只保留识别挂载关系所需的厚度。 */
+    --home-onward-board-mount-space: clamp(26px, 3.8svh, 38px);
+    --home-onward-board-block-size: calc(
+      var(--home-onward-board-screen-size) + var(--home-onward-pids-inset) +
+        var(--home-onward-pids-inset) +
+        var(--home-onward-board-mount-space)
+    );
+    --home-onward-pids-support-offset: clamp(148px, 17svh, 174px);
+    /* 桌面邀请以探索线反推正文右边缘，并让两级文案都采用右对齐的阅读锚点。 */
+    --home-onward-introduction-width: min(40vw, 720px);
+    --home-onward-introduction-track-gap: clamp(60px, 4.5vw, 86px);
+    /* 导视牌跨过线路；内容安全区会叠加列车实际厚度，避免文字和箭头钻进运行中的车体。 */
+    --home-onward-guide-right-wing: clamp(52px, 4.8vw, 92px);
+    --home-onward-active-train-thickness: 90px;
+    --home-onward-guide-train-gap: clamp(24px, 2vw, 32px);
+    --home-onward-guide-right: calc(
+      100% - var(--home-onward-right-track-x) - var(--home-onward-track-width) -
+        var(--home-onward-guide-right-wing)
+    );
+    --home-onward-guide-width: min(42vw, 720px);
+    --home-onward-guide-height: clamp(560px, 82svh, 893px);
+    --home-onward-guide-content-right: calc(
+      var(--home-onward-track-width) / 2 + var(--home-onward-guide-right-wing) +
+        var(--home-onward-active-train-thickness) / 2 +
+        var(--home-onward-guide-train-gap)
+    );
+    position: relative;
+    min-height: 0;
+    isolation: isolate;
+    background: var(--palette-canvas);
+    color: var(--palette-text);
+  }
+
+  .home-onward__route-track {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--home-onward-right-track-x);
+    z-index: 4;
+    display: block;
+    width: var(--home-onward-track-width);
+    background: var(--home-onward-line-color);
+    pointer-events: none;
+  }
+
+  .home-onward__introduction {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    min-height: min(90svh, 920px);
+    align-items: center;
+    padding-block: clamp(120px, 16svh, 190px);
+  }
+
+  .home-onward__station-marker {
+    position: absolute;
+    top: calc(50% - var(--home-onward-track-width) / 2);
+    right: calc(100% - var(--home-onward-right-track-x) - 1px);
+    z-index: 3;
+    display: block;
+    width: var(--home-onward-introduction-track-gap);
+    height: var(--home-onward-track-width);
+    background: var(--home-onward-line-color);
+    pointer-events: none;
+  }
+
+  .home-onward__introduction-copy {
+    display: grid;
+    gap: clamp(18px, 2vw, 34px);
+    width: var(--home-onward-introduction-width);
+    margin-right: calc(
+      100% - var(--home-onward-right-track-x) +
+        var(--home-onward-introduction-track-gap)
+    );
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .home-onward__introduction-copy p,
+  .home-onward__introduction-copy h2 {
+    margin: 0;
+  }
+
+  .home-onward__introduction-copy p {
+    font-size: clamp(17px, 1.25vw, 24px);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .home-onward__introduction-copy h2 {
+    font-size: clamp(43px, 4.6vw, 88px);
+    font-weight: 700;
+    line-height: 1.14;
+  }
+
+  .home-onward__journey {
+    position: relative;
+    z-index: 1;
+    height: calc(100svh + var(--home-onward-scroll-distance));
+    min-height: 980px;
+  }
+
+  .home-onward__stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    min-height: 680px;
+    overflow: clip;
+  }
+
+  .home-onward__pids-support {
+    position: absolute;
+    top: calc(21% + var(--home-onward-pids-support-offset));
+    bottom: 0;
+    left: 10.9%;
+    z-index: 1;
+    width: var(--home-onward-track-width);
+    background: var(--palette-text);
+  }
+
+  .home-onward__board-area {
+    position: absolute;
+    top: 21%;
+    left: var(--home-onward-board-left);
+    z-index: 2;
+    width: var(--home-onward-board-width);
+  }
+
+  .home-onward__board-shell {
+    position: relative;
+    box-sizing: border-box;
+    height: var(--home-onward-board-block-size);
+    padding: var(--home-onward-pids-inset);
+    background: color-mix(in srgb, var(--palette-journey-map) 86%, var(--palette-text));
+  }
+
+  .home-onward__board-screen {
+    position: absolute;
+    inset: var(--home-onward-pids-inset) var(--home-onward-pids-inset)
+      calc(var(--home-onward-pids-inset) + var(--home-onward-board-mount-space));
+    overflow: hidden;
+    background: var(--palette-surface);
+  }
+
+  .home-onward__board {
+    position: absolute;
+    inset: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: transparent;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .home-onward[data-home-onward-board-state="destinations"]
+    .home-onward__board--destinations,
+  .home-onward[data-home-onward-board-state="help"] .home-onward__board--help {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .home-onward__board--destinations {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .home-onward[data-home-onward-board-state="destinations"]
+    .home-onward__board--destinations {
+    display: grid;
+  }
+
+  .home-onward table {
+    width: 100%;
+    height: auto;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .home-onward th,
+  .home-onward td {
+    box-sizing: border-box;
+    padding: 0.16em 0.58em;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  .home-onward th {
+    border-bottom: 2px solid currentColor;
+    font-size: clamp(15px, 1.15vw, 22px);
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .home-onward thead tr {
+    height: clamp(28px, 3.2svh, 32px);
+  }
+
+  .home-onward td {
+    border-bottom: 1px solid var(--palette-border);
+    font-size: clamp(19px, 1.6vw, 28px);
+    font-weight: 700;
+    line-height: 1.18;
+  }
+
+  .home-onward tbody tr {
+    height: clamp(48px, 5.6svh, 52px);
+  }
+
+  .home-onward th:first-child,
+  .home-onward td:first-child {
+    width: 17%;
+    text-align: center;
+  }
+
+  .home-onward th:last-child,
+  .home-onward td:last-child {
+    width: 34%;
+    text-align: right;
+  }
+
+  .home-onward td a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.35em;
+    min-height: 44px;
+    padding-inline: 0.25em;
+    color: inherit;
+    font-size: clamp(16px, 1.25vw, 20px);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .home-onward td a:hover,
+  .home-onward td a:focus-visible,
+  a.home-onward__service-link:hover,
+  a.home-onward__service-link:focus-visible {
+    background: var(--palette-surface-raised);
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  .home-onward td a:active,
+  a.home-onward__service-link:active,
+  .home-onward__ticker:active,
+  .home-onward__qq-copy:active {
+    opacity: 0.72;
+  }
+
+  .home-onward td a span:last-child,
+  .home-onward__service-arrow {
+    display: inline-grid;
+    width: 1.15em;
+    height: 1.15em;
+    place-items: center;
+  }
+
+  .home-onward td a span:last-child :global(svg),
+  .home-onward__service-arrow :global(svg),
+  .home-onward__ticker :global(svg),
+  .home-onward__qq-copy :global(svg),
+  .home-onward__service-icon :global(svg) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .home-onward__ticker {
+    display: grid;
+    grid-template-columns: 1.35em minmax(0, 1fr) 1.2em;
+    gap: 0.55em;
+    align-items: center;
+    width: 100%;
+    min-height: clamp(40px, 4.2svh, 44px);
+    margin: 0;
+    padding: 0.42em 0.7em;
+    border: 0;
+    background: var(--color-scene-fallback);
+    color: var(--color-on-hero);
+    cursor: pointer;
+    font: inherit;
+    font-size: clamp(14px, 1.05vw, 20px);
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: left;
+  }
+
+  .home-onward__ticker > span:first-child,
+  .home-onward__ticker-arrow,
+  .home-onward__qq-copy-icon,
+  .home-onward__service-icon {
+    display: inline-grid;
+    place-items: center;
+  }
+
+  .home-onward__ticker:hover,
+  .home-onward__ticker:focus-visible {
+    background: var(--palette-action);
+    color: var(--palette-action-text);
+    outline: 3px solid var(--palette-text);
+    outline-offset: -3px;
+  }
+
+  .home-onward__ticker-arrow {
+    width: 1.2em;
+    height: 1.2em;
+  }
+
+  .home-onward__board--help {
+    grid-template-columns: minmax(0, 1fr) clamp(108px, 7.3vw, 140px);
+    gap: clamp(16px, 1.3vw, 24px);
+    align-items: center;
+    padding: clamp(16px, 1.3vw, 24px);
+  }
+
+  .home-onward[data-home-onward-board-state="help"] .home-onward__board--help {
+    display: grid;
+  }
+
+  .home-onward__help-content,
+  .home-onward__help-copy {
+    display: grid;
+  }
+
+  .home-onward__help-content {
+    gap: clamp(12px, 1vw, 18px);
+    min-width: 0;
+  }
+
+  .home-onward__help-copy {
+    gap: 0.65em;
+  }
+
+  .home-onward__help-copy p {
+    margin: 0;
+    font-size: clamp(16px, 1.2vw, 22px);
+    line-height: 1.35;
+  }
+
+  .home-onward__help-copy .home-onward__help-title {
+    font-size: clamp(27px, 2.2vw, 40px);
+    font-weight: 700;
+    line-height: 1.12;
+  }
+
+  .home-onward__qq-copy {
+    display: grid;
+    grid-template-columns: clamp(28px, 2.2vw, 42px) minmax(0, 1fr) auto;
+    gap: clamp(8px, 0.7vw, 12px);
+    align-items: center;
+    min-width: 0;
+    min-height: 58px;
+    padding: 0.55em 0.65em;
+    border: 2px solid currentColor;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+  }
+
+  .home-onward__qq-copy:hover,
+  .home-onward__qq-copy:focus-visible {
+    background: var(--palette-action);
+    color: var(--palette-action-text);
+    outline: 3px solid var(--palette-text);
+    outline-offset: 3px;
+  }
+
+  .home-onward__qq-copy-icon {
+    width: clamp(28px, 2.2vw, 42px);
+    height: clamp(28px, 2.2vw, 42px);
+  }
+
+  .home-onward__qq-copy-meta,
+  .home-onward__qq-copy-meta strong,
+  .home-onward__qq-copy-meta small {
+    display: block;
+  }
+
+  .home-onward__qq-copy-meta {
+    min-width: 0;
+  }
+
+  .home-onward__qq-copy-meta small {
+    overflow: hidden;
+    font-size: clamp(10px, 0.72vw, 13px);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .home-onward__qq-copy-meta strong {
+    margin-top: 0.12em;
+    font-size: clamp(19px, 1.45vw, 27px);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .home-onward__qq-copy-action {
+    display: inline-flex;
+    gap: 0.35em;
+    align-items: center;
+    font-size: clamp(10px, 0.72vw, 13px);
+    font-weight: 700;
+  }
+
+  .home-onward__qq-copy-action-icon {
+    display: inline-grid;
+    width: 1.25em;
+    height: 1.25em;
+    place-items: center;
+  }
+
+  .home-onward__qq-copy-action-icon--done,
+  .home-onward__qq-copy[data-copy-state="copied"]
+    .home-onward__qq-copy-action-icon--copy {
+    display: none;
+  }
+
+  .home-onward__qq-copy[data-copy-state="copied"]
+    .home-onward__qq-copy-action-icon--done {
+    display: inline-grid;
+  }
+
+  .home-onward__copy-feedback {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .home-onward__qr {
+    display: grid;
+    gap: 0.45em;
+    justify-items: center;
+    font-size: clamp(9px, 0.65vw, 12px);
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .home-onward__qr-code {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    background: var(--palette-surface);
+  }
+
+  .home-onward__qr-code :global(svg) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .home-onward__guide {
+    position: absolute;
+    top: 10%;
+    right: var(--home-onward-guide-right);
+    z-index: 2;
+    box-sizing: border-box;
+    width: var(--home-onward-guide-width);
+    min-height: var(--home-onward-guide-height);
+    padding: clamp(20px, 2vw, 38px) var(--home-onward-guide-content-right)
+      clamp(54px, 8svh, 92px) 0;
+    background: var(--palette-surface);
+  }
+
+  .home-onward__service-links {
+    display: grid;
+    gap: clamp(8px, 1.1svh, 12px);
+  }
+
+  .home-onward__service-link {
+    display: grid;
+    grid-template-columns:
+      clamp(58px, 4.4vw, 84px) minmax(0, max-content) minmax(36px, 1fr)
+      clamp(30px, 2.2vw, 42px);
+    gap: clamp(10px, 0.8vw, 16px);
+    align-items: center;
+    min-height: clamp(76px, 9.5svh, 102px);
+    padding: 0;
+    color: inherit;
+    font-size: clamp(26px, 2.95vw, 56px);
+    font-weight: 700;
+    line-height: 1.05;
+    text-decoration: none;
+  }
+
+  .home-onward__service-icon {
+    grid-column: 1;
+    box-sizing: border-box;
+    width: clamp(58px, 4.4vw, 84px);
+    height: clamp(58px, 4.4vw, 84px);
+    padding: clamp(13px, 1vw, 19px);
+    background: var(--palette-fetarute-info);
+    color: var(--palette-fetarute-info-text);
+  }
+
+  .home-onward__service-link--future .home-onward__service-icon {
+    background: var(--palette-fetarute-exit);
+    color: var(--palette-fetarute-exit-text);
+  }
+
+  .home-onward__service-copy {
+    grid-column: 2;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .home-onward__service-link--future .home-onward__service-copy {
+    grid-column: 2 / 5;
+    white-space: normal;
+    text-wrap: balance;
+  }
+
+  .home-onward__service-arrow {
+    grid-column: 4;
+  }
+
+  .home-onward__service-link[aria-disabled="true"] {
+    color: var(--palette-muted);
+  }
+
+  .home-onward__service-arrow {
+    width: clamp(30px, 2.2vw, 42px);
+    height: clamp(30px, 2.2vw, 42px);
+  }
+
+  @media (min-width: 1024px) {
+    .home-onward[data-home-onward-locale="en"] {
+      /* 英文帮助文案需要固定的一档额外高度；两种 PIDS 状态仍共用同一外框，不在翻页时跳动。 */
+      --home-onward-board-screen-size: clamp(252px, 29.2svh, 268px);
+    }
+  }
+
+  @media (max-width: 1279px) and (min-width: 1024px) {
+    .home-onward {
+      --home-onward-board-width: clamp(360px, 39vw, 470px);
+      --home-onward-guide-width: clamp(360px, 38vw, 430px);
+    }
+
+    .home-onward__service-link {
+      grid-template-columns: 48px minmax(max-content, auto) minmax(38px, 1fr) 34px;
+      gap: 10px;
+      min-height: 76px;
+      font-size: clamp(22px, 2.5vw, 32px);
+    }
+
+    .home-onward__service-icon {
+      width: 48px;
+      height: 48px;
+      padding: 11px;
+    }
+  }
+
+  @media (max-width: 1023px) {
+    .home-onward {
+      /* 小屏延续“线路在左、正文向内容侧伸出”的首页铁路语法。 */
+      --home-onward-scroll-distance: clamp(940px, 150svh, 1260px);
+      --home-onward-track-width: clamp(20px, 5.8vw, 30px);
+      --home-onward-pids-inset: clamp(12px, 3.6vw, 18px);
+      --home-onward-board-screen-size: clamp(202px, 24svh, 210px);
+      /* 小屏把原本位于 PIDS 底部的安装留白翻到左侧，供探索线连续穿过。 */
+      --home-onward-board-block-size: calc(
+        var(--home-onward-board-screen-size) + var(--home-onward-pids-inset) * 2
+      );
+      /* 移动端所有线路对象共享同一条左侧轨道基准，避免各自使用相近但不同的 7vw。 */
+      --home-onward-mobile-track-left: 7vw;
+      /* 挂载面只略微越过轨道左缘，让线路穿过牌体而不生成过宽的灰色翼板。 */
+      --home-onward-mobile-mount-left: max(
+        12px,
+        calc(var(--home-onward-mobile-track-left) - 8px)
+      );
+      /* 纯文本页继续避开 station marker，避免紧凑挂载尺寸反向挤压阅读区域。 */
+      --home-onward-mobile-copy-left: max(
+        calc(
+          var(--home-onward-mobile-track-left) + var(--home-onward-track-width) +
+            62px
+        ),
+        20.9vw
+      );
+      /* PIDS 与导视内容保留列车安全距离，同时缩短轨道至屏幕之间的安装留白。 */
+      --home-onward-mobile-content-left: max(
+        calc(
+          var(--home-onward-mobile-track-left) + var(--home-onward-track-width) +
+            32px
+        ),
+        18vw
+      );
+      /* 左侧挂载留白从牌体外缘延伸到内容起点，PIDS 与导视牌共同复用。 */
+      --home-onward-mobile-mount-depth: calc(
+        var(--home-onward-mobile-content-left) - var(--home-onward-mobile-mount-left)
+      );
+    }
+
+    .home-onward__route-track {
+      right: auto;
+      left: var(--home-onward-mobile-track-left);
+    }
+
+    .home-onward__introduction {
+      min-height: 82svh;
+      padding: clamp(108px, 15svh, 150px) 22px clamp(96px, 13svh, 132px)
+        var(--home-onward-mobile-copy-left);
+    }
+
+    .home-onward__station-marker {
+      right: auto;
+      left: calc(
+        var(--home-onward-mobile-track-left) + var(--home-onward-track-width) - 1px
+      );
+      width: clamp(44px, 12vw, 72px);
+    }
+
+    .home-onward__introduction-copy {
+      gap: clamp(14px, 3.8vw, 20px);
+      width: auto;
+      margin-right: 0;
+      margin-left: 0;
+      text-align: left;
+    }
+
+    .home-onward__introduction-copy p {
+      font-size: clamp(14px, 3.7vw, 18px);
+    }
+
+    .home-onward__introduction-copy h2 {
+      font-size: clamp(34px, 9.6vw, 54px);
+      line-height: 1.14;
+    }
+
+    .home-onward__journey {
+      min-height: 1080px;
+    }
+
+    .home-onward__stage {
+      display: grid;
+      grid-template-rows: auto auto;
+      align-content: start;
+      gap: clamp(14px, 2svh, 20px);
+      min-height: 720px;
+      padding: clamp(104px, 13svh, 128px) 16px 54px
+        var(--home-onward-mobile-content-left);
+    }
+
+    .home-onward__pids-support {
+      display: none;
+    }
+
+    .home-onward__guide,
+    .home-onward__board-area {
+      position: relative;
+      inset: auto;
+      box-sizing: border-box;
+      width: calc(
+        100% + var(--home-onward-mobile-content-left) -
+          var(--home-onward-mobile-mount-left)
+      );
+      height: auto;
+      margin-left: calc(
+        var(--home-onward-mobile-mount-left) - var(--home-onward-mobile-content-left)
+      );
+      min-height: 0;
+    }
+
+    .home-onward__board-screen {
+      inset: var(--home-onward-pids-inset) var(--home-onward-pids-inset)
+        var(--home-onward-pids-inset)
+        var(--home-onward-mobile-mount-depth);
+    }
+
+    .home-onward__guide {
+      order: 2;
+      min-height: clamp(244px, 34svh, 286px);
+      padding: clamp(12px, 2svh, 18px) clamp(28px, 8vw, 42px)
+        clamp(28px, 5svh, 44px) var(--home-onward-mobile-mount-depth);
+    }
+
+    .home-onward__service-links {
+      grid-template-columns: 1fr;
+    }
+
+    .home-onward__service-link {
+      grid-template-columns: 44px minmax(0, max-content) minmax(24px, 1fr) 26px;
+      gap: 8px;
+      min-height: 64px;
+      font-size: clamp(17px, 4.6vw, 22px);
+    }
+
+    .home-onward__service-icon {
+      grid-column: 1;
+      width: 44px;
+      height: 44px;
+      padding: 10px;
+    }
+
+    .home-onward__service-copy {
+      grid-column: 2;
+    }
+
+    .home-onward__service-link--future .home-onward__service-copy {
+      grid-column: 2 / 5;
+    }
+
+    .home-onward__service-arrow {
+      grid-column: 4;
+      grid-row: 1;
+      width: 26px;
+      height: 26px;
+    }
+
+    .home-onward__board-area {
+      order: 1;
+    }
+
+    .home-onward__board--destinations {
+      grid-template-rows: auto 44px;
+    }
+
+    .home-onward th,
+    .home-onward td {
+      padding-inline: 0.28em;
+    }
+
+    .home-onward th {
+      padding-block: 0.12em;
+      font-size: clamp(10px, 2.65vw, 13px);
+    }
+
+    .home-onward td {
+      padding-block: 0;
+      border-bottom: 0;
+      box-shadow: inset 0 -1px var(--palette-border);
+      font-size: clamp(12px, 3.15vw, 15px);
+    }
+
+    .home-onward thead tr {
+      height: 26px;
+    }
+
+    .home-onward tbody tr {
+      height: 44px;
+    }
+
+    .home-onward th:last-child,
+    .home-onward td:last-child {
+      width: 42%;
+    }
+
+    .home-onward td a {
+      gap: 0.2em;
+      min-height: 44px;
+      padding-inline: 0;
+      font-size: clamp(11px, 2.9vw, 14px);
+    }
+
+    .home-onward__ticker {
+      min-height: 44px;
+      padding-block: 0.3em;
+      font-size: clamp(11px, 2.9vw, 14px);
+    }
+
+    .home-onward__board--help {
+      grid-template-columns: minmax(0, 1fr) clamp(64px, 18vw, 76px);
+      gap: 8px;
+      padding: 8px;
+    }
+
+    .home-onward__help-content {
+      gap: 8px;
+    }
+
+    .home-onward__help-copy p:not(.home-onward__help-title) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .home-onward__help-copy p {
+      font-size: clamp(12px, 3.1vw, 15px);
+    }
+
+    .home-onward__help-copy .home-onward__help-title {
+      font-size: clamp(18px, 4.8vw, 24px);
+    }
+
+    .home-onward__qq-copy {
+      grid-template-columns: minmax(0, 1fr) 18px;
+      gap: 7px;
+      min-height: 48px;
+      padding: 0.45em 0.5em;
+    }
+
+    .home-onward__qq-copy-icon {
+      display: none;
+    }
+
+    .home-onward__qq-copy-meta strong {
+      font-size: clamp(15px, 4vw, 19px);
+    }
+
+    .home-onward__qq-copy-action > span:last-child {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .home-onward__qr {
+      font-size: clamp(8px, 2.35vw, 11px);
+    }
+  }
+
+  @media (max-width: 1023px) and (max-height: 639px) {
+    .home-onward__stage {
+      min-height: 100svh;
+      padding-top: 84px;
+      padding-bottom: 0;
+    }
+  }
+
+  @media (forced-colors: active), (prefers-contrast: more) {
+    .home-onward__route-track,
+    .home-onward__station-marker,
+    .home-onward__pids-support,
+    .home-onward__guide,
+    .home-onward__board {
+      border: 2px solid currentColor;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-onward {
+      --home-onward-scroll-distance: 0px;
+    }
+
+    .home-onward__journey {
+      min-height: 100svh;
+    }
+
+    .home-onward__board {
+      transition: none;
+      transform: none;
+    }
+  }
+</style>

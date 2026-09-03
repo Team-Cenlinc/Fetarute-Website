@@ -4,7 +4,9 @@ import handTapIcon from "@phosphor-icons/core/assets/regular/hand-tap.svg?raw";
 import mouseSimpleIcon from "@phosphor-icons/core/assets/regular/mouse-simple.svg?raw";
 import DepartureGate from "@/components/DepartureGate.astro";
 import HomeCommunitySection from "@/components/HomeCommunitySection.astro";
+import HomeFooter from "@/components/HomeFooter.astro";
 import HomeJourneyQuickPick from "@/components/HomeJourneyQuickPick.astro";
+import HomeOnwardSection from "@/components/HomeOnwardSection.astro";
 import HomeSectionBreaker from "@/components/HomeSectionBreaker.astro";
 import HomeTransferSectionBreaker from "@/components/HomeTransferSectionBreaker.astro";
 import HomeTriServerSection from "@/components/HomeTriServerSection.astro";
@@ -597,6 +599,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       data-home-arrival-train
       data-tooltip-open="false"
       data-tooltip-mode="closed"
+      data-tooltip-visual-active="true"
       type="button"
       aria-label={messages.home.arrival.trainTooltip.triggerLabel}
       aria-controls="home-arrival-train-tooltip"
@@ -617,6 +620,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     <aside
       class="home-arrival__train-tooltip"
       id="home-arrival-train-tooltip"
+      data-home-arrival-tooltip-locale={locale}
       role="dialog"
       aria-label={messages.home.arrival.trainTooltip.title}
       aria-hidden="true"
@@ -637,6 +641,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
   <script>
     import {
       getHomeMobileTransferTrainState,
+      getHomeOnwardContentTrainProgress,
+      getHomeOnwardFooterTrainProgress,
       getHomeOnwardTrainChoreography,
       getHomeSectionBreakerEntryPathStartY,
       getHomeSectionBreakerScrollDistance,
@@ -732,6 +738,17 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       homeOnwardTransferRoute?.querySelector<HTMLButtonElement>(
         "[data-home-transfer-outgoing-train]",
       ) ?? null;
+    /* “续行”正文接住换乘段驶出的探索线列车；轨道和 sticky 行程都从真实 DOM 测量。 */
+    const homeOnwardContentRoute =
+      document.querySelector<HTMLElement>("[data-home-onward-content]");
+    const homeOnwardContentJourney =
+      homeOnwardContentRoute?.querySelector<HTMLElement>("[data-home-onward-journey]") ?? null;
+    const homeOnwardContentTrack =
+      homeOnwardContentRoute?.querySelector<HTMLElement>("[data-home-onward-route-track]") ?? null;
+    /* 低矮页尾仍属于探索线行程；轨道与容器都用于保持最后一班车可见、可点击。 */
+    const homeFooterRoute = document.querySelector<HTMLElement>("[data-home-footer]");
+    const homeFooterTrack =
+      homeFooterRoute?.querySelector<HTMLElement>(".home-footer__track") ?? null;
     /* 首个换乘站继续承担全页列车交接；续行另用局部路径状态，避免污染前段全程列车。 */
     const homeTransferBreakerRoute = homeTransferBreakerRoutes[0] ?? null;
     const homeTransferBreakerStage =
@@ -762,7 +779,6 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     const homeCommunityTrack = document.querySelector<HTMLElement>("[data-home-community-track]");
     const homeArrivalTrainTooltip = document.querySelector<HTMLElement>("#home-arrival-train-tooltip");
     const homeJourneyPicker = document.querySelector<HTMLElement>("[data-home-journey-picker]");
-    const homeJourneyMap = document.querySelector<HTMLElement>("[data-home-journey-map]");
     const homeJourneyClose = document.querySelector<HTMLButtonElement>("[data-home-journey-close]");
 
     if (
@@ -808,11 +824,15 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       homeOnwardRightTrack &&
       homeOnwardMobileTrain &&
       homeOnwardDesktopOutgoingTrain &&
+      homeOnwardContentRoute &&
+      homeOnwardContentJourney &&
+      homeOnwardContentTrack &&
+      homeFooterRoute &&
+      homeFooterTrack &&
       homeCommunityRoute &&
       homeCommunityTrack &&
       homeArrivalTrainTooltip &&
       homeJourneyPicker &&
-      homeJourneyMap &&
       homeJourneyClose
     ) {
       /** 将一条数值限制在页面进度范围，避免 overscroll 时列车离开已绘制的线路。 */
@@ -858,6 +878,34 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       /** 判断列车是否属于续行局部站牌，供滚离清理与响应式交接共用。 */
       const isOnwardTransferTrigger = (trigger: HTMLButtonElement) =>
         getTransferBreakerForTrigger(trigger) === homeOnwardTransferRoute;
+      /** 换乘站车身由本地按钮或全局路径绘制；该状态不得与 Tooltip 当前选中线路混用。 */
+      type HomeTransferTrainVisualOwner = "local" | "global-incoming" | "global-outgoing";
+      /** 单独记录车身绘制所有权，让 hover 只切换 Tooltip，不会重新显示同一班本地副本。 */
+      const setTransferTrainVisualOwner = (
+        transferRoute: HTMLElement,
+        owner: HomeTransferTrainVisualOwner,
+      ) => {
+        transferRoute.dataset.trainVisualOwner = owner;
+        const incomingTrain = transferRoute.querySelector<HTMLButtonElement>(
+          "[data-home-transfer-incoming-train]",
+        );
+        const outgoingTrain = transferRoute.querySelector<HTMLButtonElement>(
+          "[data-home-transfer-outgoing-train]",
+        );
+
+        /*
+         * 直接把当前由全局 SVG 代画的本地副本从命中与绘制树中隐藏。
+         * 该内联状态跟随滚动所有权更新，不再受 hover 改写 Tooltip 线路状态的级联影响。
+         */
+        incomingTrain?.style.setProperty(
+          "visibility",
+          owner === "global-incoming" ? "hidden" : "",
+        );
+        outgoingTrain?.style.setProperty(
+          "visibility",
+          owner === "global-outgoing" ? "hidden" : "",
+        );
+      };
       /** 判断事件目标是否属于任一列车入口，供焦点与点击外部关闭逻辑共用。 */
       const isTrainTooltipTrigger = (target: EventTarget | null) =>
         target instanceof Node && trainTooltipTriggers.some((trigger) => trigger.contains(target));
@@ -941,6 +989,18 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           headerBottom + trainLength / 2 + 16,
         );
       };
+      /**
+       * PIDS 停驻点使用导航完整态的稳定安全边界。
+       * Header 在 compact 与展开态之间改变高度时，列车不会因此在静止站台上轻微上下漂移。
+       */
+      const getOnwardContentTrainTopCenterY = (trainLength: number) => {
+        const stableHeaderBottom = window.innerWidth <= 760 ? 88 : 116;
+
+        return Math.max(
+          getRouteViewportTop() + trainLength / 2 + routeViewportEdgeGap,
+          stableHeaderBottom + trainLength / 2 + 16,
+        );
+      };
       /** 三服汇接车点读取首个 Station Mark 在 section 顶边时的位置，让交接帧就是创造服停靠帧。 */
       const getTriServerEntryTrainCenterY = (trainWidth: number) => {
         const firstMarker = homeTriServerStopMarkers[0];
@@ -1013,7 +1073,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
        */
       let routeTrainTooltipAnchorX = Number.NaN;
       let routeTrainTooltipAnchorY = Number.NaN;
-      let routeTrainTooltipAnchorSize = 44;
+      let routeTrainTooltipAnchorWidth = 44;
+      let routeTrainTooltipAnchorHeight = 44;
       /** 返回当前列车的视觉锚点；换乘站台实体仍直接使用自身边界。 */
       const getActiveTrainTooltipBounds = () => {
         const triggerBounds = activeTrainTooltipTrigger.getBoundingClientRect();
@@ -1030,16 +1091,16 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           return triggerBounds;
         }
 
-        const anchorSize = Math.max(44, routeTrainTooltipAnchorSize);
-        const anchorHalf = anchorSize / 2;
+        const anchorWidth = Math.max(44, routeTrainTooltipAnchorWidth);
+        const anchorHeight = Math.max(44, routeTrainTooltipAnchorHeight);
 
         return {
-          left: routeTrainTooltipAnchorX - anchorHalf,
-          top: routeTrainTooltipAnchorY - anchorHalf,
-          right: routeTrainTooltipAnchorX + anchorHalf,
-          bottom: routeTrainTooltipAnchorY + anchorHalf,
-          width: anchorSize,
-          height: anchorSize,
+          left: routeTrainTooltipAnchorX - anchorWidth / 2,
+          top: routeTrainTooltipAnchorY - anchorHeight / 2,
+          right: routeTrainTooltipAnchorX + anchorWidth / 2,
+          bottom: routeTrainTooltipAnchorY + anchorHeight / 2,
+          width: anchorWidth,
+          height: anchorHeight,
         };
       };
       /**
@@ -1048,8 +1109,6 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
        */
       const updateTrainTooltipPlacement = () => {
         const tooltipEdge = 20;
-        /* 恢复原有 16px 呼吸距离，让 Tooltip 仍明显归属于当前列车，又不会与车身矩形粘成一块。 */
-        const tooltipGap = 16;
         const trainBounds = getActiveTrainTooltipBounds();
         const visualViewport = window.visualViewport;
         const viewportLeft = visualViewport?.offsetLeft ?? 0;
@@ -1059,8 +1118,22 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         const viewportRight = viewportLeft + viewportWidth;
         const viewportBottom = viewportTop + viewportHeight;
         const headerBottom = siteHeader ? Math.max(0, siteHeader.getBoundingClientRect().bottom) : 0;
-        const preferredSafeTop = Math.max(viewportTop + tooltipEdge, headerBottom + 12);
+        /* 极矮视口允许 Tooltip 覆盖 Header，优先一次展示全部四站而不是裁切或恢复内层滚动。 */
+        const preferredSafeTop =
+          viewportHeight <= 440
+            ? viewportTop + tooltipEdge
+            : Math.max(viewportTop + tooltipEdge, headerBottom + 12);
         const tooltipStyle = window.getComputedStyle(homeArrivalTrainTooltip);
+        /* 英文站名更长；由 CSS 按语言提供理想宽度，脚本只负责把它限制在真实 visual viewport 内。 */
+        const preferredTooltipInlineSize =
+          Number.parseFloat(
+            tooltipStyle.getPropertyValue("--home-arrival-tooltip-preferred-inline-size"),
+          ) || 232;
+        /* 间距与列车的视口尺度一起响应，避免小屏在短车身旁留下过宽断层。 */
+        const tooltipGap =
+          Number.parseFloat(
+            tooltipStyle.getPropertyValue("--home-arrival-tooltip-anchor-gap"),
+          ) || 8;
         const tooltipBorderBlockSize =
           (Number.parseFloat(tooltipStyle.borderTopWidth) || 0) +
           (Number.parseFloat(tooltipStyle.borderBottomWidth) || 0);
@@ -1071,7 +1144,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
 
         homeArrivalTrainTooltip.style.setProperty(
           "--home-arrival-tooltip-inline-size",
-          `${Math.max(0, Math.min(320, viewportWidth - tooltipEdge * 2))}px`,
+          `${Math.max(0, Math.min(preferredTooltipInlineSize, viewportWidth - tooltipEdge * 2))}px`,
         );
         homeArrivalTrainTooltip.style.setProperty(
           "--home-arrival-tooltip-content-max-block-size",
@@ -1163,6 +1236,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
        */
       const renderOnwardTransferTrains = () => {
         if (desktopRouteGalleryQuery.matches) {
+          setTransferTrainVisualOwner(homeOnwardTransferRoute, "local");
           const incomingLabel =
             homeOnwardTransferRoute.dataset.homeTransferIncomingTrainLabel;
           const outgoingLabel =
@@ -1271,6 +1345,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         homeArrivalTrainVisual.style.removeProperty("color");
         homeOnwardTransferRoute.dataset.routeEnhanced = String(!reducedMotionQuery.matches);
         homeOnwardTransferRoute.dataset.onwardOutgoingVisualActive = "false";
+        setTransferTrainVisualOwner(homeOnwardTransferRoute, "local");
 
         const { routeProgress, topSectionRatio, colorProgress } =
           getHomeMobileTransferTrainState({
@@ -1350,6 +1425,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         const transferBounds = homeTransferBreakerRoute.getBoundingClientRect();
         const communityBounds = homeCommunityRoute.getBoundingClientRect();
         const onwardBounds = homeOnwardTransferRoute.getBoundingClientRect();
+        const onwardContentBounds = homeOnwardContentRoute.getBoundingClientRect();
+        const footerBounds = homeFooterRoute.getBoundingClientRect();
         const viewportMiddle = getRouteViewportTop() + getRouteViewportHeight() / 2;
         const isReadingTransferBreaker =
           transferBounds.top <= viewportMiddle && transferBounds.bottom > viewportMiddle;
@@ -1357,6 +1434,10 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           communityBounds.top <= viewportMiddle && communityBounds.bottom > viewportMiddle;
         const isReadingOnward =
           onwardBounds.top <= viewportMiddle && onwardBounds.bottom > viewportMiddle;
+        const isReadingOnwardContent =
+          onwardContentBounds.top <= viewportMiddle && onwardContentBounds.bottom > viewportMiddle;
+        const isReadingFooter =
+          footerBounds.top <= viewportMiddle && footerBounds.bottom > viewportMiddle;
         const isOnwardSectionVisible =
           onwardBounds.bottom > getRouteViewportTop() &&
           onwardBounds.top < getRouteViewportBottom();
@@ -1378,7 +1459,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         if (
           homeArrivalTrain.dataset.tooltipOpen === "true" &&
           isOnwardTransferTrigger(activeTrainTooltipTrigger) &&
-          !isOnwardSectionVisible
+          !isOnwardSectionVisible &&
+          !isReadingOnwardContent
         ) {
           setTrainTooltipOpen(false);
           suppressPassiveTrainTooltipOpen();
@@ -1407,6 +1489,45 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           if (homeArrivalTrain.dataset.tooltipOpen === "true") {
             updateTrainTooltipPlacement();
           }
+          return;
+        }
+
+        if (isReadingOnwardContent) {
+          const contentTrainWidth = desktopRouteGalleryQuery.matches
+            ? trainWidth
+            : Math.min(trainWidth, 88);
+
+          if (
+            homeArrivalTrain.dataset.tooltipOpen === "true" &&
+            isOnwardTransferTrigger(activeTrainTooltipTrigger)
+          ) {
+            handoffTrainTooltipTrigger(homeArrivalTrain);
+          }
+
+          setTransferTrainAppearance(1, homeOnwardTransferRoute);
+          renderHomeOnwardContentTrain(
+            getRouteBottomTrainCenterY(contentTrainWidth),
+            trainWidth,
+            trainHeight,
+          );
+          homeArrivalTrain.dataset.routeVisible = "true";
+          homeArrivalTrainVisual.dataset.routeVisible = "true";
+          homeArrivalTrain.disabled = false;
+          updateTrainTooltipPlacement();
+          return;
+        }
+
+        if (isReadingFooter) {
+          setTransferTrainAppearance(1, homeOnwardTransferRoute);
+          renderHomeFooterTrain(
+            getRouteBottomTrainCenterY(trainWidth),
+            trainWidth,
+            trainHeight,
+          );
+          homeArrivalTrain.dataset.routeVisible = "true";
+          homeArrivalTrainVisual.dataset.routeVisible = "true";
+          homeArrivalTrain.disabled = false;
+          updateTrainTooltipPlacement();
           return;
         }
 
@@ -1490,7 +1611,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
 
         routeTrainTooltipAnchorX = trainMidpoint.x;
         routeTrainTooltipAnchorY = trainMidpoint.y;
-        routeTrainTooltipAnchorSize = Math.max(44, trainHeight);
+        routeTrainTooltipAnchorWidth = Math.max(44, trainHeight);
+        routeTrainTooltipAnchorHeight = Math.max(44, trainHeight);
 
         return { hitArea, trainMidpoint };
       };
@@ -1541,13 +1663,14 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           "--home-route-train-y",
           `${hitArea.top}px`,
         );
+        /* Tooltip 命中区必须以透明按钮自己的未变换尺寸为基准，不能混用收窄后的视觉车身。 */
         homeArrivalRoute.style.setProperty(
           "--home-route-train-hit-scale-x",
-          String(hitArea.width / trainWidth),
+          String(Math.max(0, hitArea.width) / Math.max(1, homeArrivalTrain.offsetWidth)),
         );
         homeArrivalRoute.style.setProperty(
           "--home-route-train-hit-scale-y",
-          String(hitArea.height / trainHeight),
+          String(Math.max(0, hitArea.height) / Math.max(1, homeArrivalTrain.offsetHeight)),
         );
 
         if (homeArrivalTrain.dataset.tooltipOpen === "true") {
@@ -1940,6 +2063,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       ) => {
         const trainCenterDistance = trainTailDistance + trainWidth / 2;
 
+        homeTransferBreakerRoute.dataset.activeTrain = "incoming";
+        setTransferTrainVisualOwner(homeTransferBreakerRoute, "global-incoming");
         setTransferTrainAppearance(0);
         homeArrivalTrain.dataset.routeSegment =
           trainCenterDistance < pathState.rightVerticalLength
@@ -1964,7 +2089,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       ) => {
         const trainCenterDistance = trainTailDistance + trainWidth / 2;
 
-        homeTransferBreakerRoute.dataset.activeTrain = "departing";
+        homeTransferBreakerRoute.dataset.activeTrain = "outgoing";
+        setTransferTrainVisualOwner(homeTransferBreakerRoute, "global-outgoing");
         setTransferTrainAppearance(1);
         homeArrivalTrain.dataset.routeSegment =
           trainCenterDistance < pathState.horizontalEndDistance
@@ -1996,6 +2122,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         homeTransferBreakerRoute.dataset.activeTrain = isOutgoingTrainActive
           ? "outgoing"
           : "incoming";
+        setTransferTrainVisualOwner(homeTransferBreakerRoute, "local");
         setTransferTrainAppearance(isOutgoingTrainActive ? 1 : 0);
         homeArrivalTrainVisual.dataset.routeVisible = "false";
         homeArrivalRoute.style.setProperty("--home-route-train-x", `${activeTrainBounds.left}px`);
@@ -2004,10 +2131,11 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         homeArrivalRoute.style.setProperty("--home-route-train-hit-scale-y", "1");
         routeTrainTooltipAnchorX = activeTrainBounds.left + activeTrainBounds.width / 2;
         routeTrainTooltipAnchorY = activeTrainBounds.top + activeTrainBounds.height / 2;
-        routeTrainTooltipAnchorSize = Math.max(
+        routeTrainTooltipAnchorWidth = Math.max(
           44,
           Math.min(activeTrainBounds.width, activeTrainBounds.height),
         );
+        routeTrainTooltipAnchorHeight = routeTrainTooltipAnchorWidth;
         homeArrivalTrain.dataset.routeSegment = isOutgoingTrainActive
           ? "transfer-outgoing-platform"
           : "transfer-incoming-platform";
@@ -2063,6 +2191,54 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
 
         homeArrivalTrain.dataset.routeSegment = routeSegment;
         renderTrainOnCurrentPath(journeyLength, trainTailDistance, trainWidth, trainHeight);
+        /* 直轨 Tooltip 使用真实长方形车身；方形中心锚点会在纵向和横向产生相反的错误间距。 */
+        routeTrainTooltipAnchorWidth = Math.max(44, trainHeight);
+        routeTrainTooltipAnchorHeight = Math.max(44, trainWidth);
+      };
+
+      /** 续行正文始终让列车压在探索线中心；响应式布局只改变列车长度，不另造运行槽。 */
+      const renderHomeOnwardContentTrain = (
+        trainCenterY: number,
+        trainWidth: number,
+        trainHeight: number,
+      ) => {
+        const trackBounds = homeOnwardContentTrack.getBoundingClientRect();
+        const isDesktop = desktopRouteGalleryQuery.matches;
+        const contentTrainWidth = isDesktop ? trainWidth : Math.min(trainWidth, 88);
+        const trainTrackX = trackBounds.left + trackBounds.width / 2;
+
+        /* 导视牌据此为桌面列车保留真实宽度，避免箭头或文字与车体相撞。 */
+        homeOnwardContentRoute.style.setProperty(
+          "--home-onward-active-train-thickness",
+          `${trainHeight}px`,
+        );
+        renderViewportVerticalTrain(
+          trainTrackX,
+          trainCenterY,
+          contentTrainWidth,
+          trainHeight,
+          "onward-content-track",
+        );
+      };
+
+      /** 让探索线列车从续行正文进入低矮页尾后继续停靠在可点击的底部安全区。 */
+      const renderHomeFooterTrain = (
+        trainCenterY: number,
+        trainWidth: number,
+        trainHeight: number,
+      ) => {
+        const trackBounds = homeFooterTrack.getBoundingClientRect();
+        const isDesktop = desktopRouteGalleryQuery.matches;
+        const footerTrainWidth = isDesktop ? trainWidth : Math.min(trainWidth, 88);
+        const trainTrackX = trackBounds.left + trackBounds.width / 2;
+
+        renderViewportVerticalTrain(
+          trainTrackX,
+          trainCenterY,
+          footerTrainWidth,
+          trainHeight,
+          "footer",
+        );
       };
 
       /**
@@ -2111,7 +2287,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           handoffProgress,
         );
 
-        homeTransferBreakerRoute.dataset.activeTrain = "departing";
+        homeTransferBreakerRoute.dataset.activeTrain = "outgoing";
+        setTransferTrainVisualOwner(homeTransferBreakerRoute, "global-outgoing");
         setTransferTrainAppearance(1);
         renderViewportVerticalTrain(
           trackX,
@@ -2347,6 +2524,9 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         const communityBottom = communityTop + homeCommunityRoute.offsetHeight;
         const onwardTop = getDocumentTop(homeOnwardTransferRoute);
         const onwardPinnedEnd = onwardTop + homeOnwardTransferScrollDistance;
+        const onwardContentTop = getDocumentTop(homeOnwardContentRoute);
+        const onwardContentBottom = onwardContentTop + homeOnwardContentRoute.offsetHeight;
+        const footerBottom = getDocumentTop(homeFooterRoute) + homeFooterRoute.offsetHeight;
         const trainWidth = homeArrivalTrain.offsetWidth;
         const trainHeight = homeArrivalTrain.offsetHeight;
         const communityHeaderOffset = siteHeader
@@ -2434,6 +2614,26 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           homeOnwardTransferScrollDistance > 0 &&
           window.scrollY > onwardTop &&
           window.scrollY <= onwardPinnedEnd + 1;
+        /* 前一 sticky 舞台结束时正文顶边刚从视口底部接轨；正文离开前列车始终保持可见。 */
+        const onwardContentRevealStart = Math.max(
+          onwardPinnedEnd,
+          onwardContentTop - getRouteViewportBottom(),
+        );
+        const onwardContentJourneyEnd = Math.max(
+          onwardContentTop,
+          onwardContentBottom - getRouteViewportBottom() + 1,
+        );
+        const onwardContentJourneyTop = getDocumentTop(homeOnwardContentJourney);
+        const isOnwardContentPhase =
+          window.scrollY > onwardContentRevealStart + 1 &&
+          window.scrollY <= onwardContentJourneyEnd + 1;
+        const footerJourneyEnd = Math.max(
+          onwardContentJourneyEnd,
+          footerBottom - getRouteViewportBottom() + 1,
+        );
+        const isFooterPhase =
+          window.scrollY > onwardContentJourneyEnd + 1 &&
+          window.scrollY <= footerJourneyEnd + 1;
         const isOnwardLocalIncomingCarrier = desktopRouteGalleryQuery.matches
           ? isOnwardPinnedPhase
           : window.scrollY > communityViewportJourneyEnd &&
@@ -2478,6 +2678,14 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           activeTrainTooltipTrigger === homeArrivalTrain
         ) {
           handoffTrainTooltipTrigger(homeOnwardMobileTrain);
+        } else if (
+          homeArrivalTrain.dataset.tooltipOpen === "true" &&
+          isOnwardContentPhase &&
+          isOnwardTransferTrigger(activeTrainTooltipTrigger)
+        ) {
+          homeArrivalTrain.dataset.routeVisible = "true";
+          homeArrivalTrain.disabled = false;
+          handoffTrainTooltipTrigger(homeArrivalTrain);
         }
 
         const onwardBounds = homeOnwardTransferRoute.getBoundingClientRect();
@@ -2488,7 +2696,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         if (
           homeArrivalTrain.dataset.tooltipOpen === "true" &&
           isOnwardTransferTrigger(activeTrainTooltipTrigger) &&
-          !isOnwardSectionVisible
+          !isOnwardSectionVisible &&
+          !isOnwardContentPhase
         ) {
           /* 局部列车离开视口即结束自己的 Tooltip；只有同一班 BS 列车允许交还全局触发器。 */
           setTrainTooltipOpen(false);
@@ -2502,6 +2711,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         const isRouteActive =
           isOnwardIncomingPhase ||
           isOnwardPinnedPhase ||
+          isOnwardContentPhase ||
+          isFooterPhase ||
           isCommunityPhase ||
           isTransferToCommunityPhase ||
           isTransferBreakerPhase ||
@@ -2520,6 +2731,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           !isCommunityPhase &&
           !isOnwardIncomingPhase &&
           !isOnwardPinnedPhase &&
+          !isOnwardContentPhase &&
+          !isFooterPhase &&
           !isOnwardLocalTooltipActive &&
           !isTransferToCommunityPhase &&
           !isTransferBreakerPhase
@@ -2562,7 +2775,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         }
 
         if (isOnwardIncomingPhase) {
-          homeOnwardTransferRoute.dataset.activeTrain = "approaching";
+          homeOnwardTransferRoute.dataset.activeTrain = "incoming";
+          setTransferTrainVisualOwner(homeOnwardTransferRoute, "global-incoming");
           setTransferTrainAppearance(0, homeOnwardTransferRoute);
 
           if (desktopRouteGalleryQuery.matches) {
@@ -2601,6 +2815,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         }
 
         if (isOnwardPinnedPhase) {
+          setTransferTrainVisualOwner(homeOnwardTransferRoute, "local");
           homeOnwardTransferRoute.dataset.activeTrain =
             activeTrainTooltipTrigger === homeOnwardDesktopOutgoingTrain
               ? "outgoing"
@@ -2611,6 +2826,82 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
               ? "onward-incoming-horizontal"
               : (homeOnwardDesktopOutgoingTrain.dataset.routeSegment ??
                 "onward-outgoing-horizontal");
+          return;
+        }
+
+        if (isOnwardContentPhase) {
+          setTransferTrainVisualOwner(homeOnwardTransferRoute, "global-outgoing");
+          const contentTrainWidth = desktopRouteGalleryQuery.matches
+            ? trainWidth
+            : Math.min(trainWidth, 88);
+          const isContentEntering = window.scrollY < onwardContentTop;
+          const contentProgress = isContentEntering
+            ? clampRouteProgress(
+                (window.scrollY - onwardContentRevealStart) /
+                  Math.max(1, onwardContentTop - onwardContentRevealStart),
+              )
+            : getHomeOnwardContentTrainProgress({
+                scrollY: window.scrollY,
+                contentTop: onwardContentTop,
+                boardJourneyTop: onwardContentJourneyTop,
+              });
+          const trainCenterY = isContentEntering
+            ? interpolateRoutePosition(
+                getRouteBottomTrainCenterY(contentTrainWidth),
+                getOnwardContentTrainTopCenterY(contentTrainWidth),
+                contentProgress,
+              )
+            : interpolateRoutePosition(
+                getOnwardContentTrainTopCenterY(contentTrainWidth),
+                getRouteBottomTrainCenterY(contentTrainWidth),
+                contentProgress,
+              );
+          const outgoingLabel =
+            homeOnwardTransferRoute.dataset.homeTransferOutgoingTrainLabel;
+
+          if (outgoingLabel) {
+            homeArrivalTrain.setAttribute("aria-label", outgoingLabel);
+          }
+          setTransferTrainAppearance(1, homeOnwardTransferRoute);
+          renderHomeOnwardContentTrain(trainCenterY, trainWidth, trainHeight);
+          return;
+        }
+
+        if (isFooterPhase) {
+          setTransferTrainVisualOwner(homeOnwardTransferRoute, "global-outgoing");
+          const contentTrainWidth = desktopRouteGalleryQuery.matches
+            ? trainWidth
+            : Math.min(trainWidth, 88);
+          const contentTrainProgress = getHomeOnwardContentTrainProgress({
+            scrollY: onwardContentJourneyEnd,
+            contentTop: onwardContentTop,
+            boardJourneyTop: onwardContentJourneyTop,
+          });
+          const footerProgress = clampRouteProgress(
+            (window.scrollY - onwardContentJourneyEnd) /
+              Math.max(1, footerJourneyEnd - onwardContentJourneyEnd),
+          );
+          const footerTrainProgress = getHomeOnwardFooterTrainProgress(
+            contentTrainProgress,
+            footerProgress,
+          );
+          const footerTrainCenterY = interpolateRoutePosition(
+            getOnwardContentTrainTopCenterY(contentTrainWidth),
+            getRouteBottomTrainCenterY(contentTrainWidth),
+            footerTrainProgress,
+          );
+          const outgoingLabel =
+            homeOnwardTransferRoute.dataset.homeTransferOutgoingTrainLabel;
+
+          if (outgoingLabel) {
+            homeArrivalTrain.setAttribute("aria-label", outgoingLabel);
+          }
+          setTransferTrainAppearance(1, homeOnwardTransferRoute);
+          renderHomeFooterTrain(
+            footerTrainCenterY,
+            trainWidth,
+            trainHeight,
+          );
           return;
         }
 
@@ -2666,7 +2957,6 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
                 revealProgress,
               );
 
-              homeTransferBreakerRoute.dataset.activeTrain = "approaching";
               renderTransferIncomingTrain(
                 pathState,
                 trainTailDistance,
@@ -2700,7 +2990,6 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
                   incomingProgress,
                 );
 
-                homeTransferBreakerRoute.dataset.activeTrain = "approaching";
                 renderTransferIncomingTrain(
                   pathState,
                   trainTailDistance,
@@ -2966,6 +3255,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       /** 选择任一换乘站的具体服务列车，并让线路色、章节名、锚点与可观测轨段保持一致。 */
       const activateTrainTooltipTrigger = (trigger: HTMLButtonElement) => {
         activeTrainTooltipTrigger = trigger;
+        homeArrivalTrain.dataset.tooltipVisualActive = String(trigger === homeArrivalTrain);
         const transferRoute = getTransferBreakerForTrigger(trigger);
 
         if (transferRoute) {
@@ -2983,7 +3273,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
               : 1;
           const isIncomingTrain = appearanceProgress < 0.5;
           transferRoute.dataset.activeTrain = isIncomingTrain ? "incoming" : "outgoing";
-          setTransferTrainAppearance(appearanceProgress, transferRoute);
+          /* hover 只选择 Tooltip 的服务；全局路径车色仍由当前滚动阶段独立控制。 */
           homeArrivalTrain.dataset.routeSegment = isOnwardMobileTrain
             ? isIncomingTrain
               ? "transfer-mobile-incoming"
@@ -3288,33 +3578,6 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         }
       });
       homeJourneyClose.addEventListener("click", closeTrainTooltipAndRestoreFocus);
-
-      /**
-       * 只允许下半路线图消费纵向滚轮；到达边界或指针停在本站栏时阻断滚动链，避免文档被带离当前列车。
-       * 缩放手势继续交给浏览器，不能为了滚动隔离而禁用用户的页面缩放。
-       */
-      const containTrainTooltipWheel = (event: WheelEvent) => {
-        if (event.ctrlKey) {
-          return;
-        }
-
-        const isInsideJourneyMap = event.target instanceof Node && homeJourneyMap.contains(event.target);
-
-        if (!isInsideJourneyMap) {
-          event.preventDefault();
-          return;
-        }
-
-        const isAtStart = homeJourneyMap.scrollTop <= 0;
-        const isAtEnd =
-          homeJourneyMap.scrollTop + homeJourneyMap.clientHeight >= homeJourneyMap.scrollHeight - 1;
-
-        if ((event.deltaY < 0 && isAtStart) || (event.deltaY > 0 && isAtEnd)) {
-          event.preventDefault();
-        }
-      };
-
-      homeArrivalTrainTooltip.addEventListener("wheel", containTrainTooltipWheel, { passive: false });
 
       document.addEventListener("pointerdown", (event) => {
         if (
@@ -3777,5 +4040,13 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     incomingTrainColor={onwardIncomingTrainColor}
     outgoingTrainColor={onwardOutgoingTrainColor}
     trainTooltipTriggerLabel={messages.home.arrival.trainTooltip.triggerLabel}
+  />
+  <HomeOnwardSection
+    locale={locale}
+    lineColor={`var(${getRailwayLineCssVariableName(onwardOutgoingLine)})`}
+  />
+  <HomeFooter
+    locale={locale}
+    lineColor={`var(${getRailwayLineCssVariableName(onwardOutgoingLine)})`}
   />
 </BaseLayout>

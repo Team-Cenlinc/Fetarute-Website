@@ -65,6 +65,9 @@ export interface HomeOnwardTrainChoreography {
   outgoingProgress: number;
 }
 
+/** 续行出发厅左侧 PIDS 当前承担的内容语义。 */
+export type HomeOnwardDepartureBoardState = "destinations" | "help";
+
 /** 一段弯曲列车路径上的视口采样点。 */
 export interface HomeTrainPathPoint {
   /** 采样点在固定视口中的横坐标。 */
@@ -81,6 +84,18 @@ export interface HomeTrainPathHitAreaOptions {
   trainThickness: number;
   /** 即使车身更窄也必须保留的最小点击尺寸。 */
   minimumTargetSize?: number;
+}
+
+/** 续行正文列车经过介绍并停驻 PIDS 时所需的滚动边界。 */
+export interface HomeOnwardContentTrainProgressOptions {
+  /** 当前页面滚动位置。 */
+  scrollY: number;
+  /** 续行正文 section 的文档顶边。 */
+  contentTop: number;
+  /** PIDS sticky 行程开始的文档顶边。 */
+  boardJourneyTop: number;
+  /** 列车停驻在 PIDS 舞台时的竖轨进度，默认避开导向牌停在下方。 */
+  boardProgress?: number;
 }
 
 /** 竖轨列车在视口底部保持完整可见所需的几何参数。 */
@@ -234,6 +249,59 @@ export const getHomeOnwardTrainChoreography = (
     handoffProgress,
     outgoingProgress,
   };
+};
+
+/**
+ * 把独立续行内容页的滚动进度映射成两个 PIDS 阅读拍点。
+ * 页面先完整展示目的地，再由首次到访帮助接管；减少动态只停用空间位移，不隐藏第二页信息。
+ */
+export const getHomeOnwardDepartureBoardState = (
+  routeProgress: number,
+): HomeOnwardDepartureBoardState => {
+  const clampedProgress = Number.isFinite(routeProgress)
+    ? Math.min(Math.max(routeProgress, 0), 1)
+    : 0;
+
+  return clampedProgress >= 0.62 ? "help" : "destinations";
+};
+
+/**
+ * 让续行列车在介绍段驶向站台，并在 PIDS 两个状态期间保持静止。
+ * 离场由 Footer 的真实可见行程接管，避免把整段位移挤进正文与 Footer 之间的一像素边界。
+ */
+export const getHomeOnwardContentTrainProgress = ({
+  scrollY,
+  contentTop,
+  boardJourneyTop,
+  boardProgress = 0.78,
+}: HomeOnwardContentTrainProgressOptions) => {
+  const clampedBoardProgress = Math.min(Math.max(boardProgress, 0), 1);
+
+  if (scrollY < boardJourneyTop) {
+    const approachProgress = Math.min(
+      Math.max((scrollY - contentTop) / Math.max(1, boardJourneyTop - contentTop), 0),
+      1,
+    );
+
+    return approachProgress * clampedBoardProgress;
+  }
+
+  return clampedBoardProgress;
+};
+
+/** 把 Footer 的原生滚动进度映射为列车从 PIDS 停驻点到视口底部的连续离场进度。 */
+export const getHomeOnwardFooterTrainProgress = (
+  contentTrainProgress: number,
+  footerProgress: number,
+) => {
+  const clampedContentProgress = Number.isFinite(contentTrainProgress)
+    ? Math.min(Math.max(contentTrainProgress, 0), 1)
+    : 0;
+  const clampedFooterProgress = Number.isFinite(footerProgress)
+    ? Math.min(Math.max(footerProgress, 0), 1)
+    : 0;
+
+  return clampedContentProgress + (1 - clampedContentProgress) * clampedFooterProgress;
 };
 
 /**
