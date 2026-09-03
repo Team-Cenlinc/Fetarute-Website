@@ -116,7 +116,7 @@
   text-align: center;
 }
 
-.home-arrival__copy h1 {
+.home-arrival__copy h2 {
   margin: 0;
   justify-self: center;
   font-size: clamp(76px, 10.42vw, 200px);
@@ -144,7 +144,7 @@
   --home-arrival-name-gap: clamp(12px, 1.1vw, 20px);
 }
 
-.home-arrival[data-home-arrival-locale="en"] .home-arrival__copy h1 {
+.home-arrival[data-home-arrival-locale="en"] .home-arrival__copy h2 {
   /* 英文站名去掉冠词后回到较自然的字宽，仍以中心锚点约束，不让字形右溢出破坏居中。 */
   font-stretch: 75%;
   font-size: clamp(60px, 6.67vw, 128px);
@@ -667,13 +667,13 @@ html[data-home-gallery-horizontal-input] {
     margin-top: var(--home-arrival-copy-top);
   }
 
-  .home-arrival__copy h1 {
+  .home-arrival__copy h2 {
     max-width: 100%;
     font-size: clamp(58px, 17vw, 98px);
     white-space: normal;
   }
 
-  .home-arrival[data-home-arrival-locale="en"] .home-arrival__copy h1 {
+  .home-arrival[data-home-arrival-locale="en"] .home-arrival__copy h2 {
     font-size: clamp(38px, 10.5vw, 58px);
     line-height: 1.04;
   }

@@ -162,6 +162,15 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
   type DepartureGateExitDirection = "fade" | "up";
   /** SVG 导引线使用的局部坐标点，始终相对于出发交互舞台。 */
   type DepartureGuidePoint = { x: number; y: number };
+  /** 一次拖卡手势开始时固定的三组几何；拖动期间只由位移推导卡片中心，避免每个 pointermove 重读布局。 */
+  type DepartureDragGeometry = {
+    /** 全屏 Guard 的可用边界；当前手势中视口不变，因此只需读取一次。 */
+    gateBounds: DOMRect;
+    /** 卡片按下瞬间已经包含既有 transform 的实际边界。 */
+    passBounds: DOMRect;
+    /** Validator 的命中边界；拖卡状态只改变其颜色，不改变几何。 */
+    readerBounds: DOMRect;
+  };
   /** 回退停止后的单一物理滚动状态；输入停止前不创建它，避免与浏览器原生惯性争夺位置。 */
   type DepartureReturnSettleMotion = {
     /** 当前文档滚动位置，单位为 CSS px。 */
@@ -303,7 +312,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
       let passRotation = -5;
       let dragStartOffsetX = 0;
       let dragStartOffsetY = 0;
-      let dragStartPassBounds: DOMRect | undefined;
+      let dragGeometry: DepartureDragGeometry | undefined;
       let draggedDuringPointerSession = false;
       let suppressPassClick = false;
       let hasDeparted = false;
@@ -693,7 +702,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
       const stopDragging = () => {
         const capturedPointerId = dragPointerId;
         dragPointerId = undefined;
-        dragStartPassBounds = undefined;
+        dragGeometry = undefined;
         if (capturedPointerId !== undefined && pass.hasPointerCapture(capturedPointerId)) {
           pass.releasePointerCapture(capturedPointerId);
         }
@@ -759,10 +768,19 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
 
       /** 根据 Validator 的实际尺寸定义感应区，卡片靠近设备即可触发，不要求放到像素级中心。 */
       const isPassNearReader = () => {
-        const passRect = pass.getBoundingClientRect();
-        const readerRect = reader.getBoundingClientRect();
-        const horizontalDistance = passRect.left + passRect.width / 2 - (readerRect.left + readerRect.width / 2);
-        const verticalDistance = passRect.top + passRect.height / 2 - (readerRect.top + readerRect.height / 2);
+        const cachedGeometry = dragGeometry;
+        const passRect = cachedGeometry?.passBounds ?? pass.getBoundingClientRect();
+        const readerRect = cachedGeometry?.readerBounds ?? reader.getBoundingClientRect();
+        const currentPassCentreX =
+          passRect.left +
+          passRect.width / 2 +
+          (cachedGeometry ? passOffsetX - dragStartOffsetX : 0);
+        const currentPassCentreY =
+          passRect.top +
+          passRect.height / 2 +
+          (cachedGeometry ? passOffsetY - dragStartOffsetY : 0);
+        const horizontalDistance = currentPassCentreX - (readerRect.left + readerRect.width / 2);
+        const verticalDistance = currentPassCentreY - (readerRect.top + readerRect.height / 2);
         const snapRadius = Math.max(108, Math.min(Math.max(readerRect.width, readerRect.height) * 0.62, 220));
 
         return Math.hypot(horizontalDistance, verticalDistance) <= snapRadius;
@@ -770,8 +788,8 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
 
       /** 将拖动范围约束到全屏遮罩之内，使卡片可以经过页面任意位置但不会遗失到可视区域外。 */
       const movePassWithinGate = (horizontalDelta: number, verticalDelta: number) => {
-        const gateBounds = departureGate.getBoundingClientRect();
-        const initialBounds = dragStartPassBounds ?? pass.getBoundingClientRect();
+        const gateBounds = dragGeometry?.gateBounds ?? departureGate.getBoundingClientRect();
+        const initialBounds = dragGeometry?.passBounds ?? pass.getBoundingClientRect();
         const safeInset = Math.max(12, Math.min(gateBounds.width, gateBounds.height) * 0.018);
         const minOffsetX = gateBounds.left + safeInset - initialBounds.left;
         const maxOffsetX = gateBounds.right - safeInset - initialBounds.right;
@@ -1136,7 +1154,11 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         dragStartY = event.clientY;
         dragStartOffsetX = passOffsetX;
         dragStartOffsetY = passOffsetY;
-        dragStartPassBounds = pass.getBoundingClientRect();
+        dragGeometry = {
+          gateBounds: departureGate.getBoundingClientRect(),
+          passBounds: pass.getBoundingClientRect(),
+          readerBounds: reader.getBoundingClientRect(),
+        };
         draggedDuringPointerSession = false;
         setState("dragging");
         status.textContent = departureGate.dataset.draggingStatus ?? status.textContent;
@@ -1165,6 +1187,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
       const settleDrag = (event: PointerEvent) => {
         if (dragPointerId !== event.pointerId) return;
 
+        const isNearReader = draggedDuringPointerSession && isPassNearReader();
         stopDragging();
         if (!draggedDuringPointerSession) {
           setState("active");
@@ -1174,7 +1197,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         }
 
         suppressPassClick = true;
-        if (isPassNearReader()) {
+        if (isNearReader) {
           completeDeparture("validated");
         } else {
           setState("returning");

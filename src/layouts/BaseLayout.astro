@@ -56,6 +56,8 @@ const canonicalUrl = getLocalizedAbsoluteUrl(locale, pagePath);
 const socialImageUrl = new URL(image, siteInfo.url);
 const brandImageUrl = new URL(siteInfo.brandImage, siteInfo.url);
 const siteHomeUrl = new URL("/", siteInfo.url).toString();
+// 首页的 x-default 交给语言推断入口；未来内容页仍回落到同一内容的默认语言版本，避免误指向首页。
+const xDefaultUrl = pagePath.length === 0 ? siteHomeUrl : getLocalizedAbsoluteUrl(defaultLocale, pagePath);
 const languageAlternates = availableLocales.map((alternateLocale) => ({
   locale: alternateLocale,
   href: getLocalizedAbsoluteUrl(alternateLocale, pagePath),
@@ -172,7 +174,7 @@ const pageStructuredData = {
         />
       ))
     }
-    <link rel="alternate" hreflang="x-default" href={getLocalizedAbsoluteUrl(defaultLocale, pagePath)} />
+    <link rel="alternate" hreflang="x-default" href={xDefaultUrl} />
     <link
       rel="icon"
       type="image/png"

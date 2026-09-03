@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg id="_图层_2" data-name="图层 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 630 135">
+<svg data-name="图层 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 630 135">
   <defs>
     <style>
       .cls-1 {
@@ -10,7 +10,7 @@
       }
     </style>
   </defs>
-  <g id="_图层_1-2" data-name="图层 1">
+  <g data-name="图层 1">
     <path class="cls-1" d="M63,9c-27,0-54,0-54,45v81"/>
     <path class="cls-1" d="M54,63c-.86,0-18.65,0-27,0"/>
     <path class="cls-1" d="M126,81h-36"/>

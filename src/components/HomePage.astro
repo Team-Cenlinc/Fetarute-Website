@@ -275,7 +275,11 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     <div class="hero-copy">
       <h1 id="hero-title">
         <span class="hero-title__base">{messages.home.title}</span>
-        <span class="hero-title__reflection" aria-hidden="true">{messages.home.title}</span>
+        <span
+          class="hero-title__reflection"
+          aria-hidden="true"
+          data-reflection-title={messages.home.title}
+        ></span>
       </h1>
       <p class="hero-description">{messages.home.description}</p>
     </div>
@@ -577,7 +581,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     <span class="home-arrival__horizontal-track" data-home-arrival-horizontal aria-hidden="true"></span>
     <div class="home-arrival__copy">
       <div class="home-arrival__name-lockup">
-        <h1 id="home-arrival-title">{homeArrivalPrimaryName}</h1>
+        <h2 id="home-arrival-title">{homeArrivalPrimaryName}</h2>
         <p>{homeArrivalSecondaryName}</p>
       </div>
     </div>

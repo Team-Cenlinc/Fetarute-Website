@@ -1,0 +1,195 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+import { runInNewContext } from "node:vm";
+import { siteInfo } from "../src/data/site.ts";
+import { localeMetadata, type Locale } from "../src/i18n/config.ts";
+import { getMessages } from "../src/i18n/messages.ts";
+
+const publicHomeLocales = ["zh-Hans", "zh-Hant", "en"] as const satisfies readonly Locale[];
+
+/** 读取一次真实 Astro 构建后的语言首页，避免只检查组件源码而漏掉最终 HTML 变换。 */
+function readStaticHomeHtml(locale: Locale): string {
+  return readFileSync(new URL(`../dist/${locale}/index.html`, import.meta.url), "utf8");
+}
+
+/** 读取不承载正文的根入口；它只负责语言推断与无脚本默认回退。 */
+function readStaticRootHtml(): string {
+  return readFileSync(new URL("../dist/index.html", import.meta.url), "utf8");
+}
+
+/** 将标题内部标记压平成搜索抓取器能直接读取的文本，用于发现视觉副本造成的重复。 */
+function extractText(markup: string): string {
+  return markup
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** 从一个已经匹配到的静态标签读取属性；测试只关心最终 HTML，不绑定 Astro 源码中的属性顺序。 */
+function getAttribute(tag: string, name: string): string | undefined {
+  return tag.match(new RegExp(`\\s${name}="([^"]*)"`, "i"))?.[1];
+}
+
+/** 按属性身份定位 head 标签，避免把 Open Graph、Twitter 与标准 description 混为同一项。 */
+function findHeadTag(
+  html: string,
+  tagName: "link" | "meta",
+  attributeName: string,
+  attributeValue: string,
+): string | undefined {
+  return Array.from(
+    html.matchAll(new RegExp(`<${tagName}\\b[^>]*>`, "gi")),
+    ({ 0: tag }) => tag,
+  ).find((tag) => getAttribute(tag, attributeName) === attributeValue);
+}
+
+test("三语言静态首页各自只输出一个不重复的主标题", () => {
+  for (const locale of publicHomeLocales) {
+    const html = readStaticHomeHtml(locale);
+    const headings = Array.from(html.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/gi));
+
+    assert.equal(headings.length, 1, `${locale} 首页应只有一个 h1`);
+    assert.equal(extractText(headings[0][1]), getMessages(locale).home.title);
+  }
+});
+
+test("启动序列不会成为三语言搜索摘要的候选正文", () => {
+  for (const locale of publicHomeLocales) {
+    const html = readStaticHomeHtml(locale);
+    const launchOpeningTag = html.match(/<section\b[^>]*class="launch-sequence"[^>]*>/i)?.[0];
+
+    assert.ok(launchOpeningTag, `${locale} 首页应输出启动序列`);
+    assert.match(launchOpeningTag, /\sdata-nosnippet(?:\s|=|>)/i);
+  }
+});
+
+test("三语言静态首页不输出重复 DOM id", () => {
+  for (const locale of publicHomeLocales) {
+    const html = readStaticHomeHtml(locale);
+    const ids = Array.from(html.matchAll(/\sid="([^"]+)"/gi), (match) => match[1]);
+    const duplicateIds = [...new Set(ids.filter((id, index) => ids.indexOf(id) !== index))];
+
+    assert.deepEqual(duplicateIds, [], `${locale} 首页存在重复 id: ${duplicateIds.join(", ")}`);
+  }
+});
+
+test("三语言静态首页输出完整且一致的可索引元数据", () => {
+  for (const locale of publicHomeLocales) {
+    const html = readStaticHomeHtml(locale);
+    const messages = getMessages(locale);
+    const canonicalUrl = `${siteInfo.url}/${locale}/`;
+    const descriptionTag = findHeadTag(html, "meta", "name", "description");
+    const canonicalTag = findHeadTag(html, "link", "rel", "canonical");
+    const robotsTag = findHeadTag(html, "meta", "name", "robots");
+    const openGraphUrlTag = findHeadTag(html, "meta", "property", "og:url");
+    const openGraphDescriptionTag = findHeadTag(html, "meta", "property", "og:description");
+    const twitterDescriptionTag = findHeadTag(html, "meta", "name", "twitter:description");
+
+    assert.match(html, new RegExp(`<html\\s+lang="${localeMetadata[locale].languageTag}"`, "i"));
+    assert.equal(extractText(html.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? ""), siteInfo.name);
+    assert.equal(getAttribute(descriptionTag ?? "", "content"), messages.description);
+    assert.doesNotMatch(messages.description, /正在建设|正在建設|under construction/i);
+    assert.equal(getAttribute(canonicalTag ?? "", "href"), canonicalUrl);
+    assert.equal(
+      getAttribute(robotsTag ?? "", "content"),
+      "index, follow, max-image-preview:large",
+    );
+    assert.equal(getAttribute(openGraphUrlTag ?? "", "content"), canonicalUrl);
+    assert.equal(getAttribute(openGraphDescriptionTag ?? "", "content"), messages.description);
+    assert.equal(getAttribute(twitterDescriptionTag ?? "", "content"), messages.description);
+
+    for (const alternateLocale of publicHomeLocales) {
+      const alternate = findHeadTag(
+        html,
+        "link",
+        "hreflang",
+        localeMetadata[alternateLocale].languageTag,
+      );
+      assert.equal(getAttribute(alternate ?? "", "href"), `${siteInfo.url}/${alternateLocale}/`);
+    }
+    const defaultAlternate = findHeadTag(html, "link", "hreflang", "x-default");
+    assert.equal(getAttribute(defaultAlternate ?? "", "href"), `${siteInfo.url}/`);
+
+    const structuredDataMarkup = html.match(
+      /<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/i,
+    )?.[1];
+    assert.ok(structuredDataMarkup, `${locale} 首页应输出 JSON-LD`);
+    const structuredData = JSON.parse(structuredDataMarkup);
+    const webPage = structuredData["@graph"].find(
+      (item: { "@type": string }) => item["@type"] === "WebPage",
+    );
+    assert.equal(webPage.url, canonicalUrl);
+    assert.equal(webPage.description, messages.description);
+    assert.equal(webPage.inLanguage, localeMetadata[locale].languageTag);
+  }
+});
+
+test("根入口按浏览器语言推断三种公开路由并保留查询与深链", () => {
+  const html = readStaticRootHtml();
+  const redirectScript = html.match(/<script>([\s\S]*?)<\/script>/i)?.[1];
+  assert.ok(redirectScript, "根入口应在首帧执行语言推断");
+
+  const cases = [
+    { languages: ["zh-TW"], expectedLocale: "zh-Hant" },
+    { languages: ["zh-Hant-HK"], expectedLocale: "zh-Hant" },
+    { languages: ["zh-HK"], expectedLocale: "zh-Hant" },
+    { languages: ["zh-CN"], expectedLocale: "zh-Hans" },
+    { languages: ["zh"], expectedLocale: "zh-Hans" },
+    { languages: ["en-US"], expectedLocale: "en" },
+    { languages: ["fr-FR", "en-GB"], expectedLocale: "en" },
+    { languages: ["fr-FR"], expectedLocale: "zh-Hans" },
+  ] as const;
+
+  for (const { languages, expectedLocale } of cases) {
+    let destination = "";
+    const location = {
+      search: "?from=launch",
+      hash: "#tri-server-joint",
+      replace(nextDestination: string) {
+        destination = nextDestination;
+      },
+    };
+    runInNewContext(redirectScript, {
+      navigator: { languages, language: languages[0] },
+      window: { location },
+    });
+    assert.equal(destination, `/${expectedLocale}/?from=launch#tri-server-joint`);
+  }
+});
+
+test("根入口保持 noindex、完整 hreflang 与无脚本默认回退", () => {
+  const html = readStaticRootHtml();
+  const robotsTag = findHeadTag(html, "meta", "name", "robots");
+  const canonicalTag = findHeadTag(html, "link", "rel", "canonical");
+
+  assert.equal(getAttribute(robotsTag ?? "", "content"), "noindex, follow");
+  assert.equal(getAttribute(canonicalTag ?? "", "href"), `${siteInfo.url}/`);
+  assert.match(
+    html,
+    /<noscript>\s*<meta\s+http-equiv="refresh"\s+content="0;url=\/zh-Hans\/"\s*\/?>(?:\s*)<\/noscript>/i,
+  );
+
+  for (const locale of publicHomeLocales) {
+    const alternate = findHeadTag(html, "link", "hreflang", localeMetadata[locale].languageTag);
+    assert.equal(getAttribute(alternate ?? "", "href"), `${siteInfo.url}/${locale}/`);
+  }
+  const defaultAlternate = findHeadTag(html, "link", "hreflang", "x-default");
+  assert.equal(getAttribute(defaultAlternate ?? "", "href"), `${siteInfo.url}/`);
+});
+
+test("构建后的 discovery 文件只公开正式页面与正式描述", () => {
+  const robotsTxt = readFileSync(new URL("../dist/robots.txt", import.meta.url), "utf8");
+  const llmsTxt = readFileSync(new URL("../dist/llms.txt", import.meta.url), "utf8");
+  const sitemap = readFileSync(new URL("../dist/sitemap-0.xml", import.meta.url), "utf8");
+
+  assert.match(robotsTxt, /^Sitemap: https:\/\/www\.fetarute\.org\/sitemap-index\.xml$/m);
+  assert.doesNotMatch(llmsTxt, /正在建设|正在建設|under construction/i);
+  assert.doesNotMatch(llmsTxt, /play\.fetarute\.example/);
+
+  for (const locale of publicHomeLocales) {
+    const canonicalUrl = `${siteInfo.url}/${locale}/`;
+    assert.match(llmsTxt, new RegExp(canonicalUrl.replaceAll("/", "\\/")));
+    assert.match(sitemap, new RegExp(`<loc>${canonicalUrl.replaceAll("/", "\\/")}</loc>`));
+  }
+});

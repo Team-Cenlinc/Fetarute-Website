@@ -1,22 +1,84 @@
 ---
-import { defaultLocale } from "@/i18n/config";
 import { siteInfo } from "@/data/site";
+import { defaultLocale, localeMetadata, locales, type Locale } from "@/i18n/config";
 
-// 纯静态发布不能依赖服务端重定向；根路径只输出一个 noindex 的立即跳转页，避免生成没有 locale 的第二份首页内容。
+// 纯静态发布不能读取 Accept-Language；根路径只承担客户端首帧推断与无脚本回退，不复制任何首页正文。
 const defaultLocaleHref = `/${defaultLocale}/`;
-const canonicalUrl = new URL(defaultLocaleHref, siteInfo.url);
+const siteHomeUrl = new URL("/", siteInfo.url).toString();
+/** 根入口可跳转的完整白名单；脚本只从这里取路径，不能把浏览器语言直接拼进 URL。 */
+const localeHrefs = Object.fromEntries(
+  locales.map((locale) => [locale, `/${locale}/`]),
+) as Record<Locale, string>;
 ---
 
 <!doctype html>
-<html lang="zh-Hans">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content={`0;url=${defaultLocaleHref}`} />
     <meta name="robots" content="noindex, follow" />
-    <link rel="canonical" href={canonicalUrl} />
-    <title>Redirecting to {siteInfo.name}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="canonical" href={siteHomeUrl} />
+    {
+      locales.map((locale) => (
+        <link
+          rel="alternate"
+          hreflang={localeMetadata[locale].languageTag}
+          href={new URL(localeHrefs[locale], siteInfo.url)}
+        />
+      ))
+    }
+    <link rel="alternate" hreflang="x-default" href={siteHomeUrl} />
+    <title>Choose language | {siteInfo.name}</title>
+    <script is:inline define:vars={{ defaultLocaleHref, localeHrefs }}>
+      (() => {
+        /**
+         * 按浏览器给出的偏好顺序匹配已发布语言；繁中脚本与台港澳地区优先进入 zh-Hant，其他中文进入 zh-Hans。
+         * 未支持语言沿用站点 defaultLocale，确保推断失败时仍与无脚本回退一致。
+         */
+        const inferLocaleHref = () => {
+          const preferredLanguages =
+            Array.isArray(navigator.languages) && navigator.languages.length > 0
+              ? navigator.languages
+              : [navigator.language];
+
+          for (const preferredLanguage of preferredLanguages) {
+            if (typeof preferredLanguage !== "string") continue;
+
+            const normalizedLanguage = preferredLanguage.toLowerCase().replaceAll("_", "-");
+            const languageParts = normalizedLanguage.split("-");
+            const primaryLanguage = languageParts[0];
+
+            if (primaryLanguage === "zh") {
+              const usesTraditionalChinese =
+                languageParts.includes("hant") ||
+                languageParts.includes("tw") ||
+                languageParts.includes("hk") ||
+                languageParts.includes("mo");
+              return usesTraditionalChinese ? localeHrefs["zh-Hant"] : localeHrefs["zh-Hans"];
+            }
+
+            if (primaryLanguage === "en") return localeHrefs.en;
+          }
+
+          return defaultLocaleHref;
+        };
+
+        window.location.replace(
+          `${inferLocaleHref()}${window.location.search}${window.location.hash}`,
+        );
+      })();
+    </script>
+    <noscript><meta http-equiv="refresh" content={`0;url=${defaultLocaleHref}`} /></noscript>
   </head>
   <body>
-    <a href={defaultLocaleHref}>Continue to {siteInfo.name}</a>
+    <nav aria-label="Choose language">
+      {
+        locales.map((locale) => (
+          <a href={localeHrefs[locale]} lang={localeMetadata[locale].languageTag}>
+            {localeMetadata[locale].label}
+          </a>
+        ))
+      }
+    </nav>
   </body>
 </html>

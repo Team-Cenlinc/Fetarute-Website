@@ -342,7 +342,7 @@ export interface SiteMessages {
  */
 const messages: Record<Locale, SiteMessages> = {
   "zh-Hans": {
-    description: "Fetarute 是一个正在建设中的 Minecraft 服务器官网。",
+    description: "Fetarute 是一个以铁路串联大厅、生存与创造世界的 Minecraft 服务器社区。",
     brandHomeLabel: "Fetarute 首页",
     headerLabel: "站点顶部导航",
     navigationLabel: "主导航",
@@ -634,7 +634,7 @@ const messages: Record<Locale, SiteMessages> = {
     socialImageAlt: "Fetarute 服联快线导视分享卡片",
   },
   "zh-Hant": {
-    description: "Fetarute 是一個正在建設中的 Minecraft 伺服器官網。",
+    description: "Fetarute 是一個以鐵路串聯大廳、生存與創造世界的 Minecraft 伺服器社群。",
     brandHomeLabel: "Fetarute 首頁",
     headerLabel: "網站頂部導覽",
     navigationLabel: "主要導覽",
@@ -927,7 +927,7 @@ const messages: Record<Locale, SiteMessages> = {
   },
   en: {
     description:
-      "Fetarute is the official website for a Minecraft server currently under construction.",
+      "Fetarute is a Minecraft server community connecting its Lobby, Survival, and Creative worlds through railways.",
     brandHomeLabel: "Fetarute home",
     headerLabel: "Site header",
     navigationLabel: "Primary navigation",

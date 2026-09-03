@@ -130,6 +130,14 @@ html[data-launching] .site-header {
   position: absolute;
   inset: 0;
   color: transparent;
+  opacity: 0.42;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 反光字形由 CSS 生成，视觉仍复用标题，但静态 HTML 与搜索抓取只保留一份真实标题文本。 */
+.hero-title__reflection::before {
+  display: block;
   background: linear-gradient(
     116deg,
     color-mix(in srgb, var(--hero-copy-reflection-color) 82%, transparent) 0%,
@@ -138,10 +146,8 @@ html[data-launching] .site-header {
   );
   -webkit-background-clip: text;
   background-clip: text;
+  content: attr(data-reflection-title);
   -webkit-text-fill-color: transparent;
-  opacity: 0.42;
-  pointer-events: none;
-  user-select: none;
 }
 
 /* 深夜模式保留反光材质但收低亮度，避免彩色高光与夜间阅读争夺注意力。 */
