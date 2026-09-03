@@ -640,6 +640,9 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
 
   <script>
     import {
+      getHomeFooterRevealProgress,
+      getHomeFooterStickyReleaseScrollY,
+      getHomeFooterTransitionShift,
       getHomeMobileTransferTrainState,
       getHomeOnwardContentTrainProgress,
       getHomeOnwardFooterTrainProgress,
@@ -743,6 +746,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       document.querySelector<HTMLElement>("[data-home-onward-content]");
     const homeOnwardContentJourney =
       homeOnwardContentRoute?.querySelector<HTMLElement>("[data-home-onward-journey]") ?? null;
+    const homeOnwardContentStage =
+      homeOnwardContentJourney?.querySelector<HTMLElement>(".home-onward__stage") ?? null;
     const homeOnwardContentTrack =
       homeOnwardContentRoute?.querySelector<HTMLElement>("[data-home-onward-route-track]") ?? null;
     /* 低矮页尾仍属于探索线行程；轨道与容器都用于保持最后一班车可见、可点击。 */
@@ -826,6 +831,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       homeOnwardDesktopOutgoingTrain &&
       homeOnwardContentRoute &&
       homeOnwardContentJourney &&
+      homeOnwardContentStage &&
       homeOnwardContentTrack &&
       homeFooterRoute &&
       homeFooterTrack &&
@@ -840,6 +846,31 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       /** 让轨道锚点之间的过渡保留连续速度，而不是按离散 scroll 事件跳格。 */
       const interpolateRoutePosition = (start: number, end: number, progress: number) =>
         start + (end - start) * progress;
+      /** 页尾文案只从下方移动一小段，不让低矮 Footer 产生第二个独立舞台。 */
+      const homeFooterContentEntryOffset = 28;
+      /**
+       * 将算好的末屏下沉量和 Footer 文案缓动写回 CSS；线路和列车仍按真实滚动位置运行。
+       */
+      const renderHomeFooterTransition = (
+        transitionShift: number,
+        footerProgress: number,
+      ) => {
+        const revealProgress = getHomeFooterRevealProgress(footerProgress);
+        const contentOffset = (1 - revealProgress) * homeFooterContentEntryOffset;
+
+        homeOnwardContentRoute.style.setProperty(
+          "--home-onward-footer-transition-shift",
+          `${transitionShift}px`,
+        );
+        homeFooterRoute.style.setProperty(
+          "--home-footer-content-offset",
+          `${contentOffset}px`,
+        );
+        homeFooterRoute.style.setProperty(
+          "--home-footer-content-opacity",
+          `${revealProgress}`,
+        );
+      };
       const homeArrivalRouteStyle = getComputedStyle(homeArrivalRoute);
       const homeArrivalLineCode = homeArrivalRoute.dataset.homeArrivalLineCode ?? "";
       const homeArrivalLineColor =
@@ -2504,6 +2535,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         renderOnwardTransferTrains();
 
         if (reducedMotionQuery.matches) {
+          renderHomeFooterTransition(0, 1);
           renderReducedMotionTrain();
           return;
         }
@@ -2619,11 +2651,21 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           onwardPinnedEnd,
           onwardContentTop - getRouteViewportBottom(),
         );
-        const onwardContentJourneyEnd = Math.max(
-          onwardContentTop,
-          onwardContentBottom - getRouteViewportBottom() + 1,
-        );
         const onwardContentJourneyTop = getDocumentTop(homeOnwardContentJourney);
+        /* 桌面 Footer 从 sticky 舞台真实解锁点接管；小屏仍按正文离开可见区的自然边界推进。 */
+        const onwardContentJourneyEnd = desktopRouteGalleryQuery.matches
+          ? Math.max(
+              onwardContentTop,
+              getHomeFooterStickyReleaseScrollY({
+                journeyTop: onwardContentJourneyTop,
+                journeyHeight: homeOnwardContentJourney.offsetHeight,
+                stageHeight: homeOnwardContentStage.offsetHeight,
+              }),
+            )
+          : Math.max(
+              onwardContentTop,
+              onwardContentBottom - getRouteViewportBottom() + 1,
+            );
         const isOnwardContentPhase =
           window.scrollY > onwardContentRevealStart + 1 &&
           window.scrollY <= onwardContentJourneyEnd + 1;
@@ -2631,9 +2673,44 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           onwardContentJourneyEnd,
           footerBottom - getRouteViewportBottom() + 1,
         );
+        const footerTravel = Math.max(
+          0,
+          footerJourneyEnd - onwardContentJourneyEnd,
+        );
+        /* 提前约三分之一视口启动下沉，让 PIDS 翻页完成后与 Footer 之间存在可感知的过渡跑道。 */
+        const footerPreparationDistance = Math.min(
+          420,
+          Math.max(280, getRouteViewportHeight() * 0.36),
+        );
+        const footerPreparationStart =
+          onwardContentJourneyEnd - footerPreparationDistance;
+        const footerPreparationProgress = desktopRouteGalleryQuery.matches
+          ? clampRouteProgress(
+              (window.scrollY - footerPreparationStart) / footerPreparationDistance,
+            )
+          : 0;
         const isFooterPhase =
-          window.scrollY > onwardContentJourneyEnd + 1 &&
+          window.scrollY > onwardContentJourneyEnd &&
           window.scrollY <= footerJourneyEnd + 1;
+        const footerProgress = isFooterPhase
+          ? clampRouteProgress(
+              (window.scrollY - onwardContentJourneyEnd) /
+                Math.max(1, footerJourneyEnd - onwardContentJourneyEnd),
+            )
+          : window.scrollY > footerJourneyEnd
+            ? 1
+            : 0;
+        /* 短桌面压低前置和收尾位移；中段始终逐像素抵消 sticky 舞台自身的上移。 */
+        const footerTransitionShift = desktopRouteGalleryQuery.matches
+          ? getHomeFooterTransitionShift(
+              footerPreparationProgress,
+              footerProgress,
+              footerTravel,
+              Math.min(96, Math.max(64, getRouteViewportHeight() * 0.08)),
+              Math.min(32, Math.max(20, getRouteViewportHeight() * 0.025)),
+            )
+          : 0;
+        renderHomeFooterTransition(footerTransitionShift, footerProgress);
         const isOnwardLocalIncomingCarrier = desktopRouteGalleryQuery.matches
           ? isOnwardPinnedPhase
           : window.scrollY > communityViewportJourneyEnd &&
@@ -2877,10 +2954,6 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
             contentTop: onwardContentTop,
             boardJourneyTop: onwardContentJourneyTop,
           });
-          const footerProgress = clampRouteProgress(
-            (window.scrollY - onwardContentJourneyEnd) /
-              Math.max(1, footerJourneyEnd - onwardContentJourneyEnd),
-          );
           const footerTrainProgress = getHomeOnwardFooterTrainProgress(
             contentTrainProgress,
             footerProgress,

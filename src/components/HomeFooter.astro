@@ -44,6 +44,9 @@ const currentYear = new Date().getFullYear();
   .home-footer {
     /* 页尾轨道宽度与续行探索线保持同一比例，并在小屏切换为左侧窄轨。 */
     --home-footer-track-width: clamp(36px, 3.23vw, 62px);
+    /* 无脚本与减少动态模式默认直接显示最终态；滚动增强只在 Footer 将进入视口时覆写。 */
+    --home-footer-content-offset: 0px;
+    --home-footer-content-opacity: 1;
     /* 页尾轨道复用续行桌面右轨公式，保证 section 与 footer 在任意桌面宽度都原位接缝。 */
     --home-footer-right-track-x: calc(77.71vw + var(--home-footer-track-width) * 3.01613);
     position: relative;
@@ -69,6 +72,8 @@ const currentYear = new Date().getFullYear();
     width: min(64vw, 980px);
     min-height: inherit;
     padding: 36px 0 28px 7.92vw;
+    opacity: var(--home-footer-content-opacity);
+    transform: translateY(var(--home-footer-content-offset));
   }
 
   .home-footer__introduction {
@@ -183,6 +188,13 @@ const currentYear = new Date().getFullYear();
   @media (forced-colors: active), (prefers-contrast: more) {
     .home-footer__track {
       border: 2px solid currentColor;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-footer__content {
+      opacity: 1;
+      transform: none;
     }
   }
 </style>

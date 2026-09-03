@@ -104,7 +104,12 @@ test("续行 PIDS 短暂停留后放行同一段连续滚动，分段输入仍�
   );
 });
 
-test("续行桌面 PIDS 压缩纵向留白但保留原有列宽", () => {
+test("续行桌面 PIDS 保持原有列宽，并让外框四边使用同一厚度", () => {
+  const desktopBoardScreenRule = [
+    ...homeOnwardComponentSource.matchAll(/\.home-onward__board-screen \{(?<body>[^}]*)\}/g),
+  ].at(0)?.groups?.body;
+
+  assert.ok(desktopBoardScreenRule);
   assert.match(homeOnwardComponentSource, /data-home-onward-locale=\{locale\}/);
   assert.match(
     homeOnwardComponentSource,
@@ -112,8 +117,10 @@ test("续行桌面 PIDS 压缩纵向留白但保留原有列宽", () => {
   );
   assert.match(
     homeOnwardComponentSource,
-    /--home-onward-board-mount-space:\s*clamp\(26px,\s*3\.8svh,\s*38px\)/,
+    /--home-onward-board-block-size:\s*calc\([\s\S]*?--home-onward-board-screen-size[\s\S]*?--home-onward-pids-inset\) \* 2/,
   );
+  assert.doesNotMatch(homeOnwardComponentSource, /--home-onward-board-mount-space/);
+  assert.match(desktopBoardScreenRule, /inset:\s*var\(--home-onward-pids-inset\);/);
   assert.match(homeOnwardComponentSource, /padding:\s*0\.16em 0\.58em/);
   assert.match(
     homeOnwardComponentSource,
@@ -138,7 +145,63 @@ test("续行桌面邀请以探索线为右侧锚点，而不是固定左边缘",
   assert.match(introductionRule, /margin-left:\s*auto/);
   assert.match(introductionRule, /text-align:\s*right/);
   assert.match(introductionRule, /margin-right:\s*calc\([\s\S]*?--home-onward-right-track-x/);
-  assert.match(markerRule, /width:\s*var\(--home-onward-introduction-track-gap\)/);
+  assert.match(markerRule, /width:\s*var\(--home-onward-introduction-spur-width\)/);
+  assert.match(
+    homeOnwardComponentSource,
+    /--home-onward-introduction-spur-width:\s*calc\([\s\S]*?--home-onward-track-width[\s\S]*?\+\s*1px[\s\S]*?\)/,
+  );
+  assert.match(
+    homeOnwardComponentSource,
+    /--home-onward-introduction-copy-clearance:\s*clamp\(48px,\s*3vw,\s*92px\)/,
+  );
+  assert.match(
+    homeOnwardComponentSource,
+    /--home-onward-introduction-copy-offset:\s*calc\([\s\S]*?--home-onward-track-width[\s\S]*?--home-onward-introduction-copy-clearance[\s\S]*?\)/,
+  );
+  assert.doesNotMatch(
+    homeOnwardComponentSource,
+    /@media \(min-width:\s*1024px\)[\s\S]*?\.home-onward__introduction-copy h2 \{[\s\S]*?text-wrap:\s*balance/,
+  );
+});
+
+test("续行桌面末屏把 PIDS 与导视牌下沉，并在 Footer 交接时抵消 sticky 解锁上移", () => {
+  assert.match(
+    homeOnwardComponentSource,
+    /--home-onward-footer-dock-offset:\s*clamp\(64px,\s*8svh,\s*96px\)/,
+  );
+  assert.match(homeOnwardComponentSource, /--home-onward-footer-transition-shift:\s*0px/);
+  assert.match(homeOnwardComponentSource, /--home-onward-footer-reduced-shift:\s*96px/);
+  assert.match(
+    homeOnwardComponentSource,
+    /@media \(min-width:\s*1024px\)[\s\S]*?\.home-onward__board-area,[\s\S]*?\.home-onward__guide \{[\s\S]*?transform:\s*translateY\([\s\S]*?--home-onward-footer-dock-offset[\s\S]*?--home-onward-footer-transition-shift/,
+  );
+  assert.match(
+    homeOnwardComponentSource,
+    /@media \(min-width:\s*1024px\)[\s\S]*?\.home-onward__pids-support \{[\s\S]*?clip-path:\s*inset\([\s\S]*?--home-onward-footer-dock-offset[\s\S]*?--home-onward-footer-transition-shift[\s\S]*?transform:\s*translateY\([\s\S]*?--home-onward-footer-dock-offset[\s\S]*?--home-onward-footer-transition-shift/,
+  );
+  assert.match(homeOnwardComponentSource, /\.home-onward__journey \{[\s\S]*?overflow:\s*clip/);
+  assert.match(
+    homeOnwardComponentSource,
+    /@media \(min-width:\s*1024px\)[\s\S]*?\.home-onward__stage \{[\s\S]*?overflow:\s*visible/,
+  );
+  assert.match(
+    homeOnwardComponentSource,
+    /@media \(prefers-reduced-motion:\s*reduce\) and \(min-width:\s*1024px\)[\s\S]*?\.home-onward__board-area,[\s\S]*?\.home-onward__guide \{[\s\S]*?--home-onward-footer-dock-offset[\s\S]*?--home-onward-footer-reduced-shift/,
+  );
+  assert.match(
+    homeOnwardComponentSource,
+    /@media \(prefers-reduced-motion:\s*reduce\) and \(min-width:\s*1024px\)[\s\S]*?\.home-onward__pids-support \{[\s\S]*?clip-path:\s*inset\([\s\S]*?--home-onward-footer-reduced-shift/,
+  );
+  assert.match(homePageSource, /getHomeFooterRevealProgress/);
+  assert.match(homePageSource, /getHomeFooterStickyReleaseScrollY/);
+  assert.match(homePageSource, /getHomeFooterTransitionShift/);
+  assert.match(homePageSource, /const footerPreparationDistance =\s*Math\.min\(\s*420,/);
+  assert.match(homePageSource, /const footerPreparationStart =/);
+  assert.match(homePageSource, /const footerTravel = Math\.max\(/);
+  assert.match(
+    homePageSource,
+    /--home-onward-footer-transition-shift[\s\S]*?--home-footer-content-offset[\s\S]*?--home-footer-content-opacity/,
+  );
 });
 
 test("续行导视让彩色图标贴住牌面边缘，并以施工中项目预留扩展空间", () => {
@@ -163,6 +226,10 @@ test("续行小屏把 PIDS 与导视牌镜像挂载在探索线上，不再生�
   assert.match(homeOnwardComponentSource, /--home-onward-mobile-mount-left:/);
   assert.match(homeOnwardComponentSource, /--home-onward-mobile-mount-depth:/);
   assert.match(homeOnwardComponentSource, /--home-onward-mobile-copy-left:/);
+  assert.match(
+    homeOnwardComponentSource,
+    /@media \(max-width:\s*1023px\)[\s\S]*?\.home-onward__station-marker \{[\s\S]*?width:\s*var\(--home-onward-introduction-spur-width\)/,
+  );
   assert.match(
     homeOnwardComponentSource,
     /--home-onward-mobile-mount-left:[\s\S]*?--home-onward-mobile-track-left\) - 8px/,
@@ -299,6 +366,20 @@ test("压薄 Footer 仍让探索线贯穿页面底部，不添加终点站标", 
   assert.match(footerTrackRule, /top:\s*0;/);
   assert.match(footerTrackRule, /bottom:\s*0;/);
   assert.doesNotMatch(footerTrackRule, /height:\s*100%/);
+});
+
+test("Footer 内容随可见进度轻量进入，并在减少动态模式下保持静态可见", () => {
+  const footerContentRule = homeFooterSource.match(
+    /\.home-footer__content \{(?<body>[\s\S]*?)\n  \}/,
+  )?.groups?.body;
+
+  assert.ok(footerContentRule);
+  assert.match(footerContentRule, /opacity:\s*var\(--home-footer-content-opacity\)/);
+  assert.match(footerContentRule, /transform:\s*translateY\(var\(--home-footer-content-offset\)\)/);
+  assert.match(
+    homeFooterSource,
+    /@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.home-footer__content \{[\s\S]*?opacity:\s*1;[\s\S]*?transform:\s*none/,
+  );
 });
 
 test("探索线进入 Footer 后仍保留可交互列车与章节快选", () => {

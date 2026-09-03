@@ -538,23 +538,32 @@ const titleId = "home-onward-content-title";
     --home-onward-right-track-x: calc(
       77.71vw + var(--home-onward-track-width) * 3.01613
     );
-    /* PIDS 灰壳保留独立安装面；内容屏幕仍用一致内距，柱子在留白处与牌体建立承托关系。 */
+    /* 桌面 PIDS 使用四边等宽灰壳；支柱在壳体背面承托，不再占用底边厚度。 */
     --home-onward-board-left: 7.92%;
     --home-onward-board-width: min(36.51vw, 701px);
     --home-onward-pids-inset: clamp(18px, 1.67vw, 32px);
     /* 三行目的地与底部提示刚好组成一屏，避免 PIDS 因空白而显得像整块墙面。 */
     --home-onward-board-screen-size: clamp(224px, 26svh, 246px);
-    /* 支柱仍从壳体下缘自然长出，但安装留白只保留识别挂载关系所需的厚度。 */
-    --home-onward-board-mount-space: clamp(26px, 3.8svh, 38px);
     --home-onward-board-block-size: calc(
-      var(--home-onward-board-screen-size) + var(--home-onward-pids-inset) +
-        var(--home-onward-pids-inset) +
-        var(--home-onward-board-mount-space)
+      var(--home-onward-board-screen-size) + var(--home-onward-pids-inset) * 2
     );
     --home-onward-pids-support-offset: clamp(148px, 17svh, 174px);
+    /* 桌面 Station Mark 只向正文侧伸出一条轨道宽度；额外 1px 用来覆盖轨道拼缝。 */
+    --home-onward-introduction-spur-width: calc(var(--home-onward-track-width) + 1px);
+    /* 正文与 Station Mark 端点保留独立响应式空隙，避免横线把文字安全距全部填满。 */
+    --home-onward-introduction-copy-clearance: clamp(48px, 3vw, 92px);
+    /* 将轨宽与安全空隙合成正文右侧锚点，让续行标题的每一行共享同一条文字边界。 */
+    --home-onward-introduction-copy-offset: calc(
+      var(--home-onward-track-width) + var(--home-onward-introduction-copy-clearance)
+    );
     /* 桌面邀请以探索线反推正文右边缘，并让两级文案都采用右对齐的阅读锚点。 */
     --home-onward-introduction-width: min(40vw, 720px);
-    --home-onward-introduction-track-gap: clamp(60px, 4.5vw, 86px);
+    /* 末屏物件按视口高度下沉；短桌面也要为 Footer 解锁后的上移预留足够空间。 */
+    --home-onward-footer-dock-offset: clamp(64px, 8svh, 96px);
+    /* 脚本逐帧写入 Footer 交接增量，使 PIDS 与导视牌在 sticky 解锁后仍连续向下。 */
+    --home-onward-footer-transition-shift: 0px;
+    /* 减少动态时直接使用 Footer 交接完成态，保留构图但不播放随滚动位移。 */
+    --home-onward-footer-reduced-shift: 96px;
     /* 导视牌跨过线路；内容安全区会叠加列车实际厚度，避免文字和箭头钻进运行中的车体。 */
     --home-onward-guide-right-wing: clamp(52px, 4.8vw, 92px);
     --home-onward-active-train-thickness: 90px;
@@ -604,7 +613,7 @@ const titleId = "home-onward-content-title";
     right: calc(100% - var(--home-onward-right-track-x) - 1px);
     z-index: 3;
     display: block;
-    width: var(--home-onward-introduction-track-gap);
+    width: var(--home-onward-introduction-spur-width);
     height: var(--home-onward-track-width);
     background: var(--home-onward-line-color);
     pointer-events: none;
@@ -616,7 +625,7 @@ const titleId = "home-onward-content-title";
     width: var(--home-onward-introduction-width);
     margin-right: calc(
       100% - var(--home-onward-right-track-x) +
-        var(--home-onward-introduction-track-gap)
+        var(--home-onward-introduction-copy-offset)
     );
     margin-left: auto;
     text-align: right;
@@ -644,6 +653,7 @@ const titleId = "home-onward-content-title";
     z-index: 1;
     height: calc(100svh + var(--home-onward-scroll-distance));
     min-height: 980px;
+    overflow: clip;
   }
 
   .home-onward__stage {
@@ -682,8 +692,7 @@ const titleId = "home-onward-content-title";
 
   .home-onward__board-screen {
     position: absolute;
-    inset: var(--home-onward-pids-inset) var(--home-onward-pids-inset)
-      calc(var(--home-onward-pids-inset) + var(--home-onward-board-mount-space));
+    inset: var(--home-onward-pids-inset);
     overflow: hidden;
     background: var(--palette-surface);
   }
@@ -1078,6 +1087,41 @@ const titleId = "home-onward-content-title";
   }
 
   @media (min-width: 1024px) {
+    .home-onward__stage {
+      /* 只由静止的 journey 边界裁切离场物件，避免移动中的 sticky 边界提前切掉 PIDS 底框。 */
+      overflow: visible;
+    }
+
+    .home-onward__board-area,
+    .home-onward__guide {
+      transform: translateY(
+        calc(
+          var(--home-onward-footer-dock-offset) +
+          var(--home-onward-footer-transition-shift)
+        )
+      );
+      will-change: transform;
+    }
+
+    .home-onward__pids-support {
+      /* 位移与 PIDS 同步，但底部按等量 inset 收起，让柱脚始终停在 Footer 交界线上。 */
+      clip-path: inset(
+        0 0
+          calc(
+            var(--home-onward-footer-dock-offset) +
+              var(--home-onward-footer-transition-shift)
+          )
+          0
+      );
+      transform: translateY(
+        calc(
+          var(--home-onward-footer-dock-offset) +
+            var(--home-onward-footer-transition-shift)
+        )
+      );
+      will-change: clip-path, transform;
+    }
+
     .home-onward[data-home-onward-locale="en"] {
       /* 英文帮助文案需要固定的一档额外高度；两种 PIDS 状态仍共用同一外框，不在翻页时跳动。 */
       --home-onward-board-screen-size: clamp(252px, 29.2svh, 268px);
@@ -1111,7 +1155,7 @@ const titleId = "home-onward-content-title";
       --home-onward-track-width: clamp(20px, 5.8vw, 30px);
       --home-onward-pids-inset: clamp(12px, 3.6vw, 18px);
       --home-onward-board-screen-size: clamp(202px, 24svh, 210px);
-      /* 小屏把原本位于 PIDS 底部的安装留白翻到左侧，供探索线连续穿过。 */
+      /* 小屏保留左侧线路挂载面，但纵向仍沿用桌面等宽的上下边框。 */
       --home-onward-board-block-size: calc(
         var(--home-onward-board-screen-size) + var(--home-onward-pids-inset) * 2
       );
@@ -1160,7 +1204,8 @@ const titleId = "home-onward-content-title";
       left: calc(
         var(--home-onward-mobile-track-left) + var(--home-onward-track-width) - 1px
       );
-      width: clamp(44px, 12vw, 72px);
+      /* 与其他移动端正文共用“一条轨宽 + 1px 接缝”的 station mark，不为续行另设长度。 */
+      width: var(--home-onward-introduction-spur-width);
     }
 
     .home-onward__introduction-copy {
@@ -1397,6 +1442,37 @@ const titleId = "home-onward-content-title";
     .home-onward__board {
       transition: none;
       transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) and (min-width: 1024px) {
+    .home-onward__board-area,
+    .home-onward__guide {
+      transform: translateY(
+        calc(
+          var(--home-onward-footer-dock-offset) +
+          var(--home-onward-footer-reduced-shift)
+        )
+      );
+      will-change: auto;
+    }
+
+    .home-onward__pids-support {
+      clip-path: inset(
+        0 0
+          calc(
+            var(--home-onward-footer-dock-offset) +
+              var(--home-onward-footer-reduced-shift)
+          )
+          0
+      );
+      transform: translateY(
+        calc(
+          var(--home-onward-footer-dock-offset) +
+            var(--home-onward-footer-reduced-shift)
+        )
+      );
+      will-change: auto;
     }
   }
 </style>

@@ -98,6 +98,16 @@ export interface HomeOnwardContentTrainProgressOptions {
   boardProgress?: number;
 }
 
+/** Footer 接替续行 sticky 舞台时所需的真实容器几何。 */
+export interface HomeFooterStickyReleaseOptions {
+  /** sticky 行程容器在文档中的顶边。 */
+  journeyTop: number;
+  /** sticky 行程容器的实际布局高度。 */
+  journeyHeight: number;
+  /** sticky 舞台的实际布局高度；短桌面可能高于 visual viewport。 */
+  stageHeight: number;
+}
+
 /** 竖轨列车在视口底部保持完整可见所需的几何参数。 */
 export interface HomeVerticalTrainBottomCenterOptions {
   /** visual viewport 在布局视口坐标中的实际底边。 */
@@ -302,6 +312,64 @@ export const getHomeOnwardFooterTrainProgress = (
     : 0;
 
   return clampedContentProgress + (1 - clampedContentProgress) * clampedFooterProgress;
+};
+
+/**
+ * 返回 sticky 舞台开始随容器底边离场的文档滚动位置。
+ * 使用舞台实高而不是视口高度，避免低于 680px 的桌面产生一段未补偿的反向上移。
+ */
+export const getHomeFooterStickyReleaseScrollY = ({
+  journeyTop,
+  journeyHeight,
+  stageHeight,
+}: HomeFooterStickyReleaseOptions) => {
+  const safeJourneyTop = Number.isFinite(journeyTop) ? journeyTop : 0;
+  const safeJourneyHeight = Number.isFinite(journeyHeight) ? Math.max(0, journeyHeight) : 0;
+  const safeStageHeight = Number.isFinite(stageHeight) ? Math.max(0, stageHeight) : 0;
+
+  return safeJourneyTop + Math.max(0, safeJourneyHeight - safeStageHeight);
+};
+
+/**
+ * 把 Footer 的原生可见进度转换成首尾速度为零的连续曲线。
+ * 线路仍严格跟随滚动，只有末屏物件与页尾文案消费缓动，避免 sticky 解锁时像硬推屏。
+ */
+export const getHomeFooterRevealProgress = (footerProgress: number) => {
+  const clampedProgress = Number.isFinite(footerProgress)
+    ? Math.min(Math.max(footerProgress, 0), 1)
+    : 0;
+
+  return clampedProgress * clampedProgress * (3 - 2 * clampedProgress);
+};
+
+/**
+ * 先在 Footer 出现前缓慢下沉末屏物件，再用与真实滚动等量的位移抵消 sticky 解锁上移。
+ * 最后一小段仍使用首尾速度为零的缓动，令 PIDS、支柱和导视牌完成同一方向的收尾动作。
+ */
+export const getHomeFooterTransitionShift = (
+  preparationProgress: number,
+  footerProgress: number,
+  footerTravel: number,
+  preparationShift = 96,
+  followThroughShift = 32,
+) => {
+  const easedPreparationProgress = getHomeFooterRevealProgress(preparationProgress);
+  const clampedFooterProgress = Number.isFinite(footerProgress)
+    ? Math.min(Math.max(footerProgress, 0), 1)
+    : 0;
+  const safeFooterTravel = Number.isFinite(footerTravel) ? Math.max(0, footerTravel) : 0;
+  const safePreparationShift = Number.isFinite(preparationShift)
+    ? Math.max(0, preparationShift)
+    : 0;
+  const safeFollowThroughShift = Number.isFinite(followThroughShift)
+    ? Math.max(0, followThroughShift)
+    : 0;
+
+  return (
+    easedPreparationProgress * safePreparationShift +
+    clampedFooterProgress * safeFooterTravel +
+    getHomeFooterRevealProgress(footerProgress) * safeFollowThroughShift
+  );
 };
 
 /**

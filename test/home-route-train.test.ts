@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  getHomeFooterRevealProgress,
+  getHomeFooterStickyReleaseScrollY,
+  getHomeFooterTransitionShift,
   getHomeMobileTransferTrainState,
   getHomeOnwardContentTrainProgress,
   getHomeOnwardDepartureBoardState,
@@ -14,6 +17,52 @@ import {
   getHomeTrainTooltipPlacement,
   getHomeVerticalTrainBottomCenterY,
 } from "../src/data/home-route-train.ts";
+
+test("Footer 交接按 sticky 舞台实高解锁，消融为视口高度会在短桌面晚 80px", () => {
+  const shortDesktopRelease = getHomeFooterStickyReleaseScrollY({
+    journeyTop: 1000,
+    journeyHeight: 1620,
+    stageHeight: 680,
+  });
+  const viewportHeightAblation = getHomeFooterStickyReleaseScrollY({
+    journeyTop: 1000,
+    journeyHeight: 1620,
+    stageHeight: 600,
+  });
+
+  assert.equal(shortDesktopRelease, 1940);
+  assert.equal(viewportHeightAblation - shortDesktopRelease, 80);
+  assert.equal(
+    getHomeFooterStickyReleaseScrollY({
+      journeyTop: 1000,
+      journeyHeight: 2250,
+      stageHeight: 900,
+    }),
+    2350,
+  );
+});
+
+test("Footer 交接使用首尾平缓的连续进度，而不是把原生滚动硬切成离散状态", () => {
+  assert.equal(getHomeFooterRevealProgress(0), 0);
+  assert.equal(getHomeFooterRevealProgress(0.25), 0.15625);
+  assert.equal(getHomeFooterRevealProgress(0.5), 0.5);
+  assert.equal(getHomeFooterRevealProgress(0.75), 0.84375);
+  assert.equal(getHomeFooterRevealProgress(1), 1);
+  assert.equal(getHomeFooterRevealProgress(-1), 0);
+  assert.equal(getHomeFooterRevealProgress(2), 1);
+  assert.equal(getHomeFooterRevealProgress(Number.NaN), 0);
+});
+
+test("Footer 交接先下沉末屏物件，再逐像素抵消 sticky 解锁并继续轻推向下", () => {
+  assert.equal(getHomeFooterTransitionShift(0, 0, 232), 0);
+  assert.equal(getHomeFooterTransitionShift(1, 0, 232), 96);
+  assert.equal(getHomeFooterTransitionShift(1, 0.5, 232), 228);
+  assert.equal(getHomeFooterTransitionShift(1, 1, 232), 360);
+  assert.equal(getHomeFooterTransitionShift(1, 1, 232, 64, 20) - 232, 84);
+  assert.equal(getHomeFooterTransitionShift(1, 1, 232, 96, 32) - 232, 128);
+  assert.equal(getHomeFooterTransitionShift(-1, -1, -1), 0);
+  assert.equal(getHomeFooterTransitionShift(Number.NaN, Number.NaN, Number.NaN), 0);
+});
 
 test("续行列车进入 PIDS 后保持停驻，把离站行程交给 Footer", () => {
   const options = {
