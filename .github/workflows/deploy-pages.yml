@@ -1,0 +1,61 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# 构建默认只读仓库；只有独立 deploy job 获得 Pages 与 OIDC 写权限。
+permissions:
+  contents: read
+
+concurrency:
+  # Pages 只允许一条生产发布链；不取消已经开始的部署，避免站点停在未知中间状态。
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - run: npm ci
+
+      # 发布前重新生成字体并要求仓库中的可发布子集与源码字符完全一致。
+      - run: npm run font:subset
+      - run: git diff --exit-code -- scripts/font-subset/chars.txt src/assets/fonts
+
+      # check 包含格式、类型、测试与最终 Astro 静态构建，只有完整通过的 dist 才能上传。
+      - run: npm run check
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

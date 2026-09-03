@@ -183,7 +183,7 @@ test("构建后的 discovery 文件只公开正式页面与正式描述", () => 
   const llmsTxt = readFileSync(new URL("../dist/llms.txt", import.meta.url), "utf8");
   const sitemap = readFileSync(new URL("../dist/sitemap-0.xml", import.meta.url), "utf8");
 
-  assert.match(robotsTxt, /^Sitemap: https:\/\/www\.fetarute\.org\/sitemap-index\.xml$/m);
+  assert.match(robotsTxt, /^Sitemap: https:\/\/fetarute\.org\/sitemap-index\.xml$/m);
   assert.doesNotMatch(llmsTxt, /正在建设|正在建設|under construction/i);
   assert.doesNotMatch(llmsTxt, /play\.fetarute\.example/);
 
@@ -192,4 +192,10 @@ test("构建后的 discovery 文件只公开正式页面与正式描述", () => 
     assert.match(llmsTxt, new RegExp(canonicalUrl.replaceAll("/", "\\/")));
     assert.match(sitemap, new RegExp(`<loc>${canonicalUrl.replaceAll("/", "\\/")}</loc>`));
   }
+});
+
+test("GitHub Pages 自定义域名与 canonical 来源保持一致", () => {
+  const cname = readFileSync(new URL("../dist/CNAME", import.meta.url), "utf8").trim();
+
+  assert.equal(cname, new URL(siteInfo.url).hostname);
 });

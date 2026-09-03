@@ -129,7 +129,7 @@ export interface HomeNavigationSignal {
  */
 export const siteInfo: SiteInfo = {
   name: "Fetarute",
-  url: "https://www.fetarute.org",
+  url: "https://fetarute.org",
   socialImage: "/fetarute-share-card.png",
   brandImage: "/web-app-manifest-512x512.png",
   serverAddress: "play.fetarute.example",
