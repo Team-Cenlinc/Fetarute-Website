@@ -109,6 +109,24 @@
   color-scheme: light dark;
 }
 
+/* 每次新文字选择都读取 Layout 写入的线路色与配套前景；同一次拖选不会在途中闪换颜色。 */
+::selection {
+  color: var(--color-selection-text);
+  background-color: var(--color-selection);
+}
+
+/* 页面图片默认是内容与品牌视觉，不作为可拖出页面的文件素材；显式标记的拖拽图片除外。 */
+img:not([data-image-drag-allowed]) {
+  user-select: none;
+}
+
+@supports (-webkit-user-drag: none) {
+  /* WebKit 使用独立的图片拖拽预览开关，需要和捕获阶段的 dragstart guard 配合。 */
+  img:not([data-image-drag-allowed]) {
+    -webkit-user-drag: none;
+  }
+}
+
 /* 繁中内容沿用当地字形，避免简繁字形与当地阅读习惯不一致。 */
 :lang(zh-Hant) {
   --font-fetarute-ui: var(--font-fetarute-display), var(--font-fetarute-sans-tc);

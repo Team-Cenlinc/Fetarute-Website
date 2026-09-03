@@ -270,6 +270,27 @@ export function getRailwayLineTextColor(color: HexColor): string {
 }
 
 /**
+ * 浏览器文字选区可使用的一组线路色。
+ * 背景只引用铁路领域的 CSS token，前景则按线路亮度配对，避免深浅主题下选中文字失去对比。
+ */
+export interface RailwaySelectionPaletteOption {
+  /** 作为选区背景的线路色 CSS 引用。 */
+  background: string;
+  /** 与线路色保持清晰对比的语义前景 CSS 引用。 */
+  foreground: string;
+}
+
+/**
+ * 从全部已录入线路派生文字选区候选；新增线路后会自动进入随机池，不另存颜色副本。
+ */
+export const railwaySelectionPalette: readonly RailwaySelectionPaletteOption[] = railwayLines.map(
+  (line) => ({
+    background: `var(${getRailwayLineCssVariableName(line)})`,
+    foreground: getRailwayLineTextColor(line.color),
+  }),
+);
+
+/**
  * 从铁路领域数据派生的线路色表。
  * 此表不另存任何色值；新增线路后会自动拥有可供页面和导出器查询的 CSS token。
  */

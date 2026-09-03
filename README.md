@@ -73,10 +73,11 @@ src/
   data/              站点级静态数据
   i18n/              公开语言、文案、内容查询与本地化链接
   layouts/           页面布局
+  lib/               全站共享的轻量浏览器行为
   pages/             Astro 页面路由
   styles/            全局样式和品牌变量
   content.config.ts  内容集合 schema
-test/                   Node 原生测试，覆盖发现文件输出与首页静态数据约定
+test/                   Node 原生测试，覆盖发现文件、全站页面行为与首页静态数据约定
 ```
 
 ## 内容维护

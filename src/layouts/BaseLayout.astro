@@ -7,6 +7,7 @@ import {
   getInterfacePaletteCssVariables,
   getRailwayLineCssVariableName,
   getRailwayLineCssVariables,
+  getRailwayLineTextColor,
   interfacePalette,
 } from "@/data/palette";
 import { railwayLineByKey } from "@/data/railway";
@@ -89,6 +90,10 @@ ${getInterfacePaletteCssVariables(interfacePalette.light)}
 ${getRailwayLineCssVariables()}
 /* 首页指示器消费当前主视觉线路的语义 token，实际颜色仍由 railway.ts 的线路变量提供。 */
 --color-home-line: var(${wayfindingLineCssVariable});
+/* 无脚本时选区回退到首页主视觉线路；运行时会在每次新的文字选择动作开始前替换这对 token。 */
+--color-selection: var(${wayfindingLineCssVariable});
+/* 选区文字前景按回退线路的亮度配对，避免深色线路与浅色线路在任一外观下失去可读性。 */
+--color-selection-text: ${getRailwayLineTextColor(wayfindingLine.color)};
 }
 
 @media (prefers-color-scheme: dark) {
@@ -311,5 +316,12 @@ const pageStructuredData = {
     <main class:list={{ "main--full-bleed": fullBleedMain }}>
       <slot />
     </main>
+    <script>
+      import { setupImageDragGuard } from "@/lib/image-drag-guard";
+      import { setupSelectionLineController } from "@/lib/selection-line-controller";
+
+      setupImageDragGuard();
+      setupSelectionLineController();
+    </script>
   </body>
 </html>
