@@ -1415,7 +1415,7 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
 @media (max-width: 760px) {
   main {
     gap: 64px;
-    padding-top: 94px;
+    padding-top: calc(94px + env(safe-area-inset-top));
   }
 
   main.main--full-bleed {
@@ -1423,9 +1423,12 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   }
 
   .site-header {
-    top: 12px;
-    width: calc(100% - 24px);
+    top: calc(12px + env(safe-area-inset-top));
+    right: calc(12px + env(safe-area-inset-right));
+    left: calc(12px + env(safe-area-inset-left));
+    width: auto;
     min-height: 76px;
+    transform: none;
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
@@ -1474,16 +1477,6 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
     place-items: center;
     cursor: pointer;
     list-style: none;
-  }
-
-  /* 小屏原本就是图标导视牌；阅读模式只降低高度，不改变既有的服务台与目的地菜单结构。 */
-  html[data-header-compact] .site-header,
-  html[data-header-compact] .mobile-header-tool__summary {
-    min-height: 56px;
-  }
-
-  html[data-header-compact] .brand-wordmark {
-    width: min(30vw, 112px);
   }
 
   .mobile-header-tool__summary::-webkit-details-marker {

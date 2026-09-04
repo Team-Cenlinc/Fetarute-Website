@@ -50,6 +50,37 @@ export interface HomeMobileTransferTrainState {
   colorProgress: number;
 }
 
+/** 换乘站局部车与全局 SVG 路径车之间的视觉绘制所有权。 */
+export type HomeTransferTrainVisualOwner = "local" | "global-incoming" | "global-outgoing";
+
+/** 根据响应式构图决定换乘站两个局部车身是否仍应参与绘制。 */
+export interface HomeTransferTrainVisibilityOptions {
+  /** 当前由局部 DOM 车或某一方向的全局 SVG 车承担视觉。 */
+  owner: HomeTransferTrainVisualOwner;
+  /** 小屏单线构图以 incoming DOM 节点承载两条线路，不能按桌面双车分别隐藏。 */
+  singleTrainComposition: boolean;
+}
+
+/** 换乘站局部车身的最终可见性；单车构图中 outgoing 节点始终不参与绘制。 */
+export interface HomeTransferTrainVisibility {
+  /** incoming DOM 车身是否应可见。 */
+  incomingVisible: boolean;
+  /** outgoing DOM 车身是否应可见。 */
+  outgoingVisible: boolean;
+}
+
+/** 减少动态时用于选择续行局部车或全局路径车的可见几何状态。 */
+export interface HomeReducedMotionOnwardTrainOwnerOptions {
+  /** 续行站牌是否覆盖当前视口阅读线。 */
+  routeContainsReadingLine: boolean;
+  /** 续行正文是否覆盖当前视口阅读线。 */
+  contentContainsReadingLine: boolean;
+  /** 页尾是否覆盖当前视口阅读线。 */
+  footerContainsReadingLine: boolean;
+  /** 单一局部车身是否仍有任何部分落在可见视口内。 */
+  localTrainWithinViewport: boolean;
+}
+
 /** 续行桌面双车在当前滚动拍点中的叙事阶段。 */
 export type HomeOnwardTrainPhase = "arriving" | "transfer" | "departing";
 
@@ -76,6 +107,22 @@ export interface HomeTrainPathPoint {
   y: number;
 }
 
+/** 纯数值路线上的累计里程采样点，用于避开 WebKit 的同步 SVG 几何查询。 */
+export interface HomeTrainPathSample extends HomeTrainPathPoint {
+  /** 从路径起点走到当前采样点的累计距离。 */
+  distance: number;
+}
+
+/** 从首页生成的 M/L/Q/C 路径派生出的浏览器无关几何。 */
+export interface HomeTrainPathGeometry {
+  /** 按路线顺序排列、带累计里程的折线采样点。 */
+  points: readonly HomeTrainPathSample[];
+  /** 整条路线的近似长度，同时写入 SVG pathLength 统一 dash 度量。 */
+  totalLength: number;
+  /** 每条 L 或 C 绘制指令结束时的累计距离，用于判断列车所在轨段。 */
+  segmentEndDistances: readonly number[];
+}
+
 /** 弯曲列车完整点击包围盒所需的路径采样参数。 */
 export interface HomeTrainPathHitAreaOptions {
   /** 从车尾到车头依次取得的路径采样点。 */
@@ -84,6 +131,22 @@ export interface HomeTrainPathHitAreaOptions {
   trainThickness: number;
   /** 即使车身更窄也必须保留的最小点击尺寸。 */
   minimumTargetSize?: number;
+}
+
+/** 小屏直轨列车无需访问 SVG 几何即可完成绘制与命中的数值输入。 */
+export interface HomeVerticalTrainRenderGeometryOptions {
+  /** 轨道中心的视口横坐标。 */
+  trackX: number;
+  /** 用于承载 dash 列车的直线路径起点。 */
+  routeStartY: number;
+  /** 用于承载 dash 列车的直线路径终点。 */
+  routeEndY: number;
+  /** 当前车身中心的视口纵坐标。 */
+  trainCenterY: number;
+  /** 列车沿轨道方向的长度。 */
+  trainLength: number;
+  /** 列车垂直轨道方向的厚度。 */
+  trainThickness: number;
 }
 
 /** 续行正文列车经过介绍并停驻 PIDS 时所需的滚动边界。 */
@@ -405,6 +468,210 @@ export const getHomeMobileTransferTrainState = ({
 };
 
 /**
+ * 将视觉所有权收敛为局部车身可见性。
+ * 小屏续行的一辆 DOM 车同时代表 incoming/outgoing；任一全局车接管时都必须隐藏它。
+ */
+export const getHomeTransferTrainVisibility = ({
+  owner,
+  singleTrainComposition,
+}: HomeTransferTrainVisibilityOptions): HomeTransferTrainVisibility => {
+  if (singleTrainComposition) {
+    return {
+      incomingVisible: owner === "local",
+      outgoingVisible: false,
+    };
+  }
+
+  return {
+    incomingVisible: owner !== "global-incoming",
+    outgoingVisible: owner !== "global-outgoing",
+  };
+};
+
+/**
+ * 为减少动态构图选择唯一列车视觉所有者。
+ * 阅读线进入站牌前继续显示来车；局部车滚出视口时则提前交给正文路径，避免交界双车或空档。
+ */
+export const getHomeReducedMotionOnwardTrainOwner = ({
+  routeContainsReadingLine,
+  contentContainsReadingLine,
+  footerContainsReadingLine,
+  localTrainWithinViewport,
+}: HomeReducedMotionOnwardTrainOwnerOptions): HomeTransferTrainVisualOwner => {
+  if (
+    contentContainsReadingLine ||
+    footerContainsReadingLine ||
+    (routeContainsReadingLine && !localTrainWithinViewport)
+  ) {
+    return "global-outgoing";
+  }
+
+  return routeContainsReadingLine ? "local" : "global-incoming";
+};
+
+/** 以偶数采样保留对称曲线的几何中点，并限制单段计算量。 */
+const getHomePathCurveSampleCount = (controlPolygonLength: number) =>
+  Math.min(48, Math.max(8, Math.ceil(controlPolygonLength / 24) * 2));
+
+/**
+ * 把首页内部生成的绝对 M/L/Q/C SVG path 转换为纯数值折线几何。
+ * 曲线采样密度随控制多边形长度增长；JavaScript 因此无需触发 WebKit 的同步 SVG 布局查询。
+ */
+export const getHomeTrainPathGeometry = (pathData: string): HomeTrainPathGeometry => {
+  const tokens = pathData.match(/[MLQC]|[-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/gi) ?? [];
+  const points: HomeTrainPathSample[] = [];
+  const segmentEndDistances: number[] = [];
+  let tokenIndex = 0;
+  let currentPoint: HomeTrainPathPoint = { x: 0, y: 0 };
+  let totalLength = 0;
+
+  /** 读取一项有限数值；内部路径格式异常时立即暴露，而不是把 NaN 带进动画帧。 */
+  const readNumber = () => {
+    const token = tokens[tokenIndex++];
+    const value = Number(token);
+
+    if (token === undefined || !Number.isFinite(value)) {
+      throw new Error(`无法解析首页列车路径：${pathData}`);
+    }
+
+    return value;
+  };
+  /** 追加采样点并累计折线里程。 */
+  const appendPoint = (point: HomeTrainPathPoint) => {
+    if (points.length > 0) {
+      totalLength += Math.hypot(point.x - currentPoint.x, point.y - currentPoint.y);
+    }
+    currentPoint = point;
+    points.push({ ...point, distance: totalLength });
+  };
+
+  while (tokenIndex < tokens.length) {
+    const command = tokens[tokenIndex++]?.toUpperCase();
+
+    if (command === "M") {
+      const movePoint = { x: readNumber(), y: readNumber() };
+      currentPoint = movePoint;
+      points.push({ ...movePoint, distance: totalLength });
+      continue;
+    }
+
+    if (command === "L") {
+      appendPoint({ x: readNumber(), y: readNumber() });
+      segmentEndDistances.push(totalLength);
+      continue;
+    }
+
+    if (command === "Q") {
+      const curveStart = currentPoint;
+      const controlPoint = { x: readNumber(), y: readNumber() };
+      const curveEnd = { x: readNumber(), y: readNumber() };
+      const controlPolygonLength =
+        Math.hypot(controlPoint.x - curveStart.x, controlPoint.y - curveStart.y) +
+        Math.hypot(curveEnd.x - controlPoint.x, curveEnd.y - controlPoint.y);
+      const sampleCount = getHomePathCurveSampleCount(controlPolygonLength);
+
+      for (let sampleIndex = 1; sampleIndex <= sampleCount; sampleIndex += 1) {
+        const progress = sampleIndex / sampleCount;
+        const inverseProgress = 1 - progress;
+        appendPoint({
+          x:
+            inverseProgress ** 2 * curveStart.x +
+            2 * inverseProgress * progress * controlPoint.x +
+            progress ** 2 * curveEnd.x,
+          y:
+            inverseProgress ** 2 * curveStart.y +
+            2 * inverseProgress * progress * controlPoint.y +
+            progress ** 2 * curveEnd.y,
+        });
+      }
+      segmentEndDistances.push(totalLength);
+      continue;
+    }
+
+    if (command === "C") {
+      const curveStart = currentPoint;
+      const controlPointA = { x: readNumber(), y: readNumber() };
+      const controlPointB = { x: readNumber(), y: readNumber() };
+      const curveEnd = { x: readNumber(), y: readNumber() };
+      const controlPolygonLength =
+        Math.hypot(controlPointA.x - curveStart.x, controlPointA.y - curveStart.y) +
+        Math.hypot(controlPointB.x - controlPointA.x, controlPointB.y - controlPointA.y) +
+        Math.hypot(curveEnd.x - controlPointB.x, curveEnd.y - controlPointB.y);
+      const sampleCount = getHomePathCurveSampleCount(controlPolygonLength);
+
+      for (let sampleIndex = 1; sampleIndex <= sampleCount; sampleIndex += 1) {
+        const progress = sampleIndex / sampleCount;
+        const inverseProgress = 1 - progress;
+        appendPoint({
+          x:
+            inverseProgress ** 3 * curveStart.x +
+            3 * inverseProgress ** 2 * progress * controlPointA.x +
+            3 * inverseProgress * progress ** 2 * controlPointB.x +
+            progress ** 3 * curveEnd.x,
+          y:
+            inverseProgress ** 3 * curveStart.y +
+            3 * inverseProgress ** 2 * progress * controlPointA.y +
+            3 * inverseProgress * progress ** 2 * controlPointB.y +
+            progress ** 3 * curveEnd.y,
+        });
+      }
+      segmentEndDistances.push(totalLength);
+      continue;
+    }
+
+    throw new Error(`首页列车路径只支持绝对 M/L/Q/C 指令：${pathData}`);
+  }
+
+  if (points.length === 0) {
+    points.push({ x: 0, y: 0, distance: 0 });
+  }
+
+  return { points, totalLength, segmentEndDistances };
+};
+
+/** 按累计里程从纯数值路线取点；超出路线的距离会夹在首尾端点。 */
+export const getHomeTrainPathPointAtLength = (
+  geometry: HomeTrainPathGeometry,
+  distance: number,
+): HomeTrainPathPoint => {
+  const points = geometry.points;
+  const firstPoint = points[0] ?? { x: 0, y: 0, distance: 0 };
+  const lastPoint = points.at(-1) ?? firstPoint;
+  const clampedDistance = Math.min(
+    Math.max(Number.isFinite(distance) ? distance : 0, 0),
+    geometry.totalLength,
+  );
+
+  if (clampedDistance <= firstPoint.distance) {
+    return { x: firstPoint.x, y: firstPoint.y };
+  }
+  if (clampedDistance >= lastPoint.distance) {
+    return { x: lastPoint.x, y: lastPoint.y };
+  }
+
+  let lowerIndex = 0;
+  let upperIndex = points.length - 1;
+  while (lowerIndex + 1 < upperIndex) {
+    const middleIndex = Math.floor((lowerIndex + upperIndex) / 2);
+    if ((points[middleIndex]?.distance ?? 0) < clampedDistance) {
+      lowerIndex = middleIndex;
+    } else {
+      upperIndex = middleIndex;
+    }
+  }
+
+  const lowerPoint = points[lowerIndex] ?? firstPoint;
+  const upperPoint = points[upperIndex] ?? lastPoint;
+  const segmentLength = Math.max(Number.EPSILON, upperPoint.distance - lowerPoint.distance);
+  const segmentProgress = (clampedDistance - lowerPoint.distance) / segmentLength;
+
+  return {
+    x: lowerPoint.x + (upperPoint.x - lowerPoint.x) * segmentProgress,
+    y: lowerPoint.y + (upperPoint.y - lowerPoint.y) * segmentProgress,
+  };
+};
+
+/**
  * 从车尾到车头的路径采样点建立局部法线包围盒。
  * 每个点只向描边的左右扩展，不越过 butt linecap 的车头车尾，同时覆盖跨在直轨与 Bézier 上的车身。
  */
@@ -461,6 +728,48 @@ export const getHomeTrainPathHitArea = ({
     top: centerY - height / 2,
     width,
     height,
+  };
+};
+
+/**
+ * 直接计算竖直路径的 dash、命中区和 Tooltip 中心。
+ * Safari 不必在每个滚动帧重算 SVG path length 与采样点，直轨视觉仍与通用路径结果一致。
+ */
+export const getHomeVerticalTrainRenderGeometry = ({
+  trackX,
+  routeStartY,
+  routeEndY,
+  trainCenterY,
+  trainLength,
+  trainThickness,
+}: HomeVerticalTrainRenderGeometryOptions) => {
+  const journeyLength = Math.max(0, routeEndY - routeStartY);
+  const safeTrainLength = Math.max(0, trainLength);
+  const maxTrainTailDistance = Math.max(0, journeyLength - safeTrainLength);
+  const trainTailDistance = Math.min(
+    Math.max(0, trainCenterY - routeStartY - safeTrainLength / 2),
+    maxTrainTailDistance,
+  );
+  const trainHeadDistance = Math.min(journeyLength, trainTailDistance + safeTrainLength);
+  const trainTailY = routeStartY + trainTailDistance;
+  const trainHeadY = routeStartY + trainHeadDistance;
+  const hitArea = getHomeTrainPathHitArea({
+    points: [
+      { x: trackX, y: trainTailY },
+      { x: trackX, y: trainHeadY },
+    ],
+    trainThickness,
+  });
+
+  return {
+    journeyLength,
+    trainTailDistance,
+    trainHeadDistance,
+    hitArea,
+    trainMidpoint: {
+      x: trackX,
+      y: trainTailY + (trainHeadY - trainTailY) / 2,
+    },
   };
 };
 

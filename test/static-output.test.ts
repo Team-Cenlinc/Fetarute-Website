@@ -54,6 +54,23 @@ test("三语言静态首页各自只输出一个不重复的主标题", () => {
   }
 });
 
+test("根入口与三语言首页都声明 edge-to-edge viewport，保持 Safari 与 Portal 的安全区契约一致", () => {
+  const pageHtmlByLabel = [
+    ["root", readStaticRootHtml()],
+    ...publicHomeLocales.map((locale) => [locale, readStaticHomeHtml(locale)] as const),
+  ] as const;
+
+  for (const [label, html] of pageHtmlByLabel) {
+    const viewportTag = findHeadTag(html, "meta", "name", "viewport");
+
+    assert.equal(
+      getAttribute(viewportTag ?? "", "content"),
+      "width=device-width, initial-scale=1, viewport-fit=cover",
+      `${label} 应允许浏览器从首帧建立 edge-to-edge viewport`,
+    );
+  }
+});
+
 test("启动序列不会成为三语言搜索摘要的候选正文", () => {
   for (const locale of publicHomeLocales) {
     const html = readStaticHomeHtml(locale);

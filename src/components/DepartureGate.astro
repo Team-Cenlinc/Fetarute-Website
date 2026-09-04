@@ -145,6 +145,12 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
 </section>
 
 <script>
+  import {
+    getHomeTrainPathGeometry,
+    getHomeTrainPathPointAtLength,
+    type HomeTrainPathGeometry,
+  } from "@/data/home-route-train";
+
   /** 出发遮罩从靠近、定点、临时回退到放行的状态；只有完成后禁止再次回到可触发状态。 */
   type DepartureGateState =
     | "armed"
@@ -330,7 +336,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
       let dragGuideFrameId: number | undefined;
       let dragGuideObserver: ResizeObserver | undefined;
       let dragGuidePromptFrameId: number | undefined;
-      let dragGuidePromptPathLength = 0;
+      let dragGuidePromptGeometry: HomeTrainPathGeometry | undefined;
       let dragGuidePromptCycleStart: number | undefined;
       let launchStateObserver: MutationObserver | undefined;
       let launchBoundaryObserver: MutationObserver | undefined;
@@ -375,7 +381,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         if (dragGuidePrompt) dragGuidePrompt.style.visibility = "hidden";
       };
 
-      /** 图标的位置和朝向直接从 SVG 路径取得，使所有断点都沿同一条测量后的贝塞尔线前进。 */
+      /** 图标的位置和朝向从纯数值路径取得，使所有断点都沿同一条贝塞尔线前进。 */
       const animateDragGuidePrompt = (timestamp: number) => {
         dragGuidePromptFrameId = undefined;
         if (
@@ -383,7 +389,8 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
           getState() !== "active" ||
           !dragGuidePath ||
           !dragGuidePrompt ||
-          dragGuidePromptPathLength <= 1
+          !dragGuidePromptGeometry ||
+          dragGuidePromptGeometry.totalLength <= 1
         ) {
           stopDragGuidePrompt();
           return;
@@ -403,9 +410,12 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         // 沿线移动采用减速曲线，抵达箭头前的轻收束让卡片方向保持可读。
         const progress = 1 - Math.pow(1 - rawProgress, 3);
         const pathProgress = 0.08 + progress * 0.68;
-        const pathLength = dragGuidePromptPathLength * pathProgress;
-        const point = dragGuidePath.getPointAtLength(pathLength);
-        const nextPoint = dragGuidePath.getPointAtLength(Math.min(dragGuidePromptPathLength, pathLength + 1));
+        const pathLength = dragGuidePromptGeometry.totalLength * pathProgress;
+        const point = getHomeTrainPathPointAtLength(dragGuidePromptGeometry, pathLength);
+        const nextPoint = getHomeTrainPathPointAtLength(
+          dragGuidePromptGeometry,
+          Math.min(dragGuidePromptGeometry.totalLength, pathLength + 1),
+        );
         const heading = (Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x) * 180) / Math.PI + 90;
         // 透明度只作为移动图标的入出场辅助，不独立承担提示语义。
         const opacity = Math.min(1, rawProgress / 0.12, (1 - rawProgress) / 0.18);
@@ -422,7 +432,8 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
           reducedMotion ||
           getState() !== "active" ||
           !dragGuidePrompt ||
-          dragGuidePromptPathLength <= 1 ||
+          !dragGuidePromptGeometry ||
+          dragGuidePromptGeometry.totalLength <= 1 ||
           dragGuidePromptFrameId !== undefined
         ) {
           return;
@@ -546,10 +557,15 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
           y: arrowBase.y - arrowPerpendicular.y * arrowHalfWidth,
         };
 
+        const pathData = `M ${start.x} ${start.y} Q ${control.x} ${control.y} ${end.x} ${end.y}`;
+        dragGuidePromptGeometry = getHomeTrainPathGeometry(pathData);
         dragGuide.setAttribute("viewBox", `0 0 ${stageBounds.width} ${stageBounds.height}`);
-        dragGuidePath.setAttribute("d", `M ${start.x} ${start.y} Q ${control.x} ${control.y} ${end.x} ${end.y}`);
+        dragGuidePath.setAttribute("d", pathData);
+        dragGuidePath.setAttribute(
+          "pathLength",
+          String(Math.max(1, dragGuidePromptGeometry.totalLength)),
+        );
         dragGuideHead.setAttribute("d", `M ${arrowStart.x} ${arrowStart.y} L ${end.x} ${end.y} L ${arrowEnd.x} ${arrowEnd.y}`);
-        dragGuidePromptPathLength = dragGuidePath.getTotalLength();
         startDragGuidePrompt();
       };
 

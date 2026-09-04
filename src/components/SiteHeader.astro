@@ -400,6 +400,8 @@ const appearanceOptions = [
   );
   const headerMenus = Array.from(document.querySelectorAll<HTMLDetailsElement>("[data-header-menu]"));
   const siteHeader = document.querySelector<HTMLElement>(".site-header");
+  /** 只有能容纳完整文字导视的中大屏参与 Header 收束；手机始终使用同一组触控尺寸。 */
+  const compactHeaderLayoutQuery = window.matchMedia("(min-width: 761px)");
   /** 向下阅读超过此距离才收束导视牌，避免首屏与短距离定位滚动反复改变 Header 密度。 */
   const compactHeaderScrollThreshold = 160;
   /** 小于此差值的滚动抖动不改变模式，触控板慢速停靠时仍保持稳定。 */
@@ -468,6 +470,12 @@ const appearanceOptions = [
    * 向下进入长内容后收成线路点与功能图标；用户一反向上滚便立即恢复完整牌面，保证回看与重新导航不需额外操作。
    */
   function syncCompactHeader() {
+    if (!compactHeaderLayoutQuery.matches) {
+      setHeaderLayoutState(false, false, false);
+      compactHeaderAnimationFrame = undefined;
+      return;
+    }
+
     const currentScrollPosition = window.scrollY;
     const scrollDelta = currentScrollPosition - lastHeaderScrollPosition;
     const nextScrollDirection = scrollDelta > 0 ? "down" : scrollDelta < 0 ? "up" : undefined;
@@ -522,6 +530,10 @@ const appearanceOptions = [
 
   /** 将连续 scroll 事件压缩到浏览器绘制帧，避免阅读时为每个输入事件重复写入根节点状态。 */
   function scheduleCompactHeaderSync() {
+    if (!compactHeaderLayoutQuery.matches) {
+      return;
+    }
+
     if (compactHeaderAnimationFrame !== undefined) {
       return;
     }
@@ -531,6 +543,12 @@ const appearanceOptions = [
 
   /** 深链首帧先采用紧凑 Header，再在浏览器完成锚点恢复后无动画校准，避免完整态短暂闪现。 */
   function initializeCompactHeaderState() {
+    if (!compactHeaderLayoutQuery.matches) {
+      setHeaderLayoutState(false, false, false);
+      hasSyncedCompactHeaderState = true;
+      return;
+    }
+
     const initialAnchorId = window.location.hash.slice(1);
     const startsInsideNarrative = initialAnchorId !== "" && initialAnchorId !== "home";
 
@@ -1156,5 +1174,17 @@ const appearanceOptions = [
   siteHeader?.addEventListener("pointerleave", scheduleCompactHeaderHoverContract);
 
   initializeCompactHeaderState();
+  compactHeaderLayoutQuery.addEventListener("change", () => {
+    if (!compactHeaderLayoutQuery.matches && compactHeaderAnimationFrame !== undefined) {
+      window.cancelAnimationFrame(compactHeaderAnimationFrame);
+      compactHeaderAnimationFrame = undefined;
+    }
+
+    headerLayoutIntent = undefined;
+    lastHeaderScrollPosition = window.scrollY;
+    compactHeaderScrollDirection = undefined;
+    compactHeaderScrollDirectionDistance = 0;
+    initializeCompactHeaderState();
+  });
   window.addEventListener("scroll", scheduleCompactHeaderSync, { passive: true });
 </script>

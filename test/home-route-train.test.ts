@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   getHomeFooterRevealProgress,
@@ -9,14 +10,49 @@ import {
   getHomeOnwardDepartureBoardState,
   getHomeOnwardFooterTrainProgress,
   getHomeOnwardTrainChoreography,
+  getHomeReducedMotionOnwardTrainOwner,
   getHomeSectionBreakerEntryPathStartY,
   getHomeSectionBreakerScrollDistance,
   getHomeTrainColorTransitionProgress,
+  getHomeTrainPathGeometry,
   getHomeTrainPathHitArea,
+  getHomeTrainPathPointAtLength,
   getHomeTrainTooltipPreferBlockPlacement,
   getHomeTrainTooltipPlacement,
+  getHomeTransferTrainVisibility,
   getHomeVerticalTrainBottomCenterY,
+  getHomeVerticalTrainRenderGeometry,
 } from "../src/data/home-route-train.ts";
+
+const homePageSource = readFileSync(
+  new URL("../src/components/HomePage.astro", import.meta.url),
+  "utf8",
+);
+
+test("路线几何在纯数值层解析直线与 Bézier，不调用浏览器 SVG 测量 API", () => {
+  const geometry = getHomeTrainPathGeometry("M0 0 L100 0 C100 0 100 100 100 100 L100 200");
+
+  assert.equal(geometry.totalLength, 300);
+  assert.deepEqual(geometry.segmentEndDistances, [100, 200, 300]);
+  assert.deepEqual(getHomeTrainPathPointAtLength(geometry, 50), { x: 50, y: 0 });
+  assert.deepEqual(getHomeTrainPathPointAtLength(geometry, 150), { x: 100, y: 50 });
+  assert.deepEqual(getHomeTrainPathPointAtLength(geometry, -1), { x: 0, y: 0 });
+  assert.deepEqual(getHomeTrainPathPointAtLength(geometry, 999), { x: 100, y: 200 });
+
+  const quadraticGeometry = getHomeTrainPathGeometry("M0 0 Q50 100 100 0");
+  const quadraticMidpoint = getHomeTrainPathPointAtLength(
+    quadraticGeometry,
+    quadraticGeometry.totalLength / 2,
+  );
+  assert.ok(Math.abs(quadraticMidpoint.x - 50) < 0.001);
+  assert.ok(Math.abs(quadraticMidpoint.y - 50) < 0.001);
+});
+
+test("首页滚动热路径不再同步查询 SVG 几何，并用 pathLength 校准数值里程", () => {
+  assert.doesNotMatch(homePageSource, /\.get(?:TotalLength|PointAtLength)\(/);
+  assert.match(homePageSource, /setAttribute\(\s*"pathLength"/);
+  assert.match(homePageSource, /getHomeTrainPathPointAtLength\(/);
+});
 
 test("Footer 交接按 sticky 舞台实高解锁，消融为视口高度会在短桌面晚 80px", () => {
   const shortDesktopRelease = getHomeFooterStickyReleaseScrollY({
@@ -203,6 +239,66 @@ test("小屏续行只用一辆车穿过分界，并在可见区内完成换色",
   );
 });
 
+test("小屏续行的局部车只在本地拥有视觉时出现，全局接管任一线路都不会留下第二辆车", () => {
+  assert.deepEqual(
+    getHomeTransferTrainVisibility({ owner: "local", singleTrainComposition: true }),
+    { incomingVisible: true, outgoingVisible: false },
+  );
+  assert.deepEqual(
+    getHomeTransferTrainVisibility({
+      owner: "global-incoming",
+      singleTrainComposition: true,
+    }),
+    { incomingVisible: false, outgoingVisible: false },
+  );
+  assert.deepEqual(
+    getHomeTransferTrainVisibility({
+      owner: "global-outgoing",
+      singleTrainComposition: true,
+    }),
+    { incomingVisible: false, outgoingVisible: false },
+  );
+});
+
+test("减少动态的续行只在局部车确实可见时交给它，离场后立即交给全局探索线列车", () => {
+  assert.equal(
+    getHomeReducedMotionOnwardTrainOwner({
+      routeContainsReadingLine: false,
+      contentContainsReadingLine: false,
+      footerContainsReadingLine: false,
+      localTrainWithinViewport: true,
+    }),
+    "global-incoming",
+  );
+  assert.equal(
+    getHomeReducedMotionOnwardTrainOwner({
+      routeContainsReadingLine: true,
+      contentContainsReadingLine: false,
+      footerContainsReadingLine: false,
+      localTrainWithinViewport: true,
+    }),
+    "local",
+  );
+  assert.equal(
+    getHomeReducedMotionOnwardTrainOwner({
+      routeContainsReadingLine: true,
+      contentContainsReadingLine: false,
+      footerContainsReadingLine: false,
+      localTrainWithinViewport: false,
+    }),
+    "global-outgoing",
+  );
+  assert.equal(
+    getHomeReducedMotionOnwardTrainOwner({
+      routeContainsReadingLine: false,
+      contentContainsReadingLine: true,
+      footerContainsReadingLine: false,
+      localTrainWithinViewport: false,
+    }),
+    "global-outgoing",
+  );
+});
+
 test("减少动态时小屏续行列车固定在分界处，只切换线路语义色", () => {
   const incomingState = getHomeMobileTransferTrainState({
     sectionTop: 500,
@@ -319,6 +415,38 @@ test("列车点击区会覆盖直轨与弯轨上的完整车身", () => {
   assert.ok(curvedHitArea.top <= 80);
   assert.ok(curvedHitArea.left + curvedHitArea.width >= 149);
   assert.ok(curvedHitArea.top + curvedHitArea.height >= 183);
+});
+
+test("移动端直轨列车直接由数值几何生成车身与命中区，不依赖 SVG 路径采样", () => {
+  assert.deepEqual(
+    getHomeVerticalTrainRenderGeometry({
+      trackX: 32,
+      routeStartY: -80,
+      routeEndY: 880,
+      trainCenterY: 400,
+      trainLength: 80,
+      trainThickness: 24,
+    }),
+    {
+      journeyLength: 960,
+      trainTailDistance: 440,
+      trainHeadDistance: 520,
+      hitArea: { left: 10, top: 360, width: 44, height: 80 },
+      trainMidpoint: { x: 32, y: 400 },
+    },
+  );
+
+  assert.equal(
+    getHomeVerticalTrainRenderGeometry({
+      trackX: 32,
+      routeStartY: 0,
+      routeEndY: 100,
+      trainCenterY: 200,
+      trainLength: 40,
+      trainThickness: 20,
+    }).trainTailDistance,
+    60,
+  );
 });
 
 test("竖轨底部锚点按车长留出完整可点击空间", () => {

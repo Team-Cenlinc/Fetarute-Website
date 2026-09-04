@@ -233,6 +233,9 @@ h3 {
  * 跑道确保正文始终藏在不透明底色之后；验票或略过时才由遮罩淡出显露 Serverlink 站名边界。
  */
 .departure-gate {
+  /* Safari 地址栏变化时以最大视口作不透明覆盖层；100vh 是旧浏览器回退。 */
+  --departure-gate-coverage-height: 100vh;
+  --departure-gate-coverage-height: 100lvh;
   /* 由滚动进度写入 0 到 1；靠近阶段只派生遮罩位置，保持不透明以隔离尚未抵达的正文。 */
   --departure-gate-approach-progress: 0;
   /* 回退时由真实 scrollY 派生 0 到 1；不使用第二条独立的 CSS 位移动画。 */
@@ -250,6 +253,7 @@ h3 {
   position: fixed;
   z-index: 29;
   inset: 0;
+  min-height: var(--departure-gate-coverage-height);
   display: grid;
   overflow: clip;
   background: var(--color-background);
@@ -257,7 +261,7 @@ h3 {
   isolation: isolate;
   opacity: 1;
   pointer-events: none;
-  transform: translateY(100dvh);
+  transform: translateY(var(--departure-gate-coverage-height));
   transition: visibility 0ms linear 200ms;
   visibility: hidden;
 }
@@ -278,7 +282,9 @@ h3 {
 
 .departure-gate[data-state="approaching"] {
   opacity: 1;
-  transform: translateY(calc((1 - var(--departure-gate-approach-progress)) * 100dvh));
+  transform: translateY(
+    calc((1 - var(--departure-gate-approach-progress)) * var(--departure-gate-coverage-height))
+  );
   /* 仅在滚动接管与收束期间提升合成优先级，避免常驻 will-change 占用绘制资源。 */
   will-change: transform;
   transition: none;
@@ -287,7 +293,9 @@ h3 {
 /* 回退位置直接跟随原生 scrollY；静默后的局部对齐也复用同一条物理滚动轨道。 */
 .departure-gate[data-state="retreating"] {
   opacity: 1;
-  transform: translateY(calc(var(--departure-gate-return-progress) * 100dvh));
+  transform: translateY(
+    calc(var(--departure-gate-return-progress) * var(--departure-gate-coverage-height))
+  );
   will-change: transform;
   transition: none;
 }
@@ -340,7 +348,7 @@ html.departure-gate--return-settling {
 /* 上划略过把整片 Guard 送往视口上沿，正文只在跑道收起与这条离场路径开始后出现。 */
 .departure-gate[data-state="leaving"][data-departure-gate-exit-direction="up"] {
   opacity: 1;
-  transform: translateY(-100dvh);
+  transform: translateY(calc(-1 * var(--departure-gate-coverage-height)));
   transition:
     transform var(--duration-departure-gate-leave) var(--motion-departure-gate-leave),
     visibility 0ms linear var(--duration-departure-gate-leave);
@@ -348,7 +356,7 @@ html.departure-gate--return-settling {
 
 .departure-gate__scene {
   position: relative;
-  min-height: 100dvh;
+  min-height: var(--departure-gate-coverage-height);
   padding: clamp(48px, 8vw, 112px) clamp(20px, 7.5vw, 112px) clamp(48px, 7vw, 96px);
   pointer-events: none;
 }
