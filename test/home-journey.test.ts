@@ -70,37 +70,25 @@ test("续行 PIDS 只硬切内部页面，不为整张屏幕添加空间位移",
   assert.doesNotMatch(boardRule, /transition:/);
 });
 
-test("续行 PIDS 消耗第一次向下输入，先完成内部翻页再允许页面离场", () => {
-  assert.match(homeOnwardComponentSource, /let wheelGestureConsumed = false/);
+test("续行 PIDS 由原生滚动行程决定翻页，不把第一次向下输入改写成翻页命令", () => {
+  assert.match(homeOnwardComponentSource, /getHomeOnwardDepartureBoardState\(progress\)/);
   assert.match(
     homeOnwardComponentSource,
-    /addEventListener\("wheel", handleWheel, \{ passive: false \}\)/,
+    /addEventListener\("scroll", requestRender, \{ passive: true \}\)/,
   );
   assert.match(
     homeOnwardComponentSource,
-    /if \(wheelGestureConsumed\)[\s\S]*?event\.preventDefault\(\)/,
-  );
-  assert.match(homeOnwardComponentSource, /addEventListener\("touchmove", handleTouchMove, \{/);
-  assert.match(homeOnwardComponentSource, /addEventListener\("keydown", handleKeyDown\)/);
-});
-
-test("续行 PIDS 短暂停留后放行同一段连续滚动，分段输入仍可逐页前进", () => {
-  assert.match(homeOnwardComponentSource, /const continuousScrollFallbackDelay = 260/);
-  assert.match(
-    homeOnwardComponentSource,
-    /if \(wheelGestureConsumed\) \{\s*event\.preventDefault\(\);\s*return;/,
+    /--home-onward-scroll-distance:\s*clamp\(1240px,\s*190svh,\s*1880px\)/,
   );
   assert.match(
     homeOnwardComponentSource,
-    /wheelReleaseTimer = window\.setTimeout\([\s\S]*?wheelGestureConsumed = false;[\s\S]*?continuousScrollFallbackDelay/,
+    /--home-onward-scroll-distance:\s*clamp\(1180px,\s*190svh,\s*1600px\)/,
   );
-  assert.match(
+  assert.doesNotMatch(homeOnwardComponentSource, /continuousScrollFallbackDelay/);
+  assert.doesNotMatch(homeOnwardComponentSource, /event\.preventDefault\(\)/);
+  assert.doesNotMatch(
     homeOnwardComponentSource,
-    /touchReleaseTimer = window\.setTimeout\([\s\S]*?touchGestureConsumed = false;[\s\S]*?continuousScrollFallbackDelay/,
-  );
-  assert.match(
-    homeOnwardComponentSource,
-    /keyboardReleaseTimer = window\.setTimeout\([\s\S]*?keyboardGestureConsumed = false;[\s\S]*?continuousScrollFallbackDelay/,
+    /addEventListener\("(?:wheel|touchstart|touchmove|touchend|touchcancel|keydown|keyup)"/,
   );
 });
 
@@ -204,9 +192,31 @@ test("续行桌面末屏把 PIDS 与导视牌下沉，并在 Footer 交接时抵
   );
 });
 
-test("续行导视让彩色图标贴住牌面边缘，并以施工中项目预留扩展空间", () => {
+test("续行 Wiki 导视从左侧色块扫出背景，并使用足够醒目的固定箭头", () => {
   assert.doesNotMatch(homeOnwardComponentSource, /\.home-onward__service-link::after/);
+  assert.doesNotMatch(homeOnwardComponentSource, /transition:\s*color/);
   assert.match(homeOnwardComponentSource, /home-onward__service-link--future/);
+  assert.match(homeOnwardComponentSource, /--duration-home-onward-guide-sweep:\s*260ms/);
+  assert.match(
+    homeOnwardComponentSource,
+    /a\.home-onward__service-link--wiki::before \{[\s\S]*?background:\s*var\(--palette-fetarute-info\);[\s\S]*?transform:\s*scaleX\(0\);[\s\S]*?transform-origin:\s*left center;/,
+  );
+  assert.match(
+    homeOnwardComponentSource,
+    /transition:\s*transform\s+var\(--duration-home-onward-guide-sweep\)\s+var\(--motion-header-standard-spatial\)/,
+  );
+  assert.match(
+    homeOnwardComponentSource,
+    /a\.home-onward__service-link--wiki:is\(:hover, :focus-visible\)::before \{[\s\S]*?transform:\s*scaleX\(1\);/,
+  );
+  assert.match(
+    homeOnwardComponentSource,
+    /--home-onward-guide-arrow-size:\s*clamp\(52px,\s*4vw,\s*76px\)/,
+  );
+  assert.match(
+    homeOnwardComponentSource,
+    /\.home-onward__service-arrow \{[\s\S]*?width:\s*var\(--home-onward-guide-arrow-size\);[\s\S]*?height:\s*var\(--home-onward-guide-arrow-size\);/,
+  );
   assert.match(
     homeOnwardComponentSource,
     /padding:\s*clamp\(20px,[\s\S]*?clamp\(54px,[\s\S]*?\s0;/,

@@ -206,7 +206,6 @@ const titleId = "home-onward-content-title";
   /** 把每个续行内容页自己的滚动行程映射到 PIDS 状态，不借用前一段 Section Breaker 的列车进度。 */
   const initialiseHomeOnwardContent = (section: HTMLElement) => {
     const journey = section.querySelector<HTMLElement>("[data-home-onward-journey]");
-    const stage = section.querySelector<HTMLElement>(".home-onward__stage");
     const destinationBoard = section.querySelector<HTMLElement>(
       "[data-home-onward-destination-board]",
     );
@@ -220,22 +219,13 @@ const titleId = "home-onward-content-title";
       "[data-home-onward-copy-feedback]",
     );
 
-    if (!journey || !stage || !destinationBoard || !helpBoard) {
+    if (!journey || !destinationBoard || !helpBoard) {
       return;
     }
 
-    /* 给 PIDS 硬切留出可感知的一拍，再把持续中的滚轮、触摸或按键输入交还原生滚动。 */
-    const continuousScrollFallbackDelay = 260;
     let frameRequest: number | undefined;
     let copyResetTimer: number | undefined;
-    let wheelReleaseTimer: number | undefined;
-    let touchReleaseTimer: number | undefined;
-    let keyboardReleaseTimer: number | undefined;
     let manuallyRequestedHelp = false;
-    let wheelGestureConsumed = false;
-    let touchGestureConsumed = false;
-    let touchStartY: number | undefined;
-    let keyboardGestureConsumed = false;
 
     /** 同一帧只写一次状态，并让隐藏的 PIDS 退出辅助技术与键盘焦点树。 */
     const render = () => {
@@ -267,7 +257,7 @@ const titleId = "home-onward-content-title";
       frameRequest = window.requestAnimationFrame(render);
     };
 
-    /** 提示按钮只替换固定 PIDS 内部内容；页面仍停在原位，随后由原生滚动进入 Footer。 */
+    /** 底部提示按钮提供显式捷径；普通滚轮、触摸和键盘输入仍完整经过续行路程。 */
     const scrollToHelp = () => {
       manuallyRequestedHelp = true;
       requestRender();
@@ -301,180 +291,6 @@ const titleId = "home-onward-content-title";
       }
 
       return copyTextWithLegacyField(value);
-    };
-
-    /** 把行和页单位换算为像素，保证鼠标滚轮与触控板使用同一进入判定。 */
-    const getWheelDeltaY = (event: WheelEvent) => {
-      if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) {
-        return event.deltaY * 16;
-      }
-
-      if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
-        return event.deltaY * window.innerHeight;
-      }
-
-      return event.deltaY;
-    };
-
-    /** 判断向下输入是否已经抵达固定舞台；尚未进入时不干预页面原生滚动。 */
-    const shouldRevealHelp = (intendedScroll: number) => {
-      if (
-        intendedScroll <= 0 ||
-        section.dataset.homeOnwardBoardState !== "destinations"
-      ) {
-        return false;
-      }
-
-      const journeyRect = journey.getBoundingClientRect();
-      const stageRect = stage.getBoundingClientRect();
-      const stageIsPinned = stageRect.top <= 1 && stageRect.bottom >= window.innerHeight - 1;
-      const reachesStage = journeyRect.top > 0 && intendedScroll >= journeyRect.top;
-      return stageIsPinned || reachesStage;
-    };
-
-    /** 若同一次输入跨过舞台起点，就精确停在 PIDS，而不是把余量带进 Footer。 */
-    const settleAtJourneyStart = () => {
-      const journeyTop = journey.getBoundingClientRect().top;
-      if (journeyTop <= 0) {
-        return;
-      }
-
-      const scrollElement = document.scrollingElement ?? document.documentElement;
-      scrollElement.scrollTop += journeyTop;
-    };
-
-    /** 固定停留只覆盖 PIDS 翻页瞬间；持续输入超过该窗口后恢复原生滚动。 */
-    const scheduleWheelRelease = () => {
-      if (wheelReleaseTimer !== undefined) {
-        window.clearTimeout(wheelReleaseTimer);
-      }
-
-      wheelReleaseTimer = window.setTimeout(() => {
-        wheelGestureConsumed = false;
-        wheelReleaseTimer = undefined;
-      }, continuousScrollFallbackDelay);
-    };
-
-    /** 第一次向下滚只翻 PIDS 内容，并短暂吞掉惯性以留下清楚的换页拍点。 */
-    const handleWheel = (event: WheelEvent) => {
-      const deltaY = getWheelDeltaY(event);
-      if (deltaY <= 0) {
-        return;
-      }
-
-      if (wheelGestureConsumed) {
-        event.preventDefault();
-        return;
-      }
-
-      if (!shouldRevealHelp(deltaY)) {
-        return;
-      }
-
-      event.preventDefault();
-      settleAtJourneyStart();
-      wheelGestureConsumed = true;
-      scrollToHelp();
-      scheduleWheelRelease();
-    };
-
-    /** 一次手指滑动先翻一页 PIDS；持续滑动超过换页拍点后恢复原生位移。 */
-    const handleTouchStart = (event: TouchEvent) => {
-      if (touchReleaseTimer !== undefined) {
-        window.clearTimeout(touchReleaseTimer);
-        touchReleaseTimer = undefined;
-      }
-
-      touchStartY = event.touches[0]?.clientY;
-      touchGestureConsumed = false;
-    };
-
-    const handleTouchMove = (event: TouchEvent) => {
-      const currentY = event.touches[0]?.clientY;
-      if (touchStartY === undefined || currentY === undefined) {
-        return;
-      }
-
-      const intendedScroll = touchStartY - currentY;
-      if (intendedScroll <= 0) {
-        return;
-      }
-
-      if (touchGestureConsumed) {
-        event.preventDefault();
-        return;
-      }
-
-      if (!shouldRevealHelp(intendedScroll)) {
-        return;
-      }
-
-      event.preventDefault();
-      settleAtJourneyStart();
-      touchGestureConsumed = true;
-      scrollToHelp();
-      touchReleaseTimer = window.setTimeout(() => {
-        touchGestureConsumed = false;
-        touchReleaseTimer = undefined;
-      }, continuousScrollFallbackDelay);
-    };
-
-    const handleTouchEnd = () => {
-      if (touchReleaseTimer !== undefined) {
-        window.clearTimeout(touchReleaseTimer);
-        touchReleaseTimer = undefined;
-      }
-
-      touchStartY = undefined;
-      touchGestureConsumed = false;
-    };
-
-    /** 键盘翻页沿用同一短暂停留，并避开链接、按钮与输入控件。 */
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target;
-      if (
-        target instanceof HTMLElement &&
-        target.closest("a, button, input, textarea, select, [contenteditable='true']")
-      ) {
-        return;
-      }
-
-      const intendedScroll =
-        event.key === "ArrowDown"
-          ? 40
-          : event.key === "PageDown" || event.key === " "
-            ? window.innerHeight * 0.8
-            : 0;
-      if (intendedScroll <= 0) {
-        return;
-      }
-
-      if (keyboardGestureConsumed) {
-        event.preventDefault();
-        return;
-      }
-
-      if (!shouldRevealHelp(intendedScroll)) {
-        return;
-      }
-
-      event.preventDefault();
-      settleAtJourneyStart();
-      keyboardGestureConsumed = true;
-      scrollToHelp();
-      keyboardReleaseTimer = window.setTimeout(() => {
-        keyboardGestureConsumed = false;
-        keyboardReleaseTimer = undefined;
-      }, continuousScrollFallbackDelay);
-    };
-
-    const handleKeyUp = () => {
-      if (keyboardReleaseTimer !== undefined) {
-        window.clearTimeout(keyboardReleaseTimer);
-        keyboardReleaseTimer = undefined;
-      }
-
-      keyboardGestureConsumed = false;
     };
 
     /** 同步复制按钮图标、可见反馈与数据状态，并在短暂确认后恢复默认文案。 */
@@ -512,13 +328,6 @@ const titleId = "home-onward-content-title";
     });
 
     window.addEventListener("scroll", requestRender, { passive: true });
-    window.addEventListener("wheel", handleWheel, { passive: false });
-    window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    window.addEventListener("touchmove", handleTouchMove, { passive: false });
-    window.addEventListener("touchend", handleTouchEnd, { passive: true });
-    window.addEventListener("touchcancel", handleTouchEnd, { passive: true });
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
     window.addEventListener("resize", requestRender);
     window.addEventListener("pageshow", requestRender);
     requestRender();
@@ -531,8 +340,8 @@ const titleId = "home-onward-content-title";
 
 <style>
   .home-onward {
-    /* 固定行程先呈现两个 PIDS 拍点，再把连续或分段的后续输入交给 Footer。 */
-    --home-onward-scroll-distance: clamp(1020px, 150svh, 1420px);
+    /* 原生滚动行程先呈现两个 PIDS 拍点，再把后续输入连续交给 Footer。 */
+    --home-onward-scroll-distance: clamp(1240px, 190svh, 1880px);
     --home-onward-track-width: clamp(36px, 3.23vw, 62px);
     /* 右轨变量表示直轨左边缘，并复用开放弯轨的 4.01613:1 比例；clamp 生效时仍与上段精确接缝。 */
     --home-onward-right-track-x: calc(
@@ -568,6 +377,10 @@ const titleId = "home-onward-content-title";
     --home-onward-guide-right-wing: clamp(52px, 4.8vw, 92px);
     --home-onward-active-train-thickness: 90px;
     --home-onward-guide-train-gap: clamp(24px, 2vw, 32px);
+    /* Wiki 箭头与导视行共用固定占位；放大只增加符号分量，不在 hover 时改变排版。 */
+    --home-onward-guide-arrow-size: clamp(52px, 4vw, 76px);
+    /* Wiki 色块扫过使用独立短促时长，保证方向可读且不拖慢高频 hover 反馈。 */
+    --duration-home-onward-guide-sweep: 260ms;
     --home-onward-guide-right: calc(
       100% - var(--home-onward-right-track-x) - var(--home-onward-track-width) -
         var(--home-onward-guide-right-wing)
@@ -789,9 +602,7 @@ const titleId = "home-onward-content-title";
   }
 
   .home-onward td a:hover,
-  .home-onward td a:focus-visible,
-  a.home-onward__service-link:hover,
-  a.home-onward__service-link:focus-visible {
+  .home-onward td a:focus-visible {
     background: var(--palette-surface-raised);
     outline: 2px solid currentColor;
     outline-offset: 2px;
@@ -1031,10 +842,11 @@ const titleId = "home-onward-content-title";
   }
 
   .home-onward__service-link {
+    position: relative;
     display: grid;
     grid-template-columns:
       clamp(58px, 4.4vw, 84px) minmax(0, max-content) minmax(36px, 1fr)
-      clamp(30px, 2.2vw, 42px);
+      var(--home-onward-guide-arrow-size);
     gap: clamp(10px, 0.8vw, 16px);
     align-items: center;
     min-height: clamp(76px, 9.5svh, 102px);
@@ -1044,6 +856,41 @@ const titleId = "home-onward-content-title";
     font-weight: 700;
     line-height: 1.05;
     text-decoration: none;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .home-onward__service-link > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  a.home-onward__service-link--wiki::before {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    background: var(--palette-fetarute-info);
+    content: "";
+    pointer-events: none;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition:
+      transform var(--duration-home-onward-guide-sweep)
+      var(--motion-header-standard-spatial);
+  }
+
+  a.home-onward__service-link--wiki:is(:hover, :focus-visible) {
+    background: transparent;
+    color: var(--palette-fetarute-info-text);
+  }
+
+  a.home-onward__service-link--wiki:is(:hover, :focus-visible)::before {
+    transform: scaleX(1);
+  }
+
+  a.home-onward__service-link--wiki:focus-visible {
+    outline: 3px solid var(--palette-text);
+    outline-offset: 3px;
   }
 
   .home-onward__service-icon {
@@ -1082,8 +929,8 @@ const titleId = "home-onward-content-title";
   }
 
   .home-onward__service-arrow {
-    width: clamp(30px, 2.2vw, 42px);
-    height: clamp(30px, 2.2vw, 42px);
+    width: var(--home-onward-guide-arrow-size);
+    height: var(--home-onward-guide-arrow-size);
   }
 
   @media (min-width: 1024px) {
@@ -1132,10 +979,13 @@ const titleId = "home-onward-content-title";
     .home-onward {
       --home-onward-board-width: clamp(360px, 39vw, 470px);
       --home-onward-guide-width: clamp(360px, 38vw, 430px);
+      --home-onward-guide-arrow-size: 48px;
     }
 
     .home-onward__service-link {
-      grid-template-columns: 48px minmax(max-content, auto) minmax(38px, 1fr) 34px;
+      grid-template-columns:
+        48px minmax(max-content, auto) minmax(38px, 1fr)
+        var(--home-onward-guide-arrow-size);
       gap: 10px;
       min-height: 76px;
       font-size: clamp(22px, 2.5vw, 32px);
@@ -1151,10 +1001,11 @@ const titleId = "home-onward-content-title";
   @media (max-width: 1023px) {
     .home-onward {
       /* 小屏延续“线路在左、正文向内容侧伸出”的首页铁路语法。 */
-      --home-onward-scroll-distance: clamp(940px, 150svh, 1260px);
+      --home-onward-scroll-distance: clamp(1180px, 190svh, 1600px);
       --home-onward-track-width: clamp(20px, 5.8vw, 30px);
       --home-onward-pids-inset: clamp(12px, 3.6vw, 18px);
       --home-onward-board-screen-size: clamp(202px, 24svh, 210px);
+      --home-onward-guide-arrow-size: 36px;
       /* 小屏保留左侧线路挂载面，但纵向仍沿用桌面等宽的上下边框。 */
       --home-onward-board-block-size: calc(
         var(--home-onward-board-screen-size) + var(--home-onward-pids-inset) * 2
@@ -1277,7 +1128,9 @@ const titleId = "home-onward-content-title";
     }
 
     .home-onward__service-link {
-      grid-template-columns: 44px minmax(0, max-content) minmax(24px, 1fr) 26px;
+      grid-template-columns:
+        44px minmax(0, max-content) minmax(24px, 1fr)
+        var(--home-onward-guide-arrow-size);
       gap: 8px;
       min-height: 64px;
       font-size: clamp(17px, 4.6vw, 22px);
@@ -1301,8 +1154,6 @@ const titleId = "home-onward-content-title";
     .home-onward__service-arrow {
       grid-column: 4;
       grid-row: 1;
-      width: 26px;
-      height: 26px;
     }
 
     .home-onward__board-area {
@@ -1442,6 +1293,10 @@ const titleId = "home-onward-content-title";
     .home-onward__board {
       transition: none;
       transform: none;
+    }
+
+    a.home-onward__service-link--wiki::before {
+      transition: none;
     }
   }
 
