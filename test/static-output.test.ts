@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
 import { siteInfo } from "../src/data/site.ts";
-import { localeMetadata, type Locale } from "../src/i18n/config.ts";
+import { defaultLocale, localeMetadata, type Locale } from "../src/i18n/config.ts";
 import { getMessages } from "../src/i18n/messages.ts";
 
 const publicHomeLocales = ["zh-Hans", "zh-Hant", "en"] as const satisfies readonly Locale[];
@@ -176,6 +176,26 @@ test("根入口保持 noindex、完整 hreflang 与无脚本默认回退", () =>
   }
   const defaultAlternate = findHeadTag(html, "link", "hreflang", "x-default");
   assert.equal(getAttribute(defaultAlternate ?? "", "href"), `${siteInfo.url}/`);
+});
+
+test("根入口为不执行语言跳转的分享抓取器输出站点级预览", () => {
+  const html = readStaticRootHtml();
+  const messages = getMessages(defaultLocale);
+  const expectedImageUrl = new URL(siteInfo.socialImage, siteInfo.url).toString();
+  const descriptionTag = findHeadTag(html, "meta", "name", "description");
+  const openGraphTitleTag = findHeadTag(html, "meta", "property", "og:title");
+  const openGraphDescriptionTag = findHeadTag(html, "meta", "property", "og:description");
+  const openGraphUrlTag = findHeadTag(html, "meta", "property", "og:url");
+  const openGraphImageTag = findHeadTag(html, "meta", "property", "og:image");
+  const twitterCardTag = findHeadTag(html, "meta", "name", "twitter:card");
+
+  assert.equal(extractText(html.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? ""), siteInfo.name);
+  assert.equal(getAttribute(descriptionTag ?? "", "content"), messages.description);
+  assert.equal(getAttribute(openGraphTitleTag ?? "", "content"), siteInfo.name);
+  assert.equal(getAttribute(openGraphDescriptionTag ?? "", "content"), messages.description);
+  assert.equal(getAttribute(openGraphUrlTag ?? "", "content"), `${siteInfo.url}/`);
+  assert.equal(getAttribute(openGraphImageTag ?? "", "content"), expectedImageUrl);
+  assert.equal(getAttribute(twitterCardTag ?? "", "content"), "summary_large_image");
 });
 
 test("构建后的 discovery 文件只公开正式页面与正式描述", () => {
