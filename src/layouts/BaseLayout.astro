@@ -131,8 +131,7 @@ const pageStructuredData = {
       "@id": `${siteHomeUrl}#organization`,
       name: siteInfo.name,
       url: siteHomeUrl,
-      description: pageDescription,
-      sameAs: ["https://wiki.fetarute.org/"],
+      description: messages.description,
       logo: {
         "@type": "ImageObject",
         url: brandImageUrl,
@@ -192,7 +191,7 @@ const pageStructuredData = {
       ))
     }
     <link rel="alternate" hreflang="x-default" href={xDefaultUrl} />
-    <link rel="alternate" type="text/plain" href="/llms.txt" title="AI content index" />
+    <link rel="describedby" href="/llms.txt" />
     <link
       rel="icon"
       type="image/png"
