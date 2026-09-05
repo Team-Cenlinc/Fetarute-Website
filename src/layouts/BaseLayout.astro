@@ -62,6 +62,12 @@ const languageAlternates = availableLocales.map((alternateLocale) => ({
   locale: alternateLocale,
   href: getLocalizedAbsoluteUrl(alternateLocale, pagePath),
 }));
+const semanticKeywords =
+  locale === "en"
+    ? ["Minecraft server community", "railways", "collaborative building", "exploration"]
+    : locale === "zh-Hant"
+      ? ["Minecraft 伺服器社群", "鐵路", "共同建設", "探索"]
+      : ["Minecraft 服务器社区", "铁路", "共同建设", "探索"];
 
 /**
  * 仅在生产环境把启动序列的已播放状态写入当前 tab。
@@ -125,6 +131,7 @@ const pageStructuredData = {
       "@id": `${siteHomeUrl}#organization`,
       name: siteInfo.name,
       url: siteHomeUrl,
+      description: messages.description,
       logo: {
         "@type": "ImageObject",
         url: brandImageUrl,
@@ -136,6 +143,8 @@ const pageStructuredData = {
       name: siteInfo.name,
       url: siteHomeUrl,
       description: messages.description,
+      inLanguage: locales.map((siteLocale) => localeMetadata[siteLocale].languageTag),
+      keywords: semanticKeywords,
       publisher: { "@id": `${siteHomeUrl}#organization` },
     },
     {
@@ -146,7 +155,14 @@ const pageStructuredData = {
       description: pageDescription,
       inLanguage: localeMetadata[locale].languageTag,
       isPartOf: { "@id": `${siteHomeUrl}#website` },
-      primaryImageOfPage: socialImageUrl,
+      about: { "@id": `${siteHomeUrl}#organization` },
+      primaryImageOfPage: {
+        "@type": "ImageObject",
+        url: socialImageUrl,
+        width: 1200,
+        height: 630,
+        caption: messages.socialImageAlt,
+      },
     },
   ],
 };
@@ -175,6 +191,7 @@ const pageStructuredData = {
       ))
     }
     <link rel="alternate" hreflang="x-default" href={xDefaultUrl} />
+    <link rel="describedby" href="/llms.txt" />
     <link
       rel="icon"
       type="image/png"
