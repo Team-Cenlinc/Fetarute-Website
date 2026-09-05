@@ -30,10 +30,10 @@ html[data-launching] .site-header {
 }
 
 .hero-section {
-  /* 文案投影由 Landing 场景数据控制；反光色从已加载图片的标题覆盖区运行时取样，图片本身保持原始色调。 */
+  /* 文案投影与预先计算的反光色均由 Landing 场景数据控制，图片本身保持原始色调。 */
   --hero-copy-shadow-blur: 14px;
   --hero-copy-shadow-opacity: 72%;
-  /* SSR 首帧先用白色反光，运行时取色失败也不会削弱标题的可读性。 */
+  /* 未提供场景元数据时以白色反光安全回退。 */
   --hero-copy-reflection-color: var(--color-hero-copy-reflection-fallback);
   position: relative;
   min-height: 100vh;

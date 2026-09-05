@@ -34,6 +34,8 @@ export interface HomeLandingScene {
   image: ImageMetadata;
   /** 图片在窄屏裁切时优先保留的视觉焦点，采用 CSS object-position 语法。 */
   focalPoint: string;
+  /** 素材维护阶段从标题覆盖区预先计算的稳定 CSS 反光色。 */
+  reflectionColor: string;
   /** 场景文案投影只调整空间强度；中性阴影色由全站 palette 提供，避免图片数据内散落色值。 */
   copyShadow: {
     /** 投影边缘的模糊半径，随左侧背景的纹理复杂度收束或放开。 */
@@ -52,60 +54,70 @@ export const homeLandingScenes: readonly HomeLandingScene[] = [
     id: "pyutocor-dusk",
     image: pyutocorDuskScene,
     focalPoint: "center center",
+    reflectionColor: "hsl(21.93deg 28.00% 72.00%)",
     copyShadow: { blur: "14px", opacity: "72%" },
   },
   {
     id: "survival-bayside",
     image: survivalBaysideScene,
     focalPoint: "32% center",
+    reflectionColor: "hsl(27.25deg 28.00% 65.97%)",
     copyShadow: { blur: "18px", opacity: "86%" },
   },
   {
     id: "survival-fueya",
     image: survivalFueyaScene,
     focalPoint: "68% 58%",
+    reflectionColor: "hsl(30.68deg 28.00% 72.00%)",
     copyShadow: { blur: "20px", opacity: "90%" },
   },
   {
     id: "survival-kitariku-haixing-road-bridge",
     image: survivalKitarikuHaixingRoadBridgeScene,
     focalPoint: "56% 55%",
+    reflectionColor: "hsl(44.72deg 60.00% 72.00%)",
     copyShadow: { blur: "22px", opacity: "94%" },
   },
   {
     id: "survival-kl-x-bridge",
     image: survivalKlXBridgeScene,
     focalPoint: "57% center",
+    reflectionColor: "hsl(32.69deg 28.00% 72.00%)",
     copyShadow: { blur: "20px", opacity: "90%" },
   },
   {
     id: "survival-port-pyutocor",
     image: survivalPortPyutocorScene,
     focalPoint: "58% 52%",
+    reflectionColor: "hsl(21.09deg 44.46% 72.00%)",
     copyShadow: { blur: "21px", opacity: "92%" },
   },
   {
     id: "survival-pyutocor-day",
     image: survivalPyutocorDayScene,
     focalPoint: "58% 52%",
+    reflectionColor: "hsl(221.66deg 28.00% 57.28%)",
     copyShadow: { blur: "20px", opacity: "90%" },
   },
   {
     id: "survival-pyutocor-from-mountain",
     image: survivalPyutocorFromMountainScene,
     focalPoint: "54% 52%",
+    reflectionColor: "hsl(189.69deg 28.00% 59.99%)",
     copyShadow: { blur: "19px", opacity: "88%" },
   },
   {
     id: "survival-pyutocor-railway-avenue",
     image: survivalPyutocorRailwayAvenueScene,
     focalPoint: "54% 64%",
+    reflectionColor: "hsl(22.52deg 60.00% 62.49%)",
     copyShadow: { blur: "15px", opacity: "76%" },
   },
   {
     id: "survival-syuchun",
     image: survivalSyuchunScene,
     focalPoint: "52% 60%",
+    reflectionColor: "hsl(14.53deg 36.03% 72.00%)",
     copyShadow: { blur: "12px", opacity: "68%" },
   },
 ];
