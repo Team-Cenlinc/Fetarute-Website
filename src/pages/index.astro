@@ -1,10 +1,13 @@
 ---
 import { siteInfo } from "@/data/site";
 import { defaultLocale, localeMetadata, locales, type Locale } from "@/i18n/config";
+import { getMessages } from "@/i18n/messages";
 
 // 纯静态发布不能读取 Accept-Language；根路径只承担客户端首帧推断与无脚本回退，不复制任何首页正文。
 const defaultLocaleHref = `/${defaultLocale}/`;
 const siteHomeUrl = new URL("/", siteInfo.url).toString();
+const defaultMessages = getMessages(defaultLocale);
+const socialImageUrl = new URL(siteInfo.socialImage, siteInfo.url).toString();
 /** 根入口可跳转的完整白名单；脚本只从这里取路径，不能把浏览器语言直接拼进 URL。 */
 const localeHrefs = Object.fromEntries(
   locales.map((locale) => [locale, `/${locale}/`]),
@@ -12,9 +15,10 @@ const localeHrefs = Object.fromEntries(
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={localeMetadata[defaultLocale].languageTag}>
   <head>
     <meta charset="UTF-8" />
+    <meta name="description" content={defaultMessages.description} />
     <meta name="robots" content="noindex, follow" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <link rel="canonical" href={siteHomeUrl} />
@@ -28,7 +32,31 @@ const localeHrefs = Object.fromEntries(
       ))
     }
     <link rel="alternate" hreflang="x-default" href={siteHomeUrl} />
-    <title>Choose language | {siteInfo.name}</title>
+
+    <!--
+      分享抓取器通常不会执行下方的客户端语言跳转，因此根入口也必须提供完整的站点级分享信息。
+      canonical 仍保留在 x-default 根地址，实际浏览器再按偏好进入对应语言首页。
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content={localeMetadata[defaultLocale].openGraphLocale} />
+    <meta property="og:site_name" content={siteInfo.name} />
+    <meta property="og:title" content={siteInfo.name} />
+    <meta property="og:description" content={defaultMessages.description} />
+    <meta property="og:url" content={siteHomeUrl} />
+    <meta property="og:image" content={socialImageUrl} />
+    <meta property="og:image:secure_url" content={socialImageUrl} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={defaultMessages.socialImageAlt} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={siteInfo.name} />
+    <meta name="twitter:description" content={defaultMessages.description} />
+    <meta name="twitter:image" content={socialImageUrl} />
+    <meta name="twitter:image:alt" content={defaultMessages.socialImageAlt} />
+
+    <title>{siteInfo.name}</title>
     <script is:inline define:vars={{ defaultLocaleHref, localeHrefs }}>
       (() => {
         /**
