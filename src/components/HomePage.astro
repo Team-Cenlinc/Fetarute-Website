@@ -23,7 +23,7 @@ import {
   homeLandingImageWidths,
   homeSceneryImageQuality,
 } from "@/data/home-image-output";
-import { homeLandingScenes } from "@/data/home-landing";
+import { homeLandingScenes, type HomeLandingSceneId } from "@/data/home-landing";
 import { getHomeJourneySectionNames, homeJourneySections } from "@/data/home-journey";
 import { getRailwayLineCssVariableName } from "@/data/palette";
 import { railwayLineByKey, shiftRailwayLineColor } from "@/data/railway";
@@ -43,63 +43,69 @@ export interface Props {
 const { locale } = Astro.props;
 const messages = getMessages(locale);
 
-/**
- * 为每张受控实景生成可由浏览器延迟选择的两种现代格式。
- * 首帧保留第一张作为无脚本回退；脚本只替换地址，不会将所有候选图片同时放进页面布局。
- */
-const landingSceneImages = await Promise.all(
-  homeLandingScenes.map(async (scene) => {
-    const outputWidths = getHomeSceneryOutputWidths(
-      scene.image.width,
-      2560,
-      homeLandingImageWidths,
-    );
-    const [avifOutputs, webpOutputs] = await Promise.all([
-      Promise.all(
-        outputWidths.map((width) =>
-          getImage({
-            src: scene.image,
-            format: "avif",
-            width,
-            quality: homeSceneryImageQuality.avif,
-          }),
-        ),
-      ),
-      Promise.all(
-        outputWidths.map((width) =>
-          getImage({
-            src: scene.image,
-            format: "webp",
-            width,
-            quality: homeSceneryImageQuality.webp,
-          }),
-        ),
-      ),
-    ]);
-    const width = outputWidths.at(-1) ?? scene.image.width;
-    const webp = webpOutputs.at(-1);
+/** 每种语言固定一张首屏实景，让 HTML preload scanner 直接发现 LCP 图片。 */
+const landingSceneIdByLocale = {
+  "zh-Hans": "pyutocor-dusk",
+  "zh-Hant": "survival-bayside",
+  en: "survival-pyutocor-day",
+} satisfies Record<Locale, HomeLandingSceneId>;
+const landingScene = homeLandingScenes.find((scene) => scene.id === landingSceneIdByLocale[locale]);
 
-    if (!webp) {
-      throw new Error(`首页 Landing 实景 ${scene.id} 没有生成可用的 WebP 输出。`);
-    }
+if (!landingScene) {
+  throw new Error(`首页没有登记 ${locale} 对应的首屏实景。`);
+}
 
-    return {
-      id: scene.id,
-      alt: messages.home.sceneAltById[scene.id],
-      focalPoint: scene.focalPoint,
-      copyShadow: scene.copyShadow,
-      width,
-      height: Math.round((scene.image.height / scene.image.width) * width),
-      avifSrcset: avifOutputs
-        .map((output, outputIndex) => `${output.src} ${outputWidths[outputIndex]}w`)
-        .join(", "),
-      webpSrc: webp.src,
-      webpSrcset: webpOutputs
-        .map((output, outputIndex) => `${output.src} ${outputWidths[outputIndex]}w`)
-        .join(", "),
-    };
-  }),
+const landingOutputWidths = getHomeSceneryOutputWidths(
+  landingScene.image.width,
+  2560,
+  homeLandingImageWidths,
 );
+const [landingAvifOutputs, landingWebpOutputs] = await Promise.all([
+  Promise.all(
+    landingOutputWidths.map((width) =>
+      getImage({
+        src: landingScene.image,
+        format: "avif",
+        width,
+        quality: homeSceneryImageQuality.avif,
+      }),
+    ),
+  ),
+  Promise.all(
+    landingOutputWidths.map((width) =>
+      getImage({
+        src: landingScene.image,
+        format: "webp",
+        width,
+        quality: homeSceneryImageQuality.webp,
+      }),
+    ),
+  ),
+]);
+const landingWebp = landingWebpOutputs.at(-1);
+
+if (!landingWebp) {
+  throw new Error(`首页 Landing 实景 ${landingScene.id} 没有生成可用的 WebP 输出。`);
+}
+
+const landingSceneImage = {
+  id: landingScene.id,
+  alt: messages.home.sceneAltById[landingScene.id],
+  focalPoint: landingScene.focalPoint,
+  copyShadow: landingScene.copyShadow,
+  width: landingOutputWidths.at(-1) ?? landingScene.image.width,
+  height: Math.round(
+    (landingScene.image.height / landingScene.image.width) *
+      (landingOutputWidths.at(-1) ?? landingScene.image.width),
+  ),
+  avifSrcset: landingAvifOutputs
+    .map((output, outputIndex) => `${output.src} ${landingOutputWidths[outputIndex]}w`)
+    .join(", "),
+  webpSrc: landingWebp.src,
+  webpSrcset: landingWebpOutputs
+    .map((output, outputIndex) => `${output.src} ${landingOutputWidths[outputIndex]}w`)
+    .join(", "),
+};
 
 /**
  * Gallery 截图在 SSG 阶段统一生成现代格式，并把可见标题与替代文本绑定到同一稳定 scene id。
@@ -159,12 +165,6 @@ const gallerySceneImages = await Promise.all(
     };
   }),
 );
-
-const defaultLandingScene = landingSceneImages[0];
-
-if (!defaultLandingScene) {
-  throw new Error("首页至少需要登记一张可用的到站实景。");
-}
 
 const homeLine = railwayLineByKey.get(wayfindingPrototype.homeLineKey);
 
@@ -251,28 +251,25 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     class="hero-section"
     id="home"
     aria-labelledby="hero-title"
-    style={`--hero-copy-shadow-blur: ${defaultLandingScene.copyShadow.blur}; --hero-copy-shadow-opacity: ${defaultLandingScene.copyShadow.opacity};`}
+    style={`--hero-copy-shadow-blur: ${landingSceneImage.copyShadow.blur}; --hero-copy-shadow-opacity: ${landingSceneImage.copyShadow.opacity};`}
   >
     <div class="hero-section__viewport">
-      <!-- 脚本先在离线 picture 中装入最终随机场景，再一次性挂载；浏览器不会抢先请求默认图。 -->
-      <picture class="hero-scene" data-landing-scene-id={defaultLandingScene.id}></picture>
-      <noscript>
-        <picture class="hero-scene">
-          <source srcset={defaultLandingScene.avifSrcset} sizes="100vw" type="image/avif" />
-          <img
-            src={defaultLandingScene.webpSrc}
-            srcset={defaultLandingScene.webpSrcset}
-            sizes="100vw"
-            width={defaultLandingScene.width}
-            height={defaultLandingScene.height}
-            alt={defaultLandingScene.alt}
-            loading="eager"
-            fetchpriority="high"
-            decoding="async"
-            style={`object-position: ${defaultLandingScene.focalPoint};`}
-          />
-        </picture>
-      </noscript>
+      <picture class="hero-scene" data-landing-scene-id={landingSceneImage.id}>
+        <source srcset={landingSceneImage.avifSrcset} sizes="100vw" type="image/avif" />
+        <img
+          data-landing-scene-image
+          src={landingSceneImage.webpSrc}
+          srcset={landingSceneImage.webpSrcset}
+          sizes="100vw"
+          width={landingSceneImage.width}
+          height={landingSceneImage.height}
+          alt={landingSceneImage.alt}
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          style={`object-position: ${landingSceneImage.focalPoint};`}
+        />
+      </picture>
       <div class="hero-section__foreground">
         <div class="hero-copy">
           <h1 id="hero-title">
@@ -289,81 +286,19 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     </div>
   </section>
 
-  <script is:inline define:vars={{ landingSceneImages }}>
+  <script is:inline>
     (() => {
-      const sceneElement = document.querySelector("[data-landing-scene-id]");
+      const sceneImage = document.querySelector("[data-landing-scene-image]");
+      const sceneElement = sceneImage?.closest("[data-landing-scene-id]");
       const heroSection = sceneElement?.closest(".hero-section");
       const heroTitle = heroSection?.querySelector("#hero-title");
-      /** 同一标签页只记录上一张 Landing 实景，既保留随机性，又避免连续刷新恰好重复时误以为没有生效。 */
-      const landingSceneSessionKey = "fetarute.home.landing-scene-id";
-
       if (
         !(sceneElement instanceof HTMLElement) ||
+        !(sceneImage instanceof HTMLImageElement) ||
         !(heroSection instanceof HTMLElement) ||
         !(heroTitle instanceof HTMLElement)
       ) {
         return;
-      }
-
-      /** 使用密码学随机源避免刷新时固定落在同一张图；旧浏览器安全回退至 Math.random。 */
-      const getRandomIndex = (length) => {
-        if (length <= 1) {
-          return 0;
-        }
-
-        if (window.crypto?.getRandomValues) {
-          const values = new Uint32Array(1);
-          window.crypto.getRandomValues(values);
-          return Math.floor((values[0] / 2 ** 32) * length);
-        }
-
-        return Math.floor(Math.random() * length);
-      };
-
-      const getPreviousSceneId = () => {
-        try {
-          return window.sessionStorage.getItem(landingSceneSessionKey);
-        } catch {
-          // 隐私模式或受限嵌入上下文不能访问 storage 时，退回普通随机即可。
-          return null;
-        }
-      };
-      const previousSceneId = getPreviousSceneId();
-      const selectableScenes = landingSceneImages.filter((scene) => scene.id !== previousSceneId);
-      const selectedScene = selectableScenes[getRandomIndex(selectableScenes.length)];
-
-      if (!selectedScene) {
-        return;
-      }
-
-      const selectedSource = document.createElement("source");
-      selectedSource.type = "image/avif";
-
-      const sceneImage = document.createElement("img");
-      sceneImage.dataset.landingSceneImage = "";
-      sceneImage.width = selectedScene.width;
-      sceneImage.height = selectedScene.height;
-      sceneImage.alt = selectedScene.alt;
-      sceneImage.loading = "eager";
-      sceneImage.fetchPriority = "high";
-      sceneImage.decoding = "async";
-      sceneImage.style.objectPosition = selectedScene.focalPoint;
-
-      sceneElement.dataset.landingSceneId = selectedScene.id;
-      sceneElement.replaceChildren(selectedSource, sceneImage);
-      // 先把无地址节点挂入 picture，再登记 AVIF 与回退地址，避免游离 img 抢先发出 WebP 请求。
-      selectedSource.srcset = selectedScene.avifSrcset;
-      selectedSource.sizes = "100vw";
-      sceneImage.src = selectedScene.webpSrc;
-      sceneImage.srcset = selectedScene.webpSrcset;
-      sceneImage.sizes = "100vw";
-      heroSection.style.setProperty("--hero-copy-shadow-blur", selectedScene.copyShadow.blur);
-      heroSection.style.setProperty("--hero-copy-shadow-opacity", selectedScene.copyShadow.opacity);
-
-      try {
-        window.sessionStorage.setItem(landingSceneSessionKey, selectedScene.id);
-      } catch {
-        // 读取失败时已经正常随机；写入失败只意味着下一次刷新可能再次抽到同一张。
       }
 
       /** 将 CSS object-position 的关键词或百分比统一为可参与 cover 裁切计算的 0-1 锚点。 */
