@@ -18,7 +18,7 @@ test("手机 Header 保持统一尺寸，滚动时不再排队 compact 动画帧
   );
   assert.match(
     siteHeaderSource,
-    /function scheduleCompactHeaderSync\(\) \{[\s\S]*?if \(!compactHeaderLayoutQuery\.matches\) \{[\s\S]*?return;[\s\S]*?requestAnimationFrame\(syncCompactHeader\)/,
+    /homePageFrameCoordinator\.register\(\{[\s\S]*?isActive: \(\) => compactHeaderLayoutQuery\.matches,[\s\S]*?read: readCompactHeaderFrame/,
   );
   assert.doesNotMatch(
     globalStylesSource,

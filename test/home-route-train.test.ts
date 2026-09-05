@@ -2,10 +2,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
+  getHomeFooterRouteState,
   getHomeFooterRevealProgress,
   getHomeFooterStickyReleaseScrollY,
   getHomeFooterTransitionShift,
+  isHomeMobileOnwardIncomingPhase,
   getHomeMobileTransferTrainState,
+  getHomeMobileTransferTrainViewportCenterY,
   getHomeOnwardContentTrainProgress,
   getHomeOnwardDepartureBoardState,
   getHomeOnwardFooterTrainProgress,
@@ -17,6 +20,8 @@ import {
   getHomeTrainPathGeometry,
   getHomeTrainPathHitArea,
   getHomeTrainPathPointAtLength,
+  getHomeTrainPathPoseAtLength,
+  getHomeTrainPathTranslatedGeometry,
   getHomeTrainTooltipPreferBlockPlacement,
   getHomeTrainTooltipPlacement,
   getHomeTransferTrainVisibility,
@@ -28,6 +33,7 @@ const homePageSource = readFileSync(
   new URL("../src/components/HomePage.astro", import.meta.url),
   "utf8",
 );
+const homeStylesSource = readFileSync(new URL("../src/styles/home.css", import.meta.url), "utf8");
 
 test("路线几何在纯数值层解析直线与 Bézier，不调用浏览器 SVG 测量 API", () => {
   const geometry = getHomeTrainPathGeometry("M0 0 L100 0 C100 0 100 100 100 100 L100 200");
@@ -48,9 +54,56 @@ test("路线几何在纯数值层解析直线与 Bézier，不调用浏览器 SV
   assert.ok(Math.abs(quadraticMidpoint.y - 50) < 0.001);
 });
 
-test("首页滚动热路径不再同步查询 SVG 几何，并用 pathLength 校准数值里程", () => {
+test("有界刚性列车从数值路径取得中心与切线，不依赖浏览器绘制层", () => {
+  const horizontal = getHomeTrainPathGeometry("M0 20 L100 20");
+  const vertical = getHomeTrainPathGeometry("M40 0 L40 100");
+
+  assert.deepEqual(getHomeTrainPathPoseAtLength(horizontal, 50, 8), {
+    center: { x: 50, y: 20 },
+    angleDegrees: 0,
+  });
+  assert.deepEqual(getHomeTrainPathPoseAtLength(vertical, 50, 8), {
+    center: { x: 40, y: 50 },
+    angleDegrees: 90,
+  });
+});
+
+test("路径平移只移动缓存采样点，不重复解析或改变累计里程", () => {
+  const source = getHomeTrainPathGeometry("M0 0 L100 0 Q150 50 100 100");
+  const translated = getHomeTrainPathTranslatedGeometry(source, 40, -20);
+
+  assert.notEqual(translated, source);
+  assert.equal(translated.totalLength, source.totalLength);
+  assert.equal(translated.segmentEndDistances, source.segmentEndDistances);
+  assert.deepEqual(translated.points[0], { x: 40, y: -20, distance: 0 });
+  assert.deepEqual(translated.points.at(-1), {
+    x: 140,
+    y: 80,
+    distance: source.totalLength,
+  });
+  assert.deepEqual(source.points[0], { x: 0, y: 0, distance: 0 });
+});
+
+test("首页路线列车使用有界视觉层，滚动热路径不再改写全屏 SVG", () => {
+  const trainVisualRule = homeStylesSource.match(
+    /\.home-arrival__train-visual\s*\{(?<body>[\s\S]*?)\n\}/,
+  )?.groups?.body;
+
+  assert.ok(trainVisualRule);
+  assert.match(homePageSource, /<button[\s\S]*?data-home-arrival-train/);
+  assert.doesNotMatch(homePageSource, /<svg[^>]*data-home-arrival-train-visual/);
   assert.doesNotMatch(homePageSource, /\.get(?:TotalLength|PointAtLength)\(/);
-  assert.match(homePageSource, /setAttribute\(\s*"pathLength"/);
+  assert.doesNotMatch(homePageSource, /stroke-dash(?:array|offset)/);
+  assert.doesNotMatch(
+    homePageSource,
+    /homeArrivalTrainVisualPath\.setAttribute\(\s*"(?:d|pathLength|stroke-width)"/,
+  );
+  assert.doesNotMatch(trainVisualRule, /inset:\s*0/);
+  assert.doesNotMatch(trainVisualRule, /(?:width:\s*100vw|height:\s*100s?vh)/);
+  assert.match(trainVisualRule, /width:\s*var\(--home-arrival-train-width\)/);
+  assert.match(trainVisualRule, /height:\s*var\(--home-arrival-train-height\)/);
+  assert.match(homePageSource, /homeArrivalTrainVisual\.style\.transform\s*=/);
+  assert.match(homePageSource, /homeArrivalTrainVisual\.style\.opacity\s*=/);
   assert.match(homePageSource, /getHomeTrainPathPointAtLength\(/);
 });
 
@@ -114,12 +167,45 @@ test("续行列车进入 PIDS 后保持停驻，把离站行程交给 Footer", (
   assert.equal(getHomeOnwardContentTrainProgress({ ...options, scrollY: 3500 }), 0.78);
 });
 
-test("Footer 可见行程把停驻列车连续带到视口底部", () => {
+test("桌面 Footer 可见行程把停驻列车连续带到视口底部", () => {
   assert.equal(getHomeOnwardFooterTrainProgress(0.78, 0), 0.78);
   assert.equal(getHomeOnwardFooterTrainProgress(0.78, 0.5), 0.89);
   assert.equal(getHomeOnwardFooterTrainProgress(0.78, 1), 1);
   assert.equal(getHomeOnwardFooterTrainProgress(0.78, -1), 0.78);
   assert.equal(getHomeOnwardFooterTrainProgress(0.78, 2), 1);
+});
+
+test("小屏到达 Footer 后让单车停在终点，不再随页面末段继续下移", () => {
+  assert.equal(getHomeOnwardFooterTrainProgress(0.78, 0, true), 0.78);
+  assert.equal(getHomeOnwardFooterTrainProgress(0.78, 0.5, true), 0.78);
+  assert.equal(getHomeOnwardFooterTrainProgress(0.78, 1, true), 0.78);
+});
+
+test("移动 Safari 在 Footer 底部弹性越界时仍由终点列车持有路线", () => {
+  assert.deepEqual(
+    getHomeFooterRouteState({
+      scrollY: 1000,
+      onwardContentJourneyEnd: 1000,
+      footerJourneyEnd: 1200,
+    }),
+    { active: false, progress: 0 },
+  );
+  assert.deepEqual(
+    getHomeFooterRouteState({
+      scrollY: 1100,
+      onwardContentJourneyEnd: 1000,
+      footerJourneyEnd: 1200,
+    }),
+    { active: true, progress: 0.5 },
+  );
+  assert.deepEqual(
+    getHomeFooterRouteState({
+      scrollY: 1280,
+      onwardContentJourneyEnd: 1000,
+      footerJourneyEnd: 1200,
+    }),
+    { active: true, progress: 1 },
+  );
 });
 
 test("独立续行内容页先展示目的地 PIDS，再交给首次到访帮助", () => {
@@ -236,6 +322,57 @@ test("小屏续行只用一辆车穿过分界，并在可见区内完成换色",
       topSectionRatio: 0.62,
       colorProgress: 1,
     },
+  );
+});
+
+test("小屏续行的局部车在交接帧抵达全局正文列车的同一可见中心", () => {
+  const options = {
+    sectionTop: 0,
+    stageHeight: 796,
+    trainBlockSize: 83,
+    handoffCenterY: 732,
+  };
+
+  assert.ok(
+    Math.abs(getHomeMobileTransferTrainViewportCenterY({ ...options, routeProgress: 0 }) - 280.3) <
+      0.00001,
+  );
+  assert.equal(getHomeMobileTransferTrainViewportCenterY({ ...options, routeProgress: 1 }), 732);
+});
+
+test("小屏续行进入正文后即使反向衰减，也不会把探索线列车回判为湾岸来车", () => {
+  const sharedOptions = {
+    communityJourneyEnd: 12_292,
+    contentRevealStart: 13_115,
+    localTrainCenterY: 736.5001,
+    handoffCenterY: 736.5,
+  };
+
+  assert.equal(
+    isHomeMobileOnwardIncomingPhase({
+      ...sharedOptions,
+      scrollY: 13_279,
+      localTrainColorProgress: 1,
+    }),
+    false,
+  );
+  assert.equal(
+    isHomeMobileOnwardIncomingPhase({
+      ...sharedOptions,
+      scrollY: 13_100,
+      localTrainCenterY: 737.1,
+      localTrainColorProgress: 1,
+    }),
+    false,
+  );
+  assert.equal(
+    isHomeMobileOnwardIncomingPhase({
+      ...sharedOptions,
+      scrollY: 12_700,
+      localTrainCenterY: 760,
+      localTrainColorProgress: 0,
+    }),
+    true,
   );
 });
 

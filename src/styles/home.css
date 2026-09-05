@@ -176,17 +176,32 @@
 }
 
 .home-arrival__train-visual {
-  /* 单一路径承载列车实体：进入弯道时，车体按同一条 Bézier 自然弯曲而不切换元素。 */
+  /* 有界刚性车身只在自身合成层移动，避免 Safari 为全视口 SVG dash 重绘整屏。 */
   position: fixed;
   z-index: 18;
-  inset: 0;
-  width: 100vw;
-  height: 100svh;
-  overflow: visible;
-  color: var(--home-route-train-color, var(--home-arrival-train-color));
+  top: 0;
+  left: 0;
+  width: var(--home-arrival-train-width);
+  height: var(--home-arrival-train-height);
   opacity: 0;
   pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  transform-origin: center;
   visibility: hidden;
+  will-change: transform, opacity;
+}
+
+.home-arrival__train-color-layer {
+  position: absolute;
+  inset: 0;
+  background: var(--home-route-incoming-train-color, var(--home-arrival-train-color));
+  pointer-events: none;
+}
+
+.home-arrival__train-color-layer--outgoing {
+  background: var(--home-route-outgoing-train-color, var(--home-arrival-train-color));
+  opacity: 0;
+  will-change: opacity;
 }
 
 .home-arrival__train-visual[data-route-visible="true"] {
@@ -195,7 +210,7 @@
 }
 
 .home-arrival__train {
-  /* 透明按钮只负责 Tooltip 和键盘焦点；视觉车体由相邻 SVG 路径统一绘制。 */
+  /* 透明按钮只负责 Tooltip 和键盘焦点；相邻有界车身承担视觉绘制。 */
   position: fixed;
   z-index: 19;
   top: 0;
@@ -208,9 +223,7 @@
   cursor: pointer;
   pointer-events: none;
   touch-action: manipulation;
-  /* 两个 hit-scale 变量按整段车身路径扩展按钮包围盒，使横轨、竖轨和弯轨都覆盖完整车身。 */
-  transform: translate3d(var(--home-route-train-x, 0px), var(--home-route-train-y, 0px), 0)
-    scale(var(--home-route-train-hit-scale-x, 1), var(--home-route-train-hit-scale-y, 1));
+  transform: translate3d(0, 0, 0);
   transform-origin: left top;
   visibility: hidden;
 }
@@ -296,15 +309,26 @@
 }
 
 /* Hover、键盘焦点与展开状态只把弯曲车体向当前路段线路色略偏移，换乘后不会被拉回 SL。 */
-.home-arrival:has(.home-arrival__train:hover) .home-arrival__train-visual,
-.home-arrival:has(.home-arrival__train:focus-visible) .home-arrival__train-visual,
+.home-arrival:has(.home-arrival__train:hover) .home-arrival__train-color-layer--incoming,
+.home-arrival:has(.home-arrival__train:focus-visible) .home-arrival__train-color-layer--incoming,
 .home-arrival:has(.home-arrival__train[data-tooltip-open="true"][data-tooltip-visual-active="true"])
-  .home-arrival__train-visual {
+  .home-arrival__train-color-layer--incoming {
   /* 本地换乘车打开共享 Tooltip 时不染色全局路径车；两班车保持各自线路状态。 */
-  color: color-mix(
+  background: color-mix(
     in oklch,
-    var(--home-route-train-color, var(--home-arrival-train-color)) 88%,
-    var(--home-route-line-color, var(--home-arrival-line-color))
+    var(--home-route-incoming-train-color, var(--home-arrival-train-color)) 88%,
+    var(--home-route-incoming-line-color, var(--home-arrival-line-color))
+  );
+}
+
+.home-arrival:has(.home-arrival__train:hover) .home-arrival__train-color-layer--outgoing,
+.home-arrival:has(.home-arrival__train:focus-visible) .home-arrival__train-color-layer--outgoing,
+.home-arrival:has(.home-arrival__train[data-tooltip-open="true"][data-tooltip-visual-active="true"])
+  .home-arrival__train-color-layer--outgoing {
+  background: color-mix(
+    in oklch,
+    var(--home-route-outgoing-train-color, var(--home-arrival-train-color)) 88%,
+    var(--home-route-outgoing-line-color, var(--home-arrival-line-color))
   );
 }
 
@@ -454,8 +478,6 @@
 .home-gallery {
   /* --home-gallery-scroll-distance 由真实轨道宽度生成纵向行程；无脚本时保持 0，不制造空白页面。 */
   --home-gallery-scroll-distance: 0px;
-  /* --home-gallery-offset 只记录当前水平位移，浏览器原生 scrollY 始终是唯一输入。 */
-  --home-gallery-offset: 0px;
   /* 首卡沿用正文版心；左侧仍由正文版心之前的空间承载 Serverlink 轨道与列车。 */
   --home-gallery-leading-space: var(--home-introduction-content-origin-x);
   /* --home-gallery-header-safe-top 覆盖桌面 Header 完整展开态底缘与 12px 呼吸区，矮屏也不能让图片钻到导航下方。 */
@@ -513,7 +535,7 @@
   margin: 0;
   padding: 0 0 0 var(--home-gallery-leading-space);
   list-style: none;
-  transform: translate3d(var(--home-gallery-offset), 0, 0);
+  transform: translate3d(0, 0, 0);
 }
 
 .home-gallery__item {
@@ -605,7 +627,8 @@
 }
 
 .home-gallery[data-home-gallery-enhanced="true"] {
-  height: calc(100svh + var(--home-gallery-scroll-distance));
+  /* 外层原生滚动行程以最大视口为稳定合同；sticky 前景仍用 svh 保持在可见区内。 */
+  height: calc(100lvh + var(--home-gallery-scroll-distance));
 }
 
 .home-gallery[data-home-gallery-enhanced="true"] .home-gallery__stage {

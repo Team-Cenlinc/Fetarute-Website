@@ -392,6 +392,16 @@ const appearanceOptions = [
 </header>
 
 <script>
+  import { getHomePageFrameCoordinator } from "@/data/home-route-viewport";
+
+  /** Header 在统一帧 read 阶段锁定的页面滚动语义。 */
+  interface CompactHeaderFrameMeasurement {
+    /** 当前纵向阅读位置。 */
+    scrollPosition: number;
+    /** 桌面 Gallery 是否正处于 sticky 横向叙事。 */
+    galleryPinned: boolean;
+  }
+
   // 与 BaseLayout 的首帧读取共用同一键，用户点击后立即更新根节点 palette 与菜单选中态。
   const appearanceStorageKey = "fetarute.appearance";
   const appearanceChoices = ["system", "light", "dark"];
@@ -469,18 +479,20 @@ const appearanceOptions = [
    * 同步阅读中的紧凑导视状态。
    * 向下进入长内容后收成线路点与功能图标；用户一反向上滚便立即恢复完整牌面，保证回看与重新导航不需额外操作。
    */
-  function syncCompactHeader() {
+  function syncCompactHeader(measurement?: CompactHeaderFrameMeasurement) {
     if (!compactHeaderLayoutQuery.matches) {
       setHeaderLayoutState(false, false, false);
       compactHeaderAnimationFrame = undefined;
       return;
     }
 
-    const currentScrollPosition = window.scrollY;
+    const currentScrollPosition = measurement?.scrollPosition ?? window.scrollY;
     const scrollDelta = currentScrollPosition - lastHeaderScrollPosition;
     const nextScrollDirection = scrollDelta > 0 ? "down" : scrollDelta < 0 ? "up" : undefined;
     const isNearPageStart = currentScrollPosition < compactHeaderScrollThreshold;
-    const isHomeGalleryPinned = document.documentElement.hasAttribute(homeGalleryPinnedAttribute);
+    const isHomeGalleryPinned =
+      measurement?.galleryPinned ??
+      document.documentElement.hasAttribute(homeGalleryPinnedAttribute);
 
     if (isInitialAnchorLayoutSettling) {
       setHeaderLayoutState(true, false, false);
@@ -538,7 +550,15 @@ const appearanceOptions = [
       return;
     }
 
-    compactHeaderAnimationFrame = window.requestAnimationFrame(syncCompactHeader);
+    compactHeaderAnimationFrame = window.requestAnimationFrame(() => syncCompactHeader());
+  }
+
+  /** 首页共享协调器在任何章节写 DOM 前一次读取 Header 所需状态。 */
+  function readCompactHeaderFrame(): CompactHeaderFrameMeasurement {
+    return {
+      scrollPosition: window.scrollY,
+      galleryPinned: document.documentElement.hasAttribute(homeGalleryPinnedAttribute),
+    };
   }
 
   /** 深链首帧先采用紧凑 Header，再在浏览器完成锚点恢复后无动画校准，避免完整态短暂闪现。 */
@@ -1186,5 +1206,22 @@ const appearanceOptions = [
     compactHeaderScrollDirectionDistance = 0;
     initializeCompactHeaderState();
   });
-  window.addEventListener("scroll", scheduleCompactHeaderSync, { passive: true });
+  const homePageFrameCoordinator = document.querySelector("[data-home-arrival-route]")
+    ? getHomePageFrameCoordinator()
+    : undefined;
+
+  if (homePageFrameCoordinator) {
+    const unregisterHeaderFrameParticipant = homePageFrameCoordinator.register({
+      isActive: () => compactHeaderLayoutQuery.matches,
+      read: readCompactHeaderFrame,
+      write: (measurement) => syncCompactHeader(measurement),
+    });
+    window.addEventListener("pagehide", (event) => {
+      if (!event.persisted) {
+        unregisterHeaderFrameParticipant();
+      }
+    });
+  } else {
+    window.addEventListener("scroll", scheduleCompactHeaderSync, { passive: true });
+  }
 </script>

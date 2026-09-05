@@ -458,6 +458,19 @@ const mainStoryTitleId = "home-community-main-story-title";
     selectHomeCommunityMemoryStoryId,
     selectHomeCommunityPresenceStoryId,
   } from "@/data/home-community";
+  import { getHomePageFrameCoordinator } from "@/data/home-route-viewport";
+
+  /** 同岸主故事从统一 read 阶段传到 write 阶段的纯数值状态。 */
+  interface HomeCommunityFrameMeasurement {
+    /** 只有桌面且未启用减少动态时才由脚本提交逐帧视觉。 */
+    enhanced: boolean;
+    /** 图片舞台的受控滚动进度。 */
+    sceneProgress: number;
+    /** 深色遮罩的过渡进度。 */
+    veilProgress: number;
+    /** 详情正文的显现进度。 */
+    detailProgress: number;
+  }
 
   /** 为页面中的同岸实例轮换两个短故事池，并初始化主故事滚动交互。 */
   function setupHomeCommunitySection(communitySection: HTMLElement): void {
@@ -557,58 +570,94 @@ const mainStoryTitleId = "home-community-main-story-title";
     const mainStage = mainStory?.querySelector<HTMLElement>(
       ".home-community__main-stage",
     );
-    if (!mainStory || !mainStage) return;
+    const mainVeil = mainStage?.querySelector<HTMLElement>(
+      ".home-community__main-veil",
+    );
+    const mainNarrative = mainStage?.querySelector<HTMLElement>(
+      ".home-community__main-narrative",
+    );
+    if (!mainStory || !mainStage || !mainVeil || !mainNarrative) return;
 
     const desktopQuery = window.matchMedia("(min-width: 1024px)");
     const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let animationFrame = 0;
+    const frameCoordinator = getHomePageFrameCoordinator();
+    let isCommunityActive = true;
 
-    /** 把主故事当前位置写入 CSS 变量，让布局与动画阶段共用同一进度。 */
-    const renderMainStory = (): void => {
-      animationFrame = 0;
+    /** 在统一帧 read 阶段读取主故事几何并计算纯数值动画状态。 */
+    const readMainStoryFrame = (): HomeCommunityFrameMeasurement => {
+      const enhanced = desktopQuery.matches && !reducedMotionQuery.matches;
       let rawProgress = 1;
 
-      if (desktopQuery.matches && !reducedMotionQuery.matches) {
+      if (enhanced) {
         const bounds = mainStory.getBoundingClientRect();
         const scrollTravel = Math.max(1, bounds.height - mainStage.offsetHeight);
         rawProgress = -bounds.top / scrollTravel;
       }
 
-      const state = getHomeCommunityMainStoryMotionState(rawProgress);
-      mainStory.style.setProperty(
-        "--home-community-main-progress",
-        String(state.sceneProgress),
-      );
-      mainStory.style.setProperty(
-        "--home-community-main-veil",
-        String(state.veilProgress),
-      );
-      mainStory.style.setProperty(
-        "--home-community-main-detail",
-        String(state.detailProgress),
-      );
-      mainStory.style.setProperty(
-        "--home-community-main-title-hero-weight",
-        `${(1 - state.detailProgress) * 100}%`,
-      );
-      mainStory.dataset.homeCommunityMainPhase =
-        state.detailProgress >= 0.5 ? "detail" : "scene";
+      return { enhanced, ...getHomeCommunityMainStoryMotionState(rawProgress) };
     };
 
-    /** 合并滚动和尺寸变化，避免在同一帧重复读取几何信息。 */
-    const scheduleMainStoryRender = (): void => {
-      if (animationFrame !== 0) return;
-      animationFrame = window.requestAnimationFrame(renderMainStory);
+    /** 只在动画目标值改变时写入行内样式，避免重复触发局部样式失效。 */
+    const setAnimatedStyle = (
+      element: HTMLElement,
+      property: "opacity" | "transform",
+      value: string,
+    ): void => {
+      if (element.style[property] !== value) {
+        element.style[property] = value;
+      }
     };
 
-    renderMainStory();
-    window.addEventListener("scroll", scheduleMainStoryRender, { passive: true });
-    window.addEventListener("resize", scheduleMainStoryRender, { passive: true });
+    /** 在统一帧 write 阶段直接更新消费元素，不让父节点变量使整棵故事子树失效。 */
+    const writeMainStoryFrame = (state: HomeCommunityFrameMeasurement): void => {
+      if (!state.enhanced) {
+        mainVeil.style.removeProperty("opacity");
+        mainNarrative.style.removeProperty("opacity");
+        mainNarrative.style.removeProperty("transform");
+      } else {
+        setAnimatedStyle(mainVeil, "opacity", String(state.veilProgress * 0.76));
+        setAnimatedStyle(mainNarrative, "opacity", String(state.detailProgress));
+        setAnimatedStyle(
+          mainNarrative,
+          "transform",
+          `translateY(${(1 - state.detailProgress) * 34}px)`,
+        );
+      }
+
+      const phase = state.detailProgress >= 0.5 ? "detail" : "scene";
+      if (mainStory.dataset.homeCommunityMainPhase !== phase) {
+        mainStory.dataset.homeCommunityMainPhase = phase;
+      }
+    };
+
+    const unregisterFrameParticipant = frameCoordinator.register({
+      isActive: () => isCommunityActive,
+      read: readMainStoryFrame,
+      write: writeMainStoryFrame,
+    });
+    const requestMainStoryFrame = (): void => frameCoordinator.request();
+    const communityVisibilityObserver = new IntersectionObserver(
+      ([entry]) => {
+        isCommunityActive = entry?.isIntersecting ?? false;
+        if (isCommunityActive) {
+          requestMainStoryFrame();
+        }
+      },
+      { rootMargin: "100% 0px" },
+    );
+    communityVisibilityObserver.observe(communitySection);
+
     /* 响应式或减少动态边界切换时同步校正，避免 CSS 已换分支而进度仍停留一帧。 */
-    desktopQuery.addEventListener("change", renderMainStory);
-    reducedMotionQuery.addEventListener("change", renderMainStory);
-    window.addEventListener("pageshow", renderMainStory);
-    window.requestAnimationFrame(renderMainStory);
+    desktopQuery.addEventListener("change", requestMainStoryFrame);
+    reducedMotionQuery.addEventListener("change", requestMainStoryFrame);
+    window.addEventListener("pageshow", requestMainStoryFrame);
+    window.addEventListener("pagehide", (event) => {
+      if (!event.persisted) {
+        communityVisibilityObserver.disconnect();
+        unregisterFrameParticipant();
+      }
+    });
+    requestMainStoryFrame();
   }
 
   document
@@ -716,17 +765,10 @@ const mainStoryTitleId = "home-community-main-story-title";
   .home-community__main-story {
     /* 桌面额外阅读行程保持首页紧凑，同时避免一次触控板扫动跳过整段主故事。 */
     --home-community-main-scroll-distance: clamp(520px, 90svh, 820px);
-    /* 主故事总进度由滚动脚本写入；静态首帧保持完整图片。 */
-    --home-community-main-progress: 0;
-    /* 浅色画布遮罩进度晚于图片入场，避免首屏立刻褪色。 */
-    --home-community-main-veil: 0;
-    /* 正文显示进度独立于遮罩，使标题到长文之间有清楚层次。 */
-    --home-community-main-detail: 0;
-    /* 单一标题从图片上的反色平滑过渡到画布文字色，不再叠两份相同文字。 */
-    --home-community-main-title-hero-weight: 100%;
     position: relative;
     z-index: 1;
-    height: calc(100svh + var(--home-community-main-scroll-distance));
+    /* 外层路程不响应 Safari 地址栏中间高度；内部 sticky 舞台继续受 svh 约束。 */
+    height: calc(100lvh + var(--home-community-main-scroll-distance));
   }
 
   .home-community__main-stage {
@@ -763,7 +805,7 @@ const mainStoryTitleId = "home-community-main-story-title";
   .home-community__main-veil {
     z-index: 1;
     background: var(--palette-canvas);
-    opacity: calc(var(--home-community-main-veil) * 0.76);
+    opacity: 0;
     pointer-events: none;
   }
 
@@ -788,11 +830,17 @@ const mainStoryTitleId = "home-community-main-story-title";
 
   .home-community__main-detail > .home-community__main-kicker,
   .home-community__main-detail > .home-community__heading-line {
-    color: color-mix(
-      in oklch,
-      var(--color-on-hero) var(--home-community-main-title-hero-weight),
-      var(--palette-text)
-    );
+    color: var(--color-on-hero);
+  }
+
+  .home-community__main-story[data-home-community-main-phase="detail"]
+    .home-community__main-detail
+    > .home-community__main-kicker,
+  .home-community__main-story[data-home-community-main-phase="detail"]
+    .home-community__main-detail
+    > .home-community__heading-line {
+    /* 遮罩过半后只离散切换一次文字色，避免滚动中连续重绘字形。 */
+    color: var(--palette-text);
   }
 
   .home-community__main-detail h3,
@@ -811,8 +859,8 @@ const mainStoryTitleId = "home-community-main-story-title";
     line-height: 1.58;
     letter-spacing: -0.02em;
     color: var(--palette-text);
-    opacity: var(--home-community-main-detail);
-    transform: translateY(calc((1 - var(--home-community-main-detail)) * 34px));
+    opacity: 0;
+    transform: translateY(34px);
   }
 
   .home-community__credit > span:first-child {

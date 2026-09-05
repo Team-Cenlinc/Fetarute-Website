@@ -50,12 +50,42 @@ export interface HomeMobileTransferTrainState {
   colorProgress: number;
 }
 
-/** 换乘站局部车与全局 SVG 路径车之间的视觉绘制所有权。 */
+/** 小屏续行局部车在 visual viewport 中追向全局列车交接中心所需的纯几何。 */
+export interface HomeMobileTransferTrainViewportCenterOptions {
+  /** 换乘 section 顶边相对 visual viewport 顶边的实时坐标。 */
+  sectionTop: number;
+  /** 当前局部舞台高度，用于还原车身未位移时的中心。 */
+  stageHeight: number;
+  /** 竖向局部车身高度。 */
+  trainBlockSize: number;
+  /** 局部车在当前 section 内已经完成的 0→1 路线进度。 */
+  routeProgress: number;
+  /** 全局正文列车第一帧使用的可见视口中心。 */
+  handoffCenterY: number;
+}
+
+/** 小屏续行从同岸全局来车交给局部单车时的互斥边界。 */
+export interface HomeMobileOnwardIncomingPhaseOptions {
+  /** 当前文档滚动坐标。 */
+  scrollY: number;
+  /** 同岸正文列车完成可见行程的文档坐标。 */
+  communityJourneyEnd: number;
+  /** 探索线正文列车开始接管的文档坐标。 */
+  contentRevealStart: number;
+  /** 上一 read 阶段取得的续行局部车可见中心。 */
+  localTrainCenterY: number;
+  /** 全局来车与局部车共同使用的底部交接中心。 */
+  handoffCenterY: number;
+  /** 局部单车从湾岸色过渡到探索色的当前进度。 */
+  localTrainColorProgress: number;
+}
+
+/** 换乘站局部车与全局数值路径车之间的视觉绘制所有权。 */
 export type HomeTransferTrainVisualOwner = "local" | "global-incoming" | "global-outgoing";
 
 /** 根据响应式构图决定换乘站两个局部车身是否仍应参与绘制。 */
 export interface HomeTransferTrainVisibilityOptions {
-  /** 当前由局部 DOM 车或某一方向的全局 SVG 车承担视觉。 */
+  /** 当前由局部 DOM 车或某一方向的全局有界车身承担视觉。 */
   owner: HomeTransferTrainVisualOwner;
   /** 小屏单线构图以 incoming DOM 节点承载两条线路，不能按桌面双车分别隐藏。 */
   singleTrainComposition: boolean;
@@ -117,17 +147,25 @@ export interface HomeTrainPathSample extends HomeTrainPathPoint {
 export interface HomeTrainPathGeometry {
   /** 按路线顺序排列、带累计里程的折线采样点。 */
   points: readonly HomeTrainPathSample[];
-  /** 整条路线的近似长度，同时写入 SVG pathLength 统一 dash 度量。 */
+  /** 整条路线的近似长度，供滚动进度、车身中心与命中区共享同一度量。 */
   totalLength: number;
   /** 每条 L 或 C 绘制指令结束时的累计距离，用于判断列车所在轨段。 */
   segmentEndDistances: readonly number[];
+}
+
+/** 有界刚性列车沿纯数值路线移动时的中心与切线姿态。 */
+export interface HomeTrainPathPose {
+  /** 车身中心在布局视口中的坐标。 */
+  center: HomeTrainPathPoint;
+  /** 路径切线相对水平向右的角度，直接供 CSS rotate 消费。 */
+  angleDegrees: number;
 }
 
 /** 弯曲列车完整点击包围盒所需的路径采样参数。 */
 export interface HomeTrainPathHitAreaOptions {
   /** 从车尾到车头依次取得的路径采样点。 */
   points: readonly HomeTrainPathPoint[];
-  /** SVG 车身描边厚度，用于把中心线边界扩展到视觉边缘。 */
+  /** 车身厚度，用于把中心线边界扩展到视觉边缘。 */
   trainThickness: number;
   /** 即使车身更窄也必须保留的最小点击尺寸。 */
   minimumTargetSize?: number;
@@ -137,9 +175,9 @@ export interface HomeTrainPathHitAreaOptions {
 export interface HomeVerticalTrainRenderGeometryOptions {
   /** 轨道中心的视口横坐标。 */
   trackX: number;
-  /** 用于承载 dash 列车的直线路径起点。 */
+  /** 供数值车身定位的直线路径起点。 */
   routeStartY: number;
-  /** 用于承载 dash 列车的直线路径终点。 */
+  /** 供数值车身定位的直线路径终点。 */
   routeEndY: number;
   /** 当前车身中心的视口纵坐标。 */
   trainCenterY: number;
@@ -159,6 +197,24 @@ export interface HomeOnwardContentTrainProgressOptions {
   boardJourneyTop: number;
   /** 列车停驻在 PIDS 舞台时的竖轨进度，默认避开导向牌停在下方。 */
   boardProgress?: number;
+}
+
+/** Footer 终段持续持有全局列车时所需的滚动边界。 */
+export interface HomeFooterRouteStateOptions {
+  /** 当前页面滚动位置；移动 Safari 弹性回弹时可能暂时超过文档终点。 */
+  scrollY: number;
+  /** 续行正文完成并把列车交给 Footer 的文档滚动位置。 */
+  onwardContentJourneyEnd: number;
+  /** Footer 正常滚动行程的终点，只用于封顶进度，不能撤销列车所有权。 */
+  footerJourneyEnd: number;
+}
+
+/** Footer 终段的列车所有权与封顶后的滚动进度。 */
+export interface HomeFooterRouteState {
+  /** Footer 是否已经接管列车；接管后在页面终点弹性越界期间仍保持为真。 */
+  active: boolean;
+  /** Footer 正常行程内的 0→1 进度；越过文档终点后保持为 1。 */
+  progress: number;
 }
 
 /** Footer 接替续行 sticky 舞台时所需的真实容器几何。 */
@@ -362,19 +418,56 @@ export const getHomeOnwardContentTrainProgress = ({
   return clampedBoardProgress;
 };
 
-/** 把 Footer 的原生滚动进度映射为列车从 PIDS 停驻点到视口底部的连续离场进度。 */
+/**
+ * 桌面把 Footer 原生进度映射为列车的连续离场；小屏可保持 PIDS 终点，避免单车在页面底部继续下坠。
+ */
 export const getHomeOnwardFooterTrainProgress = (
   contentTrainProgress: number,
   footerProgress: number,
+  holdAtContentTerminus = false,
 ) => {
   const clampedContentProgress = Number.isFinite(contentTrainProgress)
     ? Math.min(Math.max(contentTrainProgress, 0), 1)
     : 0;
+  /* 小屏单车在 PIDS 终点停驻，让 Footer 自己进入视口而不是继续把列车推向浏览器手势边缘。 */
+  if (holdAtContentTerminus) {
+    return clampedContentProgress;
+  }
   const clampedFooterProgress = Number.isFinite(footerProgress)
     ? Math.min(Math.max(footerProgress, 0), 1)
     : 0;
 
   return clampedContentProgress + (1 - clampedContentProgress) * clampedFooterProgress;
+};
+
+/**
+ * 让 Footer 一旦接管便持续持有终点列车，同时只把视觉进度封顶。
+ * Safari 底部弹性滚动会短暂报告超出文档终点的 scrollY，不能把这种越界解释为离开 Footer。
+ */
+export const getHomeFooterRouteState = ({
+  scrollY,
+  onwardContentJourneyEnd,
+  footerJourneyEnd,
+}: HomeFooterRouteStateOptions): HomeFooterRouteState => {
+  const safeScrollY = Number.isFinite(scrollY) ? scrollY : 0;
+  const safeJourneyStart = Number.isFinite(onwardContentJourneyEnd) ? onwardContentJourneyEnd : 0;
+  const safeJourneyEnd = Number.isFinite(footerJourneyEnd)
+    ? Math.max(footerJourneyEnd, safeJourneyStart)
+    : safeJourneyStart;
+  const active = safeScrollY > safeJourneyStart;
+
+  return {
+    active,
+    progress: active
+      ? Math.min(
+          Math.max(
+            (safeScrollY - safeJourneyStart) / Math.max(1, safeJourneyEnd - safeJourneyStart),
+            0,
+          ),
+          1,
+        )
+      : 0,
+  };
 };
 
 /**
@@ -466,6 +559,46 @@ export const getHomeMobileTransferTrainState = ({
     colorProgress,
   };
 };
+
+/**
+ * 将小屏局部车从 Figma 初始车位连续送到全局正文列车的同一中心。
+ * 终点由调用方的真实可见视口安全锚点决定，避免用固定 section 比例制造所有权跃迁。
+ */
+export const getHomeMobileTransferTrainViewportCenterY = ({
+  sectionTop,
+  stageHeight,
+  trainBlockSize,
+  routeProgress,
+  handoffCenterY,
+}: HomeMobileTransferTrainViewportCenterOptions) => {
+  const safeSectionTop = Number.isFinite(sectionTop) ? sectionTop : 0;
+  const safeStageHeight = Number.isFinite(stageHeight) ? Math.max(0, stageHeight) : 0;
+  const safeTrainBlockSize = Number.isFinite(trainBlockSize) ? Math.max(0, trainBlockSize) : 0;
+  const safeHandoffCenterY = Number.isFinite(handoffCenterY) ? handoffCenterY : 0;
+  const clampedRouteProgress = Number.isFinite(routeProgress)
+    ? Math.min(Math.max(routeProgress, 0), 1)
+    : 0;
+  const initialCenterY = safeSectionTop + safeStageHeight * 0.3 + safeTrainBlockSize / 2;
+
+  return initialCenterY + (safeHandoffCenterY - initialCenterY) * clampedRouteProgress;
+};
+
+/**
+ * 判断小屏是否仍应由湾岸全局来车接近续行局部车。
+ * 正文边界具有更高优先级，并用半像素容差吸收 read/write 跨帧后的浮点噪声，避免反向惯性滚动把 DS 误判回 BS。
+ */
+export const isHomeMobileOnwardIncomingPhase = ({
+  scrollY,
+  communityJourneyEnd,
+  contentRevealStart,
+  localTrainCenterY,
+  handoffCenterY,
+  localTrainColorProgress,
+}: HomeMobileOnwardIncomingPhaseOptions) =>
+  scrollY > communityJourneyEnd &&
+  scrollY <= contentRevealStart + 1 &&
+  localTrainColorProgress < 1 &&
+  localTrainCenterY - handoffCenterY > 0.5;
 
 /**
  * 将视觉所有权收敛为局部车身可见性。
@@ -629,6 +762,30 @@ export const getHomeTrainPathGeometry = (pathData: string): HomeTrainPathGeometr
   return { points, totalLength, segmentEndDistances };
 };
 
+/**
+ * 平移已缓存的路线采样点，同时复用累计里程与轨段阈值。
+ * 滚动只改变 fixed 图层在视口中的原点时无需再次解析或采样 Bézier。
+ */
+export const getHomeTrainPathTranslatedGeometry = (
+  geometry: HomeTrainPathGeometry,
+  offsetX: number,
+  offsetY: number,
+): HomeTrainPathGeometry => {
+  if (offsetX === 0 && offsetY === 0) {
+    return geometry;
+  }
+
+  return {
+    points: geometry.points.map((point) => ({
+      x: point.x + offsetX,
+      y: point.y + offsetY,
+      distance: point.distance,
+    })),
+    totalLength: geometry.totalLength,
+    segmentEndDistances: geometry.segmentEndDistances,
+  };
+};
+
 /** 按累计里程从纯数值路线取点；超出路线的距离会夹在首尾端点。 */
 export const getHomeTrainPathPointAtLength = (
   geometry: HomeTrainPathGeometry,
@@ -669,6 +826,40 @@ export const getHomeTrainPathPointAtLength = (
     x: lowerPoint.x + (upperPoint.x - lowerPoint.x) * segmentProgress,
     y: lowerPoint.y + (upperPoint.y - lowerPoint.y) * segmentProgress,
   };
+};
+
+/**
+ * 从缓存的数值路线取得车身中心与局部切线；浏览器层只需据此写一次 transform。
+ * 切线在中心两侧取样，首尾会自动收束到有效里程，零长度路径稳定回退为 0°。
+ */
+export const getHomeTrainPathPoseAtLength = (
+  geometry: HomeTrainPathGeometry,
+  distance: number,
+  tangentSampleRadius: number,
+): HomeTrainPathPose => {
+  const centerDistance = Math.min(
+    Math.max(Number.isFinite(distance) ? distance : 0, 0),
+    geometry.totalLength,
+  );
+  const safeSampleRadius = Math.min(
+    Math.max(Number.isFinite(tangentSampleRadius) ? tangentSampleRadius : 1, 1),
+    Math.max(1, geometry.totalLength / 2),
+  );
+  const center = getHomeTrainPathPointAtLength(geometry, centerDistance);
+  const tangentStart = getHomeTrainPathPointAtLength(
+    geometry,
+    Math.max(0, centerDistance - safeSampleRadius),
+  );
+  const tangentEnd = getHomeTrainPathPointAtLength(
+    geometry,
+    Math.min(geometry.totalLength, centerDistance + safeSampleRadius),
+  );
+  const deltaX = tangentEnd.x - tangentStart.x;
+  const deltaY = tangentEnd.y - tangentStart.y;
+  const angleDegrees =
+    deltaX === 0 && deltaY === 0 ? 0 : (Math.atan2(deltaY, deltaX) * 180) / Math.PI;
+
+  return { center, angleDegrees };
 };
 
 /**
@@ -732,8 +923,8 @@ export const getHomeTrainPathHitArea = ({
 };
 
 /**
- * 直接计算竖直路径的 dash、命中区和 Tooltip 中心。
- * Safari 不必在每个滚动帧重算 SVG path length 与采样点，直轨视觉仍与通用路径结果一致。
+ * 直接计算竖直路径的车身里程、命中区和 Tooltip 中心。
+ * Safari 不必在每个滚动帧重算 SVG 几何，直轨视觉仍与通用路径结果一致。
  */
 export const getHomeVerticalTrainRenderGeometry = ({
   trackX,

@@ -355,6 +355,7 @@ const triServerItems = await Promise.all(
     prepareHomeTriServerImage,
     shuffleHomeTriServerItems,
   } from "@/data/home-tri-server-media";
+  import { getHomePageFrameCoordinator } from "@/data/home-route-viewport";
 
   const homeTriServer = document.querySelector<HTMLElement>("[data-home-tri-server]");
 
@@ -374,6 +375,7 @@ const triServerItems = await Promise.all(
     const serverStops = Array.from(
       homeTriServer.querySelectorAll<HTMLElement>("[data-home-tri-server-stop]"),
     );
+    const triServerStage = homeTriServer.querySelector<HTMLElement>(".home-tri-server__stage");
     const mediaPanels = Array.from(
       homeTriServer.querySelectorAll<HTMLElement>("[data-home-tri-server-media-panel]"),
     );
@@ -388,9 +390,10 @@ const triServerItems = await Promise.all(
       ).map((button) => [button.dataset.homeTriServerMapLaunch, button]),
     );
     const preparePanelForDisplayById = new Map<string, () => Promise<boolean>>();
+    const frameCoordinator = getHomePageFrameCoordinator();
     let activeServerId = serverStops[0]?.dataset.homeTriServerStop;
     let requestedServerId = activeServerId;
-    let pendingActiveServerFrame = 0;
+    let isTriServerActive = true;
     let activeServerRequest = 0;
     let pendingActiveServerPromise: Promise<boolean> | undefined;
     let serverLoadingResetTimer = 0;
@@ -645,34 +648,40 @@ const triServerItems = await Promise.all(
       return serverRequestPromise;
     };
 
-    /** 用列车中心选择当前子服务器；列车未进站时回退正文阅读线，不修正原生滚动位置。 */
-    const updateActiveServerFromScroll = () => {
-      window.cancelAnimationFrame(pendingActiveServerFrame);
-      pendingActiveServerFrame = window.requestAnimationFrame(() => {
-        const routeTrain = document.querySelector<HTMLElement>(
-          '[data-home-arrival-train][data-route-segment="tri-server"]',
-        );
-        const routeTrainBounds = routeTrain?.getBoundingClientRect();
-        // 三服汇换景以列车中心为阅读线；列车尚未进入本节时才回退到固定正文阅读线。
-        const readingLine =
-          routeTrainBounds && routeTrain?.dataset.routeVisible === "true"
-            ? routeTrainBounds.top + routeTrainBounds.height / 2
-            : Math.max(120, window.innerHeight * 0.34);
-        const stopAtReadingLine = serverStops.find((stop) => {
-          const bounds = stop.getBoundingClientRect();
-          return bounds.top <= readingLine && bounds.bottom > readingLine;
-        });
-        const activeStop = stopAtReadingLine ?? serverStops.reduce((closestStop, stop) => {
-          const distance = Math.abs(stop.getBoundingClientRect().top + stop.offsetHeight / 2 - readingLine);
+    /**
+     * 在统一帧 read 阶段用列车中心选择子服务器；列车未进站时回退正文阅读线。
+     * 每个 stop 只读一次矩形，避免 reduce 内重复触发布局查询。
+     */
+    const readActiveServerFromScroll = () => {
+      const routeTrain = document.querySelector<HTMLElement>(
+        '[data-home-arrival-train][data-route-segment="tri-server"]',
+      );
+      const routeTrainBounds = routeTrain?.getBoundingClientRect();
+      const readingLine =
+        routeTrainBounds && routeTrain?.dataset.routeVisible === "true"
+          ? routeTrainBounds.top + routeTrainBounds.height / 2
+          : Math.max(120, (triServerStage?.offsetHeight ?? window.innerHeight) * 0.34);
+      const measuredStops = serverStops.map((stop) => ({
+        stop,
+        bounds: stop.getBoundingClientRect(),
+      }));
+      const stopAtReadingLine = measuredStops.find(
+        ({ bounds }) => bounds.top <= readingLine && bounds.bottom > readingLine,
+      );
+      const activeStop =
+        stopAtReadingLine ??
+        measuredStops.reduce((closestStop, candidate) => {
+          const distance = Math.abs(
+            candidate.bounds.top + candidate.bounds.height / 2 - readingLine,
+          );
           const closestDistance = Math.abs(
-            closestStop.getBoundingClientRect().top + closestStop.offsetHeight / 2 - readingLine,
+            closestStop.bounds.top + closestStop.bounds.height / 2 - readingLine,
           );
 
-          return distance < closestDistance ? stop : closestStop;
-        }, serverStops[0]);
+          return distance < closestDistance ? candidate : closestStop;
+        }, measuredStops[0]);
 
-        void setActiveServer(activeStop?.dataset.homeTriServerStop);
-      });
+      return activeStop?.stop.dataset.homeTriServerStop;
     };
 
     /** 将同一份媒体面板放到桌面 sticky 车窗或小屏对应正文下方，避免重复图片请求。 */
@@ -715,8 +724,37 @@ const triServerItems = await Promise.all(
         });
       }
 
-      updateActiveServerFromScroll();
+      frameCoordinator.request({ measureGeometry: true });
     };
+
+    const unregisterFrameParticipant = frameCoordinator.register({
+      isActive: () => isTriServerActive,
+      read: readActiveServerFromScroll,
+      write: (serverId) => void setActiveServer(serverId),
+    });
+    const triServerVisibilityObserver = new IntersectionObserver(
+      ([entry]) => {
+        isTriServerActive = entry?.isIntersecting ?? false;
+        if (isTriServerActive) {
+          frameCoordinator.request();
+        }
+      },
+      { rootMargin: "100% 0px" },
+    );
+    triServerVisibilityObserver.observe(homeTriServer);
+
+    /** 每个媒体面板把 IntersectionObserver 结果映射回自己的自动播放状态。 */
+    const panelVisibilityHandlers = new Map<
+      Element,
+      (entry: IntersectionObserverEntry) => void
+    >();
+    const panelVisibilityObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => panelVisibilityHandlers.get(entry.target)?.(entry));
+      },
+      { threshold: [0, 0.55, 1] },
+    );
+    const mediaPanelObserverCleanup = new Set<() => void>();
 
     mediaPanels.forEach((panel) => {
       const carousel = panel.querySelector<HTMLElement>("[data-home-tri-server-carousel]");
@@ -749,7 +787,6 @@ const triServerItems = await Promise.all(
       let autoplayCycleRequest = 0;
       let autoplayAdvanceRequest = 0;
       let isAutoplayAdvancing = false;
-      let pendingPanelVisibilityFrame = 0;
       let isPanelMostlyVisible = false;
       let isPointerInsidePanel = false;
       let isPointerInteractingWithCarousel = false;
@@ -1091,43 +1128,27 @@ const triServerItems = await Promise.all(
         });
       });
 
-      /**
-       * 按面板当前真实几何判断可见性；响应式搬移节点后不能沿用搬移前的 observer 记录。
-       * 高度与宽度都至少露出 55% 才计时，避免视口边缘同时启动两个移动端 Carousel。
-       */
-      function updatePanelVisibility() {
-        const bounds = panel.getBoundingClientRect();
-        const visibleWidth = Math.max(
-          0,
-          Math.min(bounds.right, window.innerWidth) - Math.max(bounds.left, 0),
-        );
-        const visibleHeight = Math.max(
-          0,
-          Math.min(bounds.bottom, window.innerHeight) - Math.max(bounds.top, 0),
-        );
-
+      /** 只让至少 55% 可见且未隐藏的面板运行 Carousel，滚动时不再主动读矩形。 */
+      const updatePanelVisibilityFromObserver = (entry: IntersectionObserverEntry) => {
         isPanelMostlyVisible =
-          bounds.width > 0 &&
-          bounds.height > 0 &&
-          visibleWidth / bounds.width >= 0.55 &&
-          visibleHeight / bounds.height >= 0.55;
+          !panel.hidden && entry.isIntersecting && entry.intersectionRatio >= 0.55;
         syncAutoplayState();
-      }
+      };
+      panelVisibilityHandlers.set(panel, updatePanelVisibilityFromObserver);
+      panelVisibilityObserver.observe(panel);
 
-      /** 合并连续 scroll/resize 测量，每帧最多读取一次三个媒体面板的几何。 */
-      function requestPanelVisibilityUpdate() {
-        if (pendingPanelVisibilityFrame !== 0) {
-          return;
+      /** 响应式搬移或 hidden 变化后重新观察该节点，不沿用搬移前的可见性记录。 */
+      const refreshPanelObservation = () => {
+        if (panel.hidden) {
+          isPanelMostlyVisible = false;
         }
+        panelVisibilityObserver.unobserve(panel);
+        panelVisibilityObserver.observe(panel);
+        syncAutoplayState();
+      };
 
-        pendingPanelVisibilityFrame = window.requestAnimationFrame(() => {
-          pendingPanelVisibilityFrame = 0;
-          updatePanelVisibility();
-        });
-      }
-
-      const panelAutoplayStateObserver = new MutationObserver(requestPanelVisibilityUpdate);
-      const activeServerAutoplayObserver = new MutationObserver(requestPanelVisibilityUpdate);
+      const panelAutoplayStateObserver = new MutationObserver(refreshPanelObservation);
+      const activeServerAutoplayObserver = new MutationObserver(syncAutoplayState);
 
       panelAutoplayStateObserver.observe(panel, {
         attributes: true,
@@ -1137,11 +1158,14 @@ const triServerItems = await Promise.all(
         attributes: true,
         attributeFilter: ["data-active-server"],
       });
-      window.addEventListener("scroll", requestPanelVisibilityUpdate, { passive: true });
-      window.addEventListener("resize", requestPanelVisibilityUpdate);
       document.addEventListener("visibilitychange", syncAutoplayState);
       reducedTriServerMotionQuery.addEventListener("change", () => resetAutoplayCycle());
-      desktopTriServerQuery.addEventListener("change", requestPanelVisibilityUpdate);
+      desktopTriServerQuery.addEventListener("change", refreshPanelObservation);
+      mediaPanelObserverCleanup.add(() => {
+        panelAutoplayStateObserver.disconnect();
+        activeServerAutoplayObserver.disconnect();
+        panelVisibilityHandlers.delete(panel);
+      });
 
       if (serverId) {
         preparePanelForDisplayById.set(serverId, () =>
@@ -1211,21 +1235,26 @@ const triServerItems = await Promise.all(
 
       setSlideIndex(0, false);
       resetAutoplayCycle();
-      requestPanelVisibilityUpdate();
+      refreshPanelObservation();
     });
 
     if (activeServerId) {
       homeTriServer.dataset.activeServer = activeServerId;
     }
 
-    window.addEventListener("scroll", updateActiveServerFromScroll, { passive: true });
-    window.addEventListener("resize", updateActiveServerFromScroll);
     desktopTriServerQuery.addEventListener("change", syncMediaPlacement);
-    window.addEventListener("pagehide", () => {
+    window.addEventListener("pageshow", () => frameCoordinator.request({ measureGeometry: true }));
+    window.addEventListener("pagehide", (event) => {
       cancelActiveServerTransition();
       mediaPanels.forEach((panel) => closeInteractiveMap(panel));
-      window.cancelAnimationFrame(pendingActiveServerFrame);
       window.clearTimeout(serverLoadingResetTimer);
+
+      if (!event.persisted) {
+        triServerVisibilityObserver.disconnect();
+        panelVisibilityObserver.disconnect();
+        mediaPanelObserverCleanup.forEach((cleanup) => cleanup());
+        unregisterFrameParticipant();
+      }
     });
 
     syncMediaPlacement();
@@ -1262,7 +1291,8 @@ const triServerItems = await Promise.all(
     --motion-home-tri-server-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
     --motion-home-tri-server-settle: cubic-bezier(0.2, 0, 0, 1);
     position: relative;
-    min-height: 300svh;
+    /* 三站外层滚动合同固定为三个最大视口，地址栏过渡不重排整条叙事。 */
+    min-height: 300lvh;
     background: var(--color-background);
     color: var(--color-text);
   }

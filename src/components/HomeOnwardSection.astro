@@ -50,7 +50,9 @@ const titleId = "home-onward-content-title";
   <div class="home-onward__journey" data-home-onward-journey>
     <div class="home-onward__stage">
       <!-- 桌面支撑柱从 PIDS 背后落到底边；小屏改由探索线本身直接承托两块导视。 -->
-      <span class="home-onward__pids-support" aria-hidden="true"></span>
+      <span class="home-onward__pids-support" aria-hidden="true">
+        <span class="home-onward__pids-support-fill"></span>
+      </span>
 
       <div class="home-onward__board-area">
         <div class="home-onward__board-shell">
@@ -202,6 +204,15 @@ const titleId = "home-onward-content-title";
 
 <script>
   import { getHomeOnwardDepartureBoardState } from "@/data/home-route-train";
+  import { getHomePageFrameCoordinator } from "@/data/home-route-viewport";
+
+  /** 续行 PIDS 在统一帧 read 阶段锁定、交给 write 阶段提交的状态。 */
+  interface HomeOnwardFrameMeasurement {
+    /** 路程是否尚未进入视口，用来撤销仅由提示按钮触发的帮助态。 */
+    journeyTop: number;
+    /** 本帧唯一可见的 PIDS 面板。 */
+    boardState: "destinations" | "help";
+  }
 
   /** 把每个续行内容页自己的滚动行程映射到 PIDS 状态，不借用前一段 Section Breaker 的列车进度。 */
   const initialiseHomeOnwardContent = (section: HTMLElement) => {
@@ -210,6 +221,7 @@ const titleId = "home-onward-content-title";
       "[data-home-onward-destination-board]",
     );
     const helpBoard = section.querySelector<HTMLElement>("[data-home-onward-help-board]");
+    const stage = section.querySelector<HTMLElement>(".home-onward__stage");
     const scrollHint = section.querySelector<HTMLButtonElement>("[data-home-onward-scroll-hint]");
     const copyQqButton = section.querySelector<HTMLButtonElement>("[data-home-onward-copy-qq]");
     const copyQqLabel = copyQqButton?.querySelector<HTMLElement>(
@@ -219,42 +231,60 @@ const titleId = "home-onward-content-title";
       "[data-home-onward-copy-feedback]",
     );
 
-    if (!journey || !destinationBoard || !helpBoard) {
+    if (!journey || !stage || !destinationBoard || !helpBoard) {
       return;
     }
 
-    let frameRequest: number | undefined;
     let copyResetTimer: number | undefined;
     let manuallyRequestedHelp = false;
+    let isOnwardActive = true;
+    const frameCoordinator = getHomePageFrameCoordinator();
 
-    /** 同一帧只写一次状态，并让隐藏的 PIDS 退出辅助技术与键盘焦点树。 */
-    const render = () => {
-      frameRequest = undefined;
+    /** 在统一帧 read 阶段取得路程进度，不改变面板或辅助技术状态。 */
+    const readFrame = (): HomeOnwardFrameMeasurement => {
       const journeyRect = journey.getBoundingClientRect();
-      const scrollDistance = Math.max(1, journey.offsetHeight - window.innerHeight);
+      const scrollDistance = Math.max(1, journey.offsetHeight - stage.offsetHeight);
       const progress = Math.min(Math.max(-journeyRect.top / scrollDistance, 0), 1);
-      if (journeyRect.top > 1) {
-        manuallyRequestedHelp = false;
-      }
-      const boardState = manuallyRequestedHelp
+      const boardState = manuallyRequestedHelp && journeyRect.top <= 1
         ? "help"
         : getHomeOnwardDepartureBoardState(progress);
-      const showsDestinations = boardState === "destinations";
 
-      section.dataset.homeOnwardBoardState = boardState;
-      destinationBoard.setAttribute("aria-hidden", String(!showsDestinations));
-      destinationBoard.inert = !showsDestinations;
-      helpBoard.setAttribute("aria-hidden", String(showsDestinations));
-      helpBoard.inert = showsDestinations;
+      return { journeyTop: journeyRect.top, boardState };
     };
 
-    /** 滚动与尺寸变化合并到下一绘制帧，避免连续布局读写。 */
-    const requestRender = () => {
-      if (frameRequest !== undefined) {
-        return;
+    /** 在统一帧 write 阶段只提交变化后的 PIDS 与可访问性状态。 */
+    const writeFrame = ({ journeyTop, boardState }: HomeOnwardFrameMeasurement) => {
+      if (journeyTop > 1) {
+        manuallyRequestedHelp = false;
       }
+      const showsDestinations = boardState === "destinations";
 
-      frameRequest = window.requestAnimationFrame(render);
+      if (section.dataset.homeOnwardBoardState !== boardState) {
+        section.dataset.homeOnwardBoardState = boardState;
+      }
+      if (destinationBoard.ariaHidden !== String(!showsDestinations)) {
+        destinationBoard.ariaHidden = String(!showsDestinations);
+      }
+      if (destinationBoard.inert !== !showsDestinations) {
+        destinationBoard.inert = !showsDestinations;
+      }
+      if (helpBoard.ariaHidden !== String(showsDestinations)) {
+        helpBoard.ariaHidden = String(showsDestinations);
+      }
+      if (helpBoard.inert !== showsDestinations) {
+        helpBoard.inert = showsDestinations;
+      }
+    };
+
+    const unregisterFrameParticipant = frameCoordinator.register({
+      isActive: () => isOnwardActive,
+      read: readFrame,
+      write: writeFrame,
+    });
+
+    /** 所有连续滚动由首页唯一入口申请；组件事件只声明需要下一帧。 */
+    const requestRender = () => {
+      frameCoordinator.request();
     };
 
     /** 底部提示按钮提供显式捷径；普通滚轮、触摸和键盘输入仍完整经过续行路程。 */
@@ -327,9 +357,24 @@ const titleId = "home-onward-content-title";
       copyResetTimer = window.setTimeout(() => setCopyState("idle"), 2400);
     });
 
-    window.addEventListener("scroll", requestRender, { passive: true });
-    window.addEventListener("resize", requestRender);
+    const onwardVisibilityObserver = new IntersectionObserver(
+      ([entry]) => {
+        isOnwardActive = entry?.isIntersecting ?? false;
+        if (isOnwardActive) {
+          requestRender();
+        }
+      },
+      { rootMargin: "100% 0px" },
+    );
+    onwardVisibilityObserver.observe(section);
+
     window.addEventListener("pageshow", requestRender);
+    window.addEventListener("pagehide", (event) => {
+      if (!event.persisted) {
+        onwardVisibilityObserver.disconnect();
+        unregisterFrameParticipant();
+      }
+    });
     requestRender();
   };
 
@@ -369,13 +414,10 @@ const titleId = "home-onward-content-title";
     --home-onward-introduction-width: min(40vw, 720px);
     /* 末屏物件按视口高度下沉；短桌面也要为 Footer 解锁后的上移预留足够空间。 */
     --home-onward-footer-dock-offset: clamp(64px, 8svh, 96px);
-    /* 脚本逐帧写入 Footer 交接增量，使 PIDS 与导视牌在 sticky 解锁后仍连续向下。 */
-    --home-onward-footer-transition-shift: 0px;
     /* 减少动态时直接使用 Footer 交接完成态，保留构图但不播放随滚动位移。 */
     --home-onward-footer-reduced-shift: 96px;
     /* 导视牌跨过线路；内容安全区会叠加列车实际厚度，避免文字和箭头钻进运行中的车体。 */
     --home-onward-guide-right-wing: clamp(52px, 4.8vw, 92px);
-    --home-onward-active-train-thickness: 90px;
     --home-onward-guide-train-gap: clamp(24px, 2vw, 32px);
     /* Wiki 箭头与导视行共用固定占位；放大只增加符号分量，不在 hover 时改变排版。 */
     --home-onward-guide-arrow-size: clamp(52px, 4vw, 76px);
@@ -387,11 +429,6 @@ const titleId = "home-onward-content-title";
     );
     --home-onward-guide-width: min(42vw, 720px);
     --home-onward-guide-height: clamp(560px, 82svh, 893px);
-    --home-onward-guide-content-right: calc(
-      var(--home-onward-track-width) / 2 + var(--home-onward-guide-right-wing) +
-        var(--home-onward-active-train-thickness) / 2 +
-        var(--home-onward-guide-train-gap)
-    );
     position: relative;
     min-height: 0;
     isolation: isolate;
@@ -464,7 +501,8 @@ const titleId = "home-onward-content-title";
   .home-onward__journey {
     position: relative;
     z-index: 1;
-    height: calc(100svh + var(--home-onward-scroll-distance));
+    /* 外层路程保持 lvh 稳定；必须完整落在当前可见区的 PIDS 舞台继续使用 svh。 */
+    height: calc(100lvh + var(--home-onward-scroll-distance));
     min-height: 980px;
     overflow: clip;
   }
@@ -484,6 +522,12 @@ const titleId = "home-onward-content-title";
     left: 10.9%;
     z-index: 1;
     width: var(--home-onward-track-width);
+    overflow: clip;
+  }
+
+  .home-onward__pids-support-fill {
+    position: absolute;
+    inset: 0;
     background: var(--palette-text);
   }
 
@@ -824,6 +868,14 @@ const titleId = "home-onward-content-title";
   }
 
   .home-onward__guide {
+    /* Footer 交接和车身厚度只在本导视牌局部消费，避免运行时变量使整节正文失效。 */
+    --home-onward-footer-transition-shift: 0px;
+    --home-onward-active-train-thickness: 90px;
+    --home-onward-guide-content-right: calc(
+      var(--home-onward-track-width) / 2 + var(--home-onward-guide-right-wing) +
+        var(--home-onward-active-train-thickness) / 2 +
+        var(--home-onward-guide-train-gap)
+    );
     position: absolute;
     top: 10%;
     right: var(--home-onward-guide-right);
@@ -934,6 +986,12 @@ const titleId = "home-onward-content-title";
   }
 
   @media (min-width: 1024px) {
+    .home-onward__board-area,
+    .home-onward__pids-support-fill {
+      /* 与导视牌分别接收局部交接值，避免在父 section 上逐帧扩散变量。 */
+      --home-onward-footer-transition-shift: 0px;
+    }
+
     .home-onward__stage {
       /* 只由静止的 journey 边界裁切离场物件，避免移动中的 sticky 边界提前切掉 PIDS 底框。 */
       overflow: visible;
@@ -950,23 +1008,15 @@ const titleId = "home-onward-content-title";
       will-change: transform;
     }
 
-    .home-onward__pids-support {
-      /* 位移与 PIDS 同步，但底部按等量 inset 收起，让柱脚始终停在 Footer 交界线上。 */
-      clip-path: inset(
-        0 0
-          calc(
-            var(--home-onward-footer-dock-offset) +
-              var(--home-onward-footer-transition-shift)
-          )
-          0
-      );
+    .home-onward__pids-support-fill {
+      /* 固定父裁窗保留柱脚，填充层只做位移，避免 Safari 在滚动中重绘 clip-path。 */
       transform: translateY(
         calc(
           var(--home-onward-footer-dock-offset) +
             var(--home-onward-footer-transition-shift)
         )
       );
-      will-change: clip-path, transform;
+      will-change: transform;
     }
 
     .home-onward[data-home-onward-locale="en"] {
@@ -1312,15 +1362,7 @@ const titleId = "home-onward-content-title";
       will-change: auto;
     }
 
-    .home-onward__pids-support {
-      clip-path: inset(
-        0 0
-          calc(
-            var(--home-onward-footer-dock-offset) +
-              var(--home-onward-footer-reduced-shift)
-          )
-          0
-      );
+    .home-onward__pids-support-fill {
       transform: translateY(
         calc(
           var(--home-onward-footer-dock-offset) +

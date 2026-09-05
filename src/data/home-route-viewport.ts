@@ -96,8 +96,75 @@ export interface HomeRouteFrameScheduler {
   request: (request?: Partial<HomeRouteFrameRequest>) => void;
 }
 
+/** 首页统一帧中一个可暂停的读写参与者；泛型值只在它自己的两个阶段之间传递。 */
+export interface HomePageFrameParticipant<Measurement> {
+  /** IntersectionObserver 等外部状态可让离屏章节完全跳过本帧。 */
+  isActive?: () => boolean;
+  /** 读取本帧所需 DOM 几何并返回不可变结果；这里不得写 DOM。 */
+  read: (request: Readonly<HomeRouteFrameRequest>, timestamp: number) => Measurement;
+  /** 在所有参与者完成读取后提交状态；这里消费自己的测量结果。 */
+  write: (
+    measurement: Measurement,
+    request: Readonly<HomeRouteFrameRequest>,
+    timestamp: number,
+  ) => void;
+}
+
+/** 首页统一帧协调器的浏览器适配参数。 */
+export interface HomePageFrameCoordinatorOptions {
+  /** 唯一的浏览器动画帧入口；测试传入可控队列以证明合帧顺序。 */
+  requestFrame: (callback: (timestamp: number) => void) => number;
+  /** 当前文档滚动坐标；连续采样让 Safari 稀疏 scroll 事件之间仍能取得合成器位置。 */
+  readScrollPosition?: () => { x: number; y: number };
+}
+
+/** 首页各滚动章节共享的最小协调接口。 */
+export interface HomePageFrameCoordinator extends HomeRouteFrameScheduler {
+  /** 注册一个读写参与者；返回函数用于页面卸载或测试时解除注册。 */
+  register: <Measurement>(participant: HomePageFrameParticipant<Measurement>) => () => void;
+  /** 启动有界连续滚动采样；位置稳定后协调器自动休眠。 */
+  requestScroll: (request?: Partial<HomeRouteFrameRequest>) => void;
+}
+
+/** 协调器内部以 unknown 保存不同参与者的测量类型，再由各自适配闭包恢复具体类型。 */
+interface RegisteredHomePageFrameParticipant {
+  /** 当前参与者是否需要消费本帧。 */
+  isActive?: () => boolean;
+  /** 擦除泛型后的读取阶段。 */
+  read: (request: Readonly<HomeRouteFrameRequest>, timestamp: number) => unknown;
+  /** 擦除泛型后的写入阶段。 */
+  write: (
+    measurement: unknown,
+    request: Readonly<HomeRouteFrameRequest>,
+    timestamp: number,
+  ) => void;
+}
+
 /** VisualViewport 连续事件中的亚像素抖动不会构成新的布局或语义状态。 */
 const HOME_ROUTE_VIEWPORT_EPSILON = 0.5;
+
+/** 稀疏 scroll 事件后继续观察约七帧，覆盖 iPhone Safari 的事件间隔并在停稳后及时休眠。 */
+const HOME_PAGE_SCROLL_IDLE_MS = 120;
+
+/** 惯性滚动的累积位移阈值远小于一个设备像素，既保留衰减尾段，也忽略浮点读数噪声。 */
+const HOME_PAGE_SCROLL_POSITION_EPSILON = 0.01;
+
+/** 建立新的空请求，避免已消费批次与下一帧共享可变对象。 */
+const createEmptyHomeRouteFrameRequest = (): HomeRouteFrameRequest => ({
+  measureGeometry: false,
+  syncJourney: false,
+  placeTooltip: false,
+});
+
+/** 用 OR 合并同一帧的工作需求，后到的轻量事件不能覆盖较强请求。 */
+const mergeHomeRouteFrameRequest = (
+  current: HomeRouteFrameRequest,
+  next: Partial<HomeRouteFrameRequest>,
+): HomeRouteFrameRequest => ({
+  measureGeometry: current.measureGeometry || next.measureGeometry === true,
+  syncJourney: current.syncJourney || next.syncJourney === true,
+  placeTooltip: current.placeTooltip || next.placeTooltip === true,
+});
 
 /** 在动画帧开头一次读取布局视口与 VisualViewport，后续路线计算只消费这份不可变快照。 */
 export const readHomeRouteViewportSnapshot = (
@@ -194,28 +261,16 @@ export const createHomeRouteFrameScheduler = ({
   update,
 }: HomeRouteFrameSchedulerOptions): HomeRouteFrameScheduler => {
   let framePending = false;
-  let pendingRequest: HomeRouteFrameRequest = {
-    measureGeometry: false,
-    syncJourney: false,
-    placeTooltip: false,
-  };
+  let pendingRequest = createEmptyHomeRouteFrameRequest();
 
   /** 把不同事件入口的布尔需求收拢，保留同一批次中最强的工作。 */
   const mergeRequest = (request: Partial<HomeRouteFrameRequest>) => {
-    pendingRequest = {
-      measureGeometry: pendingRequest.measureGeometry || request.measureGeometry === true,
-      syncJourney: pendingRequest.syncJourney || request.syncJourney === true,
-      placeTooltip: pendingRequest.placeTooltip || request.placeTooltip === true,
-    };
+    pendingRequest = mergeHomeRouteFrameRequest(pendingRequest, request);
   };
   /** 取走当前批次并先清空状态，允许 update 内部安全排下一帧。 */
   const consumeRequest = () => {
     const requestForFrame = pendingRequest;
-    pendingRequest = {
-      measureGeometry: false,
-      syncJourney: false,
-      placeTooltip: false,
-    };
+    pendingRequest = createEmptyHomeRouteFrameRequest();
     update(requestForFrame);
   };
 
@@ -234,4 +289,123 @@ export const createHomeRouteFrameScheduler = ({
       });
     },
   };
+};
+
+/**
+ * 建立首页唯一的两阶段帧协调器。
+ * 每帧先锁定活跃参与者并完成所有 reads，随后才按同一顺序执行 writes；写阶段产生的新请求会进入下一帧。
+ */
+export const createHomePageFrameCoordinator = ({
+  requestFrame,
+  readScrollPosition = () => ({ x: window.scrollX, y: window.scrollY }),
+}: HomePageFrameCoordinatorOptions): HomePageFrameCoordinator => {
+  const participants = new Set<RegisteredHomePageFrameParticipant>();
+  let framePending = false;
+  let pendingRequest = createEmptyHomeRouteFrameRequest();
+  let scrollSamplingActive = false;
+  let scrollSamplingRenewed = false;
+  let scrollSamplingRequest = createEmptyHomeRouteFrameRequest();
+  let lastScrollPosition: { x: number; y: number } | undefined;
+  let lastScrollMotionTimestamp = 0;
+
+  /** 所有入口都只可排队同一个协调帧，避免连续采样与事件请求生成两条 rAF 链。 */
+  const scheduleFrame = () => {
+    if (framePending) {
+      return;
+    }
+
+    framePending = true;
+    requestFrame(consumeFrame);
+  };
+
+  /** 执行一个不可分割的读写批次，注册变化只影响下一帧。 */
+  function consumeFrame(timestamp: number) {
+    framePending = false;
+    const scrollPosition = scrollSamplingActive ? readScrollPosition() : undefined;
+    const scrollPositionChanged =
+      scrollPosition !== undefined &&
+      (lastScrollPosition === undefined ||
+        Math.abs(scrollPosition.x - lastScrollPosition.x) > HOME_PAGE_SCROLL_POSITION_EPSILON ||
+        Math.abs(scrollPosition.y - lastScrollPosition.y) > HOME_PAGE_SCROLL_POSITION_EPSILON);
+    const requestForFrame = pendingRequest;
+    pendingRequest = createEmptyHomeRouteFrameRequest();
+    const activeParticipants = Array.from(participants).filter(
+      (participant) => participant.isActive?.() !== false,
+    );
+    const measurements = activeParticipants.map((participant) =>
+      participant.read(requestForFrame, timestamp),
+    );
+
+    activeParticipants.forEach((participant, index) => {
+      participant.write(measurements[index], requestForFrame, timestamp);
+    });
+
+    if (!scrollSamplingActive || !scrollPosition) {
+      return;
+    }
+
+    if (scrollSamplingRenewed || scrollPositionChanged) {
+      lastScrollMotionTimestamp = timestamp;
+    }
+    scrollSamplingRenewed = false;
+    if (scrollPositionChanged) {
+      /* 未过阈值时保留旧基准，让连续亚像素位移累积后仍能续订采样窗口。 */
+      lastScrollPosition = scrollPosition;
+    }
+
+    if (timestamp - lastScrollMotionTimestamp < HOME_PAGE_SCROLL_IDLE_MS) {
+      pendingRequest = mergeHomeRouteFrameRequest(pendingRequest, scrollSamplingRequest);
+      scheduleFrame();
+      return;
+    }
+
+    scrollSamplingActive = false;
+    scrollSamplingRequest = createEmptyHomeRouteFrameRequest();
+    lastScrollPosition = undefined;
+    lastScrollMotionTimestamp = 0;
+  }
+
+  return {
+    register: <Measurement>(participant: HomePageFrameParticipant<Measurement>) => {
+      const registeredParticipant: RegisteredHomePageFrameParticipant = {
+        isActive: participant.isActive,
+        read: participant.read,
+        write: (measurement, request, timestamp) => {
+          participant.write(measurement as Measurement, request, timestamp);
+        },
+      };
+      participants.add(registeredParticipant);
+
+      return () => participants.delete(registeredParticipant);
+    },
+    request: (request = {}) => {
+      pendingRequest = mergeHomeRouteFrameRequest(pendingRequest, request);
+      scheduleFrame();
+    },
+    requestScroll: (request = {}) => {
+      pendingRequest = mergeHomeRouteFrameRequest(pendingRequest, request);
+      scrollSamplingRequest = mergeHomeRouteFrameRequest(scrollSamplingRequest, {
+        syncJourney: request.syncJourney,
+        placeTooltip: request.placeTooltip,
+      });
+      scrollSamplingActive = true;
+      scrollSamplingRenewed = true;
+      scheduleFrame();
+    },
+  };
+};
+
+/** 当前静态首页生命周期内共享的浏览器协调器；Astro 多个脚本入口会复用同一 ESM 实例。 */
+let sharedHomePageFrameCoordinator: HomePageFrameCoordinator | undefined;
+
+/**
+ * 取得首页唯一浏览器帧协调器。
+ * 延迟创建避免 SSG 构建触碰 window，并让各 Astro 组件在客户端按任意加载顺序安全注册。
+ */
+export const getHomePageFrameCoordinator = (): HomePageFrameCoordinator => {
+  sharedHomePageFrameCoordinator ??= createHomePageFrameCoordinator({
+    requestFrame: (callback) => window.requestAnimationFrame(callback),
+  });
+
+  return sharedHomePageFrameCoordinator;
 };

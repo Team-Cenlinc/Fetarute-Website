@@ -36,13 +36,31 @@ html[data-launching] .site-header {
   /* SSR 首帧先用白色反光，运行时取色失败也不会削弱标题的可读性。 */
   --hero-copy-reflection-color: var(--color-hero-copy-reflection-fallback);
   position: relative;
-  display: grid;
-  min-height: 100dvh;
-  align-items: end;
-  isolation: isolate;
+  min-height: 100vh;
+  min-height: 100lvh;
   overflow: hidden;
   background: var(--color-scene-fallback);
-  padding: clamp(40px, 6vw, 96px) var(--hero-inline-gutter) clamp(44px, 11vh, 112px);
+}
+
+.hero-section__viewport {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100lvh;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.hero-section__foreground {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-height: 100vh;
+  min-height: 100svh;
+  align-items: end;
+  padding: max(clamp(40px, 6vw, 96px), env(safe-area-inset-top))
+    max(var(--hero-inline-gutter), env(safe-area-inset-right))
+    max(clamp(44px, 11vh, 112px), env(safe-area-inset-bottom))
+    max(var(--hero-inline-gutter), env(safe-area-inset-left));
 }
 
 .hero-scene {
@@ -214,7 +232,8 @@ h3 {
  */
 .departure-gate-sentinel {
   width: 100%;
-  height: 100dvh;
+  height: 100vh;
+  height: 100lvh;
   background: var(--color-background);
   pointer-events: none;
 }
@@ -1752,8 +1771,13 @@ html[data-launching] .launch-sequence {
   .hero-section {
     /* 窄屏 Header 的外缘固定为 12px，首屏文字同步贴齐该导视牌边线。 */
     --hero-inline-gutter: 12px;
-    min-height: 100dvh;
-    padding: 28px var(--hero-inline-gutter) 48px;
+  }
+
+  .hero-section__foreground {
+    padding: max(28px, env(safe-area-inset-top))
+      max(var(--hero-inline-gutter), env(safe-area-inset-right))
+      max(48px, env(safe-area-inset-bottom))
+      max(var(--hero-inline-gutter), env(safe-area-inset-left));
   }
 
   .hero-copy {

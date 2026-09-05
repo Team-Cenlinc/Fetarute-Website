@@ -74,8 +74,9 @@ test("续行 PIDS 由原生滚动行程决定翻页，不把第一次向下输�
   assert.match(homeOnwardComponentSource, /getHomeOnwardDepartureBoardState\(progress\)/);
   assert.match(
     homeOnwardComponentSource,
-    /addEventListener\("scroll", requestRender, \{ passive: true \}\)/,
+    /frameCoordinator\.register\(\{[\s\S]*?read: readFrame,[\s\S]*?write: writeFrame/,
   );
+  assert.doesNotMatch(homeOnwardComponentSource, /window\.addEventListener\(\s*"scroll"/);
   assert.match(
     homeOnwardComponentSource,
     /--home-onward-scroll-distance:\s*clamp\(1240px,\s*190svh,\s*1880px\)/,
@@ -163,9 +164,10 @@ test("续行桌面末屏把 PIDS 与导视牌下沉，并在 Footer 交接时抵
     homeOnwardComponentSource,
     /@media \(min-width:\s*1024px\)[\s\S]*?\.home-onward__board-area,[\s\S]*?\.home-onward__guide \{[\s\S]*?transform:\s*translateY\([\s\S]*?--home-onward-footer-dock-offset[\s\S]*?--home-onward-footer-transition-shift/,
   );
+  assert.match(homeOnwardComponentSource, /\.home-onward__pids-support \{[^}]*overflow:\s*clip/);
   assert.match(
     homeOnwardComponentSource,
-    /@media \(min-width:\s*1024px\)[\s\S]*?\.home-onward__pids-support \{[\s\S]*?clip-path:\s*inset\([\s\S]*?--home-onward-footer-dock-offset[\s\S]*?--home-onward-footer-transition-shift[\s\S]*?transform:\s*translateY\([\s\S]*?--home-onward-footer-dock-offset[\s\S]*?--home-onward-footer-transition-shift/,
+    /@media \(min-width:\s*1024px\)[\s\S]*?\.home-onward__pids-support-fill \{[\s\S]*?transform:\s*translateY\([\s\S]*?--home-onward-footer-dock-offset[\s\S]*?--home-onward-footer-transition-shift/,
   );
   assert.match(homeOnwardComponentSource, /\.home-onward__journey \{[\s\S]*?overflow:\s*clip/);
   assert.match(
@@ -178,7 +180,7 @@ test("续行桌面末屏把 PIDS 与导视牌下沉，并在 Footer 交接时抵
   );
   assert.match(
     homeOnwardComponentSource,
-    /@media \(prefers-reduced-motion:\s*reduce\) and \(min-width:\s*1024px\)[\s\S]*?\.home-onward__pids-support \{[\s\S]*?clip-path:\s*inset\([\s\S]*?--home-onward-footer-reduced-shift/,
+    /@media \(prefers-reduced-motion:\s*reduce\) and \(min-width:\s*1024px\)[\s\S]*?\.home-onward__pids-support-fill \{[\s\S]*?transform:\s*translateY\([\s\S]*?--home-onward-footer-reduced-shift/,
   );
   assert.match(homePageSource, /getHomeFooterRevealProgress/);
   assert.match(homePageSource, /getHomeFooterStickyReleaseScrollY/);
@@ -363,6 +365,25 @@ test("列车快选按语言与视口收紧面板宽度和列车间距", () => {
   assert.match(
     homeJourneyQuickPickSource,
     /\[data-home-journey-locale="en"\][\s\S]*?font-weight:\s*650;[\s\S]*?letter-spacing:\s*-0\.02em;/,
+  );
+});
+
+test("列车焦点恢复不保存抑制状态，首次键盘 focus 始终可以打开快选", () => {
+  assert.doesNotMatch(
+    homePageSource,
+    /trainTooltipSuppressedFocusTarget|isTrainTooltipFocusRestoreSuppressed/,
+  );
+  assert.match(
+    homePageSource,
+    /const setTrainTooltipOpen = \(isOpen: boolean, allowDuringNavigation = false\)/,
+  );
+  assert.match(
+    homePageSource,
+    /trigger\.addEventListener\("focus", \(\) => \{[\s\S]*?setTrainTooltipOpen\(true, true\);[\s\S]*?\}\);/,
+  );
+  assert.match(
+    homePageSource,
+    /const closeTrainTooltipAndRestoreFocus = \(\) => \{[\s\S]*?activeTrainTooltipTrigger\.focus\(\{ preventScroll: true \}\);\s*setTrainTooltipOpen\(false\);/,
   );
 });
 
