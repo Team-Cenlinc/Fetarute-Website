@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { Buffer } from "node:buffer";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
 import { siteInfo } from "../src/data/site.ts";
@@ -139,6 +140,51 @@ test("三语言静态首页输出完整且一致的可索引元数据", () => {
     assert.equal(webPage.url, canonicalUrl);
     assert.equal(webPage.description, messages.description);
     assert.equal(webPage.inLanguage, localeMetadata[locale].languageTag);
+  }
+});
+
+test("记录压缩后三语言首页字节数，并守护可索引正文与图片属性", (context) => {
+  for (const locale of publicHomeLocales) {
+    const html = readStaticHomeHtml(locale);
+    const messages = getMessages(locale);
+    const bytes = Buffer.byteLength(html, "utf8");
+    const imageTags = Array.from(html.matchAll(/<img\b[^>]*>/gi), ({ 0: tag }) => tag);
+
+    context.diagnostic(`${locale}/index.html: ${bytes} bytes`);
+    assert.ok(bytes > 0, `${locale} 首页应输出非空 HTML`);
+    assert.equal(
+      extractText(html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? ""),
+      messages.home.title,
+    );
+    assert.ok(html.includes(messages.home.introduction.title), `${locale} 首页应保留介绍章节标题`);
+    assert.ok(html.includes(messages.home.footer.title), `${locale} 首页应保留页尾关键正文`);
+    assert.ok(imageTags.length > 0, `${locale} 首页应输出图片`);
+
+    for (const imageTag of imageTags) {
+      assert.ok(getAttribute(imageTag, "src"), `${locale} 图片应保留 src: ${imageTag}`);
+      assert.match(imageTag, /\salt(?:\s|=|>)/i, `${locale} 图片应保留 alt: ${imageTag}`);
+      assert.ok(getAttribute(imageTag, "width"), `${locale} 图片应保留 width: ${imageTag}`);
+      assert.ok(getAttribute(imageTag, "height"), `${locale} 图片应保留 height: ${imageTag}`);
+      assert.ok(getAttribute(imageTag, "decoding"), `${locale} 图片应保留 decoding: ${imageTag}`);
+      assert.ok(getAttribute(imageTag, "loading"), `${locale} 图片应保留 loading: ${imageTag}`);
+    }
+  }
+});
+
+test("HTML 压缩保留内联文案、导视代码、可访问名称与内联 SVG 结构", () => {
+  for (const locale of publicHomeLocales) {
+    const html = readStaticHomeHtml(locale);
+    const messages = getMessages(locale);
+
+    assert.match(html, /<span\b[^>]*class="railway-line-hint__code"[^>]*>SL<\/span>/i);
+    assert.match(html, /<span\b[^>]*class="railway-line-hint__sequence"[^>]*>01<\/span>/i);
+    assert.ok(html.includes(`aria-label="${messages.launch.label}"`));
+    assert.match(
+      html,
+      /<svg\b[^>]*data-departure-drag-guide[^>]*>[\s\S]*?<path\b[^>]*data-departure-drag-guide-path[^>]*>[\s\S]*?<\/svg>/i,
+    );
+    // 当前首页没有 code/pre 或带文本节点的 SVG；未来加入时必须在此补充压缩后的逐字断言。
+    assert.doesNotMatch(html, /<(?:code|pre|text|tspan)\b/i);
   }
 });
 

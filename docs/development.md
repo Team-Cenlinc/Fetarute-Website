@@ -79,6 +79,19 @@ npm run build:with-fonts
 `team-cenlinc.github.io`，由 GitHub Pages 重定向到正式根域名。`wiki`
 与各环境地图使用各自独立的 DNS 记录，不随官网根域名配置变更。
 
+每次更换 CDN 或缓存规则后，都要对正式域名执行一次响应头验收。使用支持自动解压的客户端分别请求 HTML、构建生成的 JavaScript/CSS、SVG 和 JSON，并确认
+`Content-Encoding` 为 `br` 或 `gzip`；对文件名带长 hash 的 `/_astro/` 资源还要确认 `Cache-Control`
+包含 `public`、较长的 `max-age` 和 `immutable`。这些是部署环境的验收项，不能由只读取 `dist/`
+的静态输出测试代替。
+
+```bash
+curl --compressed -sS -D - -o /dev/null https://fetarute.org/en/
+curl --compressed -sS -D - -o /dev/null https://fetarute.org/_astro/<hashed-asset>.js
+curl --compressed -sS -D - -o /dev/null https://fetarute.org/_astro/<hashed-asset>.css
+curl --compressed -sS -D - -o /dev/null https://fetarute.org/favicon.svg
+curl --compressed -sS -D - -o /dev/null https://fetarute.org/site.webmanifest
+```
+
 ## 目录结构
 
 ```text
