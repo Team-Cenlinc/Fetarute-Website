@@ -15,7 +15,7 @@ const localeHrefs = Object.fromEntries(
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={localeMetadata[defaultLocale].languageTag}>
   <head>
     <meta charset="UTF-8" />
     <meta name="description" content={defaultMessages.description} />

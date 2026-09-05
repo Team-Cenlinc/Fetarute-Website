@@ -187,7 +187,16 @@ test("根入口为不执行语言跳转的分享抓取器输出站点级预览",
   const openGraphDescriptionTag = findHeadTag(html, "meta", "property", "og:description");
   const openGraphUrlTag = findHeadTag(html, "meta", "property", "og:url");
   const openGraphImageTag = findHeadTag(html, "meta", "property", "og:image");
+  const openGraphSecureImageTag = findHeadTag(html, "meta", "property", "og:image:secure_url");
+  const openGraphImageTypeTag = findHeadTag(html, "meta", "property", "og:image:type");
+  const openGraphImageWidthTag = findHeadTag(html, "meta", "property", "og:image:width");
+  const openGraphImageHeightTag = findHeadTag(html, "meta", "property", "og:image:height");
+  const openGraphImageAltTag = findHeadTag(html, "meta", "property", "og:image:alt");
   const twitterCardTag = findHeadTag(html, "meta", "name", "twitter:card");
+  const twitterTitleTag = findHeadTag(html, "meta", "name", "twitter:title");
+  const twitterDescriptionTag = findHeadTag(html, "meta", "name", "twitter:description");
+  const twitterImageTag = findHeadTag(html, "meta", "name", "twitter:image");
+  const twitterImageAltTag = findHeadTag(html, "meta", "name", "twitter:image:alt");
 
   assert.equal(extractText(html.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? ""), siteInfo.name);
   assert.equal(getAttribute(descriptionTag ?? "", "content"), messages.description);
@@ -195,7 +204,30 @@ test("根入口为不执行语言跳转的分享抓取器输出站点级预览",
   assert.equal(getAttribute(openGraphDescriptionTag ?? "", "content"), messages.description);
   assert.equal(getAttribute(openGraphUrlTag ?? "", "content"), `${siteInfo.url}/`);
   assert.equal(getAttribute(openGraphImageTag ?? "", "content"), expectedImageUrl);
+  assert.equal(getAttribute(openGraphSecureImageTag ?? "", "content"), expectedImageUrl);
+  assert.equal(getAttribute(openGraphImageTypeTag ?? "", "content"), "image/png");
+  assert.equal(getAttribute(openGraphImageWidthTag ?? "", "content"), "1200");
+  assert.equal(getAttribute(openGraphImageHeightTag ?? "", "content"), "630");
+  assert.equal(getAttribute(openGraphImageAltTag ?? "", "content"), messages.socialImageAlt);
   assert.equal(getAttribute(twitterCardTag ?? "", "content"), "summary_large_image");
+  assert.equal(getAttribute(twitterTitleTag ?? "", "content"), siteInfo.name);
+  assert.equal(getAttribute(twitterDescriptionTag ?? "", "content"), messages.description);
+  assert.equal(getAttribute(twitterImageTag ?? "", "content"), expectedImageUrl);
+  assert.equal(getAttribute(twitterImageAltTag ?? "", "content"), messages.socialImageAlt);
+});
+
+test("根入口的文档语言与默认分享语言保持一致", () => {
+  const html = readStaticRootHtml();
+  const openGraphLocaleTag = findHeadTag(html, "meta", "property", "og:locale");
+
+  assert.match(
+    html,
+    new RegExp(`<html\\s+lang="${localeMetadata[defaultLocale].languageTag}"`, "i"),
+  );
+  assert.equal(
+    getAttribute(openGraphLocaleTag ?? "", "content"),
+    localeMetadata[defaultLocale].openGraphLocale,
+  );
 });
 
 test("构建后的 discovery 文件只公开正式页面与正式描述", () => {
