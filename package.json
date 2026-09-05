@@ -27,7 +27,7 @@
     "build:with-fonts": "npm run font:subset && npm run build",
     "test:discovery": "NODE_OPTIONS=--experimental-strip-types node --test test/discovery.test.ts",
     "test:document": "NODE_OPTIONS=--experimental-strip-types node --test test/document-details.test.ts",
-    "test:static": "NODE_OPTIONS=--experimental-strip-types node --test test/static-output.test.ts",
+    "test:static": "NODE_OPTIONS=--experimental-strip-types node --test test/static-output.test.ts test/discovery-output.test.ts",
     "build": "npm run social-card:build && ASTRO_TELEMETRY_DISABLED=1 astro build",
     "test:home": "NODE_OPTIONS=--experimental-strip-types node --test test/home-tri-server-media.test.ts test/home-image-output.test.ts test/home-route-train.test.ts test/home-journey.test.ts test/home-community.test.ts",
     "check": "npm run format:check && npm run typecheck && npm run test:discovery && npm run test:document && npm run test:home && npm run build && npm run test:static",

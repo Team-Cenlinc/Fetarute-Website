@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
-import { externalDestinations, siteInfo } from "../src/data/site.ts";
+import { siteInfo } from "../src/data/site.ts";
 import { localeMetadata, type Locale } from "../src/i18n/config.ts";
 import { getMessages } from "../src/i18n/messages.ts";
 
@@ -119,23 +119,9 @@ test("三语言静态首页输出完整且一致的可索引元数据", () => {
     const webPage = structuredData["@graph"].find(
       (item: { "@type": string }) => item["@type"] === "WebPage",
     );
-    const organization = structuredData["@graph"].find(
-      (item: { "@type": string }) => item["@type"] === "Organization",
-    );
     assert.equal(webPage.url, canonicalUrl);
     assert.equal(webPage.description, messages.description);
     assert.equal(webPage.inLanguage, localeMetadata[locale].languageTag);
-    assert.equal(organization.description, messages.description);
-    assert.equal(organization.sameAs, undefined);
-  }
-});
-
-test("三语言首页把 llms.txt 声明为页面描述文件", () => {
-  for (const locale of publicHomeLocales) {
-    const html = readStaticHomeHtml(locale);
-    const llmsDescriptor = findHeadTag(html, "link", "rel", "describedby");
-
-    assert.equal(getAttribute(llmsDescriptor ?? "", "href"), "/llms.txt");
   }
 });
 
@@ -195,19 +181,11 @@ test("根入口保持 noindex、完整 hreflang 与无脚本默认回退", () =>
 test("构建后的 discovery 文件只公开正式页面与正式描述", () => {
   const robotsTxt = readFileSync(new URL("../dist/robots.txt", import.meta.url), "utf8");
   const llmsTxt = readFileSync(new URL("../dist/llms.txt", import.meta.url), "utf8");
-  const llmsFullTxt = readFileSync(new URL("../dist/llms-full.txt", import.meta.url), "utf8");
   const sitemap = readFileSync(new URL("../dist/sitemap-0.xml", import.meta.url), "utf8");
 
   assert.match(robotsTxt, /^Sitemap: https:\/\/fetarute\.org\/sitemap-index\.xml$/m);
   assert.doesNotMatch(llmsTxt, /正在建设|正在建設|under construction/i);
   assert.doesNotMatch(llmsTxt, /play\.fetarute\.example/);
-  assert.doesNotMatch(llmsFullTxt, /play\.fetarute\.example/);
-  assert.match(llmsFullTxt, /does not announce a public game-server address/i);
-  assert.match(llmsFullTxt, new RegExp(externalDestinations.wiki.href.replaceAll("/", "\\/")));
-
-  for (const map of externalDestinations.maps) {
-    assert.match(llmsFullTxt, new RegExp(map.href.replaceAll("/", "\\/")));
-  }
 
   for (const locale of publicHomeLocales) {
     const canonicalUrl = `${siteInfo.url}/${locale}/`;
