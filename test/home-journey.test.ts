@@ -5,10 +5,9 @@ import { getHomeJourneySectionHash, homeJourneySections } from "../src/data/home
 import { railwayLineByKey } from "../src/data/railway.ts";
 import { onwardDestinations, onwardEntryPoints } from "../src/data/site.ts";
 
-const homeOnwardComponentSource = readFileSync(
-  new URL("../src/components/HomeOnwardSection.astro", import.meta.url),
-  "utf8",
-);
+const homeOnwardComponentSource =
+  readFileSync(new URL("../src/components/HomeOnwardSection.astro", import.meta.url), "utf8") +
+  readFileSync(new URL("../src/lib/home/onward-controller.ts", import.meta.url), "utf8");
 const homeJourneyQuickPickSource = readFileSync(
   new URL("../src/components/HomeJourneyQuickPick.astro", import.meta.url),
   "utf8",
@@ -17,10 +16,9 @@ const homeFooterSource = readFileSync(
   new URL("../src/components/HomeFooter.astro", import.meta.url),
   "utf8",
 );
-const homePageSource = readFileSync(
-  new URL("../src/components/HomePage.astro", import.meta.url),
-  "utf8",
-);
+const homePageSource =
+  readFileSync(new URL("../src/components/HomePage.astro", import.meta.url), "utf8") +
+  readFileSync(new URL("../src/lib/home/route-controller.ts", import.meta.url), "utf8");
 const homeStylesSource = readFileSync(new URL("../src/styles/home.css", import.meta.url), "utf8");
 
 test("同岸站本身把服联快线 SL07 明确换乘到湾岸支线 BS05", () => {
@@ -302,13 +300,13 @@ test("续行 QQ 复制在 Clipboard API 拒绝后仍尝试兼容回退", () => {
 
 test("续行小屏列车与 Tooltip 都使用线路中心和完整车身长度", () => {
   const contentTrainRenderer = homePageSource.match(
-    /const renderHomeOnwardContentTrain = \([\s\S]*?\n      \};/,
+    /const renderHomeOnwardContentTrain = \([\s\S]*?\n    \};/,
   )?.[0];
   const footerTrainRenderer = homePageSource.match(
-    /const renderHomeFooterTrain = \([\s\S]*?\n      \};/,
+    /const renderHomeFooterTrain = \([\s\S]*?\n    \};/,
   )?.[0];
   const verticalTrainRenderer = homePageSource.match(
-    /const renderViewportVerticalTrain = \([\s\S]*?\n      \};/,
+    /const renderViewportVerticalTrain = \([\s\S]*?\n    \};/,
   )?.[0];
 
   assert.ok(contentTrainRenderer);

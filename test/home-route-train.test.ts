@@ -29,10 +29,9 @@ import {
   getHomeVerticalTrainRenderGeometry,
 } from "../src/data/home-route-train.ts";
 
-const homePageSource = readFileSync(
-  new URL("../src/components/HomePage.astro", import.meta.url),
-  "utf8",
-);
+const homePageSource =
+  readFileSync(new URL("../src/components/HomePage.astro", import.meta.url), "utf8") +
+  readFileSync(new URL("../src/lib/home/route-controller.ts", import.meta.url), "utf8");
 const homeStylesSource = readFileSync(new URL("../src/styles/home.css", import.meta.url), "utf8");
 
 test("路线几何在纯数值层解析直线与 Bézier，不调用浏览器 SVG 测量 API", () => {

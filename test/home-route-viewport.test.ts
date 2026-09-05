@@ -12,30 +12,28 @@ import {
   type HomeRouteViewportSnapshot,
 } from "../src/data/home-route-viewport.ts";
 
-const homePageSource = readFileSync(
-  new URL("../src/components/HomePage.astro", import.meta.url),
-  "utf8",
-);
-const homeOnwardSource = readFileSync(
-  new URL("../src/components/HomeOnwardSection.astro", import.meta.url),
-  "utf8",
-);
-const homeCommunitySource = readFileSync(
-  new URL("../src/components/HomeCommunitySection.astro", import.meta.url),
-  "utf8",
-);
-const homeTriServerSource = readFileSync(
-  new URL("../src/components/HomeTriServerSection.astro", import.meta.url),
-  "utf8",
-);
+const homePageSource =
+  readFileSync(new URL("../src/components/HomePage.astro", import.meta.url), "utf8") +
+  readFileSync(new URL("../src/lib/home/route-controller.ts", import.meta.url), "utf8") +
+  readFileSync(new URL("../src/lib/home/gallery-controller.ts", import.meta.url), "utf8");
+const homeOnwardSource =
+  readFileSync(new URL("../src/components/HomeOnwardSection.astro", import.meta.url), "utf8") +
+  readFileSync(new URL("../src/lib/home/onward-controller.ts", import.meta.url), "utf8");
+const homeCommunitySource =
+  readFileSync(new URL("../src/components/HomeCommunitySection.astro", import.meta.url), "utf8") +
+  readFileSync(new URL("../src/lib/home/community-controller.ts", import.meta.url), "utf8");
+const homeTriServerSource =
+  readFileSync(new URL("../src/components/HomeTriServerSection.astro", import.meta.url), "utf8") +
+  readFileSync(new URL("../src/lib/home/tri-server-controller.ts", import.meta.url), "utf8");
 const siteHeaderSource = readFileSync(
   new URL("../src/components/SiteHeader.astro", import.meta.url),
   "utf8",
 );
 const homeStylesSource = readFileSync(new URL("../src/styles/home.css", import.meta.url), "utf8");
-const homeRouteScriptStart = homePageSource.indexOf("      getHomeFooterRevealProgress,");
-const homeRouteScriptEnd = homePageSource.indexOf("  </script>", homeRouteScriptStart);
-const homeRouteScriptSource = homePageSource.slice(homeRouteScriptStart, homeRouteScriptEnd);
+const homeRouteScriptSource = readFileSync(
+  new URL("../src/lib/home/route-controller.ts", import.meta.url),
+  "utf8",
+);
 
 /** 建立 iPhone Safari 地址栏收放前后的最小 viewport 快照。 */
 const createViewportSnapshot = (
@@ -266,8 +264,6 @@ test("窗口滚动使用协调器的连续采样入口，reduced-motion 仍只�
 });
 
 test("路线参与者在统一 read 阶段冻结所需 DOM 几何，write 阶段只消费快照", () => {
-  assert.ok(homeRouteScriptStart >= 0);
-  assert.ok(homeRouteScriptEnd > homeRouteScriptStart);
   assert.match(homeRouteScriptSource, /const readHomeRouteFrameMeasurements/);
   assert.match(
     homeRouteScriptSource,
@@ -429,7 +425,7 @@ test("续行稳定帧的样式、区段和 aria-label 都跳过同值 mutation",
 
 test("旅程导航只在 section 真正变化时提交 DOM，并复用统一路线帧重排 Tooltip", () => {
   const setActiveSectionStart = homeRouteScriptSource.indexOf("const setActiveJourneySection =");
-  const setActiveSectionEnd = homeRouteScriptSource.indexOf("\n      };", setActiveSectionStart);
+  const setActiveSectionEnd = homeRouteScriptSource.indexOf("\n    };", setActiveSectionStart);
   const setActiveSectionSource = homeRouteScriptSource.slice(
     setActiveSectionStart,
     setActiveSectionEnd,
