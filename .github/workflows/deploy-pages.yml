@@ -1,5 +1,6 @@
 name: Deploy GitHub Pages
 
+# GitHub Pages 只发布静态产物；根路径语言选择由构建产物中的客户端回退承担，不能在此声明边缘重定向。
 on:
   push:
     branches:
