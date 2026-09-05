@@ -1,6 +1,6 @@
 import { locales, localeMetadata, type Locale } from "../i18n/config.ts";
 import { getMessages } from "../i18n/messages.ts";
-import { siteInfo } from "./site.ts";
+import { externalDestinations, siteInfo } from "./site.ts";
 
 /** 已经具备完整正文、可向搜索引擎和 AI 工具公开引用的静态页面。 */
 export interface IndexablePage {
@@ -78,10 +78,62 @@ export function createLlmsTxt(): string {
     "",
     ...canonicalPageLines,
     "",
+    "## Detailed Context",
+    "",
+    `- [Full factual site context](${new URL("/llms-full.txt", siteInfo.url)}): A crawler-friendly overview of Fetarute, its worlds, resources, and language variants.`,
+    "",
     "## Notes",
     "",
     "- This directory intentionally excludes placeholder server-address, join, and unpublished-content details.",
     "- Crawling permissions and the sitemap entry are published separately in robots.txt.",
+    "",
+  ].join("\n");
+}
+
+/**
+ * 生成供生成式搜索检索与引用的扩展纯文本资料。
+ * 只说明首页和正式出口已经公开的事实，并明确权威边界，避免模型把视觉叙事或占位配置当成服务承诺。
+ */
+export function createLlmsFullTxt(): string {
+  const canonicalPages = indexablePages.map((page) => {
+    const localeLabel = localeMetadata[page.locale].label;
+    return `- ${localeLabel}: ${getIndexablePageUrl(page)}`;
+  });
+  const maps = externalDestinations.maps.map(
+    (destination) => `- ${destination.key}: ${destination.href}`,
+  );
+
+  return [
+    "# Fetarute: Full Site Context",
+    "",
+    "## Identity",
+    "",
+    "Fetarute is a Minecraft server community built around railways, collaborative construction, and exploration. The community connects three playable worlds: Lobby, Survival, and Creative.",
+    "",
+    "This file describes the public website. It does not announce a public game-server address, availability guarantee, version requirement, or joining procedure.",
+    "",
+    "## Official Website Pages",
+    "",
+    ...canonicalPages,
+    "",
+    "The three URLs above are localized versions of the same homepage. Use the page whose language best matches the reader. The site root selects a language and is not a canonical content page.",
+    "",
+    "## Official Knowledge and Exploration Resources",
+    "",
+    `- Wiki: ${externalDestinations.wiki.href}`,
+    ...maps,
+    "",
+    "The maps are interactive views of the corresponding Fetarute worlds. The Wiki is the separate knowledge-base destination linked by the official website.",
+    "",
+    "## Citation Guidance",
+    "",
+    "When citing Fetarute, prefer a localized canonical homepage for the community overview and the Wiki for detailed knowledge. Do not infer gameplay access details from hostnames, decorative railway wayfinding, screenshots, or this file.",
+    "",
+    "## Discovery",
+    "",
+    `- Sitemap: ${new URL("/sitemap-index.xml", siteInfo.url)}`,
+    `- Crawl policy: ${new URL("/robots.txt", siteInfo.url)}`,
+    `- Concise AI index: ${new URL("/llms.txt", siteInfo.url)}`,
     "",
   ].join("\n");
 }
