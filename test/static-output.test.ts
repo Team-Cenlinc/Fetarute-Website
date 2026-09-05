@@ -7,6 +7,10 @@ import { defaultLocale, localeMetadata, type Locale } from "../src/i18n/config.t
 import { getMessages } from "../src/i18n/messages.ts";
 
 const publicHomeLocales = ["zh-Hans", "zh-Hant", "en"] as const satisfies readonly Locale[];
+const homeCommunitySource = readFileSync(
+  new URL("../src/components/HomeCommunitySection.astro", import.meta.url),
+  "utf8",
+);
 
 /** 读取一次真实 Astro 构建后的语言首页，避免只检查组件源码而漏掉最终 HTML 变换。 */
 function readStaticHomeHtml(locale: Locale): string {
@@ -44,6 +48,16 @@ function findHeadTag(
   ).find((tag) => getAttribute(tag, attributeName) === attributeValue);
 }
 
+/** 读取同岸短故事的完整 article，供延迟媒体契约检查。 */
+function findCommunityStories(html: string, attributeName: string): string[] {
+  return Array.from(
+    html.matchAll(
+      new RegExp(`<article\\b[^>]*${attributeName}="[^"]+"[^>]*>[\\s\\S]*?<\\/article>`, "gi"),
+    ),
+    ({ 0: article }) => article,
+  );
+}
+
 test("三语言静态首页各自只输出一个不重复的主标题", () => {
   for (const locale of publicHomeLocales) {
     const html = readStaticHomeHtml(locale);
@@ -52,6 +66,41 @@ test("三语言静态首页各自只输出一个不重复的主标题", () => {
     assert.equal(headings.length, 1, `${locale} 首页应只有一个 h1`);
     assert.equal(extractText(headings[0][1]), getMessages(locale).home.title);
   }
+});
+
+test("同岸非初始短故事只保存响应式媒体描述，不输出可立即请求的图片 URL", () => {
+  for (const locale of publicHomeLocales) {
+    const html = readStaticHomeHtml(locale);
+
+    for (const attributeName of [
+      "data-home-community-memory-story",
+      "data-home-community-presence-story",
+    ]) {
+      const stories = findCommunityStories(html, attributeName);
+      assert.ok(stories.length > 1, `${locale} ${attributeName} 应保留完整故事池`);
+
+      assert.match(stories[0], /home-community__short-media[\s\S]*?<img\b[^>]*\ssrc="/i);
+      for (const story of stories.slice(1)) {
+        assert.doesNotMatch(story, /<img\b[^>]*\ssrc(?:set)?="/i);
+        const deferredPicture = story.match(
+          /<picture\b[^>]*data-home-community-deferred-picture[^>]*>([\s\S]*?)<\/picture>/i,
+        )?.[1];
+        assert.ok(deferredPicture, `${locale} 的隐藏故事应输出延迟 picture 描述`);
+        assert.match(deferredPicture, /data-home-community-deferred-src="[^"]+"/i);
+        assert.match(deferredPicture, /data-home-community-deferred-srcset="[^"]+\s\d+w/i);
+        assert.match(deferredPicture, /data-home-community-deferred-alt="[^"]+"/i);
+      }
+    }
+  }
+});
+
+test("同岸客户端在故事切换与 details 展开时提交延迟媒体及替代文本", () => {
+  assert.match(homeCommunitySource, /image\.alt = image\.dataset\.homeCommunityDeferredAlt/);
+  assert.match(homeCommunitySource, /details\.addEventListener\("toggle"/);
+  assert.match(homeCommunitySource, /details\.open && storyElement/);
+  assert.match(homeCommunitySource, /if \(selected\) loadStoryImages\(storyElement\)/);
+  assert.match(homeCommunitySource, /image\.srcset = homeCommunityDeferredSrcset/);
+  assert.match(homeCommunitySource, /image\.src = homeCommunityDeferredSrc/);
 });
 
 test("根入口与三语言首页都声明 edge-to-edge viewport，保持 Safari 与 Portal 的安全区契约一致", () => {
