@@ -7,25 +7,27 @@ type HomeSectionCleanup = () => void;
  */
 interface HomeLazySectionRegistration {
   selector: string;
-  load: () => Promise<HomeSectionCleanup>;
+  /** 下载只交回初始化入口，由仍然存活的页面决定是否启用交互。 */
+  load: () => Promise<() => HomeSectionCleanup>;
 }
 
+/** 仅延迟首屏以下章节；Hero、路线、Header 与闸机仍在初次加载时准备交互。 */
 const homeLazySectionRegistrations: readonly HomeLazySectionRegistration[] = [
   {
     selector: "[data-home-gallery]",
-    load: async () => (await import("./gallery-controller")).setupHomeGallery(),
+    load: async () => (await import("./gallery-controller")).setupHomeGallery,
   },
   {
     selector: "[data-home-tri-server]",
-    load: async () => (await import("./tri-server-controller")).setupHomeTriServer(),
+    load: async () => (await import("./tri-server-controller")).setupHomeTriServer,
   },
   {
     selector: "[data-home-community]",
-    load: async () => (await import("./community-controller")).setupHomeCommunity(),
+    load: async () => (await import("./community-controller")).setupHomeCommunity,
   },
   {
     selector: "[data-home-onward-content]",
-    load: async () => (await import("./onward-controller")).setupHomeOnward(),
+    load: async () => (await import("./onward-controller")).setupHomeOnward,
   },
 ];
 
@@ -33,7 +35,7 @@ let disposeLazyHomeSections: (() => void) | undefined;
 
 /**
  * 用一个 observer 为所有低于首屏的交互下载对应 chunk。
- * 导入在清理后才完成时会立即释放，避免页面导航后留下观察器、监听器或计时器。
+ * 导入在清理后才完成时跳过初始化，避免先修改旧页面再释放观察器、监听器或计时器。
  */
 export function setupLazyHomeSections(): () => void {
   if (disposeLazyHomeSections) return disposeLazyHomeSections;
@@ -47,6 +49,7 @@ export function setupLazyHomeSections(): () => void {
 
   const observer = new IntersectionObserver(
     (entries) => {
+      if (disposed) return;
       for (const entry of entries) {
         if (!entry.isIntersecting) {
           // 下载失败的章节必须先离开预加载区，下一次进入才重试，避免离线时原地反复请求 chunk。
@@ -61,14 +64,11 @@ export function setupLazyHomeSections(): () => void {
         pendingElements.add(entry.target);
         void registration
           .load()
-          .then((cleanup) => {
+          .then((setup) => {
             pendingElements.delete(entry.target);
             observer.unobserve(entry.target);
-            if (disposed) {
-              cleanup();
-            } else {
-              cleanups.add(cleanup);
-            }
+            if (disposed) return;
+            cleanups.add(setup());
           })
           .catch(() => {
             // chunk 下载失败时静态内容仍可阅读；离开预加载区后再次进入才会重试。

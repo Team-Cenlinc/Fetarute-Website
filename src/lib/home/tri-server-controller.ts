@@ -571,6 +571,9 @@ export function setupHomeTriServer(): () => void {
 
       const isReady = await prepareSlideIndex(nextIndex, requestOwner);
 
+      // 内层取消也返回 false；卸载后不能把取消误当成加载失败并回滚旧轮播。
+      if (isDisposed) return false;
+
       if (isReady) {
         setSlideIndex(nextIndex, shouldScroll, scrollBehavior, shouldAnnounce);
         return true;

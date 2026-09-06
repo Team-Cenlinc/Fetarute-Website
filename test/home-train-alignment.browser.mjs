@@ -20,6 +20,18 @@ for (const width of [440, 1024, 1440]) {
       try {
         await page.goto(`${baseUrl}/zh-Hans/#onward`, { waitUntil: "networkidle" });
         await page.evaluate(() => document.fonts.ready);
+        if (sectionKind === "三服汇") {
+          /* 冷深链会跳过 Gallery；先完成增强高度与路线帧，再采样后方横轨的文档坐标。 */
+          await page.locator("[data-home-gallery]").scrollIntoViewIfNeeded();
+          await page.waitForFunction(
+            () =>
+              document.querySelector("[data-home-gallery]").dataset.homeGalleryEnhanced === "true",
+          );
+          await page.evaluate(
+            () =>
+              new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+          );
+        }
         const samples = await page.evaluate(async (kind) => {
           const section =
             kind === "启示湾"

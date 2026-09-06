@@ -86,6 +86,6 @@ test("失败的章节 chunk 只在离开预加载区后再次进入时重试", (
   );
   assert.match(
     lazySectionsSource,
-    /\.then\(\(cleanup\) => \{[\s\S]*?observer\.unobserve\(entry\.target\);/,
+    /\.then\(\(setup\) => \{[\s\S]*?observer\.unobserve\(entry\.target\);/,
   );
 });

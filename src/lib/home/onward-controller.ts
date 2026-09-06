@@ -127,18 +127,26 @@ const initialiseHomeOnwardContent = (section: HTMLElement, signal: AbortSignal):
 
   /** 使用临时输入框兼容不提供 Clipboard API，或明确拒绝写入权限的浏览器。 */
   const copyTextWithLegacyField = (value: string) => {
+    // 权限拒绝可能晚于页面卸载；必须在创建输入框及尝试复制之前停止回退。
+    if (signal.aborted) return false;
+    const previousFocus = document.activeElement;
     const field = document.createElement("textarea");
     field.value = value;
     field.setAttribute("readonly", "");
     field.style.position = "fixed";
     field.style.opacity = "0";
     document.body.append(field);
-    field.select();
-    const legacyCopy = Reflect.get(document, "execCommand");
-    const copied =
-      typeof legacyCopy === "function" && Reflect.apply(legacyCopy, document, ["copy"]);
-    field.remove();
-    return copied;
+    try {
+      field.select();
+      const legacyCopy = Reflect.get(document, "execCommand");
+      return typeof legacyCopy === "function" && Reflect.apply(legacyCopy, document, ["copy"]);
+    } finally {
+      // 复制被拒绝或抛出异常时也释放临时输入框，避免留下不可见的键盘焦点。
+      field.remove();
+      if (!signal.aborted && previousFocus instanceof HTMLElement && previousFocus.isConnected) {
+        previousFocus.focus({ preventScroll: true });
+      }
+    }
   };
 
   /** 在安全上下文优先使用 Clipboard API；权限拒绝时仍尝试兼容复制。 */

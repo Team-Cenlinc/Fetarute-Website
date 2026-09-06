@@ -46,6 +46,11 @@ node --test test/*.browser.mjs
 `FETARUTE_HOME_TEST_URL` 可覆盖预览地址，`FETARUTE_TEST_BROWSER=webkit`
 可检查已安装的 WebKit。这项检查独立于 `npm run check`，不为项目安装新的浏览器依赖。
 
+`test/home-lifecycle.browser.mjs`
+使用真实构建产物和受控的浏览器 API，验证章节下载、Clipboard 拒绝与图片 decode 晚于 `pagehide`
+时停止续写，并保留 `persisted`
+页面返回后的正常行为。它还覆盖旧复制 API 的成功、失败与异常清理，确认临时输入框不残留、键盘焦点回到原按钮。这些事件时序回归不替代真实浏览器往返导航的 BFCache 验收。
+
 `test/home-tooltip.browser.mjs`
 还会对比同一段滚动中 Tooltip 开关前后的实际布局次数，并从标题区发起原生触摸滑动，防止跟随定位逐帧回流或局部手势被吞掉。这两项使用 Chromium
 CDP；WebKit 覆盖弹窗边界、触摸开关、键盘与跳站关闭。本机浏览器结果不替代 iPhone
@@ -114,9 +119,12 @@ npm run build:with-fonts
 与各环境地图使用各自独立的 DNS 记录，不随官网根域名配置变更。
 
 每次更换 CDN 或缓存规则后，都要对正式域名执行一次响应头验收。使用支持自动解压的客户端分别请求 HTML、构建生成的 JavaScript/CSS、SVG 和 JSON，并确认
-`Content-Encoding` 为 `br` 或 `gzip`；对文件名带长 hash 的 `/_astro/` 资源还要确认 `Cache-Control`
-包含 `public`、较长的 `max-age` 和 `immutable`。这些是部署环境的验收项，不能由只读取 `dist/`
-的静态输出测试代替。
+`Content-Encoding` 为 `br` 或 `gzip`，并记录实际的 `Cache-Control`。当前 GitHub
+Pages 直出资源在 2026-09-06 的验收中返回 `max-age=600`，没有
+`immutable`；仓库中的静态文件不能配置该响应头。若后续在可配置的 CDN 上设置长期缓存，只对文件名带 hash 的
+`/_astro/` 资源启用 `public`、较长的 `max-age` 和
+`immutable`，HTML 仍应及时重新验证，避免引用已经替换的 chunk。这些是部署环境的验收项，不能由只读取
+`dist/` 的静态输出测试代替。
 
 ```bash
 curl --compressed -sS -D - -o /dev/null https://fetarute.org/en/

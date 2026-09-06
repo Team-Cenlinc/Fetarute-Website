@@ -52,6 +52,8 @@ for (const [width, height, locale, reducedMotion, batchVisibility] of [
         });
       }
       await page.goto(`${baseUrl}/${locale}/#onward`, { waitUntil: "networkidle" });
+      /* 桌面深链先落在续行换乘段；正文进入预加载范围后才应等待 PIDS 控制器。 */
+      await page.locator("[data-home-onward-content]").scrollIntoViewIfNeeded();
       await page.waitForFunction(
         () =>
           document.querySelector("[data-home-onward-content]").dataset.homeOnwardEnhanced ===
