@@ -1144,6 +1144,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
             homeOnwardContentJourney,
             homeOnwardContentStage,
             homeOnwardContentTrack,
+            homeOnwardBoardArea,
+            homeOnwardGuide,
           ],
         },
         {
@@ -3456,7 +3458,16 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         });
         const isFooterPhase = footerRouteState.active;
         const footerProgress = footerRouteState.progress;
-        /* 短桌面压低前置和收尾位移；中段始终逐像素抵消 sticky 舞台自身的上移。 */
+        /* 只使用 read 阶段快照的未变换盒模型，避免上帧位移污染净空并产生反馈抖动。 */
+        const onwardObjectsBottom = Math.max(
+          getRouteElementOffsetTop(homeOnwardBoardArea) + getRouteElementOffsetHeight(homeOnwardBoardArea),
+          getRouteElementOffsetTop(homeOnwardGuide) + getRouteElementOffsetHeight(homeOnwardGuide),
+        );
+        const footerDockClearance = Math.max(
+          0,
+          getRouteElementOffsetHeight(homeOnwardContentStage) - onwardObjectsBottom - 24,
+        );
+        /* 短屏不足以同时容纳牌体和 Footer 时，缩短下沉曲线，让原生滚动带走完整牌面。 */
         const footerTransitionShift = desktopRouteGalleryQuery.matches
           ? getHomeFooterTransitionShift(
               footerPreparationProgress,
@@ -3464,6 +3475,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
               footerTravel,
               Math.min(96, Math.max(64, getRouteViewportHeight() * 0.08)),
               Math.min(32, Math.max(20, getRouteViewportHeight() * 0.025)),
+              footerDockClearance,
             )
           : 0;
         renderHomeFooterTransition(footerTransitionShift, footerProgress);

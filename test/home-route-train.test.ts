@@ -194,6 +194,21 @@ test("Footer 交接先下沉末屏物件，再逐像素抵消 sticky 解锁并�
   assert.equal(getHomeFooterTransitionShift(Number.NaN, Number.NaN, Number.NaN), 0);
 });
 
+test("Footer 下沉以实测净空为上限，短屏在整个行程内都不裁到牌面", () => {
+  for (const clearance of [0, 48, 136, 420]) {
+    let previousShift = 0;
+    for (let step = 0; step <= 100; step += 1) {
+      const progress = step / 100;
+      const shift = getHomeFooterTransitionShift(1, progress, 272, 72, 24, clearance);
+      assert.ok(shift <= clearance);
+      assert.ok(shift >= previousShift);
+      previousShift = shift;
+    }
+    assert.equal(previousShift, Math.min(clearance, 368));
+  }
+  assert.equal(getHomeFooterTransitionShift(1, 1, 272, 72, 24, Number.NaN), 0);
+});
+
 test("续行列车进入 PIDS 后保持停驻，把离站行程交给 Footer", () => {
   const options = {
     contentTop: 1000,

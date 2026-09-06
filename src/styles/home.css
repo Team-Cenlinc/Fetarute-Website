@@ -10,7 +10,8 @@
   --home-arrival-track-half: clamp(17px, 1.615vw, 31px);
   /* 列车尺寸保持 Figma 中约 3.2 倍轨宽、1.6 倍轨高的比例，避免窄屏时列车压过导视内容。 */
   --home-arrival-train-width: clamp(116px, 10.42vw, 200px);
-  --home-arrival-train-height: clamp(58px, 9.26svh, 100px);
+  /* 厚度随车长保持 2:1；不能按 svh 独立放大，否则窄高窗口的竖向列车会变成宽方块。 */
+  --home-arrival-train-height: calc(var(--home-arrival-train-width) / 2);
   /* --home-arrival-bend-size 与 --home-arrival-bend-center-inset 保留 Figma SVG 的 249×250 曲线比例和端点位置。 */
   --home-arrival-bend-size: clamp(162px, 12.97vw, 249px);
   --home-arrival-bend-center-inset: clamp(20px, 1.615vw, 31px);

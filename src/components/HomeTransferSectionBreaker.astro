@@ -180,7 +180,8 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
     --home-transfer-name-gap: clamp(12px, 1.2vw, 24px);
     --home-transfer-joint-overlap: 1px;
     --home-transfer-train-width: clamp(116px, 10.42vw, 200px);
-    --home-transfer-train-height: clamp(58px, 9.26svh, 100px);
+    /* 厚度随车长保持 2:1；不能按 svh 独立放大，否则窄高窗口的竖向列车会变成宽方块。 */
+    --home-transfer-train-height: calc(var(--home-transfer-train-width) / 2);
     /* 桌面由换乘交接节奏注入额外 sticky 行程；无脚本时保持一屏完整站牌。 */
     --home-transfer-scroll-distance: 0px;
     position: relative;

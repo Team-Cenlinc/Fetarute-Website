@@ -1,4 +1,8 @@
 :root {
+  /* 桌面正文与锚点避开顶部悬浮导视牌，预留展开牌高和一行舒适阅读间隔。 */
+  --home-desktop-reading-inset: 128px;
+  /* 同岸短故事使用中等圆角，区别于全屏 Gallery 的大幅场景圆角。 */
+  --radius-story-media: 24px;
   /* 英文、数字与导视符号优先使用 Noto Sans Display；未覆盖的 CJK 字符继续落到简中面孔。 */
   --font-fetarute-ui: var(--font-fetarute-display), var(--font-fetarute-sans-sc);
   /* 英文斜体强调使用独立 Display Italic，并沿用当前简中面孔补齐中文混排。 */
@@ -659,7 +663,54 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   line-height: 1.2;
 }
 
-@media (min-width: 761px) {
+@media (min-width: 1024px) {
+  .site-header {
+    /* 完整导视牌也保持桌面工具栏尺度；阅读态仍由后续 compact 规则控制。 */
+    min-height: 76px;
+    /* 紧凑的双层导视共用 4px 行距与 18px 标记行，文字基线不再依赖单独位移。 */
+    --header-stack-gap: 4px;
+    --header-marker-size: 18px;
+  }
+
+  .home-nav {
+    --home-nav-indicator-bottom-offset: calc(
+      38px - clamp(12.48px, 1.04vw, 15.6px) - var(--header-stack-gap) / 2 -
+        var(--header-marker-size) / 2 - 3px
+    );
+  }
+
+  .home-nav__text-stack,
+  .service-desk__copy,
+  .exit-menu__copy {
+    gap: var(--header-stack-gap);
+  }
+
+  .home-nav__indicator {
+    height: var(--header-marker-size);
+    --home-nav-indicator-dot-diameter: var(--header-marker-size);
+  }
+
+  .service-desk__marker {
+    width: var(--header-marker-size);
+    height: var(--header-marker-size);
+  }
+
+  .service-desk__marker-row {
+    min-height: var(--header-marker-size);
+  }
+
+  .exit-menu__hint {
+    line-height: var(--header-marker-size);
+  }
+
+  .home-nav__label,
+  .service-desk__label,
+  .exit-menu__label {
+    font-size: clamp(24px, 2vw, 30px);
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1023px) {
   /* 三块导视牌的第二行高度不同，微调主标题以锁定同一条可扫读的文字基线。 */
   .home-nav__label {
     transform: translateY(0.32px);

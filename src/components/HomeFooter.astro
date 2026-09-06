@@ -1,7 +1,10 @@
 ---
 import arrowUpIcon from "@phosphor-icons/core/assets/bold/arrow-up-bold.svg?raw";
-import { siteInfo } from "@/data/site";
-import type { Locale } from "@/i18n/config";
+import arrowUpRightIcon from "@phosphor-icons/core/assets/bold/arrow-up-right-bold.svg?raw";
+import fetaruteLogo from "@/assets/fetarute-branding/fetarute-logo.svg?raw";
+import { externalDestinations, siteInfo } from "@/data/site";
+import { localeMetadata, locales, type Locale } from "@/i18n/config";
+import { getLocalizedRelativeUrl } from "@/i18n/links";
 import { getMessages } from "@/i18n/messages";
 
 /** 首页铁路叙事页尾属性；探索线颜色由正式线路数据注入，避免页尾另造品牌橙色。 */
@@ -28,15 +31,48 @@ const currentYear = new Date().getFullYear();
 
   <div class="home-footer__content">
     <div class="home-footer__introduction">
-      <h2>{footerMessages.title}</h2>
-      <p class="home-footer__description">{footerMessages.description}</p>
-      <a class="home-footer__restart" href="#home">
-        <span>{footerMessages.restartLabel}</span>
-        <span aria-hidden="true" set:html={arrowUpIcon}></span>
-      </a>
+      <div class="home-footer__closing-copy">
+        <h2>{footerMessages.title}</h2>
+        <p class="home-footer__description">{footerMessages.description}</p>
+      </div>
+      <nav class="home-footer__directions" aria-label={messages.home.onward.serviceGuideLabel}>
+        <a
+          class="home-footer__direction"
+          href={externalDestinations.wiki.href}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`${messages.externalDestinationLabels.wiki} (${messages.externalLinkNewTabHint})`}
+        >
+          <span>{messages.externalDestinationLabels.wiki}</span>
+          <span class="home-footer__direction-icon" aria-hidden="true" set:html={arrowUpRightIcon}></span>
+        </a>
+        <a class="home-footer__direction home-footer__restart" href="#home">
+          <span>{footerMessages.restartLabel}</span>
+          <span class="home-footer__direction-icon" aria-hidden="true" set:html={arrowUpIcon}></span>
+        </a>
+      </nav>
     </div>
 
-    <p class="home-footer__legal">© {currentYear} {siteInfo.name}</p>
+    <div class="home-footer__signature">
+      <div class="home-footer__brand">
+        <span class="home-footer__wordmark" aria-hidden="true" set:html={fetaruteLogo}></span>
+        <p class="home-footer__legal">© {currentYear} {siteInfo.name}</p>
+      </div>
+      <nav class="home-footer__languages" aria-label={messages.languageNavigationLabel}>
+        {
+          locales.map((alternateLocale) => (
+            <a
+              href={getLocalizedRelativeUrl(alternateLocale, "", "footer")}
+              lang={localeMetadata[alternateLocale].languageTag}
+              hreflang={localeMetadata[alternateLocale].languageTag}
+              aria-current={alternateLocale === locale ? "page" : undefined}
+            >
+              {localeMetadata[alternateLocale].label}
+            </a>
+          ))
+        }
+      </nav>
+    </div>
   </div>
 </footer>
 
@@ -50,10 +86,12 @@ const currentYear = new Date().getFullYear();
     /* 页尾轨道复用续行桌面右轨公式，保证 section 与 footer 在任意桌面宽度都原位接缝。 */
     --home-footer-right-track-x: calc(77.71vw + var(--home-footer-track-width) * 3.01613);
     position: relative;
-    min-height: 232px;
+    /* Footer 是首页网格子项；允许窄屏收缩，避免英文最小内容宽度撑开整页。 */
+    min-width: 0;
+    min-height: 300px;
     overflow: clip;
     background: var(--palette-text);
-    color: var(--palette-canvas);
+    color: var(--palette-surface);
   }
 
   .home-footer__track {
@@ -69,18 +107,26 @@ const currentYear = new Date().getFullYear();
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    width: min(64vw, 980px);
+    width: auto;
     min-height: inherit;
-    padding: 36px 0 28px 7.92vw;
+    margin-right: calc(100% - var(--home-footer-right-track-x) + 72px);
+    padding: 40px 0 24px 7.92vw;
     opacity: var(--home-footer-content-opacity);
     transform: translateY(var(--home-footer-content-offset));
   }
 
   .home-footer__introduction {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px clamp(32px, 4vw, 72px);
-    align-items: center;
+    grid-template-columns: minmax(0, 1fr) minmax(200px, 0.42fr);
+    gap: 12px clamp(32px, 4vw, 72px);
+    align-items: start;
+  }
+
+  /* 结束语是一组独立文案，右侧链接的高度不再拉大标题与说明的行距。 */
+  .home-footer__closing-copy {
+    display: grid;
+    gap: 12px;
+    align-content: start;
   }
 
   .home-footer__introduction h2,
@@ -90,54 +136,108 @@ const currentYear = new Date().getFullYear();
   }
 
   .home-footer__introduction h2 {
-    grid-column: 1;
-    font-size: clamp(28px, 2.4vw, 44px);
+    font-size: clamp(28px, 2.6vw, 42px);
     font-weight: 700;
-    line-height: 1.08;
+    line-height: 1.18;
     text-wrap: balance;
   }
 
   .home-footer__description {
-    grid-column: 1;
-    max-width: 42ch;
+    max-width: 48ch;
     font-size: clamp(14px, 0.94vw, 17px);
-    font-weight: 600;
-    line-height: 1.45;
+    font-weight: 480;
+    line-height: 1.65;
+    opacity: 0.76;
   }
 
-  .home-footer__restart {
-    display: inline-flex;
+  .home-footer__directions {
+    display: grid;
     grid-column: 2;
-    grid-row: 1 / span 2;
-    gap: 0.55em;
+    gap: 12px;
+  }
+
+  .home-footer__direction {
+    display: flex;
+    gap: 16px;
     align-items: center;
+    justify-content: space-between;
     color: inherit;
     font-size: clamp(14px, 1vw, 18px);
     font-weight: 700;
-    text-decoration-line: underline;
+    text-decoration: none;
     text-decoration-thickness: 2px;
     text-underline-offset: 0.32em;
+    min-height: 44px;
+    line-height: 1.4;
   }
 
-  .home-footer__restart span:last-child {
+  .home-footer__direction-icon {
     display: inline-grid;
-    width: 1.15em;
-    height: 1.15em;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    padding: 12px;
     place-items: center;
+    background: var(--palette-fetarute-info);
+    color: var(--palette-fetarute-info-text);
+    transition: transform 180ms var(--motion-header-standard-spatial);
   }
 
-  .home-footer__restart:hover,
-  .home-footer__restart:focus-visible {
-    color: var(--home-footer-line-color);
+  .home-footer__restart .home-footer__direction-icon {
+    background: var(--palette-fetarute-exit);
+    color: var(--palette-fetarute-exit-text);
+  }
+
+  .home-footer__direction:hover {
+    text-decoration-line: underline;
+  }
+
+  .home-footer__direction:focus-visible,
+  .home-footer__languages a:focus-visible {
     outline: 2px solid currentColor;
     outline-offset: 4px;
   }
 
-  .home-footer__restart:active {
+  .home-footer__direction:active,
+  .home-footer__languages a:active {
     opacity: 0.72;
   }
 
-  .home-footer__restart span:last-child :global(svg) {
+  .home-footer__direction:hover .home-footer__direction-icon {
+    transform: translateY(-3px);
+  }
+
+  .home-footer__signature {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 2px solid color-mix(in srgb, currentColor 24%, transparent);
+  }
+
+  .home-footer__brand {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+    min-width: 0;
+  }
+
+  .home-footer__wordmark {
+    display: block;
+    flex: 0 0 120px;
+    width: 120px;
+    line-height: 0;
+  }
+
+  .home-footer__wordmark :global(svg) {
+    width: 100%;
+    height: auto;
+  }
+
+  .home-footer__direction-icon :global(svg) {
     display: block;
     width: 100%;
     height: 100%;
@@ -150,10 +250,35 @@ const currentYear = new Date().getFullYear();
     opacity: 0.72;
   }
 
+  .home-footer__languages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 20px;
+    align-items: center;
+  }
+
+  .home-footer__languages a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: inherit;
+    font-size: 13px;
+    font-weight: 480;
+    text-decoration: none;
+    text-underline-offset: 0.4em;
+    white-space: nowrap;
+    opacity: 0.76;
+  }
+
+  .home-footer__languages a:is([aria-current="page"], :hover) {
+    text-decoration: underline;
+    opacity: 1;
+  }
+
   @media (max-width: 1023px) {
     .home-footer {
       --home-footer-track-width: clamp(20px, 5.8vw, 30px);
-      min-height: 286px;
+      min-height: 320px;
     }
 
     .home-footer__track {
@@ -162,6 +287,7 @@ const currentYear = new Date().getFullYear();
 
     .home-footer__content {
       width: auto;
+      margin-right: 0;
       padding: 34px 22px 24px max(calc(7vw + var(--home-footer-track-width) + 50px), 20.9vw);
     }
 
@@ -180,8 +306,30 @@ const currentYear = new Date().getFullYear();
       font-size: clamp(14px, 3.8vw, 17px);
     }
 
-    .home-footer__restart {
-      margin-top: 22px;
+    .home-footer__directions {
+      max-width: 340px;
+      margin-top: 28px;
+    }
+
+    .home-footer__signature {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 28px;
+      padding-top: 24px;
+    }
+
+    .home-footer__brand {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .home-footer__wordmark {
+      flex-basis: auto;
+    }
+
+    .home-footer__languages {
+      gap: 0 16px;
     }
   }
 
@@ -192,6 +340,12 @@ const currentYear = new Date().getFullYear();
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .home-footer__direction-icon,
+    .home-footer__direction:hover .home-footer__direction-icon {
+      transition: none;
+      transform: none;
+    }
+
     .home-footer__content {
       opacity: 1;
       transform: none;

@@ -79,6 +79,36 @@ for (const [width, height, locale, reducedMotion, batchVisibility] of [
       await page.evaluate((top) => scrollTo({ top, behavior: "instant" }), journey.top);
       await waitState("destinations");
 
+      const controls = await section
+        .locator("[data-home-onward-board-navigation]")
+        .evaluate((nav) => {
+          const bounds = nav.getBoundingClientRect();
+          const shell = document.querySelector(".home-onward__board-shell").getBoundingClientRect();
+          const header = document.querySelector(".site-header").getBoundingClientRect();
+          return {
+            clearance: shell.top - bounds.bottom,
+            headerClearance: bounds.top - header.bottom,
+            buttons: [...nav.querySelectorAll("button")].map((button) => {
+              const rect = button.getBoundingClientRect();
+              return {
+                height: rect.height,
+                hit:
+                  document
+                    .elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+                    ?.closest("button") === button,
+              };
+            }),
+          };
+        });
+      assert.ok(
+        controls.clearance >= 12 && controls.headerClearance >= 12,
+        JSON.stringify(controls),
+      );
+      assert.ok(
+        controls.buttons.every(({ height, hit }) => height >= 44 && hit),
+        JSON.stringify(controls),
+      );
+
       const screen = section.locator(".home-onward__board-screen");
       const initialSize = await screen.evaluate((element) => ({
         width: element.offsetWidth,

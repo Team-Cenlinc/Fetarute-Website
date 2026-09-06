@@ -59,32 +59,32 @@ const titleId = "home-onward-content-title";
       </span>
 
       <div class="home-onward__board-area">
+        <div
+          class="home-onward__board-navigation"
+          data-home-onward-board-navigation
+          role="group"
+          aria-label={onwardMessages.boardNavigationLabel}
+          hidden
+        >
+          <button
+            type="button"
+            data-home-onward-select-board="destinations"
+            aria-pressed="true"
+            aria-controls="home-onward-destinations"
+          >
+            {onwardMessages.destinationsLabel}
+          </button>
+          <button
+            type="button"
+            data-home-onward-select-board="help"
+            aria-pressed="false"
+            aria-controls="home-onward-help"
+          >
+            {onwardMessages.firstVisitLabel}
+          </button>
+        </div>
         <div class="home-onward__board-shell">
           <div class="home-onward__board-screen">
-            <div
-              class="home-onward__board-navigation"
-              data-home-onward-board-navigation
-              role="group"
-              aria-label={onwardMessages.boardNavigationLabel}
-              hidden
-            >
-              <button
-                type="button"
-                data-home-onward-select-board="destinations"
-                aria-pressed="true"
-                aria-controls="home-onward-destinations"
-              >
-                {onwardMessages.destinationsLabel}
-              </button>
-              <button
-                type="button"
-                data-home-onward-select-board="help"
-                aria-pressed="false"
-                aria-controls="home-onward-help"
-              >
-                {onwardMessages.firstVisitLabel}
-              </button>
-            </div>
             <section
               id="home-onward-destinations"
               class="home-onward__board home-onward__board--destinations"
@@ -244,12 +244,12 @@ const titleId = "home-onward-content-title";
     );
     /* 桌面 PIDS 使用四边等宽灰壳；支柱在壳体背面承托，不再占用底边厚度。 */
     --home-onward-board-left: 7.92%;
-    --home-onward-board-width: min(36.51vw, 701px);
-    --home-onward-pids-inset: clamp(18px, 1.67vw, 32px);
-    /* 在三行目的地上方预留一行切换按钮；两页共用外框高度，选择时不挤动附近内容。 */
+    /* PIDS 保留可读下限，宽屏将更多版面留给可扩充的目的地导视。 */
+    --home-onward-board-width: clamp(420px, 39vw, 680px);
+    --home-onward-pids-inset: clamp(16px, 1.25vw, 24px);
+    /* 两页共用固定屏幕高度；所有尺寸的切换按钮均在屏框外，完整牌面用于阅读。 */
     --home-onward-board-screen-size: clamp(268px, 31svh, 290px);
-    /* 无脚本时没有切换控件；增强后只在屏幕内部给常驻按钮留出 44px。 */
-    --home-onward-board-navigation-height: 0px;
+    /* 固定灰框包含完整屏幕与上下等厚边框，切换状态不改变外框尺寸。 */
     --home-onward-board-block-size: calc(
       var(--home-onward-board-screen-size) + var(--home-onward-pids-inset) * 2
     );
@@ -264,10 +264,10 @@ const titleId = "home-onward-content-title";
     );
     /* 桌面邀请以探索线反推正文右边缘，并让两级文案都采用右对齐的阅读锚点。 */
     --home-onward-introduction-width: min(40vw, 720px);
-    /* 末屏物件按视口高度下沉；短桌面也要为 Footer 解锁后的上移预留足够空间。 */
-    --home-onward-footer-dock-offset: clamp(64px, 8svh, 96px);
-    /* 减少动态时直接使用 Footer 交接完成态，保留构图但不播放随滚动位移。 */
-    --home-onward-footer-reduced-shift: 96px;
+    /* 桌面物件的起始高度由阅读安全区控制，下沉量只由实测 Footer 余量决定。 */
+    --home-onward-footer-dock-offset: 0px;
+    /* 减少动态时保留自然位置，避免无滚动补偿却先把内容推向裁切边界。 */
+    --home-onward-footer-reduced-shift: 0px;
     /* 导视牌跨过线路；内容安全区会叠加列车实际厚度，避免文字和箭头钻进运行中的车体。 */
     --home-onward-guide-right-wing: clamp(52px, 4.8vw, 92px);
     --home-onward-guide-train-gap: clamp(24px, 2vw, 32px);
@@ -279,8 +279,9 @@ const titleId = "home-onward-content-title";
       100% - var(--home-onward-right-track-x) - var(--home-onward-track-width) -
         var(--home-onward-guide-right-wing)
     );
-    --home-onward-guide-width: min(42vw, 720px);
-    --home-onward-guide-height: clamp(560px, 82svh, 893px);
+    --home-onward-guide-width: min(43vw, 740px);
+    /* 导视牌至少容纳第三行，未来加入目的地时无需重新改变两侧比例。 */
+    --home-onward-guide-height: clamp(336px, 38svh, 360px);
     position: relative;
     min-height: 0;
     isolation: isolate;
@@ -376,7 +377,7 @@ const titleId = "home-onward-content-title";
     position: sticky;
     top: 0;
     height: 100svh;
-    min-height: 680px;
+    min-height: 600px;
     overflow: clip;
   }
 
@@ -419,36 +420,41 @@ const titleId = "home-onward-content-title";
     background: var(--palette-surface);
   }
 
-  .home-onward[data-home-onward-enhanced="true"] {
-    --home-onward-board-navigation-height: 44px;
-  }
-
   .home-onward__board-navigation:not([hidden]) {
-    position: relative;
-    z-index: 1;
+    /* 切换控件独立于屏框，桌面悬于框外；移动端改为自然流，给 Header 留出完整触控空间。 */
+    position: absolute;
+    top: -60px;
+    left: 0;
+    z-index: 3;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    height: var(--home-onward-board-navigation-height);
-    box-shadow: inset 0 -2px var(--palette-text);
+    gap: 24px;
+    min-height: 44px;
   }
 
   .home-onward__board-navigation button {
     min-width: 0;
     min-height: 44px;
-    padding: 6px 10px;
+    padding: 6px 0;
     border: 0;
+    border-bottom: 3px solid transparent;
     background: transparent;
-    color: inherit;
+    color: var(--palette-muted);
     font: inherit;
-    font-size: clamp(14px, 1.2vw, 18px);
+    font-size: 16px;
     font-weight: 650;
     cursor: pointer;
     touch-action: manipulation;
+    transition: opacity 150ms var(--motion-header-standard-spatial);
   }
 
   .home-onward__board-navigation button[aria-pressed="true"] {
-    background: var(--palette-text);
-    color: var(--palette-surface);
+    border-bottom-color: currentColor;
+    color: var(--palette-text);
+  }
+
+  .home-onward__board-navigation button:hover {
+    color: var(--palette-text);
   }
 
   .home-onward__board-navigation button:focus-visible {
@@ -462,7 +468,7 @@ const titleId = "home-onward-content-title";
 
   .home-onward__board {
     position: absolute;
-    inset: var(--home-onward-board-navigation-height) 0 0;
+    inset: 0;
     min-height: 0;
     overflow: hidden;
     background: transparent;
@@ -906,6 +912,58 @@ const titleId = "home-onward-content-title";
   }
 
   @media (min-width: 1024px) {
+    .home-onward {
+      --home-onward-guide-arrow-size: 36px;
+    }
+
+    .home-onward__board-area {
+      top: max(176px, 22svh);
+    }
+
+    .home-onward__board--help {
+      grid-template-columns: minmax(0, 1fr) clamp(84px, 6.8vw, 112px);
+      gap: 12px;
+      padding: clamp(16px, 1.4vw, 24px);
+    }
+
+    .home-onward__help-copy .home-onward__help-title {
+      font-size: clamp(24px, 2vw, 32px);
+    }
+
+    .home-onward__qq-copy-action {
+      white-space: nowrap;
+    }
+
+    .home-onward__guide {
+      top: max(176px, 22svh);
+      padding-top: 24px;
+      padding-bottom: 24px;
+    }
+
+    .home-onward__service-link {
+      grid-template-columns: 56px minmax(0, 1fr) var(--home-onward-guide-arrow-size);
+      gap: 12px;
+      min-height: 88px;
+      font-size: clamp(26px, 2.5vw, 40px);
+      line-height: 1.25;
+    }
+
+    .home-onward__service-icon {
+      width: 56px;
+      height: 56px;
+      padding: 13px;
+    }
+
+    .home-onward__service-arrow {
+      grid-column: 3;
+    }
+
+    .home-onward__service-link--future .home-onward__service-copy {
+      grid-column: 2 / 4;
+      font-size: clamp(20px, 1.65vw, 28px);
+      text-wrap: pretty;
+    }
+
     .home-onward__board-area,
     .home-onward__pids-support-fill {
       /* 与导视牌分别接收局部交接值，避免在父 section 上逐帧扩散变量。 */
@@ -947,18 +1005,16 @@ const titleId = "home-onward-content-title";
 
   @media (max-width: 1279px) and (min-width: 1024px) {
     .home-onward {
-      --home-onward-board-width: clamp(360px, 39vw, 470px);
-      --home-onward-guide-width: clamp(360px, 38vw, 430px);
-      --home-onward-guide-arrow-size: 48px;
+      --home-onward-guide-arrow-size: 28px;
     }
 
     .home-onward__service-link {
       grid-template-columns:
-        48px minmax(max-content, auto) minmax(38px, 1fr)
+        48px minmax(0, 1fr)
         var(--home-onward-guide-arrow-size);
       gap: 10px;
-      min-height: 76px;
-      font-size: clamp(22px, 2.5vw, 32px);
+      min-height: 80px;
+      font-size: 26px;
     }
 
     .home-onward__service-icon {
@@ -970,6 +1026,8 @@ const titleId = "home-onward-content-title";
 
   @media (max-width: 1023px) {
     .home-onward {
+      /* 小屏按已有内容自然取高，新增目的地时再向下延展。 */
+      --home-onward-guide-height: 0px;
       /* 小屏延续“线路在左、正文向内容侧伸出”的首页铁路语法。 */
       --home-onward-scroll-distance: clamp(1180px, 190svh, 1600px);
       --home-onward-track-width: clamp(20px, 5.8vw, 30px);
@@ -1091,11 +1149,19 @@ const titleId = "home-onward-content-title";
         var(--home-onward-mobile-mount-depth);
     }
 
+    .home-onward__board-navigation:not([hidden]) {
+      position: relative;
+      top: auto;
+      left: auto;
+      gap: 16px;
+      margin: 0 var(--home-onward-pids-inset) 16px
+        var(--home-onward-mobile-mount-depth);
+    }
+
     .home-onward__guide {
       order: 2;
-      min-height: clamp(244px, 34svh, 286px);
       padding: clamp(12px, 2svh, 18px) clamp(28px, 8vw, 42px)
-        clamp(28px, 5svh, 44px) var(--home-onward-mobile-mount-depth);
+        clamp(12px, 2svh, 18px) var(--home-onward-mobile-mount-depth);
     }
 
     .home-onward__service-links {

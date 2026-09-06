@@ -500,7 +500,8 @@ export const getHomeFooterRevealProgress = (footerProgress: number) => {
 
 /**
  * 先在 Footer 出现前缓慢下沉末屏物件，再用与真实滚动等量的位移抵消 sticky 解锁上移。
- * 最后一小段仍使用首尾速度为零的缓动，令 PIDS、支柱和导视牌完成同一方向的收尾动作。
+ * maximumShift 来自舞台底边与牌体底边的实测净空；空间不足时等比缩短整条曲线，
+ * 保持连续运动并让物件随原生滚动离场，不能为了抵消 sticky 位移把屏幕推入 Footer。
  */
 export const getHomeFooterTransitionShift = (
   preparationProgress: number,
@@ -508,6 +509,7 @@ export const getHomeFooterTransitionShift = (
   footerTravel: number,
   preparationShift = 96,
   followThroughShift = 32,
+  maximumShift = Number.POSITIVE_INFINITY,
 ) => {
   const easedPreparationProgress = getHomeFooterRevealProgress(preparationProgress);
   const clampedFooterProgress = Number.isFinite(footerProgress)
@@ -521,10 +523,15 @@ export const getHomeFooterTransitionShift = (
     ? Math.max(0, followThroughShift)
     : 0;
 
+  const requestedTotal = safePreparationShift + safeFooterTravel + safeFollowThroughShift;
+  const safeMaximumShift = Number.isNaN(maximumShift) ? 0 : Math.max(0, maximumShift);
+  const travelScale = requestedTotal > 0 ? Math.min(1, safeMaximumShift / requestedTotal) : 0;
+
   return (
-    easedPreparationProgress * safePreparationShift +
-    clampedFooterProgress * safeFooterTravel +
-    getHomeFooterRevealProgress(footerProgress) * safeFollowThroughShift
+    travelScale *
+    (easedPreparationProgress * safePreparationShift +
+      clampedFooterProgress * safeFooterTravel +
+      getHomeFooterRevealProgress(footerProgress) * safeFollowThroughShift)
   );
 };
 

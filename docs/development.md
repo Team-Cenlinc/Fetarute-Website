@@ -46,6 +46,19 @@ node --test test/*.browser.mjs
 `FETARUTE_HOME_TEST_URL` 可覆盖预览地址，`FETARUTE_TEST_BROWSER=webkit`
 可检查已安装的 WebKit。这项检查独立于 `npm run check`，不为项目安装新的浏览器依赖。
 
+`test/home-desktop-layout.browser.mjs`
+检查三语桌面短故事的图文分栏、Header 阅读间距、桌面与移动端 PIDS 框外切换按钮，以及 Footer 往返滚动全程的牌体净空；同时覆盖 1024px 断点两侧、手机纵向版式、页尾 Wiki
+/ 语言入口的触控净空和减少动态模式。
+
+桌面精修回归还会检查同岸图内展开文案（窄屏长文允许图片随内容增高）、PIDS 与导视牌的宽度关系、页尾文案组间距，以及窄高窗口和缩放后的 2:1 列车比例。首页的轨道收尾与滚动交接由
+`HomeFooter.astro` 负责；将来内容页应使用自然流页尾，复用品牌、语言与版权信息，无需继承首页动画。
+
+`test/home-departure-layout.browser.mjs`
+检查 Gate 在 320px 手机、横屏、平板与桌面短屏上的读卡机、卡片和略过入口净空，并验证已抵达锚点或缺少
+`scrollend` 时不会空等 900ms 才能操作；同时测量现有浅深外观中读卡机小字与实际牌面的合成对比度。既有
+`test/home-departure-gate.browser.mjs`
+继续覆盖拖卡时的 VisualViewport 重排、键盘验票与回退生命周期。
+
 `test/home-lifecycle.browser.mjs`
 使用真实构建产物和受控的浏览器 API，验证章节下载、Clipboard 拒绝与图片 decode 晚于 `pagehide`
 时停止续写，并保留 `persisted`

@@ -399,42 +399,50 @@ html.departure-gate--return-settling {
 
 .departure-gate__scene {
   position: relative;
+  display: grid;
+  grid-template-rows: max-content minmax(0, 1fr);
+  gap: 24px;
+  height: var(--departure-gate-coverage-height);
   min-height: var(--departure-gate-coverage-height);
-  padding: clamp(48px, 8vw, 112px) clamp(20px, 7.5vw, 112px) clamp(48px, 7vw, 96px);
+  padding: clamp(32px, 6svh, 64px) clamp(20px, 7.5vw, 112px) 88px;
   pointer-events: none;
 }
 
 .departure-gate__copy {
-  position: absolute;
+  position: relative;
   z-index: 5;
-  top: clamp(52px, 11vh, 132px);
-  left: 50%;
   display: grid;
-  width: min(620px, calc(100% - 40px));
+  width: min(620px, 100%);
   max-width: 620px;
   gap: 10px;
   text-align: center;
-  transform: translateX(-50%);
+  justify-self: center;
 }
 
-.departure-gate[data-departure-locale="en"] .departure-gate__copy h2 {
-  /* 英文启程标题使用单行锚点，避免同一提示在宽度临界处产生不稳定的断行。 */
-  white-space: nowrap;
+.departure-gate__copy h2 {
+  margin: 0;
+  font-size: clamp(28px, 3.6vw, 52px);
+  line-height: 1.16;
+  text-wrap: balance;
 }
 
 .departure-gate__copy p:last-child {
-  /* 英文说明可用更宽的两行阅读列，避免第三行落入下方 Validator 的起始区。 */
-  max-width: min(48ch, 100%);
+  /* 中英文都按字身宽度留出阅读列，避免 ch 单位把中文末尾挤成孤行。 */
+  max-width: min(34em, 100%);
   justify-self: center;
-  margin-bottom: 0;
+  margin: 0;
   color: var(--color-muted);
   font-size: 17px;
   line-height: 1.6;
+  text-wrap: balance;
 }
 
 .departure-gate__stage {
   position: relative;
-  min-height: 100%;
+  /* 设备使用标题之后的实际剩余高度；窄屏不会因固定舞台高度把卡片挤出锁定视口。 */
+  min-height: 0;
+  width: min(100%, 1000px);
+  justify-self: center;
   isolation: isolate;
 }
 
@@ -497,13 +505,12 @@ html.departure-gate--return-settling {
 .departure-gate__pass {
   position: absolute;
   z-index: 4;
-  /* 卡片在常规桌面高度对齐屏幕下半段的左侧栏位；矮屏连续下让，避免侵入标题阅读区。 */
-  bottom: clamp(64px, calc(51vh - 243px), 218px);
-  /* 桌面卡片向 Validator 内收为左侧前景主体，同时持续给动态导引留出可读通道。 */
-  left: max(20px, calc(50vw - 680px));
+  /* 卡片与读卡机组合成居中的操作场景，留出两者之间的手势通道。 */
+  bottom: 24%;
+  left: 8%;
   display: block;
   /* 卡片同时受横向与纵向视口限制：桌面保持凭证主体感，矮屏会随可用舞台同步收束。 */
-  width: clamp(176px, min(20vw, 32dvh), 300px);
+  width: clamp(176px, min(20vw, 30svh), 280px);
   aspect-ratio: 1.586 / 1;
   border: 0;
   background: transparent;
@@ -628,13 +635,13 @@ html.departure-gate--return-settling {
 .departure-gate__reader {
   position: absolute;
   z-index: 3;
-  /* 设备以固定纵向比例下移，给上方的引导文案保留稳定阅读区。 */
-  top: 58%;
+  /* 标题独立占一行；设备在剩余舞台居中，不再从整屏百分比猜测阅读净空。 */
+  top: 50%;
   right: auto;
-  left: 50%;
+  left: 72%;
   display: grid;
   /* 桌面 Validator 保持居中节点感而不压过标题与行程卡；总宽度仍受高度约束，矮屏同步收束。 */
-  width: clamp(250px, min(27vw, 41dvh), 380px);
+  width: clamp(240px, min(27vw, 36svh), 320px);
   border: 0;
   background: transparent;
   color: var(--color-text);
@@ -643,7 +650,7 @@ html.departure-gate--return-settling {
   padding: 0;
   pointer-events: auto;
   /* 桌面设备略向下让出标题说明区；Reader 的实体高度不能反向压住上方操作说明。 */
-  transform: translate(-50%, -37%);
+  transform: translate(-50%, -50%);
   transition: transform 160ms var(--motion-header-standard-effects);
 }
 
@@ -732,7 +739,8 @@ html.departure-gate--return-settling {
 
 .departure-gate__reader-screen-mode {
   justify-content: end;
-  color: color-mix(in srgb, currentColor 76%, transparent);
+  /* 蓝色屏幕上的小字使用完整前景色；透明白合成后会跌破普通文字的对比度要求。 */
+  color: var(--fetarute-info-text);
   font-size: 10px;
   font-weight: 820;
   letter-spacing: 0.13em;
@@ -851,7 +859,7 @@ html.departure-gate--return-settling {
   position: relative;
   display: grid;
   margin-inline: clamp(18px, 2vw, 34px);
-  min-height: 112px;
+  min-height: 88px;
   /* 右栏只承担运营方标记，为长提示句保留足够的整行宽度。 */
   grid-template-columns: minmax(0, 1fr) 34px;
   align-items: end;
@@ -878,10 +886,12 @@ html.departure-gate--return-settling {
   font-weight: 800;
   letter-spacing: -0.035em;
   line-height: 1.28;
+  text-wrap: balance;
 }
 
 .departure-gate__reader-copy small {
-  color: color-mix(in srgb, var(--fetarute-exit-text) 76%, transparent);
+  /* 深浅导视牌都消费配对前景色，小字号通过尺寸而非透明度区分层级。 */
+  color: var(--fetarute-exit-text);
   font-size: 11px;
   font-weight: 740;
   letter-spacing: 0.02em;
@@ -982,15 +992,16 @@ html.departure-gate--return-settling {
   justify-items: end;
   gap: 2px;
   border: 0;
-  background: transparent;
-  color: color-mix(in srgb, var(--color-text) 66%, transparent);
+  /* 自带配对底色，立柱延伸到按钮背后时仍可读，也让略过入口在锁屏阶段容易找到。 */
+  background: var(--color-action);
+  color: var(--color-action-text);
   cursor: pointer;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 760;
   letter-spacing: 0.035em;
   line-height: 1.3;
-  padding: 0;
+  padding: 9px 14px;
   pointer-events: auto;
   text-align: right;
   transition:
@@ -999,7 +1010,7 @@ html.departure-gate--return-settling {
 }
 
 .departure-gate__skip small {
-  color: var(--color-muted);
+  color: inherit;
   font-size: 11px;
   font-weight: 650;
   letter-spacing: 0;
@@ -1015,52 +1026,8 @@ html.departure-gate--return-settling {
   }
 
   .departure-gate__skip:hover {
-    color: var(--color-text);
-  }
-}
-
-/* 矮屏桌面收小并下移 Reader，保证英文说明增至多行时仍与读卡屏保有可读间隔。 */
-@media (min-width: 1101px) and (max-height: 800px) {
-  .departure-gate__reader {
-    top: 59%;
-    width: clamp(230px, min(27vw, 38dvh), 380px);
-    transform: translate(-50%, -30%);
-  }
-
-  .departure-gate__reader:active {
-    transform: translate(-50%, -30%) scale(0.985);
-  }
-}
-
-/* 高度继续收窄时只收紧导视牌排版，保留外壳、屏幕与立柱的完整比例。 */
-@media (min-width: 1101px) and (max-height: 700px) {
-  .departure-gate__reader {
-    top: 66%;
-  }
-
-  .departure-gate__reader-housing {
-    padding: 16px;
-  }
-
-  .departure-gate__reader-sign {
-    min-height: 72px;
-    padding: 10px 14px;
-  }
-
-  .departure-gate__reader-copy {
-    gap: 4px;
-  }
-
-  .departure-gate__reader-copy strong {
-    font-size: 13px;
-  }
-
-  .departure-gate__reader-copy small {
-    font-size: 10px;
-  }
-
-  .departure-gate__reader-mark {
-    width: 26px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 }
 
@@ -1069,13 +1036,7 @@ html.departure-gate--return-settling {
 }
 
 .departure-gate__reader:active {
-  transform: translate(-50%, -37%) scale(0.985);
-}
-
-@media (min-width: 1101px) and (max-height: 800px) {
-  .departure-gate__reader:active {
-    transform: translate(-50%, -30%) scale(0.985);
-  }
+  transform: translate(-50%, -50%) scale(0.985);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1116,7 +1077,7 @@ html.departure-gate--return-settling {
   }
 
   .departure-gate__reader:active {
-    transform: translate(-50%, -45%);
+    transform: translate(-50%, -50%);
   }
 }
 
@@ -1715,17 +1676,13 @@ html[data-launching] .launch-sequence {
 @media (max-width: 1100px) and (min-width: 761px), (min-width: 1101px) and (max-height: 700px) {
   /* 中等宽度沿用小屏的右侧抽象 Validator，防止完整外壳与前景卡片在中线堆成一团。 */
   .departure-gate__pass {
-    bottom: 6%;
-    left: 16px;
-    width: clamp(168px, 30vw, 240px);
+    bottom: 18%;
+    left: 4%;
+    width: clamp(148px, min(26vw, 34svh), 240px);
   }
 
   .departure-gate__reader {
-    top: 28%;
-    right: clamp(20px, 5vw, 52px);
-    left: auto;
-    width: min(38vw, 300px);
-    transform: none;
+    width: min(30vw, calc((var(--departure-gate-visible-height) - 240px) * 0.72), 260px);
   }
 
   .departure-gate__reader-housing {
@@ -1781,12 +1738,12 @@ html[data-launching] .launch-sequence {
   }
 
   .departure-gate__reader:active {
-    transform: scale(0.985);
+    transform: translate(-50%, -50%) scale(0.985);
   }
 
   @media (prefers-reduced-motion: reduce) {
     .departure-gate__reader:active {
-      transform: none;
+      transform: translate(-50%, -50%);
     }
   }
 }
@@ -1825,9 +1782,8 @@ html[data-launching] .launch-sequence {
   }
 
   .departure-gate__scene {
-    display: grid;
-    grid-template-rows: max-content minmax(0, 1fr);
-    padding: 112px 20px 72px;
+    gap: 16px;
+    padding: clamp(28px, 6svh, 52px) 20px 72px;
   }
 
   .departure-gate__copy {
@@ -1845,7 +1801,7 @@ html[data-launching] .launch-sequence {
   }
 
   .departure-gate__stage {
-    min-height: 496px;
+    min-height: 0;
   }
 
   .departure-gate__pass {
@@ -1876,7 +1832,7 @@ html[data-launching] .launch-sequence {
 
   .departure-gate__reader {
     /* 小屏采用右侧抽象 Validator：不缩放桌面信息牌，而是只保留可点击的设备符号。 */
-    top: 7%;
+    top: 4%;
     right: 16px;
     left: auto;
     width: min(38vw, 156px);
@@ -2074,6 +2030,45 @@ html[data-launching] .launch-sequence {
 
   .launch-sequence__brand svg {
     width: min(84vw, 630px);
+  }
+}
+
+/* 矮屏把拖拽路径改为横向，保留读卡与略过的完整命中区域；宽度不足不能靠滚动锁定后的裁切补救。 */
+@media (max-width: 760px) and (max-height: 600px) {
+  .departure-gate__scene {
+    padding-top: 24px;
+    padding-bottom: 68px;
+  }
+
+  .departure-gate__copy p:last-child {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .departure-gate__pass {
+    top: 50%;
+    bottom: auto;
+    left: 2%;
+    width: clamp(112px, min(30vw, 40svh), 176px);
+    /* 静态居中独立于拖拽 transform，卡片宽度改变时无需猜测半高偏移。 */
+    translate: 0 -50%;
+  }
+
+  .departure-gate__reader {
+    top: 50%;
+    right: 2%;
+    width: min(38vw, 156px, calc((var(--departure-gate-visible-height) - 192px) * 0.65));
+    transform: translateY(-50%);
+  }
+
+  .departure-gate__reader:active {
+    transform: translateY(-50%) scale(0.985);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .departure-gate__reader:active {
+      transform: translateY(-50%);
+    }
   }
 }
 

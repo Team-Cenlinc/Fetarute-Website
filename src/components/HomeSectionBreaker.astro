@@ -114,7 +114,8 @@ const titleId = `${id}-title`;
     --home-section-breaker-joint-overlap: 1px;
     /* 到站列车保持 Figma 中 200×100 的封顶尺寸，只作为本张站牌的静态位置标记。 */
     --home-section-breaker-train-width: clamp(116px, 10.42vw, 200px);
-    --home-section-breaker-train-height: clamp(58px, 9.26svh, 100px);
+    /* 厚度随车长保持 2:1；不能按 svh 独立放大，否则窄高窗口的竖向列车会变成宽方块。 */
+    --home-section-breaker-train-height: calc(var(--home-section-breaker-train-width) / 2);
     /* 桌面滚动行程由列车尚未走完的真实路径长度注入；默认 0 保证无脚本时仍是一张完整站牌。 */
     --home-section-breaker-scroll-distance: 0px;
     position: relative;

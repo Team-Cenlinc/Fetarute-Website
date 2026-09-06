@@ -157,13 +157,10 @@ test("续行桌面邀请以探索线为右侧锚点，而不是固定左边缘",
   );
 });
 
-test("续行桌面末屏把 PIDS 与导视牌下沉，并在 Footer 交接时抵消 sticky 解锁上移", () => {
-  assert.match(
-    homeOnwardComponentSource,
-    /--home-onward-footer-dock-offset:\s*clamp\(64px,\s*8svh,\s*96px\)/,
-  );
+test("续行桌面以净空限制末屏下沉，并保留 Footer 连续交接", () => {
+  assert.match(homeOnwardComponentSource, /--home-onward-footer-dock-offset:\s*0px/);
   assert.match(homeOnwardComponentSource, /--home-onward-footer-transition-shift:\s*0px/);
-  assert.match(homeOnwardComponentSource, /--home-onward-footer-reduced-shift:\s*96px/);
+  assert.match(homeOnwardComponentSource, /--home-onward-footer-reduced-shift:\s*0px/);
   assert.match(
     homeOnwardComponentSource,
     /@media \(min-width:\s*1024px\)[\s\S]*?\.home-onward__board-area,[\s\S]*?\.home-onward__guide \{[\s\S]*?transform:\s*translateY\([\s\S]*?--home-onward-footer-dock-offset[\s\S]*?--home-onward-footer-transition-shift/,
@@ -391,13 +388,12 @@ test("列车焦点恢复不保存抑制状态，首次键盘 focus 始终可以�
   );
 });
 
-test("压薄 Footer 仍让探索线贯穿页面底部，不添加终点站标", () => {
+test("Footer 保留贯穿页面底部的探索线，不添加终点站标", () => {
   const footerTrackRule = homeFooterSource.match(/\.home-footer__track \{(?<body>[\s\S]*?)\n  \}/)
     ?.groups?.body;
 
   assert.ok(footerTrackRule);
   assert.doesNotMatch(homeFooterSource, /home-footer__station-marker/);
-  assert.match(homeFooterSource, /min-height:\s*232px/);
   assert.match(footerTrackRule, /top:\s*0;/);
   assert.match(footerTrackRule, /bottom:\s*0;/);
   assert.doesNotMatch(footerTrackRule, /height:\s*100%/);
