@@ -27,6 +27,22 @@ const homeTriServerSource = readFileSync(
   new URL("../src/components/HomeTriServerSection.astro", import.meta.url),
   "utf8",
 );
+const homeGalleryControllerSource = readFileSync(
+  new URL("../src/lib/home/gallery-controller.ts", import.meta.url),
+  "utf8",
+);
+const homeOnwardControllerSource = readFileSync(
+  new URL("../src/lib/home/onward-controller.ts", import.meta.url),
+  "utf8",
+);
+const homeCommunityControllerSource = readFileSync(
+  new URL("../src/lib/home/community-controller.ts", import.meta.url),
+  "utf8",
+);
+const homeTriServerControllerSource = readFileSync(
+  new URL("../src/lib/home/tri-server-controller.ts", import.meta.url),
+  "utf8",
+);
 const siteHeaderSource = readFileSync(
   new URL("../src/components/SiteHeader.astro", import.meta.url),
   "utf8",
@@ -241,15 +257,15 @@ test("首页路线、章节和 Header 共用唯一全局滚动帧入口", () => 
 
   assert.match(homePageSource, /getHomePageFrameCoordinator\(/);
   assert.equal(homePageSource.match(globalScrollListenerPattern)?.length, 1);
-  assert.doesNotMatch(homeOnwardSource, globalScrollListenerPattern);
-  assert.doesNotMatch(homeCommunitySource, globalScrollListenerPattern);
-  assert.doesNotMatch(homeTriServerSource, globalScrollListenerPattern);
-  assert.match(homeOnwardSource, /getHomePageFrameCoordinator\(/);
-  assert.match(homeCommunitySource, /getHomePageFrameCoordinator\(/);
-  assert.match(homeTriServerSource, /getHomePageFrameCoordinator\(/);
+  assert.doesNotMatch(homeOnwardControllerSource, globalScrollListenerPattern);
+  assert.doesNotMatch(homeCommunityControllerSource, globalScrollListenerPattern);
+  assert.doesNotMatch(homeTriServerControllerSource, globalScrollListenerPattern);
+  assert.match(homeOnwardControllerSource, /getHomePageFrameCoordinator\(/);
+  assert.match(homeCommunityControllerSource, /getHomePageFrameCoordinator\(/);
+  assert.match(homeTriServerControllerSource, /getHomePageFrameCoordinator\(/);
   assert.match(siteHeaderSource, /getHomePageFrameCoordinator\(/);
-  assert.match(homeCommunitySource, /IntersectionObserver/);
-  assert.match(homeTriServerSource, /IntersectionObserver/);
+  assert.match(homeCommunityControllerSource, /IntersectionObserver/);
+  assert.match(homeTriServerControllerSource, /IntersectionObserver/);
 });
 
 test("窗口滚动使用协调器的连续采样入口，reduced-motion 仍只消费单次合帧", () => {
@@ -290,23 +306,26 @@ test("列车与 Tooltip 在 Safari 地址栏过渡中共用最新可见边界，
 
 test("Gallery 离屏时暂停，且逐帧位移只写到实际轨道元素", () => {
   assert.match(
-    homePageSource,
+    homeGalleryControllerSource,
     /galleryFrameCoordinator\.register\(\{[\s\S]*?isActive:\s*\(\)\s*=>\s*isHomeGalleryActive/,
   );
-  assert.match(homePageSource, /homeGalleryTrack\.style\.transform\s*=/);
-  assert.doesNotMatch(homePageSource, /--home-gallery-offset/);
+  assert.match(homeGalleryControllerSource, /homeGalleryTrack\.style\.transform\s*=/);
+  assert.doesNotMatch(homeGalleryControllerSource, /--home-gallery-offset/);
   assert.doesNotMatch(homeStylesSource, /--home-gallery-offset/);
 });
 
 test("社区主故事的逐帧状态只写在实际消费元素，不再从父节点扩散", () => {
   assert.doesNotMatch(
-    homeCommunitySource,
+    homeCommunityControllerSource,
     /mainStory\.style\.setProperty\(\s*"--home-community-main-(?:progress|veil|detail|title-hero-weight)"/,
   );
-  assert.match(homeCommunitySource, /setAnimatedStyle\(mainVeil,\s*"opacity"/);
-  assert.match(homeCommunitySource, /setAnimatedStyle\([\s\S]*?mainNarrative,[\s\S]*?"transform"/);
+  assert.match(homeCommunityControllerSource, /setAnimatedStyle\(mainVeil,\s*"opacity"/);
+  assert.match(
+    homeCommunityControllerSource,
+    /setAnimatedStyle\([\s\S]*?mainNarrative,[\s\S]*?"transform"/,
+  );
   assert.doesNotMatch(
-    homeCommunitySource,
+    homeCommunityControllerSource,
     /setAnimatedStyle\(\s*(?:mainKicker|mainHeadingLine),\s*"color"/,
   );
   assert.match(

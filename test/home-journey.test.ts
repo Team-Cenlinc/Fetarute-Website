@@ -9,6 +9,10 @@ const homeOnwardComponentSource = readFileSync(
   new URL("../src/components/HomeOnwardSection.astro", import.meta.url),
   "utf8",
 );
+const homeOnwardControllerSource = readFileSync(
+  new URL("../src/lib/home/onward-controller.ts", import.meta.url),
+  "utf8",
+);
 const homeJourneyQuickPickSource = readFileSync(
   new URL("../src/components/HomeJourneyQuickPick.astro", import.meta.url),
   "utf8",
@@ -71,12 +75,12 @@ test("续行 PIDS 只硬切内部页面，不为整张屏幕添加空间位移",
 });
 
 test("续行 PIDS 由原生滚动行程决定翻页，不把第一次向下输入改写成翻页命令", () => {
-  assert.match(homeOnwardComponentSource, /getHomeOnwardDepartureBoardState\(progress\)/);
+  assert.match(homeOnwardControllerSource, /getHomeOnwardDepartureBoardState\(progress\)/);
   assert.match(
-    homeOnwardComponentSource,
+    homeOnwardControllerSource,
     /frameCoordinator\.register\(\{[\s\S]*?read: readFrame,[\s\S]*?write: writeFrame/,
   );
-  assert.doesNotMatch(homeOnwardComponentSource, /window\.addEventListener\(\s*"scroll"/);
+  assert.doesNotMatch(homeOnwardControllerSource, /window\.addEventListener\(\s*"scroll"/);
   assert.match(
     homeOnwardComponentSource,
     /--home-onward-scroll-distance:\s*clamp\(1240px,\s*190svh,\s*1880px\)/,
@@ -85,10 +89,10 @@ test("续行 PIDS 由原生滚动行程决定翻页，不把第一次向下输�
     homeOnwardComponentSource,
     /--home-onward-scroll-distance:\s*clamp\(1180px,\s*190svh,\s*1600px\)/,
   );
-  assert.doesNotMatch(homeOnwardComponentSource, /continuousScrollFallbackDelay/);
-  assert.doesNotMatch(homeOnwardComponentSource, /event\.preventDefault\(\)/);
+  assert.doesNotMatch(homeOnwardControllerSource, /continuousScrollFallbackDelay/);
+  assert.doesNotMatch(homeOnwardControllerSource, /event\.preventDefault\(\)/);
   assert.doesNotMatch(
-    homeOnwardComponentSource,
+    homeOnwardControllerSource,
     /addEventListener\("(?:wheel|touchstart|touchmove|touchend|touchcancel|keydown|keyup)"/,
   );
 });
@@ -293,9 +297,9 @@ test("续行短屏压低固定舞台，使 PIDS 与导视牌完整落在同一�
 });
 
 test("续行 QQ 复制在 Clipboard API 拒绝后仍尝试兼容回退", () => {
-  assert.match(homeOnwardComponentSource, /const copyTextWithLegacyField = \(value: string\)/);
+  assert.match(homeOnwardControllerSource, /const copyTextWithLegacyField = \(value: string\)/);
   assert.match(
-    homeOnwardComponentSource,
+    homeOnwardControllerSource,
     /navigator\.clipboard\?\.writeText[\s\S]*?catch[\s\S]*?return copyTextWithLegacyField\(value\)/,
   );
 });
