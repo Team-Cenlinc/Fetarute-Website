@@ -887,6 +887,9 @@ export function setupHomeTriServer(): () => void {
           return;
         }
 
+        // 切换活动面板期间可能已触发 pagehide；不能再创建已卸载面板的地图。
+        if (isDisposed || signal.aborted) return;
+
         const mapHref = launchButton.dataset.mapHref;
         const mapFrameTitle = launchButton.dataset.mapFrameTitle;
         const overlay = panel.querySelector<HTMLElement>("[data-home-tri-server-map-overlay]");

@@ -68,6 +68,13 @@ test("页面卸载会截断跨越 Clipboard 与图片 decode 的异步续写", (
   );
 });
 
+test("地图等待活动面板时不会在已卸载页面继续创建嵌入内容", () => {
+  assert.match(
+    triServerControllerSource,
+    /if \(!\(await setActiveServer\(serverId\)\)\) \{\s+return;\s+\}\s+(?:\/\/[^\n]*\s+)?if \(isDisposed \|\| signal\.aborted\) return;\s+const mapHref/,
+  );
+});
+
 test("失败的章节 chunk 只在离开预加载区后再次进入时重试", () => {
   assert.match(
     lazySectionsSource,
