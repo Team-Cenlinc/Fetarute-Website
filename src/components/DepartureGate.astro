@@ -133,15 +133,16 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         <span class="departure-gate__reader-stand" aria-hidden="true"></span>
       </button>
     </div>
-  </div>
 
-  <p class="departure-gate__status" data-departure-status aria-live="polite">
-    {messages.home.departure.readyStatus}
-  </p>
-  <button class="departure-gate__skip" data-departure-skip type="button">
-    <span>{messages.home.departure.skipLabel}</span>
-    <small>{messages.home.departure.skipHint}</small>
-  </button>
+    <!-- 状态与略过入口属于可见前景；背景扩进浏览器控件后，它们仍需留在 VisualViewport 内。 -->
+    <p class="departure-gate__status" data-departure-status aria-live="polite">
+      {messages.home.departure.readyStatus}
+    </p>
+    <button class="departure-gate__skip" data-departure-skip type="button">
+      <span>{messages.home.departure.skipLabel}</span>
+      <small>{messages.home.departure.skipHint}</small>
+    </button>
+  </div>
 </section>
 
 <script>
@@ -150,6 +151,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
     getHomeTrainPathPointAtLength,
     type HomeTrainPathGeometry,
   } from "@/data/home-route-train";
+  import { getDepartureGateViewportPlacement } from "@/data/departure-gate-viewport";
 
   /** 出发遮罩从靠近、定点、临时回退到放行的状态；只有完成后禁止再次回到可触发状态。 */
   type DepartureGateState =
@@ -168,13 +170,13 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
   type DepartureGateExitDirection = "fade" | "up";
   /** SVG 导引线使用的局部坐标点，始终相对于出发交互舞台。 */
   type DepartureGuidePoint = { x: number; y: number };
-  /** 一次拖卡手势开始时固定的三组几何；拖动期间只由位移推导卡片中心，避免每个 pointermove 重读布局。 */
+  /** 手势起点的三组几何；仅在视口改变时重建，普通 pointermove 仍由位移推导位置。 */
   type DepartureDragGeometry = {
-    /** 全屏 Guard 的可用边界；当前手势中视口不变，因此只需读取一次。 */
+    /** 当前可见交互场景的边界；背景可以延伸到工具栏后方，但卡片不能被拖入那里。 */
     gateBounds: DOMRect;
-    /** 卡片按下瞬间已经包含既有 transform 的实际边界。 */
+    /** 最近一次建立手势基准时，卡片已经包含既有 transform 的实际边界。 */
     passBounds: DOMRect;
-    /** Validator 的命中边界；拖卡状态只改变其颜色，不改变几何。 */
+    /** 与卡片基准同时测量的 Validator 命中边界，视口重排后必须一起刷新。 */
     readerBounds: DOMRect;
   };
   /** 回退停止后的单一物理滚动状态；输入停止前不创建它，避免与浏览器原生惯性争夺位置。 */
@@ -198,6 +200,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
   const root = document.documentElement;
 
   if (departureGate && departureSentinel) {
+    const gateScene = departureGate.querySelector<HTMLElement>(".departure-gate__scene");
     const stage = departureGate.querySelector<HTMLElement>("[data-departure-stage]");
     const pass = departureGate.querySelector<HTMLButtonElement>("[data-departure-pass]");
     const passNumber = departureGate.querySelector<HTMLElement>("[data-departure-pass-number]");
@@ -309,10 +312,16 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
     } else if (hasSeenDeparture) {
       removeDepartureRunwayForSeenSession();
       departureGate.remove();
-    } else if (stage && pass && reader && skip && status) {
+    } else if (gateScene && stage && pass && reader && skip && status) {
       let dragPointerId: number | undefined;
       let dragStartX = 0;
       let dragStartY = 0;
+      /** 点击与拖动的门槛始终相对最初按下位置，不能被视口重排重置为每笔小位移。 */
+      let dragPressX = 0;
+      let dragPressY = 0;
+      /** 视口重排时以最近的指针位置重建手势起点，下一笔位移不会重复应用补偿。 */
+      let dragPointerX = 0;
+      let dragPointerY = 0;
       let passOffsetX = 0;
       let passOffsetY = 0;
       let passRotation = -5;
@@ -338,6 +347,13 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
       let dragGuidePromptFrameId: number | undefined;
       let dragGuidePromptGeometry: HomeTrainPathGeometry | undefined;
       let dragGuidePromptCycleStart: number | undefined;
+      let gateViewportFrameId: number | undefined;
+      /** 只有当前 modal 持有 viewport 监听；退回 Home 后连排帧入口也应休眠。 */
+      let isGateViewportTracking = false;
+      /** 相同读数不重复写 CSS；布局视口尺寸另用于识别旋转引起的卡片重排。 */
+      let gateViewportPlacement: ReturnType<typeof getDepartureGateViewportPlacement> | undefined;
+      let gateViewportLayoutWidth = 0;
+      let gateViewportLayoutHeight = 0;
       let launchStateObserver: MutationObserver | undefined;
       let launchBoundaryObserver: MutationObserver | undefined;
       let headerWasInert = false;
@@ -368,6 +384,87 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
       const setGateSwipeDistance = (distance: number) => {
         gateSwipeDistance = Math.min(window.innerHeight, Math.max(0, distance));
         departureGate.style.setProperty("--departure-gate-swipe-distance", `${gateSwipeDistance}px`);
+      };
+
+      /**
+       * 让不透明背景脱离 Safari 的 fixed 可见视口起点，内部场景再单独补偿动态工具栏。
+       * 相同读数不写样式；拖卡遇到真实重排时仅补测 Gate 内部几何，不使首页路线失效。
+       */
+      const updateGateViewportPlacement = () => {
+        if (gateViewportFrameId !== undefined) window.cancelAnimationFrame(gateViewportFrameId);
+        gateViewportFrameId = undefined;
+        if (!isGateViewportTracking) return;
+
+        const visualViewport = window.visualViewport;
+        const layoutWidth = window.innerWidth;
+        const layoutHeight = window.innerHeight;
+        const placement = getDepartureGateViewportPlacement({
+          scrollY: window.scrollY,
+          visualOffsetTop: visualViewport?.offsetTop ?? 0,
+          visualHeight: visualViewport?.height ?? layoutHeight,
+        });
+
+        if (
+          gateViewportPlacement?.documentTop === placement.documentTop &&
+          gateViewportPlacement.visibleOffsetTop === placement.visibleOffsetTop &&
+          gateViewportPlacement.visibleHeight === placement.visibleHeight &&
+          gateViewportLayoutWidth === layoutWidth &&
+          gateViewportLayoutHeight === layoutHeight
+        ) return;
+
+        /* 从手势缓存推导应保持的车票中心；此时真实 DOM 可能已经受浏览器 resize 影响。 */
+        const heldPassCenter = dragGeometry && dragPointerId !== undefined
+          ? {
+              x: dragGeometry.passBounds.left + dragGeometry.passBounds.width / 2 + passOffsetX - dragStartOffsetX,
+              y: dragGeometry.passBounds.top + dragGeometry.passBounds.height / 2 + passOffsetY - dragStartOffsetY,
+            }
+          : undefined;
+        if (gateViewportPlacement?.documentTop !== placement.documentTop) {
+          departureGate.style.setProperty("--departure-gate-document-top", `${placement.documentTop}px`);
+        }
+        if (gateViewportPlacement?.visibleOffsetTop !== placement.visibleOffsetTop) {
+          departureGate.style.setProperty("--departure-gate-visible-offset-top", `${placement.visibleOffsetTop}px`);
+        }
+        if (gateViewportPlacement?.visibleHeight !== placement.visibleHeight) {
+          departureGate.style.setProperty("--departure-gate-visible-height", `${placement.visibleHeight}px`);
+        }
+        gateViewportPlacement = placement;
+        gateViewportLayoutWidth = layoutWidth;
+        gateViewportLayoutHeight = layoutHeight;
+
+        if (heldPassCenter) rebaseDragAfterViewportChange(heldPassCenter.x, heldPassCenter.y);
+      };
+
+      /** VisualViewport 连续事件合并到一个绘制帧，避免工具栏动画期间重复排版 Gate 前景。 */
+      const queueGateViewportPlacement = () => {
+        if (!isGateViewportTracking || gateViewportFrameId !== undefined) return;
+        gateViewportFrameId = window.requestAnimationFrame(updateGateViewportPlacement);
+      };
+
+      /** Gate 成为唯一交互层后才追踪工具栏边界；靠近阶段继续沿原生 fixed 跑道滑入。 */
+      const startGateViewportTracking = () => {
+        if (isGateViewportTracking) return;
+        isGateViewportTracking = true;
+        updateGateViewportPlacement();
+        window.addEventListener("scroll", queueGateViewportPlacement, { passive: true });
+        window.addEventListener("resize", queueGateViewportPlacement, { passive: true });
+        window.visualViewport?.addEventListener("resize", queueGateViewportPlacement, {
+          passive: true,
+        });
+        window.visualViewport?.addEventListener("scroll", queueGateViewportPlacement, {
+          passive: true,
+        });
+      };
+
+      /** 回退或离场时归还 viewport 监听与动画帧，隐藏且未移除的 Gate 也不能保留后台工作。 */
+      const stopGateViewportTracking = () => {
+        isGateViewportTracking = false;
+        window.removeEventListener("scroll", queueGateViewportPlacement);
+        window.removeEventListener("resize", queueGateViewportPlacement);
+        window.visualViewport?.removeEventListener("resize", queueGateViewportPlacement);
+        window.visualViewport?.removeEventListener("scroll", queueGateViewportPlacement);
+        if (gateViewportFrameId !== undefined) window.cancelAnimationFrame(gateViewportFrameId);
+        gateViewportFrameId = undefined;
       };
 
       /** 仅让桌面精确指针取得回退滚动的输入权，窄屏和触控设备不改写既有手势路径。 */
@@ -452,6 +549,30 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
       /** 将手势位置直接写到卡片本体，避免父级变量更新整片遮罩的样式计算。 */
       const renderPassTransform = () => {
         pass.style.transform = `translate(${passOffsetX}px, ${passOffsetY}px) rotate(${passRotation}deg)`;
+      };
+
+      /**
+       * 前景重排后保持手中卡片的中心，再以当前指针和新 Validator 矩形建立下一笔拖动基准。
+       * 所有布局读取集中在这次真实 viewport 变化，写回补偿后用平移后的矩形缓存避免再次强制布局。
+       */
+      const rebaseDragAfterViewportChange = (centerX: number, centerY: number) => {
+        const passBounds = pass.getBoundingClientRect();
+        const gateBounds = gateScene.getBoundingClientRect();
+        const readerBounds = reader.getBoundingClientRect();
+        const offsetX = centerX - passBounds.left - passBounds.width / 2;
+        const offsetY = centerY - passBounds.top - passBounds.height / 2;
+        passOffsetX += offsetX;
+        passOffsetY += offsetY;
+        dragStartOffsetX = passOffsetX;
+        dragStartOffsetY = passOffsetY;
+        dragStartX = dragPointerX;
+        dragStartY = dragPointerY;
+        dragGeometry = {
+          gateBounds,
+          passBounds: new DOMRect(passBounds.x + offsetX, passBounds.y + offsetY, passBounds.width, passBounds.height),
+          readerBounds,
+        };
+        renderPassTransform();
       };
 
       /**
@@ -677,6 +798,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
       /** 真正移除遮罩前先撤销所有全局监听，避免已卸载的节点继续持有焦点或滚动引用。 */
       const removeDepartureGate = () => {
         stopScrollControl();
+        stopGateViewportTracking();
         clearDepartureSnapWait();
         clearDepartureSettleWait();
         clearDepartureReturnSettle();
@@ -744,7 +866,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
 
         const passRect = pass.getBoundingClientRect();
         const readerBounds = readerHousing?.getBoundingClientRect() ?? reader.getBoundingClientRect();
-        const gateBounds = departureGate.getBoundingClientRect();
+        const gateBounds = gateScene.getBoundingClientRect();
         const safeInset = Math.max(12, Math.min(gateBounds.width, gateBounds.height) * 0.018);
         const dockingGap = Math.min(28, Math.max(12, passRect.width * 0.07));
         const targetPassLeft = Math.max(gateBounds.left + safeInset, readerBounds.left - dockingGap - passRect.width);
@@ -804,13 +926,16 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
 
       /** 将拖动范围约束到全屏遮罩之内，使卡片可以经过页面任意位置但不会遗失到可视区域外。 */
       const movePassWithinGate = (horizontalDelta: number, verticalDelta: number) => {
-        const gateBounds = dragGeometry?.gateBounds ?? departureGate.getBoundingClientRect();
+        const gateBounds = dragGeometry?.gateBounds ?? gateScene.getBoundingClientRect();
         const initialBounds = dragGeometry?.passBounds ?? pass.getBoundingClientRect();
         const safeInset = Math.max(12, Math.min(gateBounds.width, gateBounds.height) * 0.018);
-        const minOffsetX = gateBounds.left + safeInset - initialBounds.left;
-        const maxOffsetX = gateBounds.right - safeInset - initialBounds.right;
-        const minOffsetY = gateBounds.top + safeInset - initialBounds.top;
-        const maxOffsetY = gateBounds.bottom - safeInset - initialBounds.bottom;
+        const currentOffsetX = passOffsetX - dragStartOffsetX;
+        const currentOffsetY = passOffsetY - dragStartOffsetY;
+        /* 视口缩小可能包不住手中卡片；只允许向安全区收回，不在下一笔输入突然钳回边界。 */
+        const minOffsetX = Math.min(gateBounds.left + safeInset - initialBounds.left, currentOffsetX);
+        const maxOffsetX = Math.max(gateBounds.right - safeInset - initialBounds.right, currentOffsetX);
+        const minOffsetY = Math.min(gateBounds.top + safeInset - initialBounds.top, currentOffsetY);
+        const maxOffsetY = Math.max(gateBounds.bottom - safeInset - initialBounds.bottom, currentOffsetY);
 
         passOffsetX = dragStartOffsetX + Math.min(Math.max(horizontalDelta, minOffsetX), maxOffsetX);
         passOffsetY = dragStartOffsetY + Math.min(Math.max(verticalDelta, minOffsetY), maxOffsetY);
@@ -828,6 +953,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         setState("active");
         departureGate.removeAttribute("aria-hidden");
         departureGate.removeAttribute("inert");
+        startGateViewportTracking();
         lockPageForDeparture();
         window.requestAnimationFrame(() => {
           queueDragGuideUpdate();
@@ -1035,6 +1161,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         departureGate.removeAttribute("aria-hidden");
         departureGate.removeAttribute("inert");
         setState("active");
+        startGateViewportTracking();
         lockPageForDeparture();
         status.textContent = departureGate.dataset.readyStatus ?? status.textContent;
         queueDragGuideUpdate();
@@ -1114,6 +1241,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         departureReturnStartScrollTop = Math.max(1, window.scrollY);
         setReturnProgress(0);
         setState("retreating");
+        stopGateViewportTracking();
         unlockPageAfterDeparture();
         armScrollControl();
         scheduleDepartureReturnSettle();
@@ -1168,10 +1296,14 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         dragPointerId = event.pointerId;
         dragStartX = event.clientX;
         dragStartY = event.clientY;
+        dragPressX = event.clientX;
+        dragPressY = event.clientY;
+        dragPointerX = event.clientX;
+        dragPointerY = event.clientY;
         dragStartOffsetX = passOffsetX;
         dragStartOffsetY = passOffsetY;
         dragGeometry = {
-          gateBounds: departureGate.getBoundingClientRect(),
+          gateBounds: gateScene.getBoundingClientRect(),
           passBounds: pass.getBoundingClientRect(),
           readerBounds: reader.getBoundingClientRect(),
         };
@@ -1180,6 +1312,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         status.textContent = departureGate.dataset.draggingStatus ?? status.textContent;
         pass.setPointerCapture(event.pointerId);
         event.preventDefault();
+        if (gateViewportFrameId !== undefined) updateGateViewportPlacement();
       });
 
       /**
@@ -1189,10 +1322,14 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
       function handlePassPointerMove(event: PointerEvent) {
         if (dragPointerId !== event.pointerId || hasDeparted) return;
 
+        /* 输入可能先于排队的 viewport 帧到达；必须先刷新命中区，再判断这笔指针位移。 */
+        if (gateViewportFrameId !== undefined) updateGateViewportPlacement();
+        dragPointerX = event.clientX;
+        dragPointerY = event.clientY;
         const horizontalDelta = event.clientX - dragStartX;
         const verticalDelta = event.clientY - dragStartY;
         movePassWithinGate(horizontalDelta, verticalDelta);
-        draggedDuringPointerSession ||= Math.hypot(horizontalDelta, verticalDelta) > 6;
+        draggedDuringPointerSession ||= Math.hypot(event.clientX - dragPressX, event.clientY - dragPressY) > 6;
         renderPassTransform();
 
         if (draggedDuringPointerSession && isPassNearReader()) {
@@ -1203,6 +1340,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
       const settleDrag = (event: PointerEvent) => {
         if (dragPointerId !== event.pointerId) return;
 
+        if (gateViewportFrameId !== undefined) updateGateViewportPlacement();
         const isNearReader = draggedDuringPointerSession && isPassNearReader();
         stopDragging();
         if (!draggedDuringPointerSession) {

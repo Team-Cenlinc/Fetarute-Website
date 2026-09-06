@@ -59,16 +59,6 @@ export interface HomeRouteVisibleViewportBounds {
   height: number;
 }
 
-/** 地址栏动画期间选择路线实际消费哪一份 viewport 快照的输入。 */
-export interface HomeRouteRenderViewportSnapshotOptions {
-  /** 上一次已经稳定并参与路线布局的快照。 */
-  stableSnapshot: HomeRouteViewportSnapshot;
-  /** 浏览器事件最近报告、等待稳定确认的候选快照。 */
-  pendingSnapshot: HomeRouteViewportSnapshot;
-  /** 当前是否仍处在只允许连续滚动、不允许重排路线的浏览器栏暂态。 */
-  transient: boolean;
-}
-
 /** 首页路线面对 viewport 变化时需要采取的语义处理类别。 */
 export type HomeRouteViewportChangeKind = "none" | "transient" | "effective";
 
@@ -240,17 +230,6 @@ export const getHomeRouteViewportTransientState = (
 
   return change === "transient" || wasTransient;
 };
-
-/**
- * Safari 地址栏动画期间冻结路线布局使用的 viewport。
- * 待稳定计时结束后再一次性采用新快照，避免局部车与全局路径车在每个工具栏帧反复交接。
- */
-export const getHomeRouteRenderViewportSnapshot = ({
-  stableSnapshot,
-  pendingSnapshot,
-  transient,
-}: HomeRouteRenderViewportSnapshotOptions): HomeRouteViewportSnapshot =>
-  transient ? stableSnapshot : pendingSnapshot;
 
 /**
  * 把同一浏览器帧内的 scroll、resize 与 VisualViewport 请求收敛成一次更新。

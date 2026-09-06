@@ -699,7 +699,6 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     import {
       classifyHomeRouteViewportChange,
       getHomePageFrameCoordinator,
-      getHomeRouteRenderViewportSnapshot,
       getHomeRouteVisibleViewportBounds,
       getHomeRouteViewportTransientState,
       readHomeRouteViewportSnapshot,
@@ -912,7 +911,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     ) {
       /** 将一条数值限制在页面进度范围，避免 overscroll 时列车离开已绘制的线路。 */
       const clampRouteProgress = (value: number) => Math.min(Math.max(value, 0), 1);
-      /** 自定义属性只在目标值改变时写到实际消费元素，避免重复扩大样式失效范围。 */
+      /** 样式属性只在目标值改变时写到实际消费元素，避免重复扩大样式失效范围。 */
       const setStylePropertyIfChanged = (
         element: HTMLElement,
         property: string,
@@ -1048,11 +1047,16 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         anchorGap: number;
         borderBlockSize: number;
       }
+      /** 与 DOMRect 同时采样的文档滚动位置，避免 Safari 在写样式后同步更新布局。 */
+      interface HomeRouteScrollPosition {
+        x: number;
+        y: number;
+      }
       /** 路线统一参与者从 read 传给 write 的完整不可变输入。 */
       interface HomeRouteFrameMeasurement {
+        scrollPosition: HomeRouteScrollPosition;
         viewportChange: ReturnType<typeof classifyHomeRouteViewportChange>;
         renderViewportSnapshot: ReturnType<typeof readHomeRouteViewportSnapshot>;
-        tooltipViewportSnapshot: ReturnType<typeof readHomeRouteViewportSnapshot>;
         elementMeasurements: ReadonlyMap<Element, HomeRouteElementMeasurement>;
         tooltipStyle: HomeRouteTooltipStyleMeasurement;
       }
@@ -1213,18 +1217,22 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       };
       let homeRouteElementMeasurements: ReadonlyMap<Element, HomeRouteElementMeasurement> =
         new Map();
-      let homeRouteLastMeasurementScrollX = window.scrollX;
-      let homeRouteLastMeasurementScrollY = window.scrollY;
+      /** 初次测量和后续帧使用同一份滚动坐标；write 阶段不得再读取 Window 的布局 getter。 */
+      let routeScrollPosition: HomeRouteScrollPosition = { x: window.scrollX, y: window.scrollY };
+      let homeRouteLastMeasurementScrollX = routeScrollPosition.x;
+      let homeRouteLastMeasurementScrollY = routeScrollPosition.y;
       /** 完整失效读取全部节点；纯滚动帧平移稳定缓存后只重测活跃组与 fixed 交互节点。 */
       const readHomeRouteFrameMeasurements = ({
         measureAll,
         viewportBounds,
+        scrollPosition,
       }: {
         measureAll: boolean;
+        scrollPosition: HomeRouteScrollPosition;
         viewportBounds: ReturnType<typeof getHomeRouteVisibleViewportBounds>;
       }): ReadonlyMap<Element, HomeRouteElementMeasurement> => {
-        const scrollDeltaX = window.scrollX - homeRouteLastMeasurementScrollX;
-        const scrollDeltaY = window.scrollY - homeRouteLastMeasurementScrollY;
+        const scrollDeltaX = scrollPosition.x - homeRouteLastMeasurementScrollX;
+        const scrollDeltaY = scrollPosition.y - homeRouteLastMeasurementScrollY;
         const nextMeasurements = measureAll
           ? new Map<Element, HomeRouteElementMeasurement>()
           : new Map(
@@ -1260,8 +1268,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         elementsToMeasure.forEach((element) => {
           nextMeasurements.set(element, readHomeRouteElementMeasurement(element));
         });
-        homeRouteLastMeasurementScrollX = window.scrollX;
-        homeRouteLastMeasurementScrollY = window.scrollY;
+        homeRouteLastMeasurementScrollX = scrollPosition.x;
+        homeRouteLastMeasurementScrollY = scrollPosition.y;
         return nextMeasurements;
       };
       /** Tooltip 的计算样式与元素边界一样在 read 阶段冻结，避免先写尺寸后强制回流。 */
@@ -1283,6 +1291,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         };
       };
       homeRouteElementMeasurements = readHomeRouteFrameMeasurements({
+        scrollPosition: routeScrollPosition,
         measureAll: true,
         viewportBounds: getHomeRouteVisibleViewportBounds(readHomeRouteViewportSnapshot()),
       });
@@ -1466,14 +1475,9 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       });
       /** 当前路线帧共享的不可变 viewport 快照；事件只替换下一帧输入，不在计算途中重新读取。 */
       let routeViewportSnapshot = readHomeRouteViewportSnapshot();
-      /** Tooltip 独立消费最新 visual viewport；地址栏过渡不会被路线稳定快照拖延。 */
-      let routeTooltipViewportSnapshot = routeViewportSnapshot;
-      /** 从当前帧的稳定快照派生列车使用的可见边界。 */
+      /** 列车与 Tooltip 共用本帧最新可见边界，地址栏动画不能冻结视觉车位。 */
       const getRouteViewportBounds = () =>
         getHomeRouteVisibleViewportBounds(routeViewportSnapshot);
-      /** Tooltip 始终使用事件阶段取得的最新 visual viewport 边界。 */
-      const getRouteTooltipViewportBounds = () =>
-        getHomeRouteVisibleViewportBounds(routeTooltipViewportSnapshot);
       /** 视觉列车与浏览器手势边缘之间的统一安全留白。 */
       const routeViewportEdgeGap = 20;
       /** 返回 visual viewport 在布局视口坐标中的实际顶边。 */
@@ -1504,7 +1508,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
        * Header 在 compact 与展开态之间改变高度时，列车不会因此在静止站台上轻微上下漂移。
        */
       const getOnwardContentTrainTopCenterY = (trainLength: number) => {
-        const stableHeaderBottom = window.innerWidth <= 760 ? 88 : 116;
+        const stableHeaderBottom = routeViewportSnapshot.layoutWidth <= 760 ? 88 : 116;
 
         return Math.max(
           getRouteViewportTop() + trainLength / 2 + routeViewportEdgeGap,
@@ -1514,10 +1518,10 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       /** 三服汇接车点读取首个 Station Mark 在 section 顶边时的位置，让交接帧就是创造服停靠帧。 */
       const getTriServerEntryTrainCenterY = (trainWidth: number) => {
         const firstMarker = homeTriServerStopMarkers[0];
-        const triServerTop = getRouteElementBounds(homeTriServerRoute).top + window.scrollY;
+        const triServerTop = getRouteElementBounds(homeTriServerRoute).top + routeScrollPosition.y;
         const firstMarkerCenterY = firstMarker
           ? getRouteElementBounds(firstMarker).top +
-            window.scrollY +
+            routeScrollPosition.y +
             getRouteElementOffsetHeight(firstMarker) / 2 -
             triServerTop
           : getRouteViewportTop() + getRouteViewportHeight() / 2;
@@ -1527,8 +1531,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           Math.max(getRouteTopTrainCenterY(trainWidth), firstMarkerCenterY),
         );
       };
-      /** 从相对视口坐标获得稳定的文档坐标；两段正文的边界会随字体和内容增长自动更新。 */
-      const getDocumentTop = (element: HTMLElement) => getRouteElementBounds(element).top + window.scrollY;
+      /** DOMRect 与滚动位置必须来自同一次 read；写入列车样式后读取 scrollY 会让 WebKit 同步更新布局。 */
+      const getDocumentTop = (element: HTMLElement) => getRouteElementBounds(element).top + routeScrollPosition.y;
       /** 减少动态时保留轨道关系，但列车不再随滚动更新位置。 */
       const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
       /** 桌面读取 sticky 图片的视口位置；小屏则读取原生图片列的稳定文档间距。 */
@@ -1566,7 +1570,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
        */
       const updateTrainHintMotion = (routeProgress: number) => {
         const followProgress = clampRouteProgress(routeProgress / 0.1);
-        const followDistance = Math.min(28, Math.max(18, window.innerWidth * 0.06));
+        const followDistance = Math.min(28, Math.max(18, routeViewportSnapshot.layoutWidth * 0.06));
 
         setStylePropertyIfChanged(
           homeArrivalTrainHint,
@@ -1626,7 +1630,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
 
         const tooltipEdge = 20;
         const trainBounds = getActiveTrainTooltipBounds();
-        const viewportBounds = getRouteTooltipViewportBounds();
+        const viewportBounds = getRouteViewportBounds();
         const viewportLeft = viewportBounds.left;
         const viewportTop = viewportBounds.top;
         const viewportWidth = viewportBounds.width;
@@ -1708,15 +1712,11 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           gap: tooltipGap,
         });
 
+        /* 不继承的独立位移只更新浮层自身，也不会被开合 transform 过渡拖慢。 */
         setStylePropertyIfChanged(
           homeArrivalTrainTooltip,
-          "--home-arrival-tooltip-left",
-          `${left}px`,
-        );
-        setStylePropertyIfChanged(
-          homeArrivalTrainTooltip,
-          "--home-arrival-tooltip-top",
-          `${top}px`,
+          "translate",
+          `${left}px ${top}px`,
         );
         setDatasetValueIfChanged(homeArrivalTrainTooltip, "placement", placement);
       };
@@ -1731,9 +1731,11 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         targetCenterX: number,
         targetCenterY: number,
       ) => {
-        const stageBounds = getRouteElementBounds(homeOnwardTransferStage);
-        const baseCenterX = stageBounds.left + getRouteElementOffsetLeft(train) + getRouteElementOffsetWidth(train) / 2;
-        const baseCenterY = stageBounds.top + getRouteElementOffsetTop(train) + getRouteElementOffsetHeight(train) / 2;
+        const bounds = getRouteElementBounds(train);
+        /* offsetTop/Height 会取整；用实测中心扣除上次位移，保留静态车位的亚像素精度。 */
+        const previousTransform = new DOMMatrixReadOnly(train.style.transform || undefined);
+        const baseCenterX = bounds.left + bounds.width / 2 - previousTransform.m41;
+        const baseCenterY = bounds.top + bounds.height / 2 - previousTransform.m42;
 
         const transform = `translate3d(${targetCenterX - baseCenterX}px, ${targetCenterY - baseCenterY}px, 0)`;
 
@@ -1801,7 +1803,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
             reducedMotionQuery.matches || homeOnwardTransferScrollDistance <= 0
               ? 0
               : clampRouteProgress(
-                  (window.scrollY - onwardTop) / homeOnwardTransferScrollDistance,
+                  (routeScrollPosition.y - onwardTop) / homeOnwardTransferScrollDistance,
                 );
           const choreography = getHomeOnwardTrainChoreography(routeProgress);
           const incomingJourney = getOnwardIncomingTrainJourney();
@@ -1825,10 +1827,10 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           const isPinnedJourney =
             !reducedMotionQuery.matches &&
             homeOnwardTransferScrollDistance > 0 &&
-            window.scrollY > onwardTop &&
-            window.scrollY <= onwardTop + homeOnwardTransferScrollDistance + 1;
+            routeScrollPosition.y > onwardTop &&
+            routeScrollPosition.y <= onwardTop + homeOnwardTransferScrollDistance + 1;
           const hasJourneyStarted =
-            !reducedMotionQuery.matches && window.scrollY > onwardTop;
+            !reducedMotionQuery.matches && routeScrollPosition.y > onwardTop;
 
           setDatasetValueIfChanged(
             homeOnwardTransferRoute,
@@ -2260,8 +2262,21 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         return cached.translatedGeometry;
       };
 
+      /** 启示湾局部定位时保存容器的本帧视口原点；其他路段继续使用视口坐标。 */
+      let routeTrainPositionOrigin: HomeTrainPathPoint = { x: 0, y: 0 };
+      /** 车身与命中区必须一起随原生滚动移动，避免 Safari 延迟路线帧时仅轨道先行。 */
+      const setRouteTrainDocumentPosition = (documentPosition: boolean) => {
+        const bounds = getRouteElementBounds(homeArrivalRoute);
+        routeTrainPositionOrigin = documentPosition
+          ? { x: bounds.left, y: bounds.top }
+          : { x: 0, y: 0 };
+        for (const element of [homeArrivalTrainVisual, homeArrivalTrain]) {
+          setDatasetValueIfChanged(element, "routePosition", documentPosition ? "document" : "viewport");
+        }
+      };
+
       /**
-       * 把数值路径中心点与切线写到小型 fixed 车身；相同姿态不重复写入合成属性。
+       * 把数值路径中心点与切线写到有界车身；相同姿态不重复写入合成属性。
        * 弯道由同一批命中区采样点生成小画布，直轨仍只更新 transform；两个断点共用变形规则。
        */
       const setRouteTrainVisualPose = (
@@ -2303,7 +2318,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
             }
           }
         }
-        const transform = `translate3d(${(trainMidpoint.x - trainWidth / 2).toFixed(3)}px, ${(trainMidpoint.y - trainHeight / 2).toFixed(3)}px, 0) rotate(${curve ? 0 : angleDegrees.toFixed(3)}deg)`;
+        const transform = `translate3d(${(trainMidpoint.x - routeTrainPositionOrigin.x - trainWidth / 2).toFixed(3)}px, ${(trainMidpoint.y - routeTrainPositionOrigin.y - trainHeight / 2).toFixed(3)}px, 0) rotate(${curve ? 0 : angleDegrees.toFixed(3)}deg)`;
 
         if (homeArrivalTrainVisual.style.transform !== transform) {
           homeArrivalTrainVisual.style.transform = transform;
@@ -2419,7 +2434,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         scaleX: number,
         scaleY: number,
       ) => {
-        const transform = `translate3d(${left.toFixed(3)}px, ${top.toFixed(3)}px, 0) scale(${scaleX.toFixed(5)}, ${scaleY.toFixed(5)})`;
+        const transform = `translate3d(${(left - routeTrainPositionOrigin.x).toFixed(3)}px, ${(top - routeTrainPositionOrigin.y).toFixed(3)}px, 0) scale(${scaleX.toFixed(5)}, ${scaleY.toFixed(5)})`;
 
         if (homeArrivalTrain.style.transform !== transform) {
           homeArrivalTrain.style.transform = transform;
@@ -2515,14 +2530,11 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         const leftCurveStartX = leftBendBounds.left + leftBendBounds.width * (31 / 249);
         const leftCurveStartY = projectStageY(leftBendBounds.top);
         const leftCurveEndX = leftBendBounds.right;
-        const leftCurveEndY = projectStageY(
-          leftBendBounds.top + leftBendBounds.height * (219 / 250),
-        );
         const horizontalY = projectStageY(horizontalBounds.top + horizontalBounds.height / 2);
+        /* 横轨两端共用同一中心线；翻转 SVG 的边界舍入不能给直轨引入纵向斜率。 */
+        const leftCurveEndY = horizontalY;
         const rightCurveStartX = rightBendBounds.left;
-        const rightCurveStartY = projectStageY(
-          rightBendBounds.top + rightBendBounds.height * (31 / 250),
-        );
+        const rightCurveStartY = horizontalY;
         const rightCurveEndX = rightBendBounds.left + rightBendBounds.width * (218 / 249);
         const rightCurveEndY = projectStageY(rightBendBounds.bottom);
         const rightTrackX = rightTrackBounds.left + rightTrackBounds.width / 2;
@@ -2591,10 +2603,9 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           rightBendBounds.left + rightBendBounds.width * (218 / 249);
         const rightCurveStartY = projectStageY(rightBendBounds.top);
         const rightCurveEndX = rightBendBounds.left;
-        const rightCurveEndY = projectStageY(
-          rightBendBounds.top + rightBendBounds.height * (219 / 250),
-        );
         const horizontalY = projectStageY(horizontalBounds.top + horizontalBounds.height / 2);
+        /* 来线横轨从弯道终点到站台必须保持同高，不能分别取 SVG 与矩形的中心。 */
+        const rightCurveEndY = horizontalY;
         const horizontalLocalY =
           horizontalBounds.top + horizontalBounds.height / 2 - stageBounds.top;
         /* 车尾始终贴着正在进入视口的右轨顶端；路径随 section 同速上移，列车不会先钻到视口下方。 */
@@ -2645,9 +2656,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
             : viewportY + pinnedStageTop - stageBounds.top;
         const horizontalY = projectStageY(horizontalBounds.top + horizontalBounds.height / 2);
         const curveStartX = leftBendBounds.right;
-        const curveStartY = projectStageY(
-          leftBendBounds.top + leftBendBounds.height * (31 / 250),
-        );
+        const curveStartY = horizontalY;
         const curveEndX = leftBendBounds.left + leftBendBounds.width * (31 / 249);
         const curveEndY = projectStageY(leftBendBounds.bottom);
         const leftTrackX = leftTrackBounds.left + leftTrackBounds.width / 2;
@@ -2695,12 +2704,10 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         const curveStartX = leftBendBounds.left + leftBendBounds.width * (31 / 249);
         const curveStartY = projectStageY(leftBendBounds.top);
         const curveEndX = leftBendBounds.right;
-        const curveEndY = projectStageY(
-          leftBendBounds.top + leftBendBounds.height * (219 / 250),
-        );
         const horizontalY = projectStageY(
           lowerTrackBounds.top + lowerTrackBounds.height / 2,
         );
+        const curveEndY = horizontalY;
         const incomingPathStartY =
           projectStageY(leftTrackBounds.top) - trainWidth - routeViewportEdgeGap;
         const pathData = [
@@ -2746,9 +2753,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           upperTrackBounds.top + upperTrackBounds.height / 2,
         );
         const curveStartX = rightBendBounds.left;
-        const curveStartY = projectStageY(
-          rightBendBounds.top + rightBendBounds.height * (31 / 250),
-        );
+        const curveStartY = horizontalY;
         const curveEndX = rightBendBounds.left + rightBendBounds.width * (218 / 249);
         const curveEndY = projectStageY(rightBendBounds.bottom);
         const rightTrackX = rightTrackBounds.left + rightTrackBounds.width / 2;
@@ -3074,7 +3079,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         const firstAnchor = stopAnchors[0];
         const lastAnchor = stopAnchors.at(-1);
 
-        if (!firstAnchor || !lastAnchor || window.scrollY <= firstAnchor.scrollY) {
+        if (!firstAnchor || !lastAnchor || routeScrollPosition.y <= firstAnchor.scrollY) {
           return firstAnchor?.centerY ?? firstStopCenterY;
         }
 
@@ -3082,12 +3087,12 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           const currentAnchor = stopAnchors[index];
           const nextAnchor = stopAnchors[index + 1];
 
-          if (!currentAnchor || !nextAnchor || window.scrollY > nextAnchor.scrollY) {
+          if (!currentAnchor || !nextAnchor || routeScrollPosition.y > nextAnchor.scrollY) {
             continue;
           }
 
           const segmentProgress = clampRouteProgress(
-            (window.scrollY - currentAnchor.scrollY) /
+            (routeScrollPosition.y - currentAnchor.scrollY) /
               Math.max(1, nextAnchor.scrollY - currentAnchor.scrollY),
           );
           const dwellRatio = 0.18;
@@ -3273,6 +3278,10 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
        * 前段沿横轨行进，中段取自 Figma 弯轨的 Bézier，后段与下一节垂直轨道共同向下推进。
        */
       const updateRouteTrain = () => {
+        /* 启示湾尚未交给正文时，与非 sticky 轨道共用文档定位；跨段后恢复原有视口锚点。 */
+        setRouteTrainDocumentPosition(
+          !reducedMotionQuery.matches && getRouteElementBounds(homeIntroductionRoute).top > 0,
+        );
         if (isOnwardTransferRouteActive()) {
           renderOnwardTransferTrains();
         }
@@ -3327,14 +3336,14 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           communityJourneyStart - transferBreakerJourneyEnd,
         );
         const transferToCommunityProgress = clampRouteProgress(
-          (window.scrollY - transferBreakerJourneyEnd) / transferToCommunityLength,
+          (routeScrollPosition.y - transferBreakerJourneyEnd) / transferToCommunityLength,
         );
         const isTransferToCommunityPhase =
-          window.scrollY > transferBreakerJourneyEnd + 1 &&
-          window.scrollY < communityJourneyStart;
+          routeScrollPosition.y > transferBreakerJourneyEnd + 1 &&
+          routeScrollPosition.y < communityJourneyStart;
         const isTransferBreakerPhase =
-          window.scrollY >= transferBreakerRevealStart &&
-          window.scrollY <= transferBreakerJourneyEnd + 1;
+          routeScrollPosition.y >= transferBreakerRevealStart &&
+          routeScrollPosition.y <= transferBreakerJourneyEnd + 1;
         const sectionBreakerRevealStart = Math.max(
           introductionTop,
           sectionBreakerTop - getRouteViewportBottom(),
@@ -3344,7 +3353,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           sectionBreakerTop - sectionBreakerRevealStart,
         );
         const sectionBreakerRevealProgress =
-          (window.scrollY - sectionBreakerRevealStart) / sectionBreakerRevealLength;
+          (routeScrollPosition.y - sectionBreakerRevealStart) / sectionBreakerRevealLength;
         // 桌面在满屏 sticky 舞台中按真实路线距离继续行进；小屏仍随整节纵向阅读自然前进。
         const sectionBreakerJourneyEnd = desktopRouteGalleryQuery.matches
           ? sectionBreakerTop + homeSectionBreakerScrollDistance
@@ -3354,17 +3363,17 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           sectionBreakerJourneyEnd - sectionBreakerRevealStart,
         );
         const sectionBreakerProgress =
-          (window.scrollY - sectionBreakerRevealStart) / sectionBreakerJourneyLength;
+          (routeScrollPosition.y - sectionBreakerRevealStart) / sectionBreakerJourneyLength;
         const isSectionBreakerPhase =
-          sectionBreakerRevealProgress >= 0 && window.scrollY < sectionBreakerJourneyEnd;
+          sectionBreakerRevealProgress >= 0 && routeScrollPosition.y < sectionBreakerJourneyEnd;
         const isTriServerEntryPhase =
-          window.scrollY >= sectionBreakerJourneyEnd && window.scrollY < triServerTop;
+          routeScrollPosition.y >= sectionBreakerJourneyEnd && routeScrollPosition.y < triServerTop;
         const isTriServerPhase =
-          window.scrollY >= triServerTop &&
-          window.scrollY <= triServerBottom - getRouteViewportBottom() + 1;
+          routeScrollPosition.y >= triServerTop &&
+          routeScrollPosition.y <= triServerBottom - getRouteViewportBottom() + 1;
         const isCommunityPhase =
-          window.scrollY >= communityJourneyStart &&
-          window.scrollY <= communityViewportJourneyEnd;
+          routeScrollPosition.y >= communityJourneyStart &&
+          routeScrollPosition.y <= communityViewportJourneyEnd;
         /* 前一 sticky 舞台结束时正文顶边刚从视口底部接轨；正文离开前列车始终保持可见。 */
         const onwardContentRevealStart = Math.max(
           onwardPinnedEnd,
@@ -3379,11 +3388,11 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
          * 与同岸的底部安全锚点重合后再交还实体，两个断点都不会产生空白帧。
          */
         const isOnwardIncomingPhase =
-          window.scrollY > communityViewportJourneyEnd &&
+          routeScrollPosition.y > communityViewportJourneyEnd &&
           (desktopRouteGalleryQuery.matches
-            ? window.scrollY <= onwardTop
+            ? routeScrollPosition.y <= onwardTop
             : isHomeMobileOnwardIncomingPhase({
-                scrollY: window.scrollY,
+                scrollY: routeScrollPosition.y,
                 communityJourneyEnd: communityViewportJourneyEnd,
                 contentRevealStart: onwardContentRevealStart,
                 localTrainCenterY: onwardMobileTrainCenterY,
@@ -3392,15 +3401,15 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
               }));
         const onwardIncomingProgress = desktopRouteGalleryQuery.matches
           ? clampRouteProgress(
-              (window.scrollY - communityViewportJourneyEnd) /
+              (routeScrollPosition.y - communityViewportJourneyEnd) /
                 Math.max(1, onwardTop - communityViewportJourneyEnd),
             )
           : 0;
         const isOnwardPinnedPhase =
           desktopRouteGalleryQuery.matches &&
           homeOnwardTransferScrollDistance > 0 &&
-          window.scrollY > onwardTop &&
-          window.scrollY <= onwardPinnedEnd + 1;
+          routeScrollPosition.y > onwardTop &&
+          routeScrollPosition.y <= onwardPinnedEnd + 1;
         const onwardContentJourneyTop = getDocumentTop(homeOnwardContentJourney);
         /* 桌面 Footer 从 sticky 舞台真实解锁点接管；小屏仍按正文离开可见区的自然边界推进。 */
         const onwardContentJourneyEnd = desktopRouteGalleryQuery.matches
@@ -3417,8 +3426,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
               onwardContentBottom - getRouteViewportBottom() + 1,
             );
         const isOnwardContentPhase =
-          window.scrollY > onwardContentRevealStart + 1 &&
-          window.scrollY <= onwardContentJourneyEnd + 1;
+          routeScrollPosition.y > onwardContentRevealStart + 1 &&
+          routeScrollPosition.y <= onwardContentJourneyEnd + 1;
         const footerJourneyEnd = Math.max(
           onwardContentJourneyEnd,
           footerBottom - getRouteViewportBottom() + 1,
@@ -3436,11 +3445,11 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           onwardContentJourneyEnd - footerPreparationDistance;
         const footerPreparationProgress = desktopRouteGalleryQuery.matches
           ? clampRouteProgress(
-              (window.scrollY - footerPreparationStart) / footerPreparationDistance,
+              (routeScrollPosition.y - footerPreparationStart) / footerPreparationDistance,
             )
           : 0;
         const footerRouteState = getHomeFooterRouteState({
-          scrollY: window.scrollY,
+          scrollY: routeScrollPosition.y,
           onwardContentJourneyEnd,
           footerJourneyEnd,
         });
@@ -3459,7 +3468,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         renderHomeFooterTransition(footerTransitionShift, footerProgress);
         const isOnwardLocalIncomingCarrier = desktopRouteGalleryQuery.matches
           ? isOnwardPinnedPhase
-          : window.scrollY > communityViewportJourneyEnd &&
+          : routeScrollPosition.y > communityViewportJourneyEnd &&
             homeOnwardMobileTrain.dataset.homeTransferTooltipTrigger === "incoming";
         /* 动态模式始终由正在运行的全局列车接管 Tooltip；静态站台车只在减少动态模式中进入焦点序列。 */
         setDatasetValueIfChanged(homeArrivalTrain, "transferControlsActive", "false");
@@ -3473,9 +3482,9 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
 
         const arrivalJourneyLength = Math.max(1, introductionTop - arrivalTop);
         const routeJourneyLength = Math.max(1, introductionBottom - arrivalTop);
-        const rawProgress = (window.scrollY - arrivalTop) / routeJourneyLength;
+        const rawProgress = (routeScrollPosition.y - arrivalTop) / routeJourneyLength;
         updateTrainHintMotion(
-          (window.scrollY - arrivalTop) / arrivalJourneyLength,
+          (routeScrollPosition.y - arrivalTop) / arrivalJourneyLength,
         );
         const horizontalBounds = getRouteElementBounds(homeArrivalHorizontal);
         // ready 状态只允许在横轨真实进入视口时出现，避免列车先于线路悬在首屏实景上。
@@ -3591,7 +3600,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           // 候车列车直接取可见横轨的实时中心线，随线路从视口边缘一起进入而不会悬浮在首屏上。
           const readyCenterY = horizontalBounds.top + horizontalBounds.height / 2;
           // 从横向线段的右侧终点候车；路径向左书写，因此车体右缘会与终点严格贴齐。
-          const readyPathStartX = window.innerWidth;
+          const readyPathStartX = routeViewportSnapshot.layoutWidth;
           const readyPathGeometry = prepareTrainPathGeometry(
             "arrival-ready",
             `M${readyPathStartX} ${readyCenterY} L${readyPathStartX - trainWidth} ${readyCenterY}`,
@@ -3670,14 +3679,14 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           const contentTrainWidth = desktopRouteGalleryQuery.matches
             ? trainWidth
             : Math.min(trainWidth, 88);
-          const isContentEntering = window.scrollY < onwardContentTop;
+          const isContentEntering = routeScrollPosition.y < onwardContentTop;
           const contentProgress = isContentEntering
             ? clampRouteProgress(
-                (window.scrollY - onwardContentRevealStart) /
+                (routeScrollPosition.y - onwardContentRevealStart) /
                   Math.max(1, onwardContentTop - onwardContentRevealStart),
               )
             : getHomeOnwardContentTrainProgress({
-                scrollY: window.scrollY,
+                scrollY: routeScrollPosition.y,
                 contentTop: onwardContentTop,
                 boardJourneyTop: onwardContentJourneyTop,
               });
@@ -3745,7 +3754,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
             communityViewportJourneyEnd - communityJourneyStart,
           );
           const communityProgress = clampRouteProgress(
-            (window.scrollY - communityJourneyStart) / communityJourneyLength,
+            (routeScrollPosition.y - communityJourneyStart) / communityJourneyLength,
           );
           const trainCenterY = interpolateRoutePosition(
             getRouteTopTrainCenterY(trainWidth),
@@ -3775,10 +3784,10 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
 
         if (isTransferBreakerPhase) {
           if (desktopRouteGalleryQuery.matches) {
-            if (window.scrollY < transferBreakerTop) {
+            if (routeScrollPosition.y < transferBreakerTop) {
               const pathState = prepareTransferIncomingTrainPath(trainWidth);
               const revealProgress = clampRouteProgress(
-                (window.scrollY - transferBreakerRevealStart) /
+                (routeScrollPosition.y - transferBreakerRevealStart) /
                   transferBreakerRevealLength,
               );
               const trainTailDistance = interpolateRoutePosition(
@@ -3799,7 +3808,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
             } else {
               const controlledScrollDistance = Math.max(
                 0,
-                window.scrollY - transferBreakerTop,
+                routeScrollPosition.y - transferBreakerTop,
               );
 
               if (
@@ -3907,11 +3916,11 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           if (desktopRouteGalleryQuery.matches) {
             const pathState = prepareSectionBreakerTrainPath(trainWidth, trainHeight);
             const pinnedProgress = clampRouteProgress(
-              (window.scrollY - sectionBreakerTop) /
+              (routeScrollPosition.y - sectionBreakerTop) /
                 Math.max(1, homeSectionBreakerScrollDistance),
             );
             const trainTailDistance =
-              window.scrollY < sectionBreakerTop
+              routeScrollPosition.y < sectionBreakerTop
                 ? interpolateRoutePosition(
                     0,
                     pathState.curveEntryTailDistance,
@@ -3961,7 +3970,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
 
         const horizontalY = horizontalBounds.top + horizontalBounds.height / 2;
         const curveStartX = bendBounds.right;
-        const curveStartY = bendBounds.top + bendBounds.height * (31 / 250);
+        /* 启示湾直轨与入弯切线共用实测横轨中心，避免 SVG 缩放舍入形成斜向直线。 */
+        const curveStartY = horizontalY;
         const curveEndX = bendBounds.left + bendBounds.width * (31 / 249);
         const curveEndY = bendBounds.bottom;
         const verticalEndX = verticalBounds.left + verticalBounds.width / 2;
@@ -3992,10 +4002,10 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         const homeGalleryTop = getDocumentTop(homeGalleryRoute);
         const homeGalleryScrollRange = Math.max(
           1,
-          getRouteElementOffsetHeight(homeGalleryRoute) - window.innerHeight,
+          getRouteElementOffsetHeight(homeGalleryRoute) - routeViewportSnapshot.layoutHeight,
         );
         const homeGalleryProgress = clampRouteProgress(
-          (window.scrollY - homeGalleryTop) / homeGalleryScrollRange,
+          (routeScrollPosition.y - homeGalleryTop) / homeGalleryScrollRange,
         );
         /**
          * 列车从首图顶边开始并随 Gallery 的同一 0→1 进度走到图底；
@@ -4006,8 +4016,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           endCenterY: galleryTrainEndCenterY,
         } = getGalleryTrainCenterRange(trainHeight);
         const galleryTrainCenterY =
-          window.scrollY < homeGalleryTop
-            ? galleryTrainStartCenterY + homeGalleryTop - window.scrollY
+          routeScrollPosition.y < homeGalleryTop
+            ? galleryTrainStartCenterY + homeGalleryTop - routeScrollPosition.y
             : interpolateRoutePosition(
                 galleryTrainStartCenterY,
                 galleryTrainEndCenterY,
@@ -4029,19 +4039,19 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           introductionLength,
         );
         const trainTailDistance =
-          window.scrollY < introductionTop
+          routeScrollPosition.y < introductionTop
             ? interpolateRoutePosition(
                 0,
                 verticalEndTailDistance + arrivalEndIntroductionTailDistance,
                 clampRouteProgress(
-                  (window.scrollY - arrivalTop) / arrivalJourneyLength,
+                  (routeScrollPosition.y - arrivalTop) / arrivalJourneyLength,
                 ),
               )
             : verticalEndTailDistance +
               Math.min(
                 Math.max(
                   0,
-                  window.scrollY -
+                  routeScrollPosition.y -
                     introductionTop +
                     introductionTargetCenterY +
                     trainWidth / 2,
@@ -4499,7 +4509,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       /** 以视口中线作为统一阅读进度；新 section 越过 50% 后，Tooltip 才同步切换当前站。 */
       const updateActiveJourneySectionFromScroll = (shouldSyncHash = false) => {
         const readingLineDocumentY =
-          window.scrollY + getRouteViewportTop() + getRouteViewportHeight() / 2;
+          routeScrollPosition.y + getRouteViewportTop() + getRouteViewportHeight() / 2;
         const activeJourneyTarget = journeyTargets.reduce<
           (typeof journeyTargets)[number] | undefined
         >(
@@ -4545,18 +4555,17 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
        */
       homePageFrameCoordinator.register({
         read: ({ measureGeometry }): HomeRouteFrameMeasurement => {
+          const scrollPosition = { x: window.scrollX, y: window.scrollY };
           const viewportChange = pendingRouteViewportChange;
-          const renderViewportSnapshot = getHomeRouteRenderViewportSnapshot({
-            stableSnapshot: routeViewportSnapshot,
-            pendingSnapshot: pendingRouteViewportSnapshot,
-            transient: isRouteViewportTransient,
-          });
+          /* 暂态仅延迟章节与 hash；冻结可见高度会把整段地址栏位移攒成 120ms 后的一次跳动。 */
+          const renderViewportSnapshot = pendingRouteViewportSnapshot;
 
           return {
+            scrollPosition,
             viewportChange,
             renderViewportSnapshot,
-            tooltipViewportSnapshot: pendingRouteViewportSnapshot,
             elementMeasurements: readHomeRouteFrameMeasurements({
+              scrollPosition,
               measureAll: measureGeometry || viewportChange === "effective",
               viewportBounds: getHomeRouteVisibleViewportBounds(renderViewportSnapshot),
             }),
@@ -4568,16 +4577,16 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         },
         write: (
           {
+            scrollPosition,
             viewportChange,
             renderViewportSnapshot,
-            tooltipViewportSnapshot,
             elementMeasurements,
             tooltipStyle,
           },
           { measureGeometry, syncJourney, placeTooltip },
         ) => {
+          routeScrollPosition = scrollPosition;
           routeViewportSnapshot = renderViewportSnapshot;
-          routeTooltipViewportSnapshot = tooltipViewportSnapshot;
           homeRouteElementMeasurements = elementMeasurements;
           homeRouteTooltipStyle = tooltipStyle;
           pendingRouteViewportChange = "none";

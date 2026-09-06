@@ -98,7 +98,8 @@ const titleId = `${id}-title`;
     --home-section-breaker-bend-size: clamp(162px, 12.97vw, 249px);
     /* 原始弯轨 viewBox 为 249×250；单独保留真实高度，避免压成正方形后在水平接缝产生约 1px 台阶。 */
     --home-section-breaker-bend-height: calc(var(--home-section-breaker-bend-size) * 250 / 249);
-    --home-section-breaker-bend-inset: var(--home-section-breaker-track-half);
+    /* 弯轨端点来自 SVG 的 31/249，而非独立 clamp 的半轨宽；否则横向路径会连成斜线。 */
+    --home-section-breaker-bend-inset: calc(var(--home-section-breaker-bend-size) * 31 / 249);
     /* 两条竖轨分别继承上一段与下一段的页面轴线；中间横轨只负责完成换边。 */
     --home-section-breaker-left-origin-x: 9.32vw;
     --home-section-breaker-right-origin-x: 86.41vw;
