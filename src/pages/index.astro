@@ -1,17 +1,16 @@
 ---
 import { siteInfo } from "@/data/site";
-import { defaultLocale, localeMetadata, locales, type Locale } from "@/i18n/config";
+import { rootLanguageEntry } from "@/data/hosting";
+import { defaultLocale, localeMetadata, locales } from "@/i18n/config";
 import { getMessages } from "@/i18n/messages";
 
-// 纯静态发布不能读取 Accept-Language；根路径只承担客户端首帧推断与无脚本回退，不复制任何首页正文。
-const defaultLocaleHref = `/${defaultLocale}/`;
+// GitHub Pages 不能读取 Accept-Language 或设置 Vary；根路径只承担客户端首帧推断与无脚本回退。
+const defaultLocaleHref = rootLanguageEntry.defaultPath;
 const siteHomeUrl = new URL("/", siteInfo.url).toString();
 const defaultMessages = getMessages(defaultLocale);
 const socialImageUrl = new URL(siteInfo.socialImage, siteInfo.url).toString();
 /** 根入口可跳转的完整白名单；脚本只从这里取路径，不能把浏览器语言直接拼进 URL。 */
-const localeHrefs = Object.fromEntries(
-  locales.map((locale) => [locale, `/${locale}/`]),
-) as Record<Locale, string>;
+const localeHrefs = rootLanguageEntry.localizedPaths;
 ---
 
 <!doctype html>

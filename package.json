@@ -27,10 +27,11 @@
     "build:with-fonts": "npm run font:subset && npm run build",
     "test:discovery": "NODE_OPTIONS=--experimental-strip-types node --test test/discovery.test.ts",
     "test:document": "NODE_OPTIONS=--experimental-strip-types node --test test/document-details.test.ts",
+    "test:hosting": "NODE_OPTIONS=--experimental-strip-types node --test test/hosting-contract.test.ts",
     "test:static": "NODE_OPTIONS=--experimental-strip-types node --test test/static-output.test.ts test/discovery-output.test.ts",
     "build": "npm run social-card:build && ASTRO_TELEMETRY_DISABLED=1 astro build",
     "test:home": "NODE_OPTIONS=--experimental-strip-types node --test test/home-tri-server-media.test.ts test/home-image-output.test.ts test/home-route-train.test.ts test/home-route-viewport.test.ts test/home-journey.test.ts test/home-community.test.ts test/home-departure-gate.test.ts test/site-header.test.ts",
-    "check": "npm run format:check && npm run typecheck && npm run test:discovery && npm run test:document && npm run test:home && npm run build && npm run test:static",
+    "check": "npm run format:check && npm run typecheck && npm run test:discovery && npm run test:document && npm run test:hosting && npm run test:home && npm run build && npm run test:static",
     "precommit:check": "npm run font:subset && git diff --exit-code -- scripts/font-subset/chars.txt src/assets/fonts && npm run check",
     "prepare": "husky"
   },

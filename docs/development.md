@@ -97,7 +97,7 @@ npm run build:with-fonts
 
 1. 安装锁文件指定的依赖；
 2. 重新生成字体子集，并拒绝未提交的生成差异；
-3. 运行完整的 `npm run check`；
+3. 运行完整的 `npm run check`，其中包含根路径语言入口配置与静态产物检查；
 4. 只把通过门禁的 `dist/` 上传并部署到 GitHub Pages。
 
 本地 `git commit` 会由 Husky 先格式化暂存文件，再执行字体子集一致性检查与
@@ -125,6 +125,19 @@ curl --compressed -sS -D - -o /dev/null https://fetarute.org/_astro/<hashed-asse
 curl --compressed -sS -D - -o /dev/null https://fetarute.org/favicon.svg
 curl --compressed -sS -D - -o /dev/null https://fetarute.org/site.webmanifest
 ```
+
+### 根路径语言入口
+
+GitHub Pages 只能提供静态文件，不能针对 `/` 读取 `Accept-Language` 后返回边缘重定向或设置 `Vary`
+响应头。因此 `src/pages/index.astro` 保留客户端语言推断：已发布路径、默认语言和无脚本回退统一由
+`src/data/hosting.ts` 维护。它不会把首次语言选择写成 HTTP 301 或 308，未知语言与无脚本访问都进入
+`/zh-Hans/`；语言首页仍可由读者主动切换。
+
+若迁移到支持请求头规则的平台，根路径应改为只允许 `/zh-Hans/`、`/zh-Hant/` 或 `/en/` 的
+`307 Temporary Redirect`，并同时返回 `Vary: Accept-Language` 与
+`Cache-Control: private, no-store`。该规则必须以真实生产响应验证后，才能删除静态入口回退；当前
+`test:hosting` 和 `test:static`
+只证明仓库内的配置与构建产物，不代表已验证边缘规则、DNS、HTTPS 或 GitHub Pages 实际部署。
 
 ## 目录结构
 
