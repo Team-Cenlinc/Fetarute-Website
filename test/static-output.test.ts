@@ -161,7 +161,14 @@ test("记录压缩后三语言首页字节数，并守护可索引正文与图�
     assert.ok(imageTags.length > 0, `${locale} 首页应输出图片`);
 
     for (const imageTag of imageTags) {
-      assert.ok(getAttribute(imageTag, "src"), `${locale} 图片应保留 src: ${imageTag}`);
+      /** 延迟社区故事把候选地址保存在 data 属性中，避免隐藏媒体参与初始请求。 */
+      const isDeferredCommunityImage = /\sdata-home-community-deferred-src(?:\s|=|>)/i.test(
+        imageTag,
+      );
+
+      if (!isDeferredCommunityImage) {
+        assert.ok(getAttribute(imageTag, "src"), `${locale} 图片应保留 src: ${imageTag}`);
+      }
       assert.match(imageTag, /\salt(?:\s|=|>)/i, `${locale} 图片应保留 alt: ${imageTag}`);
       assert.ok(getAttribute(imageTag, "width"), `${locale} 图片应保留 width: ${imageTag}`);
       assert.ok(getAttribute(imageTag, "height"), `${locale} 图片应保留 height: ${imageTag}`);
