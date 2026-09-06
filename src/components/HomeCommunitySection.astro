@@ -1,5 +1,5 @@
 ---
-import { Image } from "astro:assets";
+import { Image, getImage } from "astro:assets";
 import type { ImageMetadata } from "astro";
 import cursorClickIcon from "@phosphor-icons/core/assets/regular/cursor-click.svg?raw";
 import newYear2026Image from "@/assets/pages/home/community/new-year-2026.png";
@@ -37,6 +37,38 @@ export interface Props {
 
 const { locale, lineColor } = Astro.props;
 const communityMessages = getMessages(locale).home.community;
+const shortStoryMediaSizes = "(max-width: 1023px) 86vw, 72vw";
+const shortStoryMediaWidths = [640, 960, 1440, 1920];
+
+/**
+ * 提前让 Astro Assets 生成所有候选，但只返回可放进延迟 DOM 属性的描述。
+ * 浏览器不会把 data-* 中的 URL 当成图片请求，控制器激活故事后才会提交它们。
+ */
+async function getDeferredStoryImage(image: ImageMetadata) {
+  const output = await getImage({
+    src: image,
+    widths: shortStoryMediaWidths,
+    sizes: shortStoryMediaSizes,
+  });
+
+  return {
+    src: output.src,
+    srcset: output.srcSet.attribute,
+    width: output.attributes.width,
+    height: output.attributes.height,
+  };
+}
+
+/** 头像固定为同一 128px 输出，让摘要与署名复用浏览器的请求和解码缓存。 */
+async function getDeferredStoryAvatar(image: ImageMetadata) {
+  const output = await getImage({ src: image, width: 128, height: 128 });
+
+  return {
+    src: output.src,
+    width: output.attributes.width,
+    height: output.attributes.height,
+  };
+}
 
 /** 已确认玩家与本地头像的唯一绑定，供多人主故事和随机短故事共用。 */
 const communityPlayerAvatarByName: Readonly<Record<string, ImageMetadata>> = {
@@ -120,7 +152,7 @@ const mainStoryDetailSegments = segmentHomeCommunityPlayerText(
   mainStory.message.detail,
   mainStoryPlayers,
 );
-const memoryStories = homeCommunityStories.memory.map((story) => {
+const memoryStories = await Promise.all(homeCommunityStories.memory.map(async (story) => {
   const assets = memoryAssetById[story.id];
 
   return {
@@ -128,18 +160,20 @@ const memoryStories = homeCommunityStories.memory.map((story) => {
     media: {
       ...story.media,
       image: assets.image,
+      deferredImage: await getDeferredStoryImage(assets.image),
     },
     player:
       story.player && "avatar" in assets
         ? {
             ...story.player,
             avatar: assets.avatar,
+            deferredAvatar: await getDeferredStoryAvatar(assets.avatar),
           }
         : undefined,
     message: communityMessages.featureStoryById[story.id],
   };
-});
-const presenceStories = homeCommunityStories.presence.map((story) => {
+}));
+const presenceStories = await Promise.all(homeCommunityStories.presence.map(async (story) => {
   const assets = presenceAssetById[story.id];
 
   return {
@@ -147,14 +181,16 @@ const presenceStories = homeCommunityStories.presence.map((story) => {
     media: {
       ...story.media,
       image: assets.image,
+      deferredImage: await getDeferredStoryImage(assets.image),
     },
     player: {
       ...story.player,
       avatar: assets.avatar,
+      deferredAvatar: await getDeferredStoryAvatar(assets.avatar),
     },
     message: communityMessages.presenceStoryById[story.id],
   };
-});
+}));
 const titleId = "home-community-title";
 const mainStoryTitleId = "home-community-main-story-title";
 ---
@@ -276,13 +312,24 @@ const mainStoryTitleId = "home-community-main-story-title";
                     class="home-community__inline-player"
                     aria-label={`${communityMessages.playerLabel}: ${story.player.name}`}
                   >
-                    <Image
-                      src={story.player.avatar}
-                      alt=""
-                      width={128}
-                      height={128}
-                      loading="lazy"
-                    />
+                    {index === 0 ? (
+                      <Image
+                        src={story.player.avatar}
+                        alt=""
+                        width={128}
+                        height={128}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <img
+                        data-home-community-deferred-src={story.player.deferredAvatar.src}
+                        data-home-community-deferred-alt=""
+                        width={story.player.deferredAvatar.width}
+                        height={story.player.deferredAvatar.height}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    )}
                     <strong>{story.player.name}</strong>
                   </span>
                 )
@@ -296,13 +343,28 @@ const mainStoryTitleId = "home-community-main-story-title";
                   class="home-community__short-media"
                   style={`--home-community-media-focus: ${story.media.focalPoint};`}
                 >
-                  <Image
-                    src={story.media.image}
-                    alt={story.message.imageAlt}
-                    widths={[640, 960, 1440, 1920]}
-                    sizes="(max-width: 1023px) 86vw, 72vw"
-                    loading="lazy"
-                  />
+                  {index === 0 ? (
+                    <Image
+                      src={story.media.image}
+                      alt={story.message.imageAlt}
+                      widths={shortStoryMediaWidths}
+                      sizes={shortStoryMediaSizes}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <picture data-home-community-deferred-picture>
+                      <img
+                        data-home-community-deferred-src={story.media.deferredImage.src}
+                        data-home-community-deferred-srcset={story.media.deferredImage.srcset}
+                        data-home-community-deferred-sizes={shortStoryMediaSizes}
+                        alt={story.message.imageAlt}
+                        width={story.media.deferredImage.width}
+                        height={story.media.deferredImage.height}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </picture>
+                  )}
                 </span>
                 <span class="home-community__story-hint">
                   <span
@@ -328,13 +390,24 @@ const mainStoryTitleId = "home-community-main-story-title";
                     class="home-community__player-credit"
                     aria-label={`${communityMessages.playerLabel}: ${story.player.name}`}
                   >
-                    <Image
-                      src={story.player.avatar}
-                      alt=""
-                      width={128}
-                      height={128}
-                      loading="lazy"
-                    />
+                    {index === 0 ? (
+                      <Image
+                        src={story.player.avatar}
+                        alt=""
+                        width={128}
+                        height={128}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <img
+                        data-home-community-deferred-src={story.player.deferredAvatar.src}
+                        data-home-community-deferred-alt=""
+                        width={story.player.deferredAvatar.width}
+                        height={story.player.deferredAvatar.height}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    )}
                     <span>{story.player.name}</span>
                   </p>
                 ) : story.hasPublicCredit ? (
@@ -375,13 +448,24 @@ const mainStoryTitleId = "home-community-main-story-title";
                   class="home-community__inline-player"
                   aria-label={`${communityMessages.playerLabel}: ${story.player.name}`}
                 >
-                  <Image
-                    src={story.player.avatar}
-                    alt=""
-                    width={128}
-                    height={128}
-                    loading="lazy"
-                  />
+                  {index === 0 ? (
+                    <Image
+                      src={story.player.avatar}
+                      alt=""
+                      width={128}
+                      height={128}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <img
+                      data-home-community-deferred-src={story.player.deferredAvatar.src}
+                      data-home-community-deferred-alt=""
+                      width={story.player.deferredAvatar.width}
+                      height={story.player.deferredAvatar.height}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  )}
                   <strong>{story.player.name}</strong>
                 </span>
                 <span>{story.message.description}</span>
@@ -392,13 +476,28 @@ const mainStoryTitleId = "home-community-main-story-title";
                     class="home-community__short-media"
                     style={`--home-community-media-focus: ${story.media.focalPoint};`}
                   >
-                    <Image
-                      src={story.media.image}
-                      alt={story.message.imageAlt}
-                      widths={[640, 960, 1440, 1920]}
-                      sizes="(max-width: 1023px) 86vw, 72vw"
-                      loading="lazy"
-                    />
+                    {index === 0 ? (
+                      <Image
+                        src={story.media.image}
+                        alt={story.message.imageAlt}
+                        widths={shortStoryMediaWidths}
+                        sizes={shortStoryMediaSizes}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <picture data-home-community-deferred-picture>
+                        <img
+                          data-home-community-deferred-src={story.media.deferredImage.src}
+                          data-home-community-deferred-srcset={story.media.deferredImage.srcset}
+                          data-home-community-deferred-sizes={shortStoryMediaSizes}
+                          alt={story.message.imageAlt}
+                          width={story.media.deferredImage.width}
+                          height={story.media.deferredImage.height}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </picture>
+                    )}
                   </span>
                   <span class="home-community__story-hint">
                     <span
@@ -422,13 +521,24 @@ const mainStoryTitleId = "home-community-main-story-title";
                     class="home-community__player-credit"
                     aria-label={`${communityMessages.playerLabel}: ${story.player.name}`}
                   >
-                    <Image
-                      src={story.player.avatar}
-                      alt=""
-                      width={128}
-                      height={128}
-                      loading="lazy"
-                    />
+                    {index === 0 ? (
+                      <Image
+                        src={story.player.avatar}
+                        alt=""
+                        width={128}
+                        height={128}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <img
+                        data-home-community-deferred-src={story.player.deferredAvatar.src}
+                        data-home-community-deferred-alt=""
+                        width={story.player.deferredAvatar.width}
+                        height={story.player.deferredAvatar.height}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    )}
                     <span>{story.player.name}</span>
                   </p>
                 </div>
@@ -474,6 +584,53 @@ const mainStoryTitleId = "home-community-main-story-title";
 
   /** 为页面中的同岸实例轮换两个短故事池，并初始化主故事滚动交互。 */
   function setupHomeCommunitySection(communitySection: HTMLElement): void {
+    /** 把构建期候选从延迟描述提交给浏览器；src 最后写入，避免中间态发出错误请求。 */
+    const loadStoryImages = (storyElement: HTMLElement): void => {
+      storyElement
+        .querySelectorAll<HTMLImageElement>("img[data-home-community-deferred-src]")
+        .forEach((image) => {
+          const {
+            homeCommunityDeferredAlt,
+            homeCommunityDeferredSrc,
+            homeCommunityDeferredSrcset,
+          } = image.dataset;
+
+          if (!homeCommunityDeferredSrc) return;
+
+          // 媒体图的标准 alt 已在静态 HTML 中；只有装饰头像才从延迟描述补写空替代文本。
+          if (homeCommunityDeferredAlt !== undefined) {
+            image.alt = homeCommunityDeferredAlt;
+          }
+          if (image.dataset.homeCommunityDeferredSizes) {
+            image.sizes = image.dataset.homeCommunityDeferredSizes;
+          }
+          if (homeCommunityDeferredSrcset) {
+            image.srcset = homeCommunityDeferredSrcset;
+          }
+          image.src = homeCommunityDeferredSrc;
+          image.removeAttribute("data-home-community-deferred-src");
+          image.removeAttribute("data-home-community-deferred-srcset");
+          image.removeAttribute("data-home-community-deferred-sizes");
+          image.removeAttribute("data-home-community-deferred-alt");
+        });
+    };
+
+    /** 选中故事即将显示时提升其图片优先级，避免用户抵达同岸后仍等待短故事解码。 */
+    const preloadSelectedStoryImages = (storyElement: HTMLElement): void => {
+      storyElement.querySelectorAll<HTMLImageElement>("img").forEach((image) => {
+        image.loading = "eager";
+      });
+    };
+
+    communitySection
+      .querySelectorAll<HTMLDetailsElement>(".home-community__story-details")
+      .forEach((details) => {
+        details.addEventListener("toggle", () => {
+          const storyElement = details.closest<HTMLElement>(".home-community__short-story");
+          if (details.open && storyElement) loadStoryImages(storyElement);
+        });
+      });
+
     const memoryStoryElements = Array.from(
       communitySection.querySelectorAll<HTMLElement>("[data-home-community-memory-story]"),
     );
@@ -514,8 +671,13 @@ const mainStoryTitleId = "home-community-main-story-title";
       }
 
       memoryStoryElements.forEach((storyElement) => {
-        storyElement.hidden =
-          storyElement.dataset.homeCommunityMemoryStory !== selectedMemoryStoryId;
+        const selected =
+          storyElement.dataset.homeCommunityMemoryStory === selectedMemoryStoryId;
+        if (selected) {
+          loadStoryImages(storyElement);
+          preloadSelectedStoryImages(storyElement);
+        }
+        storyElement.hidden = !selected;
       });
       communitySection.dataset.homeCommunityActiveMemoryStory = selectedMemoryStoryId;
     }
@@ -558,8 +720,12 @@ const mainStoryTitleId = "home-community-main-story-title";
       }
 
       presenceStoryElements.forEach((storyElement) => {
-        storyElement.hidden =
-          storyElement.dataset.homeCommunityPresenceStory !== selectedStoryId;
+        const selected = storyElement.dataset.homeCommunityPresenceStory === selectedStoryId;
+        if (selected) {
+          loadStoryImages(storyElement);
+          preloadSelectedStoryImages(storyElement);
+        }
+        storyElement.hidden = !selected;
       });
       communitySection.dataset.homeCommunityActivePresenceStory = selectedStoryId;
     }
