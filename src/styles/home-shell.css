@@ -1782,15 +1782,20 @@ html[data-launching] .launch-sequence {
 
   .hero-copy {
     gap: 14px;
+    /* 手机文案使用 Header 内的完整宽度，避免说明末字被桌面 66vw 限制挤成孤行。 */
+    max-width: min(100%, 30rem);
   }
 
   .hero-copy h1 {
+    max-width: min(100%, 12ch);
     font-size: clamp(42px, 11.5vw, 50px);
     line-height: 1;
+    /* 窄屏按词组自然换行，避免 balance 把「欢迎来到」末字挪到品牌名前。 */
+    text-wrap: wrap;
   }
 
   .hero-description {
-    max-width: 26ch;
+    max-width: 32ch;
     font-size: 16px;
     line-height: 1.5;
   }

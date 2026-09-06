@@ -598,16 +598,24 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       secondaryName={homeLineSecondaryName}
       isEnglishPrimary={locale === "en"}
     />
-    <!-- 有界车身沿数值路径的切线移动；避免 WebKit 为全视口 SVG dash 持续重绘。 -->
+    <!-- 直轨平移，弯轨只绘制一个车长的局部曲线；保留变形而不扩大到全视口。 -->
     <span class="home-arrival__train-visual" data-home-arrival-train-visual aria-hidden="true">
       <span
         class="home-arrival__train-color-layer home-arrival__train-color-layer--incoming"
         data-home-arrival-train-color-layer="incoming"
-      ></span>
+      >
+        <svg class="home-arrival__train-curve" aria-hidden="true" focusable="false">
+          <path data-home-train-curve-path></path>
+        </svg>
+      </span>
       <span
         class="home-arrival__train-color-layer home-arrival__train-color-layer--outgoing"
         data-home-arrival-train-color-layer="outgoing"
-      ></span>
+      >
+        <svg class="home-arrival__train-curve" aria-hidden="true" focusable="false">
+          <path data-home-train-curve-path></path>
+        </svg>
+      </span>
     </span>
     <button
       class="home-arrival__train"
@@ -670,6 +678,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       getHomeSectionBreakerScrollDistance,
       getHomeTrainColorTransitionProgress,
       getHomeTrainPathGeometry,
+      getHomeTrainPathCurveGeometry,
       getHomeTrainPathHitArea,
       getHomeTrainPathPointAtLength,
       getHomeTrainPathPoseAtLength,
@@ -680,6 +689,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       getHomeVerticalTrainBottomCenterY,
       getHomeVerticalTrainRenderGeometry,
       type HomeTrainPathGeometry,
+      type HomeTrainPathPoint,
       type HomeTransferTrainVisualOwner,
     } from "@/data/home-route-train";
     import {
@@ -708,6 +718,9 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       homeArrivalTrainVisual?.querySelector<HTMLElement>(
         '[data-home-arrival-train-color-layer="outgoing"]',
       ) ?? null;
+    const homeArrivalTrainCurvePaths = Array.from(
+      homeArrivalTrainVisual?.querySelectorAll<SVGPathElement>("[data-home-train-curve-path]") ?? [],
+    );
     const homeArrivalTrainHint = document.querySelector<HTMLElement>(
       ".home-arrival__train-hint",
     );
@@ -2249,20 +2262,48 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
 
       /**
        * 把数值路径中心点与切线写到小型 fixed 车身；相同姿态不重复写入合成属性。
-       * 刚性车身在弯道按切线旋转，避免恢复任何会扩大绘制区域的全屏裁剪层。
+       * 弯道由同一批命中区采样点生成小画布，直轨仍只更新 transform；两个断点共用变形规则。
        */
       const setRouteTrainVisualPose = (
         pathGeometry: HomeTrainPathGeometry,
         centerDistance: number,
         trainWidth: number,
         trainHeight: number,
+        pathPoints: readonly HomeTrainPathPoint[] = [],
       ) => {
         const { center: trainMidpoint, angleDegrees } = getHomeTrainPathPoseAtLength(
           pathGeometry,
           centerDistance,
           trainWidth * 0.08,
         );
-        const transform = `translate3d(${(trainMidpoint.x - trainWidth / 2).toFixed(3)}px, ${(trainMidpoint.y - trainHeight / 2).toFixed(3)}px, 0) rotate(${angleDegrees.toFixed(3)}deg)`;
+        const curve = getHomeTrainPathCurveGeometry(
+          pathPoints,
+          trainMidpoint,
+          trainWidth,
+          trainHeight,
+        );
+        /* 探索线小屏把车长收至 88px；实际车身必须同步，否则绕旧尺寸中心旋转会横移半个长度差。 */
+        setStylePropertyIfChanged(homeArrivalTrainVisual, "width", `${trainWidth}px`);
+        setStylePropertyIfChanged(homeArrivalTrainVisual, "height", `${trainHeight}px`);
+        setDatasetValueIfChanged(homeArrivalTrainVisual, "routeCurved", String(Boolean(curve)));
+        if (curve) {
+          setStylePropertyIfChanged(
+            homeArrivalTrainVisual,
+            "--home-route-curve-size",
+            `${curve.size}px`,
+          );
+          setStylePropertyIfChanged(
+            homeArrivalTrainVisual,
+            "--home-route-curve-thickness",
+            `${trainHeight}px`,
+          );
+          for (const path of homeArrivalTrainCurvePaths) {
+            if (path.getAttribute("d") !== curve.pathData) {
+              path.setAttribute("d", curve.pathData);
+            }
+          }
+        }
+        const transform = `translate3d(${(trainMidpoint.x - trainWidth / 2).toFixed(3)}px, ${(trainMidpoint.y - trainHeight / 2).toFixed(3)}px, 0) rotate(${curve ? 0 : angleDegrees.toFixed(3)}deg)`;
 
         if (homeArrivalTrainVisual.style.transform !== transform) {
           homeArrivalTrainVisual.style.transform = transform;
@@ -2291,7 +2332,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           journeyLength,
           clampedTrainTailDistance + trainWidth,
         );
-        const pathSampleCount = Math.max(4, Math.ceil(trainWidth / 24));
+        // 4px 沿程间距让手机小半径弯道的车身边缘平滑，命中区也跟随相同形状。
+        const pathSampleCount = Math.max(8, Math.ceil(trainWidth / 4));
         const trainPathPoints = Array.from({ length: pathSampleCount + 1 }, (_, index) =>
           getHomeTrainPathPointAtLength(
             pathGeometry,
@@ -2313,6 +2355,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           trainCenterDistance,
           trainWidth,
           trainHeight,
+          trainPathPoints,
         );
 
         routeTrainTooltipAnchorX = trainMidpoint.x;
@@ -4941,7 +4984,9 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         write: writeHomeGalleryFrame,
       });
       const homeGalleryVisibilityObserver = new IntersectionObserver(
-        ([entry]) => {
+        (entries) => {
+          /* 单个相册可能同批收到离屏与入屏记录，以最后状态决定是否恢复逐帧更新。 */
+          const entry = entries.at(-1);
           isHomeGalleryActive = entry?.isIntersecting ?? false;
           if (isHomeGalleryActive) {
             requestHomeGalleryMeasurement();

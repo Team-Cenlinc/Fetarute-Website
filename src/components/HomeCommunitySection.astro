@@ -803,7 +803,9 @@ const mainStoryTitleId = "home-community-main-story-title";
     });
     const requestMainStoryFrame = (): void => frameCoordinator.request();
     const communityVisibilityObserver = new IntersectionObserver(
-      ([entry]) => {
+      (entries) => {
+        /* 同一章节的入屏记录可能与旧的离屏记录合批，以最新状态恢复故事叙事。 */
+        const entry = entries.at(-1);
         isCommunityActive = entry?.isIntersecting ?? false;
         if (isCommunityActive) {
           requestMainStoryFrame();
@@ -920,7 +922,7 @@ const mainStoryTitleId = "home-community-main-story-title";
     --home-community-heading-size: clamp(46px, 4.35vw, 82px);
   }
 
-  .home-community__introduction > p {
+  .home-community__introduction > p:not(.home-community__eyebrow) {
     max-width: 650px;
     margin: clamp(58px, 8vh, 92px) 0 0;
     font-size: clamp(17px, 1.15vw, 22px);
@@ -1326,16 +1328,16 @@ const mainStoryTitleId = "home-community-main-story-title";
     }
 
     .home-community__introduction .home-community__heading-line {
-      --home-community-heading-size: clamp(42px, 12.2vw, 64px);
-      line-height: 1;
+      --home-community-heading-size: clamp(32px, 9vw, 48px);
+      line-height: 1.12;
     }
 
     .home-community__introduction .home-community__station-spur {
       top: 0.5em;
     }
 
-    .home-community__introduction > p {
-      margin-top: clamp(44px, 11vw, 64px);
+    .home-community__introduction > p:not(.home-community__eyebrow) {
+      margin-top: clamp(28px, 7.5vw, 40px);
       font-size: 17px;
     }
 
@@ -1346,7 +1348,9 @@ const mainStoryTitleId = "home-community-main-story-title";
     .home-community__main-stage {
       position: relative;
       height: auto;
-      min-height: max(940px, 112svh);
+      /* 手机按正文自然撑开图片舞台：短文不留下整屏空白，长英文与放大文字也不会被裁切。 */
+      min-height: 100svh;
+      padding-block: clamp(100px, 25vw, 124px) clamp(72px, 12svh, 112px);
     }
 
     .home-community__main-media :global(img) {
@@ -1358,18 +1362,43 @@ const mainStoryTitleId = "home-community-main-story-title";
     }
 
     .home-community__main-detail {
-      top: clamp(100px, 25vw, 124px);
+      position: relative;
+      inset: auto;
+      margin-inline: var(--home-community-content-left) var(--home-community-content-right);
     }
 
     .home-community__main-detail .home-community__heading-line {
-      --home-community-heading-size: clamp(42px, 12vw, 62px);
+      --home-community-heading-size: clamp(34px, 9.6vw, 52px);
+    }
+
+    .home-community__heading-line,
+    .home-community__short-heading h3,
+    .home-community__short-heading h4,
+    .home-community__closing h3 {
+      line-height: 1.12;
+      letter-spacing: -0.02em;
+    }
+
+    .home-community__heading-line > :is(h2, h3),
+    .home-community__closing h3 {
+      line-height: 1.12;
+      text-wrap: balance;
+    }
+
+    .home-community__introduction > p:not(.home-community__eyebrow),
+    .home-community__short-excerpt,
+    .home-community__closing > p {
+      font-weight: 480;
+      line-height: 1.7;
+      text-wrap: pretty;
     }
 
     .home-community__main-narrative {
       gap: 0.9em;
       margin-top: clamp(34px, 8vw, 48px);
       font-size: clamp(16px, 4.2vw, 19px);
-      line-height: 1.58;
+      font-weight: 480;
+      line-height: 1.7;
       opacity: 1;
       transform: none;
     }
@@ -1386,7 +1415,7 @@ const mainStoryTitleId = "home-community-main-story-title";
 
     .home-community__short-heading .home-community__heading-line,
     .home-community__closing .home-community__heading-line {
-      --home-community-heading-size: clamp(40px, 11.5vw, 60px);
+      --home-community-heading-size: clamp(34px, 9.6vw, 52px);
     }
 
     .home-community__story-details,
@@ -1425,7 +1454,7 @@ const mainStoryTitleId = "home-community-main-story-title";
     .home-community__short-excerpt {
       margin-top: 28px;
       font-size: 17px;
-      line-height: 1.55;
+      line-height: 1.7;
     }
 
     .home-community__credit {

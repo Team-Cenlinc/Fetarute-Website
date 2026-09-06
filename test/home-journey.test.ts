@@ -102,7 +102,7 @@ test("续行桌面 PIDS 保持原有列宽，并让外框四边使用同一厚�
   assert.match(homeOnwardComponentSource, /data-home-onward-locale=\{locale\}/);
   assert.match(
     homeOnwardComponentSource,
-    /--home-onward-board-screen-size:\s*clamp\(224px,\s*26svh,\s*246px\)/,
+    /--home-onward-board-screen-size:\s*clamp\(268px,\s*31svh,\s*290px\)/,
   );
   assert.match(
     homeOnwardComponentSource,
@@ -117,7 +117,7 @@ test("续行桌面 PIDS 保持原有列宽，并让外框四边使用同一厚�
   );
   assert.match(
     homeOnwardComponentSource,
-    /@media \(min-width:\s*1024px\)[\s\S]*?data-home-onward-locale="en"[\s\S]*?--home-onward-board-screen-size:\s*clamp\(252px,\s*29\.2svh,\s*268px\)/,
+    /@media \(min-width:\s*1024px\)[\s\S]*?data-home-onward-locale="en"[\s\S]*?--home-onward-board-screen-size:\s*clamp\(296px,\s*34svh,\s*312px\)/,
   );
 });
 
@@ -267,15 +267,15 @@ test("续行小屏把 PIDS 与导视牌镜像挂载在探索线上，不再生�
   );
 });
 
-test("续行小屏 PIDS 压缩每行留白但保留 44px 操作命中区", () => {
+test("续行小屏 PIDS 放大行距与文字，保留完整帮助说明", () => {
   assert.match(
     homeOnwardComponentSource,
-    /--home-onward-board-screen-size:\s*clamp\(202px,\s*24svh,\s*210px\)/,
+    /--home-onward-board-screen-size:\s*clamp\(270px,\s*32svh,\s*286px\)/,
   );
-  assert.match(homeOnwardComponentSource, /\.home-onward tbody tr \{[\s\S]*?height:\s*44px/);
+  assert.match(homeOnwardComponentSource, /\.home-onward tbody tr \{[\s\S]*?height:\s*52px/);
   assert.match(homeOnwardComponentSource, /\.home-onward td a \{[\s\S]*?min-height:\s*44px/);
   assert.match(homeOnwardComponentSource, /\.home-onward__ticker \{[\s\S]*?min-height:\s*44px/);
-  assert.match(
+  assert.doesNotMatch(
     homeOnwardComponentSource,
     /\.home-onward__help-copy p:not\(\.home-onward__help-title\)[\s\S]*?clip-path:\s*inset\(50%\)/,
   );
