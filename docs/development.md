@@ -30,6 +30,22 @@ git diff --check
 
 `npm run check` 包含 Prettier、Astro 类型检查、Node 原生测试与最终静态构建。
 
+真实浏览器回归覆盖列车对齐、续行正文与页尾、反向滚动、减少动态，以及 PIDS 双向切换、手动选择保持、整行地图命中、复制成功和失败反馈。先构建并在
+`4323` 端口启动预览，再使用本机已有的 Playwright 和 Chrome 运行：
+
+```sh
+npm run build
+npm run preview -- --host 127.0.0.1 --port 4323
+```
+
+```sh
+node --test test/*.browser.mjs
+```
+
+如果 Playwright 位于仓库外，用 `FETARUTE_PLAYWRIGHT_MODULE` 指定其模块绝对路径；
+`FETARUTE_HOME_TEST_URL` 可覆盖预览地址，`FETARUTE_TEST_BROWSER=webkit`
+可检查已安装的 WebKit。这项检查独立于 `npm run check`，不为项目安装新的浏览器依赖。
+
 ## 图片与字体资产
 
 社交分享卡会在普通构建前自动生成；需要单独更新时运行：
@@ -115,7 +131,7 @@ src/
   pages/             Astro 页面路由
   styles/            全局样式和品牌变量
   content.config.ts  内容集合 schema
-test/                   Node 原生测试，覆盖发现文件、全站页面行为与首页静态数据约定
+test/                   Node 原生测试与独立浏览器回归，覆盖静态约定、页面行为和铁路对齐
 ```
 
 ## 内容维护

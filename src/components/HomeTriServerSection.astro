@@ -733,7 +733,9 @@ const triServerItems = await Promise.all(
       write: (serverId) => void setActiveServer(serverId),
     });
     const triServerVisibilityObserver = new IntersectionObserver(
-      ([entry]) => {
+      (entries) => {
+        /* 深链跳转后同批记录可能先离屏再入屏，不能让旧记录暂停当前世界的滚动更新。 */
+        const entry = entries.at(-1);
         isTriServerActive = entry?.isIntersecting ?? false;
         if (isTriServerActive) {
           frameCoordinator.request();
@@ -2059,7 +2061,8 @@ const triServerItems = await Promise.all(
     animation: home-tri-server-autoplay-progress var(--home-tri-server-autoplay-duration) linear
       both;
     animation-play-state: paused;
-    background: var(--home-tri-server-line-color);
+    /* 轮播进度随主题文本色切换，避免固定线路色在不同主题下失去可视性。 */
+    background: var(--color-text);
     transform-origin: left center;
   }
 
@@ -2325,28 +2328,33 @@ const triServerItems = await Promise.all(
     }
 
     .home-tri-server__lead {
-      margin-bottom: clamp(52px, 9svh, 78px);
+      margin-bottom: clamp(36px, 6svh, 56px);
       font-size: clamp(15px, 4.1vw, 18px);
     }
 
     .home-tri-server__copy h3 {
-      font-size: clamp(46px, 14.5vw, 74px);
+      font-size: clamp(40px, 12vw, 64px);
+      text-wrap: balance;
     }
 
     .home-tri-server__tagline {
       margin-top: 10px;
-      font-size: clamp(20px, 5.8vw, 28px);
+      font-size: clamp(19px, 5.1vw, 24px);
+      line-height: 1.4;
+      text-wrap: pretty;
     }
 
     .home-tri-server__description {
       margin-top: 20px;
-      font-size: clamp(15px, 4.15vw, 18px);
+      font-size: clamp(16px, 4.15vw, 18px);
+      line-height: 1.75;
+      text-wrap: pretty;
     }
 
     .home-tri-server__mobile-media-host {
       display: block;
       width: 100%;
-      margin-top: clamp(36px, 7svh, 56px);
+      margin-top: clamp(28px, 4svh, 40px);
       pointer-events: auto;
     }
 

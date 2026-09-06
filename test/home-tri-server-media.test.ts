@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import type { ImageMetadata } from "astro";
 import {
@@ -8,6 +9,11 @@ import {
   prepareHomeTriServerImage,
   shuffleHomeTriServerItems,
 } from "../src/data/home-tri-server-media.ts";
+
+const homeTriServerSectionSource = readFileSync(
+  new URL("../src/components/HomeTriServerSection.astro", import.meta.url),
+  "utf8",
+);
 
 const stubImage = (src: string): ImageMetadata => ({
   src,
@@ -57,6 +63,16 @@ test("Carousel 自动轮播逐张前进，并在末张回到首张", () => {
   assert.equal(getHomeTriServerCarouselAutoplayNextIndex(0, 4), 1);
   assert.equal(getHomeTriServerCarouselAutoplayNextIndex(3, 4), 0);
   assert.equal(getHomeTriServerCarouselAutoplayNextIndex(0, 1), 0);
+});
+
+test("三服汇自动轮播进度使用主题文本色", () => {
+  const progressFillRule = homeTriServerSectionSource.match(
+    /\.home-tri-server__autoplay-progress > span \{(?<rule>[\s\S]*?)\n  \}/,
+  )?.groups?.rule;
+
+  assert.ok(progressFillRule, "应保留自动轮播进度填充的样式规则");
+  assert.match(progressFillRule, /background:\s*var\(--color-text\);/);
+  assert.doesNotMatch(progressFillRule, /--home-tri-server-line-color/);
 });
 
 test("Carousel 等待目标图片完成解码，并把延迟图片提升为 eager", async () => {

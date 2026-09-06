@@ -42,8 +42,12 @@ const titleId = "home-onward-content-title";
   <header class="home-onward__introduction">
     <span class="home-onward__station-marker" aria-hidden="true"></span>
     <div class="home-onward__introduction-copy">
-      <p>{onwardMessages.invitationKicker}</p>
-      <h2 id={titleId}>{onwardMessages.invitation}</h2>
+      <p class="home-onward__kicker">{onwardMessages.invitationKicker}</p>
+      <h2 id={titleId}>
+        <span>{onwardMessages.invitation[0]}</span>{" "}
+        <span>{onwardMessages.invitation[1]}</span>
+      </h2>
+      <p class="home-onward__invitation-description">{onwardMessages.invitationDescription}</p>
     </div>
   </header>
 
@@ -57,7 +61,32 @@ const titleId = "home-onward-content-title";
       <div class="home-onward__board-area">
         <div class="home-onward__board-shell">
           <div class="home-onward__board-screen">
+            <div
+              class="home-onward__board-navigation"
+              data-home-onward-board-navigation
+              role="group"
+              aria-label={onwardMessages.boardNavigationLabel}
+              hidden
+            >
+              <button
+                type="button"
+                data-home-onward-select-board="destinations"
+                aria-pressed="true"
+                aria-controls="home-onward-destinations"
+              >
+                {onwardMessages.destinationsLabel}
+              </button>
+              <button
+                type="button"
+                data-home-onward-select-board="help"
+                aria-pressed="false"
+                aria-controls="home-onward-help"
+              >
+                {onwardMessages.firstVisitLabel}
+              </button>
+            </div>
             <section
+              id="home-onward-destinations"
               class="home-onward__board home-onward__board--destinations"
               data-home-onward-destination-board
               aria-label={onwardMessages.destinationBoardLabel}
@@ -112,6 +141,7 @@ const titleId = "home-onward-content-title";
             </section>
 
             <section
+              id="home-onward-help"
               class="home-onward__board home-onward__board--help"
               data-home-onward-help-board
               aria-label={onwardMessages.helpTitle}
@@ -208,8 +238,8 @@ const titleId = "home-onward-content-title";
 
   /** 续行 PIDS 在统一帧 read 阶段锁定、交给 write 阶段提交的状态。 */
   interface HomeOnwardFrameMeasurement {
-    /** 路程是否尚未进入视口，用来撤销仅由提示按钮触发的帮助态。 */
-    journeyTop: number;
+    /** 手动选择在阅读期间保留；整个行程离开视口后才恢复滚动导览。 */
+    journeyVisible: boolean;
     /** 本帧唯一可见的 PIDS 面板。 */
     boardState: "destinations" | "help";
   }
@@ -230,32 +260,42 @@ const titleId = "home-onward-content-title";
     const copyFeedback = section.querySelector<HTMLElement>(
       "[data-home-onward-copy-feedback]",
     );
+    const boardNavigation = section.querySelector<HTMLElement>(
+      "[data-home-onward-board-navigation]",
+    );
+    const boardButtons = Array.from(
+      section.querySelectorAll<HTMLButtonElement>("[data-home-onward-select-board]"),
+    );
 
     if (!journey || !stage || !destinationBoard || !helpBoard) {
       return;
     }
 
     let copyResetTimer: number | undefined;
-    let manuallyRequestedHelp = false;
+    /** 显式选择优先于滚动进度，避免用户刚返回目的地就被下一帧切回帮助。 */
+    let selectedBoard: HomeOnwardFrameMeasurement["boardState"] | null = null;
     let isOnwardActive = true;
     const frameCoordinator = getHomePageFrameCoordinator();
 
     /** 在统一帧 read 阶段取得路程进度，不改变面板或辅助技术状态。 */
     const readFrame = (): HomeOnwardFrameMeasurement => {
       const journeyRect = journey.getBoundingClientRect();
-      const scrollDistance = Math.max(1, journey.offsetHeight - stage.offsetHeight);
-      const progress = Math.min(Math.max(-journeyRect.top / scrollDistance, 0), 1);
-      const boardState = manuallyRequestedHelp && journeyRect.top <= 1
-        ? "help"
-        : getHomeOnwardDepartureBoardState(progress);
+      const scrollDistance = Math.max(0, journey.offsetHeight - stage.offsetHeight);
+      /* 短屏的自然排版没有额外滚动行程，直接用按钮换页，不把一像素滚动误判为读完。 */
+      const progress = scrollDistance > 0
+        ? Math.min(Math.max(-journeyRect.top / scrollDistance, 0), 1)
+        : 0;
+      const journeyVisible = journeyRect.top < window.innerHeight && journeyRect.bottom > 0;
+      const boardState = (journeyVisible ? selectedBoard : null) ??
+        getHomeOnwardDepartureBoardState(progress);
 
-      return { journeyTop: journeyRect.top, boardState };
+      return { journeyVisible, boardState };
     };
 
     /** 在统一帧 write 阶段只提交变化后的 PIDS 与可访问性状态。 */
-    const writeFrame = ({ journeyTop, boardState }: HomeOnwardFrameMeasurement) => {
-      if (journeyTop > 1) {
-        manuallyRequestedHelp = false;
+    const writeFrame = ({ journeyVisible, boardState }: HomeOnwardFrameMeasurement) => {
+      if (!journeyVisible) {
+        selectedBoard = null;
       }
       const showsDestinations = boardState === "destinations";
 
@@ -274,6 +314,12 @@ const titleId = "home-onward-content-title";
       if (helpBoard.inert !== showsDestinations) {
         helpBoard.inert = showsDestinations;
       }
+      for (const button of boardButtons) {
+        const pressed = String(button.dataset.homeOnwardSelectBoard === boardState);
+        if (button.getAttribute("aria-pressed") !== pressed) {
+          button.setAttribute("aria-pressed", pressed);
+        }
+      }
     };
 
     const unregisterFrameParticipant = frameCoordinator.register({
@@ -287,9 +333,13 @@ const titleId = "home-onward-content-title";
       frameCoordinator.request();
     };
 
-    /** 底部提示按钮提供显式捷径；普通滚轮、触摸和键盘输入仍完整经过续行路程。 */
-    const scrollToHelp = () => {
-      manuallyRequestedHelp = true;
+    /** 在同一块屏内双向切换；焦点停在始终可见的按钮上，不随旧面板进入 inert。 */
+    const selectBoard = (state: HomeOnwardFrameMeasurement["boardState"]) => {
+      selectedBoard = state;
+      const selectedButton = boardButtons.find(
+        (button) => button.dataset.homeOnwardSelectBoard === state,
+      );
+      selectedButton?.focus({ preventScroll: true });
       requestRender();
     };
 
@@ -341,7 +391,24 @@ const titleId = "home-onward-content-title";
       copyFeedback.textContent = state === "idle" ? "" : (label ?? "");
     };
 
-    scrollHint?.addEventListener("click", scrollToHelp);
+    scrollHint?.addEventListener("click", () => selectBoard("help"));
+    for (const button of boardButtons) {
+      button.addEventListener("click", () => {
+        const state = button.dataset.homeOnwardSelectBoard;
+        if (state === "destinations" || state === "help") selectBoard(state);
+      });
+    }
+    /* 键盘正在操作的面板保持可见，滚动不能藏起当前焦点所在的链接或复制按钮。 */
+    destinationBoard.addEventListener("focusin", () => {
+      selectedBoard = "destinations";
+    });
+    helpBoard.addEventListener("focusin", () => {
+      selectedBoard = "help";
+    });
+    if (boardNavigation) {
+      boardNavigation.hidden = false;
+      section.dataset.homeOnwardEnhanced = "true";
+    }
     copyQqButton?.addEventListener("click", async () => {
       if (copyResetTimer !== undefined) {
         window.clearTimeout(copyResetTimer);
@@ -358,7 +425,9 @@ const titleId = "home-onward-content-title";
     });
 
     const onwardVisibilityObserver = new IntersectionObserver(
-      ([entry]) => {
+      (entries) => {
+        /* 深链定位可能同批送达离屏与入屏记录；单目标观察器必须采用最后状态，才能恢复按钮更新。 */
+        const entry = entries.at(-1);
         isOnwardActive = entry?.isIntersecting ?? false;
         if (isOnwardActive) {
           requestRender();
@@ -396,8 +465,10 @@ const titleId = "home-onward-content-title";
     --home-onward-board-left: 7.92%;
     --home-onward-board-width: min(36.51vw, 701px);
     --home-onward-pids-inset: clamp(18px, 1.67vw, 32px);
-    /* 三行目的地与底部提示刚好组成一屏，避免 PIDS 因空白而显得像整块墙面。 */
-    --home-onward-board-screen-size: clamp(224px, 26svh, 246px);
+    /* 在三行目的地上方预留一行切换按钮；两页共用外框高度，选择时不挤动附近内容。 */
+    --home-onward-board-screen-size: clamp(268px, 31svh, 290px);
+    /* 无脚本时没有切换控件；增强后只在屏幕内部给常驻按钮留出 44px。 */
+    --home-onward-board-navigation-height: 0px;
     --home-onward-board-block-size: calc(
       var(--home-onward-board-screen-size) + var(--home-onward-pids-inset) * 2
     );
@@ -486,7 +557,7 @@ const titleId = "home-onward-content-title";
     margin: 0;
   }
 
-  .home-onward__introduction-copy p {
+  .home-onward__kicker {
     font-size: clamp(17px, 1.25vw, 24px);
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -496,6 +567,19 @@ const titleId = "home-onward-content-title";
     font-size: clamp(43px, 4.6vw, 88px);
     font-weight: 700;
     line-height: 1.14;
+  }
+
+  .home-onward__introduction-copy h2 span {
+    display: block;
+  }
+
+  .home-onward__invitation-description {
+    max-width: 34em;
+    margin-left: auto;
+    font-size: clamp(18px, 1.6vw, 24px);
+    font-weight: 480;
+    line-height: 1.65;
+    text-wrap: pretty;
   }
 
   .home-onward__journey {
@@ -554,9 +638,50 @@ const titleId = "home-onward-content-title";
     background: var(--palette-surface);
   }
 
+  .home-onward[data-home-onward-enhanced="true"] {
+    --home-onward-board-navigation-height: 44px;
+  }
+
+  .home-onward__board-navigation:not([hidden]) {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: var(--home-onward-board-navigation-height);
+    box-shadow: inset 0 -2px var(--palette-text);
+  }
+
+  .home-onward__board-navigation button {
+    min-width: 0;
+    min-height: 44px;
+    padding: 6px 10px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: clamp(14px, 1.2vw, 18px);
+    font-weight: 650;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .home-onward__board-navigation button[aria-pressed="true"] {
+    background: var(--palette-text);
+    color: var(--palette-surface);
+  }
+
+  .home-onward__board-navigation button:focus-visible {
+    outline: 2px solid var(--palette-action);
+    outline-offset: -4px;
+  }
+
+  .home-onward__board-navigation button:active {
+    opacity: 0.72;
+  }
+
   .home-onward__board {
     position: absolute;
-    inset: 0;
+    inset: var(--home-onward-board-navigation-height) 0 0;
     min-height: 0;
     overflow: hidden;
     background: transparent;
@@ -617,7 +742,12 @@ const titleId = "home-onward-content-title";
   }
 
   .home-onward tbody tr {
+    position: relative;
     height: clamp(48px, 5.6svh, 52px);
+  }
+
+  .home-onward tbody tr:is(:hover, :focus-within) {
+    background: var(--palette-surface-raised);
   }
 
   .home-onward th:first-child,
@@ -645,11 +775,20 @@ const titleId = "home-onward-content-title";
     white-space: nowrap;
   }
 
-  .home-onward td a:hover,
+  /* 原生链接的透明命中面覆盖整行，保留新标签页、键盘与浏览器链接菜单的既有行为。 */
+  .home-onward td a::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+  }
+
   .home-onward td a:focus-visible {
-    background: var(--palette-surface-raised);
+    outline: none;
+  }
+
+  .home-onward td a:focus-visible::after {
     outline: 2px solid currentColor;
-    outline-offset: 2px;
+    outline-offset: -2px;
   }
 
   .home-onward td a:active,
@@ -1021,7 +1160,7 @@ const titleId = "home-onward-content-title";
 
     .home-onward[data-home-onward-locale="en"] {
       /* 英文帮助文案需要固定的一档额外高度；两种 PIDS 状态仍共用同一外框，不在翻页时跳动。 */
-      --home-onward-board-screen-size: clamp(252px, 29.2svh, 268px);
+      --home-onward-board-screen-size: clamp(296px, 34svh, 312px);
     }
   }
 
@@ -1054,7 +1193,7 @@ const titleId = "home-onward-content-title";
       --home-onward-scroll-distance: clamp(1180px, 190svh, 1600px);
       --home-onward-track-width: clamp(20px, 5.8vw, 30px);
       --home-onward-pids-inset: clamp(12px, 3.6vw, 18px);
-      --home-onward-board-screen-size: clamp(202px, 24svh, 210px);
+      --home-onward-board-screen-size: clamp(270px, 32svh, 286px);
       --home-onward-guide-arrow-size: 36px;
       /* 小屏保留左侧线路挂载面，但纵向仍沿用桌面等宽的上下边框。 */
       --home-onward-board-block-size: calc(
@@ -1067,11 +1206,11 @@ const titleId = "home-onward-content-title";
         12px,
         calc(var(--home-onward-mobile-track-left) - 8px)
       );
-      /* 纯文本页继续避开 station marker，避免紧凑挂载尺寸反向挤压阅读区域。 */
+      /* 文字跟在一条轨宽的站标之后，留出 18px 阅读间隔，与其余小屏章节保持接近的版心。 */
       --home-onward-mobile-copy-left: max(
         calc(
-          var(--home-onward-mobile-track-left) + var(--home-onward-track-width) +
-            62px
+          var(--home-onward-mobile-track-left) + var(--home-onward-track-width) * 2 +
+            18px
         ),
         20.9vw
       );
@@ -1095,7 +1234,7 @@ const titleId = "home-onward-content-title";
     }
 
     .home-onward__introduction {
-      min-height: 82svh;
+      min-height: clamp(460px, 72svh, 720px);
       padding: clamp(108px, 15svh, 150px) 22px clamp(96px, 13svh, 132px)
         var(--home-onward-mobile-copy-left);
     }
@@ -1117,12 +1256,17 @@ const titleId = "home-onward-content-title";
       text-align: left;
     }
 
-    .home-onward__introduction-copy p {
+    .home-onward__kicker {
       font-size: clamp(14px, 3.7vw, 18px);
     }
 
+    .home-onward__invitation-description {
+      margin-left: 0;
+      font-size: clamp(17px, 4.4vw, 20px);
+    }
+
     .home-onward__introduction-copy h2 {
-      font-size: clamp(34px, 9.6vw, 54px);
+      font-size: clamp(30px, 8.8vw, 52px);
       line-height: 1.14;
     }
 
@@ -1228,7 +1372,7 @@ const titleId = "home-onward-content-title";
       padding-block: 0;
       border-bottom: 0;
       box-shadow: inset 0 -1px var(--palette-border);
-      font-size: clamp(12px, 3.15vw, 15px);
+      font-size: clamp(14px, 3.6vw, 17px);
     }
 
     .home-onward thead tr {
@@ -1236,7 +1380,7 @@ const titleId = "home-onward-content-title";
     }
 
     .home-onward tbody tr {
-      height: 44px;
+      height: 52px;
     }
 
     .home-onward th:last-child,
@@ -1248,13 +1392,13 @@ const titleId = "home-onward-content-title";
       gap: 0.2em;
       min-height: 44px;
       padding-inline: 0;
-      font-size: clamp(11px, 2.9vw, 14px);
+      font-size: clamp(14px, 3.6vw, 16px);
     }
 
     .home-onward__ticker {
       min-height: 44px;
       padding-block: 0.3em;
-      font-size: clamp(11px, 2.9vw, 14px);
+      font-size: clamp(13px, 3.4vw, 16px);
     }
 
     .home-onward__board--help {
@@ -1267,17 +1411,8 @@ const titleId = "home-onward-content-title";
       gap: 8px;
     }
 
-    .home-onward__help-copy p:not(.home-onward__help-title) {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip-path: inset(50%);
-      white-space: nowrap;
-    }
-
     .home-onward__help-copy p {
-      font-size: clamp(12px, 3.1vw, 15px);
+      font-size: clamp(14px, 3.6vw, 16px);
     }
 
     .home-onward__help-copy .home-onward__help-title {
@@ -1285,7 +1420,7 @@ const titleId = "home-onward-content-title";
     }
 
     .home-onward__qq-copy {
-      grid-template-columns: minmax(0, 1fr) 18px;
+      grid-template-columns: minmax(0, 1fr);
       gap: 7px;
       min-height: 48px;
       padding: 0.45em 0.5em;
@@ -1299,13 +1434,13 @@ const titleId = "home-onward-content-title";
       font-size: clamp(15px, 4vw, 19px);
     }
 
-    .home-onward__qq-copy-action > span:last-child {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip-path: inset(50%);
-      white-space: nowrap;
+    .home-onward__qq-copy-action {
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .home-onward__qq-copy-action-icon {
+      flex: 0 0 1.25em;
     }
 
     .home-onward__qr {
@@ -1314,10 +1449,19 @@ const titleId = "home-onward-content-title";
   }
 
   @media (max-width: 1023px) and (max-height: 639px) {
+    /* 矮屏按自然高度展示两块牌，按钮仍可换页；避免把操作内容裁在固定舞台底部。 */
+    .home-onward__journey {
+      height: auto;
+      min-height: 0;
+      overflow: visible;
+    }
+
     .home-onward__stage {
+      position: relative;
+      height: auto;
       min-height: 100svh;
       padding-top: 84px;
-      padding-bottom: 0;
+      padding-bottom: 44px;
     }
   }
 

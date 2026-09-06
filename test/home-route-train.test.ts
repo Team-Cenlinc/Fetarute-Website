@@ -18,6 +18,7 @@ import {
   getHomeSectionBreakerScrollDistance,
   getHomeTrainColorTransitionProgress,
   getHomeTrainPathGeometry,
+  getHomeTrainPathCurveGeometry,
   getHomeTrainPathHitArea,
   getHomeTrainPathPointAtLength,
   getHomeTrainPathPoseAtLength,
@@ -66,6 +67,46 @@ test("有界刚性列车从数值路径取得中心与切线，不依赖浏览�
     center: { x: 40, y: 50 },
     angleDegrees: 90,
   });
+});
+
+test("弯道车身保留沿程形状，局部绘制边界只随车长与厚度变化", () => {
+  const route = getHomeTrainPathGeometry("M180 20 L100 20 C40 20 20 50 20 120 L20 200");
+  const points = Array.from({ length: 25 }, (_, index) =>
+    getHomeTrainPathPointAtLength(route, 70 + index * 4),
+  );
+  const center = getHomeTrainPathPointAtLength(route, 118);
+  const curve = getHomeTrainPathCurveGeometry(points, center, 96, 40);
+  assert.ok(curve);
+  assert.equal(curve.size, 138);
+  // 平移视口不能改变局部曲线，滚动时只需移动小画布。
+  assert.deepEqual(
+    getHomeTrainPathCurveGeometry(
+      points.map(({ x, y }) => ({ x: x + 180, y: y - 700 })),
+      { x: center.x + 180, y: center.y - 700 },
+      96,
+      40,
+    ),
+    curve,
+  );
+  const coordinates = curve.pathData.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+  assert.equal(coordinates.length, points.length * 2);
+  assert.ok(coordinates.every((value) => value >= 20 && value <= curve.size - 20));
+  assert.ok(new Set(points.map((point) => Math.round(point.x))).size > 5);
+  assert.ok(new Set(points.map((point) => Math.round(point.y))).size > 5);
+});
+
+test("直轨与退化路径不启用曲线绘制，横竖车身继续走 transform", () => {
+  for (const path of ["M0 20 L200 20", "M40 0 L40 200", "M180 20 L0 20"]) {
+    const geometry = getHomeTrainPathGeometry(path);
+    const points = Array.from({ length: 19 }, (_, index) =>
+      getHomeTrainPathPointAtLength(geometry, 20 + index * 4),
+    );
+    assert.equal(
+      getHomeTrainPathCurveGeometry(points, getHomeTrainPathPointAtLength(geometry, 56), 72, 40),
+      null,
+    );
+  }
+  assert.equal(getHomeTrainPathCurveGeometry([], { x: 0, y: 0 }, 72, 40), null);
 });
 
 test("路径平移只移动缓存采样点，不重复解析或改变累计里程", () => {

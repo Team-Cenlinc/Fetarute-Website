@@ -863,6 +863,42 @@ export const getHomeTrainPathPoseAtLength = (
 };
 
 /**
+ * 把一个车长的采样点转成以车身中心为原点的小画布曲线；直轨返回 null，继续使用合成层平移。
+ * 任一点距沿程中点至多半个车长，加上半个车厚即可包住描边，画布不随视口或完整线路扩大。
+ */
+export const getHomeTrainPathCurveGeometry = (
+  points: readonly HomeTrainPathPoint[],
+  center: HomeTrainPathPoint,
+  trainLength: number,
+  trainThickness: number,
+) => {
+  const first = points[0];
+  const last = points.at(-1);
+  if (!first || !last || points.length < 3) return null;
+
+  const deltaX = last.x - first.x;
+  const deltaY = last.y - first.y;
+  const chordLength = Math.hypot(deltaX, deltaY);
+  if (chordLength < Number.EPSILON) return null;
+
+  const bends = points.some(
+    (point) =>
+      Math.abs(deltaX * (point.y - first.y) - deltaY * (point.x - first.x)) / chordLength > 0.2,
+  );
+  if (!bends) return null;
+
+  // 描边首尾为平口、折点为圆连接；额外 2px 只容纳画布边缘的抗锯齿。
+  const size = Math.ceil(trainLength + trainThickness + 2);
+  const pathData = points
+    .map(
+      (point, index) =>
+        `${index === 0 ? "M" : "L"}${(point.x - center.x + size / 2).toFixed(3)} ${(point.y - center.y + size / 2).toFixed(3)}`,
+    )
+    .join(" ");
+  return { size, pathData };
+};
+
+/**
  * 从车尾到车头的路径采样点建立局部法线包围盒。
  * 每个点只向描边的左右扩展，不越过 butt linecap 的车头车尾，同时覆盖跨在直轨与 Bézier 上的车身。
  */

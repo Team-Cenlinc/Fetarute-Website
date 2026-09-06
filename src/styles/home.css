@@ -176,7 +176,12 @@
 }
 
 .home-arrival__train-visual {
-  /* 有界刚性车身只在自身合成层移动，避免 Safari 为全视口 SVG dash 重绘整屏。 */
+  /* 车身只在自身合成层移动；弯道的小画布边长由车长加厚度决定，不受视口面积影响。 */
+  --home-route-curve-size: calc(
+    var(--home-arrival-train-width) + var(--home-arrival-train-height) + 2px
+  );
+  /* 局部曲线描边与直线车身始终等厚，响应式换乘只在厚度变化时更新。 */
+  --home-route-curve-thickness: var(--home-arrival-train-height);
   position: fixed;
   z-index: 18;
   top: 0;
@@ -194,14 +199,40 @@
 .home-arrival__train-color-layer {
   position: absolute;
   inset: 0;
-  background: var(--home-route-incoming-train-color, var(--home-arrival-train-color));
+  color: var(--home-route-incoming-train-color, var(--home-arrival-train-color));
+  background: currentColor;
   pointer-events: none;
 }
 
 .home-arrival__train-color-layer--outgoing {
-  background: var(--home-route-outgoing-train-color, var(--home-arrival-train-color));
+  color: var(--home-route-outgoing-train-color, var(--home-arrival-train-color));
   opacity: 0;
   will-change: opacity;
+}
+
+.home-arrival__train-curve {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--home-route-curve-size);
+  height: var(--home-route-curve-size);
+  transform: translate(-50%, -50%);
+  overflow: hidden;
+  contain: paint;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--home-route-curve-thickness);
+  stroke-linecap: butt;
+  stroke-linejoin: round;
+}
+
+.home-arrival__train-visual[data-route-curved="true"] .home-arrival__train-color-layer {
+  background: none;
+}
+
+.home-arrival__train-visual[data-route-curved="true"] .home-arrival__train-curve {
+  display: block;
 }
 
 .home-arrival__train-visual[data-route-visible="true"] {
@@ -314,7 +345,7 @@
 .home-arrival:has(.home-arrival__train[data-tooltip-open="true"][data-tooltip-visual-active="true"])
   .home-arrival__train-color-layer--incoming {
   /* 本地换乘车打开共享 Tooltip 时不染色全局路径车；两班车保持各自线路状态。 */
-  background: color-mix(
+  color: color-mix(
     in oklch,
     var(--home-route-incoming-train-color, var(--home-arrival-train-color)) 88%,
     var(--home-route-incoming-line-color, var(--home-arrival-line-color))
@@ -325,7 +356,7 @@
 .home-arrival:has(.home-arrival__train:focus-visible) .home-arrival__train-color-layer--outgoing,
 .home-arrival:has(.home-arrival__train[data-tooltip-open="true"][data-tooltip-visual-active="true"])
   .home-arrival__train-color-layer--outgoing {
-  background: color-mix(
+  color: color-mix(
     in oklch,
     var(--home-route-outgoing-train-color, var(--home-arrival-train-color)) 88%,
     var(--home-route-outgoing-line-color, var(--home-arrival-line-color))
@@ -667,9 +698,9 @@ html[data-home-gallery-horizontal-input] {
     --home-arrival-bend-center-inset: var(--home-arrival-track-half);
     /* 窄屏主线贴近左侧安全边，优先把横向空间留给下一站正文。 */
     --home-arrival-track-origin-x: 7vw;
-    /* 标题区独立停在上半屏；线路与导视作为下半屏的第二阅读层。 */
-    --home-arrival-copy-top: 32svh;
-    --home-arrival-track-top: 68svh;
+    /* 与下方 680px 的舞台下限保持同比例；短横屏不能把弯道提前挤到 Header 后面。 */
+    --home-arrival-copy-top: max(218px, 32svh);
+    --home-arrival-track-top: max(462px, 68svh);
     /* 导视牌落在横轨下方与弯道外侧，不再由标题文字的高度推开。 */
     --home-arrival-route-top: calc(
       var(--home-arrival-track-top) + var(--home-arrival-track-width) + clamp(34px, 8vw, 42px)
@@ -772,10 +803,10 @@ html[data-home-gallery-horizontal-input] {
     /* 窄屏正文与图片列共享 branch 右缘后的安全起点，维持单一纵向阅读轴。 */
     --home-introduction-content-origin-x: calc(
       var(--home-introduction-track-origin-x) + var(--home-introduction-track-width) +
-        var(--home-introduction-track-width) + clamp(8px, 2vw, 16px)
+        var(--home-introduction-track-width) + 1px + clamp(12px, 1.6vw, 16px)
     );
-    --home-introduction-copy-top: 20svh;
-    --home-introduction-title-line-half: clamp(19.38px, 6.27vw, 24.51px);
+    --home-introduction-copy-top: clamp(104px, 16svh, 152px);
+    --home-introduction-title-line-half: clamp(17.1px, 5.13vw, 22.8px);
     --home-introduction-track-half: clamp(10px, 2.9vw, 15px);
     --home-introduction-opening-end-space: clamp(48px, 8svh, 72px);
     min-height: max(680px, 100svh);
@@ -802,18 +833,22 @@ html[data-home-gallery-horizontal-input] {
   }
 
   .home-introduction__copy h2 {
-    /* 43px 上限可让「的創立與概覽」等六字尾段保持完整，避免繁中末字孤行。 */
-    font-size: clamp(34px, 11vw, 43px);
+    /* 标题保留站牌力度，同时在窄列中容纳更完整的词组；行盒同步供站标定位。 */
+    font-size: clamp(30px, 9vw, 40px);
+    text-wrap: balance;
   }
 
   .home-introduction__copy p {
-    font-size: clamp(19px, 5vw, 28px);
+    font-size: clamp(17px, 4.35vw, 20px);
+    font-weight: 480;
+    line-height: 1.7;
+    text-wrap: pretty;
   }
 
   .home-gallery {
     /* 小屏改用原生纵向图片列；当前项沿轨道放大，前后项缩小，不再把纵向手势翻译成横移。 */
     --home-gallery-leading-space: var(--home-introduction-content-origin-x);
-    --home-gallery-card-inline-size: 70vw;
+    --home-gallery-card-inline-size: calc(100vw - var(--home-gallery-leading-space) - 24px);
     --home-gallery-card-block-size: min(48svh, 420px);
     /* 小屏首图在 Gallery 起点进入 Header 下方安全区，列车也从这一锚点开始累计进度。 */
     --home-gallery-stage-top: 100px;
