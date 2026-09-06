@@ -243,7 +243,7 @@ export const railwayLines: readonly RailwayLine[] = [
     code: "LT",
     primaryName: "列维希德支线",
     secondaryName: "Levitheed Branch",
-    color: createHexColor("#06CCDD"),
+    color: createHexColor("#C8FFFF"),
     operatorCode: "SURN",
   },
   {
@@ -316,6 +316,20 @@ assertUniqueRailwayLineField("color", "官方导视颜色");
  * 每座车站只录入一次，ListOf[Lines] 是线路站序的唯一事实来源；换乘站在同一车站记录内列出多条服务。
  */
 export const railwayStations: readonly RailwayStation[] = [
+  {
+    id: "levitheed",
+    primaryName: "列维希德",
+    secondaryName: "Levitheed",
+    stationCode: "LVT",
+    lines: [{ lineKey: getRailwayLineKey("SURN", "LT"), stationIndex: 7 }],
+  },
+  {
+    id: "bayside",
+    primaryName: "湾岸",
+    secondaryName: "Bayside",
+    stationCode: "BSD",
+    lines: [{ lineKey: getRailwayLineKey("SURN", "BS"), stationIndex: 4 }],
+  },
   {
     id: "pyutocor",
     primaryName: "蒲塘桥",
