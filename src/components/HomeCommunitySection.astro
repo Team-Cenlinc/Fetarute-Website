@@ -357,7 +357,7 @@ const mainStoryTitleId = "home-community-main-story-title";
                         data-home-community-deferred-src={story.media.deferredImage.src}
                         data-home-community-deferred-srcset={story.media.deferredImage.srcset}
                         data-home-community-deferred-sizes={shortStoryMediaSizes}
-                        data-home-community-deferred-alt={story.message.imageAlt}
+                        alt={story.message.imageAlt}
                         width={story.media.deferredImage.width}
                         height={story.media.deferredImage.height}
                         loading="lazy"
@@ -490,7 +490,7 @@ const mainStoryTitleId = "home-community-main-story-title";
                           data-home-community-deferred-src={story.media.deferredImage.src}
                           data-home-community-deferred-srcset={story.media.deferredImage.srcset}
                           data-home-community-deferred-sizes={shortStoryMediaSizes}
-                          data-home-community-deferred-alt={story.message.imageAlt}
+                          alt={story.message.imageAlt}
                           width={story.media.deferredImage.width}
                           height={story.media.deferredImage.height}
                           loading="lazy"
@@ -589,11 +589,18 @@ const mainStoryTitleId = "home-community-main-story-title";
       storyElement
         .querySelectorAll<HTMLImageElement>("img[data-home-community-deferred-src]")
         .forEach((image) => {
-          const { homeCommunityDeferredSrc, homeCommunityDeferredSrcset } = image.dataset;
+          const {
+            homeCommunityDeferredAlt,
+            homeCommunityDeferredSrc,
+            homeCommunityDeferredSrcset,
+          } = image.dataset;
 
           if (!homeCommunityDeferredSrc) return;
 
-          image.alt = image.dataset.homeCommunityDeferredAlt ?? "";
+          // 媒体图的标准 alt 已在静态 HTML 中；只有装饰头像才从延迟描述补写空替代文本。
+          if (homeCommunityDeferredAlt !== undefined) {
+            image.alt = homeCommunityDeferredAlt;
+          }
           if (image.dataset.homeCommunityDeferredSizes) {
             image.sizes = image.dataset.homeCommunityDeferredSizes;
           }
@@ -606,6 +613,13 @@ const mainStoryTitleId = "home-community-main-story-title";
           image.removeAttribute("data-home-community-deferred-sizes");
           image.removeAttribute("data-home-community-deferred-alt");
         });
+    };
+
+    /** 选中故事即将显示时提升其图片优先级，避免用户抵达同岸后仍等待短故事解码。 */
+    const preloadSelectedStoryImages = (storyElement: HTMLElement): void => {
+      storyElement.querySelectorAll<HTMLImageElement>("img").forEach((image) => {
+        image.loading = "eager";
+      });
     };
 
     communitySection
@@ -659,7 +673,10 @@ const mainStoryTitleId = "home-community-main-story-title";
       memoryStoryElements.forEach((storyElement) => {
         const selected =
           storyElement.dataset.homeCommunityMemoryStory === selectedMemoryStoryId;
-        if (selected) loadStoryImages(storyElement);
+        if (selected) {
+          loadStoryImages(storyElement);
+          preloadSelectedStoryImages(storyElement);
+        }
         storyElement.hidden = !selected;
       });
       communitySection.dataset.homeCommunityActiveMemoryStory = selectedMemoryStoryId;
@@ -704,7 +721,10 @@ const mainStoryTitleId = "home-community-main-story-title";
 
       presenceStoryElements.forEach((storyElement) => {
         const selected = storyElement.dataset.homeCommunityPresenceStory === selectedStoryId;
-        if (selected) loadStoryImages(storyElement);
+        if (selected) {
+          loadStoryImages(storyElement);
+          preloadSelectedStoryImages(storyElement);
+        }
         storyElement.hidden = !selected;
       });
       communitySection.dataset.homeCommunityActivePresenceStory = selectedStoryId;

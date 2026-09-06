@@ -88,17 +88,19 @@ test("同岸非初始短故事只保存响应式媒体描述，不输出可立�
         assert.ok(deferredPicture, `${locale} 的隐藏故事应输出延迟 picture 描述`);
         assert.match(deferredPicture, /data-home-community-deferred-src="[^"]+"/i);
         assert.match(deferredPicture, /data-home-community-deferred-srcset="[^"]+\s\d+w/i);
-        assert.match(deferredPicture, /data-home-community-deferred-alt="[^"]+"/i);
+        assert.match(deferredPicture, /\salt="[^"]+"/i);
       }
     }
   }
 });
 
 test("同岸客户端在故事切换与 details 展开时提交延迟媒体及替代文本", () => {
-  assert.match(homeCommunitySource, /image\.alt = image\.dataset\.homeCommunityDeferredAlt/);
+  assert.match(homeCommunitySource, /image\.alt = homeCommunityDeferredAlt/);
   assert.match(homeCommunitySource, /details\.addEventListener\("toggle"/);
   assert.match(homeCommunitySource, /details\.open && storyElement/);
-  assert.match(homeCommunitySource, /if \(selected\) loadStoryImages\(storyElement\)/);
+  assert.match(homeCommunitySource, /if \(selected\) \{\s+loadStoryImages\(storyElement\)/);
+  assert.match(homeCommunitySource, /preloadSelectedStoryImages\(storyElement\)/);
+  assert.match(homeCommunitySource, /image\.loading = "eager"/);
   assert.match(homeCommunitySource, /image\.srcset = homeCommunityDeferredSrcset/);
   assert.match(homeCommunitySource, /image\.src = homeCommunityDeferredSrc/);
 });
