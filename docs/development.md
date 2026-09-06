@@ -46,6 +46,24 @@ node --test test/*.browser.mjs
 `FETARUTE_HOME_TEST_URL` 可覆盖预览地址，`FETARUTE_TEST_BROWSER=webkit`
 可检查已安装的 WebKit。这项检查独立于 `npm run check`，不为项目安装新的浏览器依赖。
 
+`test/home-tooltip.browser.mjs`
+还会对比同一段滚动中 Tooltip 开关前后的实际布局次数，并从标题区发起原生触摸滑动，防止跟随定位逐帧回流或局部手势被吞掉。这两项使用 Chromium
+CDP；WebKit 覆盖弹窗边界、触摸开关、键盘与跳站关闭。本机浏览器结果不替代 iPhone
+Safari 真机滚动验收。
+
+`test/home-scroll-frame.browser.mjs`
+在真实页面的动画帧中检查列车样式写入与窗口布局读取顺序，并验证静止列车不会重复提交样式。滚动位置必须与 DOMRect 在 read 阶段一起采样，后续路线与章节同步只消费快照；WebKit 的
+`scrollY` getter 会进入同步布局更新，不能把它当作 write 阶段的普通数值读取。
+
+启示湾车身和点击区域在进入正文前与轨道共用文档定位，纵向滚动不依赖路线帧追赶；上述测试会暂停路线帧，检查原生滚动时仍然同轴，并覆盖文档定位与视口定位的双向交接。
+`test/home-train-alignment.browser.mjs`
+还覆盖启示湾、三服汇、同岸和续行横轨的往返行驶：横轨两端必须共用同一实测中心线，弯轨的 SVG 缩放与车位的整数盒模型不能引入额外纵向位移。
+
+地址栏高度变化时，列车和 Tooltip 在统一帧中采用最新可见视口；120ms 稳定计时只延迟章节与 URL 同步。上述帧回归会模拟地址栏收放，检查同岸、交接段与续行每帧响应高度变化，且计时结束后不会补跳。
+
+`test/home-departure-gate.browser.mjs`
+覆盖拖卡期间的可见高度与顶部偏移变化：前景重排必须保留卡片相对指针的位置，并同步重建 Validator 命中基准；连续小步拖动仍按最初按下位置判断，松手早于视口刷新帧也使用最新命中区。桌面退回 Home 后停止 Gate 视口监听，重新激活时恢复；相同视口读数不重复写样式。
+
 ## 图片与字体资产
 
 社交分享卡会在普通构建前自动生成；需要单独更新时运行：

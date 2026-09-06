@@ -264,6 +264,12 @@
   visibility: visible;
 }
 
+/* 启示湾车身与按钮共享轨道的定位容器；Safari 原生滚动无需等待 JS 逐帧补偿纵坐标。 */
+.home-arrival__train-visual[data-route-position="document"],
+.home-arrival__train[data-route-position="document"] {
+  position: absolute;
+}
+
 .home-arrival__train[data-transfer-controls-active="true"][data-route-segment="transfer-incoming-platform"],
 .home-arrival__train[data-transfer-controls-active="true"][data-route-segment="transfer-outgoing-platform"] {
   /* 同岸桌面由两班真实站台列车接管交互；全局透明锚点只保留 Tooltip 状态桥接，不重复进入焦点序列。 */
@@ -373,9 +379,11 @@
   position: fixed;
   /* Tooltip 覆盖页面内容与固定 Header，不会在三服汇图片或地图层下方消失。 */
   z-index: 21;
-  /* --home-arrival-tooltip-top 与 --home-arrival-tooltip-left 由列车的实际 viewport 边界推导；优先贴近列车，空间不足时回退到左上安全区。 */
-  top: var(--home-arrival-tooltip-top, 20px);
-  left: var(--home-arrival-tooltip-left, 20px);
+  /* 固定布局原点，跟随坐标由脚本直接写 translate；避免逐帧 top/left 回流及定位变量向子树继承。 */
+  top: 0;
+  left: 0;
+  /* 首次定位前保留安全边距；独立位移不参与下方 transform 的开合过渡，滚动时紧跟列车。 */
+  translate: 20px 20px;
   display: block;
   /* inline-size 由 visual viewport 实测宽度注入，地址栏、缩放和软键盘出现后仍保留两侧安全区。 */
   width: var(--home-arrival-tooltip-inline-size, min(320px, calc(100vw - 40px)));

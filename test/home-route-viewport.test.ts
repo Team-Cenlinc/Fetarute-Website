@@ -5,7 +5,6 @@ import {
   classifyHomeRouteViewportChange,
   createHomePageFrameCoordinator,
   createHomeRouteFrameScheduler,
-  getHomeRouteRenderViewportSnapshot,
   getHomeRouteVisibleViewportBounds,
   getHomeRouteViewportTransientState,
   readHomeRouteViewportSnapshot,
@@ -279,13 +278,14 @@ test("路线参与者在统一 read 阶段冻结所需 DOM 几何，write 阶段
   assert.doesNotMatch(homeRouteScriptSource, /homeArrivalTrain\.offset(?:Width|Height)/);
 });
 
-test("Tooltip 在 Safari 地址栏过渡中读取最新可见边界，路线仍可冻结稳定快照", () => {
-  assert.match(homeRouteScriptSource, /tooltipViewportSnapshot:\s*pendingRouteViewportSnapshot/);
-  assert.match(homeRouteScriptSource, /routeTooltipViewportSnapshot\s*=\s*tooltipViewportSnapshot/);
+test("列车与 Tooltip 在 Safari 地址栏过渡中共用最新可见边界，只有章节语义延迟", () => {
   assert.match(
     homeRouteScriptSource,
-    /getHomeRouteVisibleViewportBounds\(routeTooltipViewportSnapshot\)/,
+    /const renderViewportSnapshot\s*=\s*pendingRouteViewportSnapshot/,
   );
+  assert.match(homeRouteScriptSource, /routeViewportSnapshot\s*=\s*renderViewportSnapshot/);
+  assert.match(homeRouteScriptSource, /getHomeRouteVisibleViewportBounds\(routeViewportSnapshot\)/);
+  assert.match(homeRouteScriptSource, /if \(syncJourney && !isRouteViewportTransient\)/);
 });
 
 test("Gallery 离屏时暂停，且逐帧位移只写到实际轨道元素", () => {
@@ -526,28 +526,6 @@ test("Safari 地址栏暂态会跨过后续纯滚动帧，直到稳定计时明�
   assert.equal(getHomeRouteViewportTransientState(true, "none"), true);
   assert.equal(getHomeRouteViewportTransientState(true, "none", true), false);
   assert.equal(getHomeRouteViewportTransientState(true, "effective"), false);
-});
-
-test("Safari 地址栏仍在运动时沿用上一份稳定 viewport，收束后才一次性交接新高度", () => {
-  const stable = createViewportSnapshot({ visualHeight: 836 });
-  const moving = createViewportSnapshot({ visualHeight: 796, visualOffsetTop: 40 });
-
-  assert.equal(
-    getHomeRouteRenderViewportSnapshot({
-      stableSnapshot: stable,
-      pendingSnapshot: moving,
-      transient: true,
-    }),
-    stable,
-  );
-  assert.equal(
-    getHomeRouteRenderViewportSnapshot({
-      stableSnapshot: stable,
-      pendingSnapshot: moving,
-      transient: false,
-    }),
-    moving,
-  );
 });
 
 test("一帧只读取一份布局与可见视口快照，并从同一份数据派生 Tooltip 安全边界", () => {

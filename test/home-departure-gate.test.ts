@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { getDepartureGateViewportPlacement } from "../src/data/departure-gate-viewport.ts";
 
 const homeShellStylesSource = readFileSync(
   new URL("../src/styles/home-shell.css", import.meta.url),
@@ -19,7 +20,7 @@ test("移动 Safari 的拍卡 Gate 以最大视口高度覆盖正文，不会在
   const gateRule = homeShellStylesSource.match(/\.departure-gate \{(?<body>[\s\S]*?)\n\}/)?.groups
     ?.body;
   const gateSceneRule = homeShellStylesSource.match(
-    /\.departure-gate__scene \{(?<body>[\s\S]*?)\n\}/,
+    /^\.departure-gate__scene \{(?<body>[\s\S]*?)\n\}/m,
   )?.groups?.body;
 
   assert.ok(gateRule);
@@ -27,6 +28,57 @@ test("移动 Safari 的拍卡 Gate 以最大视口高度覆盖正文，不会在
   assert.match(gateRule, /--departure-gate-coverage-height:\s*100lvh/);
   assert.match(gateRule, /min-height:\s*var\(--departure-gate-coverage-height\)/);
   assert.match(gateSceneRule, /min-height:\s*var\(--departure-gate-coverage-height\)/);
+});
+
+test("移动 Safari 的拍卡 Gate 从布局视口顶边覆盖，并把交互前景留在当前可见区域", () => {
+  assert.deepEqual(
+    getDepartureGateViewportPlacement({
+      scrollY: 1260,
+      visualOffsetTop: 92,
+      visualHeight: 752,
+    }),
+    {
+      documentTop: 1260,
+      visibleOffsetTop: 92,
+      visibleHeight: 752,
+    },
+  );
+  assert.deepEqual(
+    getDepartureGateViewportPlacement({
+      scrollY: 1260,
+      visualOffsetTop: 0,
+      visualHeight: 844,
+    }),
+    {
+      documentTop: 1260,
+      visibleOffsetTop: 0,
+      visibleHeight: 844,
+    },
+  );
+
+  assert.match(departureGateSource, /--departure-gate-document-top/);
+  assert.match(departureGateSource, /--departure-gate-visible-offset-top/);
+  assert.match(departureGateSource, /--departure-gate-visible-height/);
+  assert.match(
+    departureGateSource,
+    /window\.addEventListener\("scroll", queueGateViewportPlacement, \{ passive: true \}\)/,
+  );
+  assert.match(
+    departureGateSource,
+    /window\.removeEventListener\("scroll", queueGateViewportPlacement\)/,
+  );
+  assert.match(
+    departureGateSource,
+    /<div class="departure-gate__scene">[\s\S]*?class="departure-gate__status"[\s\S]*?class="departure-gate__skip"[\s\S]*?<\/div>\s*<\/section>/,
+  );
+  assert.match(
+    homeShellStylesSource,
+    /html\[data-departure-gating\] \.departure-gate \{[\s\S]*?position:\s*absolute/,
+  );
+  assert.match(
+    homeShellStylesSource,
+    /html\[data-departure-gating\] \.departure-gate__scene \{[\s\S]*?height:\s*var\(--departure-gate-visible-height\)[\s\S]*?align-self:\s*start[\s\S]*?translateY\(var\(--departure-gate-visible-offset-top\)\)/,
+  );
 });
 
 test("拍卡提示沿纯数值路径移动，不在动画帧同步查询 SVG 几何", () => {

@@ -169,7 +169,8 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
     --home-transfer-track-half: clamp(17px, 1.615vw, 31px);
     --home-transfer-bend-size: clamp(162px, 12.97vw, 249px);
     --home-transfer-bend-height: calc(var(--home-transfer-bend-size) * 250 / 249);
-    --home-transfer-bend-inset: var(--home-transfer-track-half);
+    /* 弯轨端点按 SVG 的 31/249 定位，独立 clamp 的半轨宽无法保证两端共线。 */
+    --home-transfer-bend-inset: calc(var(--home-transfer-bend-size) * 31 / 249);
     --home-transfer-left-origin-x: 9.32vw;
     --home-transfer-right-origin-x: 86.41vw;
     /* 两条横向线路中心相隔 10svh，在桌面轨宽下保留约四分之三轨宽的换乘净空。 */

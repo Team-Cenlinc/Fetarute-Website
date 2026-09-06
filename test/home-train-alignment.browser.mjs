@@ -12,6 +12,159 @@ const browser = await (engine === "webkit" ? webkit : chromium).launch({
 after(() => browser.close());
 const baseUrl = process.env.FETARUTE_HOME_TEST_URL ?? "http://127.0.0.1:4323";
 
+/* 弯轨触发最小尺寸与按 vw 缩放时都要锁住横轨中心，避免往返滚动出现垂直漂移。 */
+for (const width of [440, 1024, 1440]) {
+  for (const sectionKind of width < 1024 ? ["启示湾"] : ["启示湾", "三服汇", "同岸", "续行"]) {
+    test(`${engine} ${width}px ${sectionKind}: 横向行驶保持同一高度`, async () => {
+      const page = await browser.newPage({ viewport: { width, height: 900 } });
+      try {
+        await page.goto(`${baseUrl}/zh-Hans/#onward`, { waitUntil: "networkidle" });
+        await page.evaluate(() => document.fonts.ready);
+        const samples = await page.evaluate(async (kind) => {
+          const section =
+            kind === "启示湾"
+              ? document.querySelector("[data-home-arrival-route]")
+              : kind === "三服汇"
+                ? document.querySelector("[data-home-section-breaker-route]")
+                : kind === "同岸"
+                  ? document.querySelector("[data-home-transfer-breaker]")
+                  : document.querySelector('[data-home-transfer-composition="open"]');
+          const globalVisual = document.querySelector("[data-home-arrival-train-visual]");
+          const globalHit = document.querySelector("[data-home-arrival-train]");
+          const tracks =
+            kind === "启示湾"
+              ? [
+                  {
+                    rail: section.querySelector("[data-home-arrival-horizontal]"),
+                    visual: globalVisual,
+                    hit: globalHit,
+                    segment: "horizontal",
+                  },
+                ]
+              : kind === "三服汇"
+                ? [
+                    {
+                      rail: section.querySelector("[data-home-section-breaker-horizontal-track]"),
+                      visual: globalVisual,
+                      hit: globalHit,
+                      segment: "breaker-horizontal",
+                    },
+                  ]
+                : kind === "同岸"
+                  ? [
+                      {
+                        rail: section.querySelector(
+                          "[data-home-transfer-incoming-horizontal-track]",
+                        ),
+                        visual: globalVisual,
+                        hit: globalHit,
+                        segment: "transfer-incoming-platform",
+                      },
+                      {
+                        rail: section.querySelector(
+                          "[data-home-transfer-outgoing-horizontal-track]",
+                        ),
+                        visual: globalVisual,
+                        hit: globalHit,
+                        segment: "transfer-outgoing-horizontal",
+                      },
+                    ]
+                  : [
+                      {
+                        rail: section.querySelector(
+                          "[data-home-transfer-outgoing-horizontal-track]",
+                        ),
+                        visual: section.querySelector("[data-home-transfer-incoming-train]"),
+                        hit: section.querySelector("[data-home-transfer-incoming-train]"),
+                        segment: "onward-incoming-horizontal",
+                      },
+                      {
+                        rail: section.querySelector(
+                          "[data-home-transfer-incoming-horizontal-track]",
+                        ),
+                        visual: globalVisual,
+                        hit: section.querySelector("[data-home-transfer-outgoing-train]"),
+                        segment: "onward-outgoing-horizontal",
+                      },
+                    ];
+          const sectionBounds = section.getBoundingClientRect();
+          const start = sectionBounds.top + scrollY;
+          const distance =
+            kind === "启示湾"
+              ? document.querySelector("[data-home-introduction-route]").getBoundingClientRect()
+                  .top - sectionBounds.top
+              : Number.parseFloat(
+                  section.style.getPropertyValue(
+                    kind === "三服汇"
+                      ? "--home-section-breaker-scroll-distance"
+                      : "--home-transfer-scroll-distance",
+                  ),
+                );
+          const samples = [];
+          for (const direction of [1, -1]) {
+            for (let step = 0; step <= 80; step++) {
+              const progress = direction === 1 ? step / 80 : 1 - step / 80;
+              scrollTo({ top: start + distance * progress, behavior: "instant" });
+              await new Promise((resolve) =>
+                requestAnimationFrame(() => requestAnimationFrame(resolve)),
+              );
+              for (const { rail, visual, hit, segment } of tracks) {
+                const body = visual.getBoundingClientRect();
+                const track = rail.getBoundingClientRect();
+                if (
+                  hit.dataset.routeSegment !== segment ||
+                  visual.dataset.routeCurved === "true" ||
+                  body.left < track.left ||
+                  body.right > track.right
+                )
+                  continue;
+                const target = hit.getBoundingClientRect();
+                samples.push({
+                  direction,
+                  segment,
+                  centerY: body.top + body.height / 2,
+                  error: body.top + body.height / 2 - track.top - track.height / 2,
+                  hitError: target.top + target.height / 2 - track.top - track.height / 2,
+                });
+              }
+            }
+          }
+          return samples;
+        }, sectionKind);
+        const expectedSegments =
+          sectionKind === "启示湾"
+            ? ["horizontal"]
+            : sectionKind === "三服汇"
+              ? ["breaker-horizontal"]
+              : sectionKind === "同岸"
+                ? ["transfer-incoming-platform", "transfer-outgoing-horizontal"]
+                : ["onward-incoming-horizontal", "onward-outgoing-horizontal"];
+        for (const segment of expectedSegments) {
+          for (const direction of [1, -1]) {
+            const pass = samples.filter(
+              (sample) => sample.direction === direction && sample.segment === segment,
+            );
+            assert.ok(
+              pass.length >= 5,
+              `${segment} 必须覆盖足够多的完整横轨车身姿态：${pass.length}`,
+            );
+            const drift =
+              Math.max(...pass.map(({ error }) => error)) -
+              Math.min(...pass.map(({ error }) => error));
+            assert.ok(drift < 0.05, `${segment} 横向行驶时垂直漂移 ${drift}px`);
+            assert.ok(
+              pass.every(({ error, hitError }) => Math.abs(error) < 0.05 && Math.abs(hitError) < 1),
+              `横轨车身应精确同高，点击区容许不足 1px 的尺寸取整：${JSON.stringify(pass.slice(0, 3))}`,
+            );
+          }
+        }
+      } finally {
+        await page.close();
+      }
+    });
+  }
+}
+
 /* 包含手机、触发 88px 车长上限的宽屏、1024px 两侧及减少动态；三语共用真实页面布局。 */
 const scenarios = [
   [390, 844, "zh-Hans", "no-preference"],

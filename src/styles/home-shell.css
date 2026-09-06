@@ -255,6 +255,12 @@ h3 {
   /* Safari 地址栏变化时以最大视口作不透明覆盖层；100vh 是旧浏览器回退。 */
   --departure-gate-coverage-height: 100vh;
   --departure-gate-coverage-height: 100lvh;
+  /* 激活后背景锚到布局视口的文档坐标，绕开 Safari 对 fixed 全屏层的工具栏裁切。 */
+  --departure-gate-document-top: 0px;
+  /* 内部交互场景仍从当前 VisualViewport 顶边开始，避免内容进入状态栏与浏览器控件。 */
+  --departure-gate-visible-offset-top: 0px;
+  /* 地址栏展开或收起时只重排交互场景，不改变整片背景的最大视口覆盖合同。 */
+  --departure-gate-visible-height: var(--departure-gate-coverage-height);
   /* 由滚动进度写入 0 到 1；靠近阶段只派生遮罩位置，保持不透明以隔离尚未抵达的正文。 */
   --departure-gate-approach-progress: 0;
   /* 回退时由真实 scrollY 派生 0 到 1；不使用第二条独立的 CSS 位移动画。 */
@@ -283,6 +289,24 @@ h3 {
   transform: translateY(var(--departure-gate-coverage-height));
   transition: visibility 0ms linear 200ms;
   visibility: hidden;
+}
+
+/*
+ * Safari 26 会把 fixed 全屏层停在浮动工具栏后的 VisualViewport 起点。
+ * Modal 激活并锁住页面后改用文档坐标锚定背景，才能让不透明底色延伸到整块屏幕。
+ */
+html[data-departure-gating] .departure-gate {
+  position: absolute;
+  inset: auto 0;
+  top: var(--departure-gate-document-top);
+}
+
+/* 背景覆盖布局视口，卡片、Validator 与略过入口仍只在 Safari 当前可见区域中排版。 */
+html[data-departure-gating] .departure-gate__scene {
+  height: var(--departure-gate-visible-height);
+  min-height: var(--departure-gate-visible-height);
+  align-self: start;
+  transform: translateY(var(--departure-gate-visible-offset-top));
 }
 
 .departure-gate[data-state="approaching"],

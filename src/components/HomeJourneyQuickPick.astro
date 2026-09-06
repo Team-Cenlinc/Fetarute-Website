@@ -198,7 +198,8 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
     gap: 2px;
     padding: 10px 72px 12px 14px;
     background: var(--palette-surface-raised);
-    touch-action: pinch-zoom;
+    /* 快选窗已无内层滚动，标题区也保留页面平移，避免手指从此处起滑时被截断。 */
+    touch-action: manipulation;
   }
 
   .home-journey-quick-pick__close {
