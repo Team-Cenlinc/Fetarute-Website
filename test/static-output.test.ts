@@ -8,8 +8,8 @@ import { defaultLocale, localeMetadata, type Locale } from "../src/i18n/config.t
 import { getMessages } from "../src/i18n/messages.ts";
 
 const publicHomeLocales = ["zh-Hans", "zh-Hant", "en"] as const satisfies readonly Locale[];
-const homeCommunitySource = readFileSync(
-  new URL("../src/components/HomeCommunitySection.astro", import.meta.url),
+const homeCommunityControllerSource = readFileSync(
+  new URL("../src/lib/home/community-controller.ts", import.meta.url),
   "utf8",
 );
 
@@ -96,14 +96,17 @@ test("同岸非初始短故事只保存响应式媒体描述，不输出可立�
 });
 
 test("同岸客户端在故事切换与 details 展开时提交延迟媒体及替代文本", () => {
-  assert.match(homeCommunitySource, /image\.alt = homeCommunityDeferredAlt/);
-  assert.match(homeCommunitySource, /details\.addEventListener\("toggle"/);
-  assert.match(homeCommunitySource, /details\.open && storyElement/);
-  assert.match(homeCommunitySource, /if \(selected\) \{\s+loadStoryImages\(storyElement\)/);
-  assert.match(homeCommunitySource, /preloadSelectedStoryImages\(storyElement\)/);
-  assert.match(homeCommunitySource, /image\.loading = "eager"/);
-  assert.match(homeCommunitySource, /image\.srcset = homeCommunityDeferredSrcset/);
-  assert.match(homeCommunitySource, /image\.src = homeCommunityDeferredSrc/);
+  assert.match(homeCommunityControllerSource, /image\.alt = homeCommunityDeferredAlt/);
+  assert.match(homeCommunityControllerSource, /details\.addEventListener\(\s+"toggle"/);
+  assert.match(homeCommunityControllerSource, /details\.open && storyElement/);
+  assert.match(
+    homeCommunityControllerSource,
+    /if \(selected\) \{\s+loadStoryImages\(storyElement\)/,
+  );
+  assert.match(homeCommunityControllerSource, /preloadSelectedStoryImages\(storyElement\)/);
+  assert.match(homeCommunityControllerSource, /image\.loading = "eager"/);
+  assert.match(homeCommunityControllerSource, /image\.srcset = homeCommunityDeferredSrcset/);
+  assert.match(homeCommunityControllerSource, /image\.src = homeCommunityDeferredSrc/);
 });
 
 test("根入口与三语言首页都声明 edge-to-edge viewport，保持 Safari 与 Portal 的安全区契约一致", () => {
