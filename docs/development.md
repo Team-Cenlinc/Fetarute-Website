@@ -70,6 +70,18 @@ npm run build:with-fonts
 `npm run check`。如果格式化引入新的 CJK 字符，需要将 `scripts/font-subset/chars.txt`
 与重新生成的 woff2 文件一并暂存后再提交。
 
+## Landing 标题反光色
+
+更换 Landing 原图、调整场景 `focalPoint` 或修改取色算法后，运行：
+
+```sh
+npm run landing-reflections:generate
+```
+
+输出是供人工核对的稳定 HSL 值。确认后只更新 `src/data/home-landing-scenes.ts` 中同一个场景的
+`reflectionColor`，再运行 `npm run test:home` 与
+`npm run check`；不要在页面和脚本分别维护第二份场景清单。
+
 ## GitHub Pages 发布
 
 仓库的 Pages Source 需选择 **GitHub Actions**，Custom domain 设为 `fetarute.org`。正式 canonical 与
@@ -100,6 +112,7 @@ fonts-source/           完整字体源文件，仅用于本地生成子集，�
 scripts/
   cache-minecraft-avatars.ts  从 Mojang 公开皮肤生成同岸故事使用的方形本地头像
   font-subset/          Node-only 字符抽取与 woff2 子集生成脚本
+  generate-home-landing-reflection-colors.ts  根据已登记 Landing 场景预计算标题反光色
   generate-social-card.ts  用既有 Logo、首页场景与铁路数据生成分享卡 PNG
 src/
   assets/

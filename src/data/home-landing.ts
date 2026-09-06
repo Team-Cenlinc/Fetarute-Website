@@ -1,4 +1,9 @@
 import type { ImageMetadata } from "astro";
+import {
+  homeLandingSceneDefinitions,
+  type HomeLandingSceneDefinition,
+  type HomeLandingSceneId,
+} from "@/data/home-landing-scenes";
 import pyutocorDuskScene from "@/assets/pages/home/landing/survival-pyutocor-dusk.png";
 import survivalBaysideScene from "@/assets/pages/home/landing/survival-bayside.jpg";
 import survivalFueyaScene from "@/assets/pages/home/landing/survival-fueya.jpg";
@@ -10,114 +15,39 @@ import survivalPyutocorFromMountainScene from "@/assets/pages/home/landing/survi
 import survivalPyutocorRailwayAvenueScene from "@/assets/pages/home/landing/survival-pyutocor-rwy-avenue.jpg";
 import survivalSyuchunScene from "@/assets/pages/home/landing/survival-syuchun.jpg";
 
-/** 首页首屏场景的稳定身份，用于将图片、替代文本与裁切焦点保持对应。 */
-export type HomeLandingSceneId =
-  | "pyutocor-dusk"
-  | "survival-bayside"
-  | "survival-fueya"
-  | "survival-kitariku-haixing-road-bridge"
-  | "survival-kl-x-bridge"
-  | "survival-port-pyutocor"
-  | "survival-pyutocor-day"
-  | "survival-pyutocor-from-mountain"
-  | "survival-pyutocor-railway-avenue"
-  | "survival-syuchun";
+/** 保持既有文案模块的场景身份导入路径稳定，实际定义集中在纯场景登记文件。 */
+export type { HomeLandingSceneId } from "@/data/home-landing-scenes";
 
 /**
- * 适合首屏随机抽取的一张服务器实景。
- * 清单只收录构图比例相近、左侧可放文案的铁路到站画面，避免随机后破坏首屏的阅读层级。
+ * Astro 构建期图片模块与纯场景登记之间的唯一映射。
+ * 用稳定 id 衔接，保证页面的优化图片不会让维护脚本再维护一份文件名或裁切信息。
  */
-export interface HomeLandingScene {
-  /** 供三语替代文本和客户端选择逻辑共同引用的唯一键。 */
-  id: HomeLandingSceneId;
+const homeLandingImageById = {
+  "pyutocor-dusk": pyutocorDuskScene,
+  "survival-bayside": survivalBaysideScene,
+  "survival-fueya": survivalFueyaScene,
+  "survival-kitariku-haixing-road-bridge": survivalKitarikuHaixingRoadBridgeScene,
+  "survival-kl-x-bridge": survivalKlXBridgeScene,
+  "survival-port-pyutocor": survivalPortPyutocorScene,
+  "survival-pyutocor-day": survivalPyutocorDayScene,
+  "survival-pyutocor-from-mountain": survivalPyutocorFromMountainScene,
+  "survival-pyutocor-railway-avenue": survivalPyutocorRailwayAvenueScene,
+  "survival-syuchun": survivalSyuchunScene,
+} satisfies Record<HomeLandingSceneId, ImageMetadata>;
+
+/**
+ * 适合首屏展示的一张服务器实景。
+ * 纯维护数据来自同一份场景登记；这里只补上 Astro 构建阶段可优化的图片模块。
+ */
+export interface HomeLandingScene extends HomeLandingSceneDefinition {
   /** 由 Astro 在构建阶段优化的原始服务器截图。 */
   image: ImageMetadata;
-  /** 图片在窄屏裁切时优先保留的视觉焦点，采用 CSS object-position 语法。 */
-  focalPoint: string;
-  /** 素材维护阶段从标题覆盖区预先计算的稳定 CSS 反光色。 */
-  reflectionColor: string;
-  /** 场景文案投影只调整空间强度；中性阴影色由全站 palette 提供，避免图片数据内散落色值。 */
-  copyShadow: {
-    /** 投影边缘的模糊半径，随左侧背景的纹理复杂度收束或放开。 */
-    blur: string;
-    /** 投影的不透明度，用于在明亮实景上维持标题与说明的可读性。 */
-    opacity: string;
-  };
 }
 
 /**
  * 首屏可用的受控服务器截图池。
  * 新增图片时必须一并登记其焦点，并在 messages.ts 补齐各语言的替代文本；文件夹本身不自动成为可展示内容。
  */
-export const homeLandingScenes: readonly HomeLandingScene[] = [
-  {
-    id: "pyutocor-dusk",
-    image: pyutocorDuskScene,
-    focalPoint: "center center",
-    reflectionColor: "hsl(21.93deg 28.00% 72.00%)",
-    copyShadow: { blur: "14px", opacity: "72%" },
-  },
-  {
-    id: "survival-bayside",
-    image: survivalBaysideScene,
-    focalPoint: "32% center",
-    reflectionColor: "hsl(27.25deg 28.00% 65.97%)",
-    copyShadow: { blur: "18px", opacity: "86%" },
-  },
-  {
-    id: "survival-fueya",
-    image: survivalFueyaScene,
-    focalPoint: "68% 58%",
-    reflectionColor: "hsl(30.68deg 28.00% 72.00%)",
-    copyShadow: { blur: "20px", opacity: "90%" },
-  },
-  {
-    id: "survival-kitariku-haixing-road-bridge",
-    image: survivalKitarikuHaixingRoadBridgeScene,
-    focalPoint: "56% 55%",
-    reflectionColor: "hsl(44.72deg 60.00% 72.00%)",
-    copyShadow: { blur: "22px", opacity: "94%" },
-  },
-  {
-    id: "survival-kl-x-bridge",
-    image: survivalKlXBridgeScene,
-    focalPoint: "57% center",
-    reflectionColor: "hsl(32.69deg 28.00% 72.00%)",
-    copyShadow: { blur: "20px", opacity: "90%" },
-  },
-  {
-    id: "survival-port-pyutocor",
-    image: survivalPortPyutocorScene,
-    focalPoint: "58% 52%",
-    reflectionColor: "hsl(21.09deg 44.46% 72.00%)",
-    copyShadow: { blur: "21px", opacity: "92%" },
-  },
-  {
-    id: "survival-pyutocor-day",
-    image: survivalPyutocorDayScene,
-    focalPoint: "58% 52%",
-    reflectionColor: "hsl(221.66deg 28.00% 57.28%)",
-    copyShadow: { blur: "20px", opacity: "90%" },
-  },
-  {
-    id: "survival-pyutocor-from-mountain",
-    image: survivalPyutocorFromMountainScene,
-    focalPoint: "54% 52%",
-    reflectionColor: "hsl(189.69deg 28.00% 59.99%)",
-    copyShadow: { blur: "19px", opacity: "88%" },
-  },
-  {
-    id: "survival-pyutocor-railway-avenue",
-    image: survivalPyutocorRailwayAvenueScene,
-    focalPoint: "54% 64%",
-    reflectionColor: "hsl(22.52deg 60.00% 62.49%)",
-    copyShadow: { blur: "15px", opacity: "76%" },
-  },
-  {
-    id: "survival-syuchun",
-    image: survivalSyuchunScene,
-    focalPoint: "52% 60%",
-    reflectionColor: "hsl(14.53deg 36.03% 72.00%)",
-    copyShadow: { blur: "12px", opacity: "68%" },
-  },
-];
+export const homeLandingScenes: readonly HomeLandingScene[] = homeLandingSceneDefinitions.map(
+  (scene) => ({ ...scene, image: homeLandingImageById[scene.id] }),
+);

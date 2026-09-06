@@ -1,33 +1,23 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
+import { homeLandingSceneDefinitions } from "../src/data/home-landing-scenes.ts";
 
 /**
  * 取色使用首页桌面设计稿的 1920 × 1080 参考画布。这个矩形对应现有中文标题的实际
  * 覆盖区（左侧 7.5vw gutter、520px 最大行宽及两行 100px 行高）。固定参考画布使素材
  * 维护结果不再随访问者的字体加载、窗口尺寸或设备像素比改变。
  */
+/** 标题取样在固定桌面参考画布上的布局，确保同一素材始终得到可复现的反光色。 */
 const reference = {
   width: 1920,
   height: 1080,
   title: { left: 144, top: 692, width: 520, height: 200 },
 } as const;
 
-const scenes = [
-  ["pyutocor-dusk", "survival-pyutocor-dusk.png", "center center"],
-  ["survival-bayside", "survival-bayside.jpg", "32% center"],
-  ["survival-fueya", "survival-fueya.jpg", "68% 58%"],
-  ["survival-kitariku-haixing-road-bridge", "survival-kitariku-haixing-rd-bridge.jpg", "56% 55%"],
-  ["survival-kl-x-bridge", "survival-kl-x-bridge.jpg", "57% center"],
-  ["survival-port-pyutocor", "survival-port-pyutocor.jpg", "58% 52%"],
-  ["survival-pyutocor-day", "survival-pyutocor-day.jpg", "58% 52%"],
-  ["survival-pyutocor-from-mountain", "survival-pyutocor-from-mountain.jpg", "54% 52%"],
-  ["survival-pyutocor-railway-avenue", "survival-pyutocor-rwy-avenue.jpg", "54% 64%"],
-  ["survival-syuchun", "survival-syuchun.jpg", "52% 60%"],
-] as const;
-
 const assetDirectory = fileURLToPath(new URL("../src/assets/pages/home/landing/", import.meta.url));
 
+/** 将 CSS object-position 的单轴关键字或百分比转换为图片裁切的 0 到 1 比例。 */
 const positionRatio = (value: string) => {
   if (value === "left" || value === "top") return 0;
   if (value === "right" || value === "bottom") return 1;
@@ -36,6 +26,7 @@ const positionRatio = (value: string) => {
   return Number.isFinite(percentage) ? Math.min(1, Math.max(0, percentage / 100)) : 0.5;
 };
 
+/** 将一个不透明 RGB 像素转换为色相、饱和度与明度，供标题区域的加权平均使用。 */
 const pixelHsl = (red: number, green: number, blue: number) => {
   const [r, g, b] = [red / 255, green / 255, blue / 255];
   const maximum = Math.max(r, g, b);
@@ -56,8 +47,14 @@ const pixelHsl = (red: number, green: number, blue: number) => {
   };
 };
 
-/** 与原浏览器 getTitleReflectionColor 相同的筛选、权重及 HSL 收束规则。 */
-export const getTitleReflectionColor = async (imagePath: string, focalPoint: string) => {
+/**
+ * 根据素材路径和 object-position 预计算标题覆盖区的反光色。
+ * 该函数刻意只依赖纯数据与本地图片，方便测试验证已登记的色值没有随着素材或算法漂移。
+ */
+export const getTitleReflectionColor = async (
+  imagePath: string,
+  focalPoint: string,
+): Promise<string> => {
   const metadata = await sharp(imagePath).metadata();
   if (!metadata.width || !metadata.height) throw new Error(`无法读取图片尺寸：${imagePath}`);
 
@@ -109,8 +106,11 @@ export const getTitleReflectionColor = async (imagePath: string, focalPoint: str
 };
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  for (const [id, filename, focalPoint] of scenes) {
-    const color = await getTitleReflectionColor(path.join(assetDirectory, filename), focalPoint);
-    console.log(`${id}: ${color}`);
+  for (const scene of homeLandingSceneDefinitions) {
+    const color = await getTitleReflectionColor(
+      path.join(assetDirectory, scene.assetFilename),
+      scene.focalPoint,
+    );
+    console.log(`${scene.id}: ${color}`);
   }
 }
