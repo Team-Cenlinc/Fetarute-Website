@@ -157,14 +157,21 @@ for (const [width, height, locale, reducedMotion] of [
           element.querySelector("h2").getBoundingClientRect().bottom,
       );
       assert.ok(copyGap >= 10 && copyGap <= 24, "页尾标题和说明不应被链接列拉开");
-      assert.equal(await footer.locator(".home-footer__languages a").count(), 3);
-      assert.equal(
-        await footer.locator('.home-footer__languages [aria-current="page"]').getAttribute("lang"),
-        locale,
-      );
-      assert.equal(
-        await footer.locator('.home-footer__directions a[target="_blank"]').getAttribute("href"),
-        "https://wiki.fetarute.org",
+      assert.equal(await footer.locator("a").count(), 1);
+      assert.equal(await footer.locator('a[hreflang], a[target="_blank"]').count(), 0);
+      assert.equal(await footer.locator(".home-footer__restart").getAttribute("href"), "#home");
+      const signature = await footer.locator(".home-footer__signature").evaluate((element) => {
+        const logo = element.querySelector(".home-footer__wordmark").getBoundingClientRect();
+        const legal = element.querySelector(".home-footer__legal").getBoundingClientRect();
+        const bounds = element.getBoundingClientRect();
+        return { logo: logo.toJSON(), legal: legal.toJSON(), bounds: bounds.toJSON() };
+      });
+      assert.ok(signature.logo.left >= signature.bounds.left - 1);
+      assert.ok(signature.legal.right <= signature.bounds.right + 1);
+      assert.ok(
+        signature.legal.left >= signature.logo.right ||
+          signature.legal.top >= signature.logo.bottom,
+        "Logo 与版权应自然分栏或换行，不能重叠",
       );
       const footerTargets = await footer.locator("a").evaluateAll((links) =>
         links.map((link) => {
@@ -195,36 +202,18 @@ for (const [width, height, locale, reducedMotion] of [
   });
 }
 
-test("页尾语言入口切换静态页面并保留页尾阅读位置", async () => {
-  const page = await browser.newPage({ viewport: { width: 320, height: 568 } });
+test("页尾只保留返回起点，语言与 Wiki 入口仍由 Header 提供", async () => {
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   try {
     await page.goto(`${baseUrl}/en/#footer`, { waitUntil: "networkidle" });
-    await page.locator('.home-footer__languages a[lang="zh-Hant"]').click();
-    await page.waitForURL((url) => url.pathname === "/zh-Hant/");
-    await page.waitForLoadState("networkidle");
-    assert.equal(await page.locator("html").getAttribute("lang"), "zh-Hant");
-    const position = await page.locator(".home-footer").evaluate((footer) => {
-      const bounds = footer.getBoundingClientRect();
-      const title = footer.querySelector("h2").getBoundingClientRect();
-      const header = document.querySelector(".site-header").getBoundingClientRect();
-      return {
-        top: bounds.top,
-        titleTop: title.top,
-        titleBottom: title.bottom,
-        headerBottom: header.bottom,
-        viewport: innerHeight,
-      };
-    });
-    assert.ok(
-      position.top < position.viewport / 2 &&
-        position.titleTop > position.headerBottom &&
-        position.titleBottom < position.viewport,
-      JSON.stringify(position),
-    );
-    assert.equal(
-      await page.locator('.home-footer__languages [aria-current="page"]').getAttribute("lang"),
-      "zh-Hant",
-    );
+    const footer = page.locator(".home-footer");
+    assert.equal(await footer.locator("a").count(), 1);
+    assert.ok(await page.locator('.site-header a[lang="zh-Hant"]').count());
+    assert.ok(await page.locator('.site-header a[href="https://wiki.fetarute.org"]').count());
+    await footer.locator(".home-footer__restart").focus();
+    await page.keyboard.press("Enter");
+    await page.waitForURL((url) => url.hash === "#home");
+    await page.waitForFunction(() => window.scrollY < 2);
   } finally {
     await page.close();
   }

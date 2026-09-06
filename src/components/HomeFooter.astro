@@ -1,10 +1,8 @@
 ---
 import arrowUpIcon from "@phosphor-icons/core/assets/bold/arrow-up-bold.svg?raw";
-import arrowUpRightIcon from "@phosphor-icons/core/assets/bold/arrow-up-right-bold.svg?raw";
 import fetaruteLogo from "@/assets/fetarute-branding/fetarute-logo.svg?raw";
-import { externalDestinations, siteInfo } from "@/data/site";
-import { localeMetadata, locales, type Locale } from "@/i18n/config";
-import { getLocalizedRelativeUrl } from "@/i18n/links";
+import { siteInfo } from "@/data/site";
+import type { Locale } from "@/i18n/config";
 import { getMessages } from "@/i18n/messages";
 
 /** 首页铁路叙事页尾属性；探索线颜色由正式线路数据注入，避免页尾另造品牌橙色。 */
@@ -35,43 +33,15 @@ const currentYear = new Date().getFullYear();
         <h2>{footerMessages.title}</h2>
         <p class="home-footer__description">{footerMessages.description}</p>
       </div>
-      <nav class="home-footer__directions" aria-label={messages.home.onward.serviceGuideLabel}>
-        <a
-          class="home-footer__direction"
-          href={externalDestinations.wiki.href}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={`${messages.externalDestinationLabels.wiki} (${messages.externalLinkNewTabHint})`}
-        >
-          <span>{messages.externalDestinationLabels.wiki}</span>
-          <span class="home-footer__direction-icon" aria-hidden="true" set:html={arrowUpRightIcon}></span>
-        </a>
-        <a class="home-footer__direction home-footer__restart" href="#home">
-          <span>{footerMessages.restartLabel}</span>
-          <span class="home-footer__direction-icon" aria-hidden="true" set:html={arrowUpIcon}></span>
-        </a>
-      </nav>
+      <a class="home-footer__restart" href="#home">
+        <span>{footerMessages.restartLabel}</span>
+        <span class="home-footer__restart-icon" aria-hidden="true" set:html={arrowUpIcon}></span>
+      </a>
     </div>
 
     <div class="home-footer__signature">
-      <div class="home-footer__brand">
-        <span class="home-footer__wordmark" aria-hidden="true" set:html={fetaruteLogo}></span>
-        <p class="home-footer__legal">© {currentYear} {siteInfo.name}</p>
-      </div>
-      <nav class="home-footer__languages" aria-label={messages.languageNavigationLabel}>
-        {
-          locales.map((alternateLocale) => (
-            <a
-              href={getLocalizedRelativeUrl(alternateLocale, "", "footer")}
-              lang={localeMetadata[alternateLocale].languageTag}
-              hreflang={localeMetadata[alternateLocale].languageTag}
-              aria-current={alternateLocale === locale ? "page" : undefined}
-            >
-              {localeMetadata[alternateLocale].label}
-            </a>
-          ))
-        }
-      </nav>
+      <span class="home-footer__wordmark" aria-hidden="true" set:html={fetaruteLogo}></span>
+      <p class="home-footer__legal">© {currentYear} {siteInfo.name}</p>
     </div>
   </div>
 </footer>
@@ -117,12 +87,12 @@ const currentYear = new Date().getFullYear();
 
   .home-footer__introduction {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(200px, 0.42fr);
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 12px clamp(32px, 4vw, 72px);
     align-items: start;
   }
 
-  /* 结束语是一组独立文案，右侧链接的高度不再拉大标题与说明的行距。 */
+  /* 结束语与返回操作各自对齐顶部，避免单个链接撑开正文行距。 */
   .home-footer__closing-copy {
     display: grid;
     gap: 12px;
@@ -150,85 +120,64 @@ const currentYear = new Date().getFullYear();
     opacity: 0.76;
   }
 
-  .home-footer__directions {
-    display: grid;
-    grid-column: 2;
-    gap: 12px;
-  }
-
-  .home-footer__direction {
-    display: flex;
-    gap: 16px;
+  /* 返回起点是页尾的唯一操作，用文字与小箭头保持可发现性，整条链接保留触摸高度。 */
+  .home-footer__restart {
+    display: inline-flex;
+    gap: 10px;
     align-items: center;
-    justify-content: space-between;
+    justify-self: end;
+    min-height: 44px;
     color: inherit;
-    font-size: clamp(14px, 1vw, 18px);
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 650;
+    line-height: 1.4;
     text-decoration: none;
     text-decoration-thickness: 2px;
     text-underline-offset: 0.32em;
-    min-height: 44px;
-    line-height: 1.4;
   }
 
-  .home-footer__direction-icon {
-    display: inline-grid;
-    flex: 0 0 44px;
-    width: 44px;
-    height: 44px;
-    padding: 12px;
-    place-items: center;
-    background: var(--palette-fetarute-info);
-    color: var(--palette-fetarute-info-text);
+  .home-footer__restart-icon {
+    display: block;
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
     transition: transform 180ms var(--motion-header-standard-spatial);
   }
 
-  .home-footer__restart .home-footer__direction-icon {
-    background: var(--palette-fetarute-exit);
-    color: var(--palette-fetarute-exit-text);
-  }
-
-  .home-footer__direction:hover {
+  .home-footer__restart:hover {
     text-decoration-line: underline;
   }
 
-  .home-footer__direction:focus-visible,
-  .home-footer__languages a:focus-visible {
+  .home-footer__restart:focus-visible {
     outline: 2px solid currentColor;
     outline-offset: 4px;
   }
 
-  .home-footer__direction:active,
-  .home-footer__languages a:active {
+  .home-footer__restart:active {
     opacity: 0.72;
   }
 
-  .home-footer__direction:hover .home-footer__direction-icon {
+  .home-footer__restart:hover .home-footer__restart-icon {
     transform: translateY(-3px);
   }
 
+  /* 品牌签名独立成行，Logo 与版权共享两端锚点；宽度不足时按内容自然换行。 */
   .home-footer__signature {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-    margin-top: 40px;
-    padding-top: 20px;
-    border-top: 2px solid color-mix(in srgb, currentColor 24%, transparent);
-  }
-
-  .home-footer__brand {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 12px 24px;
-    min-width: 0;
+    justify-content: space-between;
+    gap: 16px 24px;
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 2px solid color-mix(in srgb, currentColor 24%, transparent);
   }
 
   .home-footer__wordmark {
     display: block;
-    flex: 0 0 120px;
-    width: 120px;
+    flex: 0 0 auto;
+    width: clamp(144px, 12.22vw, 176px);
+    max-width: 100%;
     line-height: 0;
   }
 
@@ -237,7 +186,7 @@ const currentYear = new Date().getFullYear();
     height: auto;
   }
 
-  .home-footer__direction-icon :global(svg) {
+  .home-footer__restart-icon :global(svg) {
     display: block;
     width: 100%;
     height: 100%;
@@ -248,31 +197,6 @@ const currentYear = new Date().getFullYear();
     font-weight: 700;
     letter-spacing: 0.08em;
     opacity: 0.72;
-  }
-
-  .home-footer__languages {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0 20px;
-    align-items: center;
-  }
-
-  .home-footer__languages a {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    color: inherit;
-    font-size: 13px;
-    font-weight: 480;
-    text-decoration: none;
-    text-underline-offset: 0.4em;
-    white-space: nowrap;
-    opacity: 0.76;
-  }
-
-  .home-footer__languages a:is([aria-current="page"], :hover) {
-    text-decoration: underline;
-    opacity: 1;
   }
 
   @media (max-width: 1023px) {
@@ -292,44 +216,27 @@ const currentYear = new Date().getFullYear();
     }
 
     .home-footer__introduction {
-      display: block;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 20px;
     }
 
     .home-footer__introduction h2 {
-      max-width: 11ch;
       font-size: clamp(28px, 8vw, 38px);
     }
 
     .home-footer__description {
       max-width: 27ch;
-      margin-top: 10px;
       font-size: clamp(14px, 3.8vw, 17px);
     }
 
-    .home-footer__directions {
-      max-width: 340px;
-      margin-top: 28px;
+    .home-footer__restart {
+      justify-self: start;
     }
 
     .home-footer__signature {
-      align-items: flex-start;
-      flex-direction: column;
-      gap: 12px;
+      gap: 12px 16px;
       margin-top: 28px;
-      padding-top: 24px;
-    }
-
-    .home-footer__brand {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .home-footer__wordmark {
-      flex-basis: auto;
-    }
-
-    .home-footer__languages {
-      gap: 0 16px;
+      padding-top: 20px;
     }
   }
 
@@ -340,8 +247,8 @@ const currentYear = new Date().getFullYear();
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .home-footer__direction-icon,
-    .home-footer__direction:hover .home-footer__direction-icon {
+    .home-footer__restart-icon,
+    .home-footer__restart:hover .home-footer__restart-icon {
       transition: none;
       transform: none;
     }
