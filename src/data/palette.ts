@@ -13,6 +13,28 @@ import {
 export type InterfaceAppearance = "light" | "dark";
 
 /**
+ * 社区概念地图的地块与导视色取自用户的 Figma 211:291 / 211:290，文字和浮层补充可读的中性色。
+ * 导视线路分别复用浦蓝线、探索线和 PN 的真实品牌色；地图仍不是游戏地理图。
+ * 地图原型固定使用浅色画纸，不新增或修改全站深色外观。
+ */
+export const communityMapPalette = {
+  canvas: "#EDEDED",
+  plot: "#D9D9D9",
+  text: "#1B2022",
+  muted: "#626A6D",
+  surface: "#FCFDFC",
+  route: railwayLines.find((line) => line.operatorCode === "SURC" && line.code === "WS")!.color,
+  arrival: railwayLines.find((line) => line.operatorCode === "SURC" && line.code === "DS")!.color,
+  connection: railwayLines.find((line) => line.operatorCode === "SURN" && line.code === "PN")!
+    .color,
+  river: "#DCFDFF",
+  park: "#129D00",
+  square: "#E5D200",
+  school: "#B98362",
+  culture: "#F3CBDD",
+} as const;
+
+/**
  * 不承载线路语义的全站中性界面色。
  * 颜色由 Layout 输出为 CSS custom properties，组件只能使用语义名称，避免重新引入偏绿的局部灰阶。
  */

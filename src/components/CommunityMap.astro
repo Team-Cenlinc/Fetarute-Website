@@ -1,0 +1,98 @@
+---
+import type { ImageMetadata } from "astro";
+import xIcon from "@phosphor-icons/core/assets/bold/x-bold.svg?raw";
+import arrowIcon from "@phosphor-icons/core/assets/bold/arrow-up-right-bold.svg?raw";
+import buildingsIcon from "@phosphor-icons/core/assets/bold/buildings-bold.svg?raw";
+import usersIcon from "@phosphor-icons/core/assets/bold/users-three-bold.svg?raw";
+import playerIcon from "@phosphor-icons/core/assets/bold/user-bold.svg?raw";
+import { communityLayoutSeed, type CommunityEntity } from "@/data/community";
+import { communityPlaces } from "@/data/community-places";
+import parkIcon from "@phosphor-icons/core/assets/bold/park-bold.svg?raw";
+import schoolIcon from "@phosphor-icons/core/assets/bold/graduation-cap-bold.svg?raw";
+import squareIcon from "@phosphor-icons/core/assets/bold/squares-four-bold.svg?raw";
+import museumIcon from "@phosphor-icons/core/assets/bold/bank-bold.svg?raw";
+import { communityDesktopMap, communityMobileMap, type CommunityMapPoint } from "@/data/community-map";
+import { createCommunityLayout, communityGeometryStyle as geometryStyle } from "@/lib/community/layout";
+import { communityMessages } from "@/i18n/community";
+import type { Locale } from "@/i18n/config";
+
+/** 构建期已经完成本地化和头像解析的成员，不在访客侧请求身份或图片服务。 */
+interface DisplayEntity extends CommunityEntity {
+  displayName: string;
+  avatar?: ImageMetadata;
+}
+/** 同一地图渲染全部公开成员，桌面和手机只更换几何，不复制交互对象。 */
+export interface Props {
+  locale: Locale;
+  entities: readonly DisplayEntity[];
+}
+const { locale, entities } = Astro.props;
+const copy = communityMessages[locale];
+/** 与站点现有图标库一致的公共场所标识，不引入新的图片请求。 */
+const placeIcons = [parkIcon,schoolIcon,squareIcon,museumIcon];
+const entityById = new Map(entities.map((entity) => [entity.id, entity]));
+const plots = createCommunityLayout(entities.map((entity) => entity.id), communityLayoutSeed);
+const blockCount = Math.ceil(plots.length / communityDesktopMap.lots.length);
+/** 两种视口使用相同资料和绘制顺序，只有地图坐标发生变化。 */
+const templates = [{ key: "desktop", map: communityDesktopMap }, { key: "mobile", map: communityMobileMap }];
+
+/** 从逻辑坐标输出 SVG，河岸与地块的接缝只由数据层决定。 */
+const pointsAttribute = (points: readonly CommunityMapPoint[]) => points.map((point) => point.join(",")).join(" ");
+---
+
+<div class="community-neighborhood" role="group" aria-label={copy.mapLabel}>
+  {Array.from({ length: blockCount }, (_, block) => (
+    <div class="community-map-block" data-community-map-block={block}>
+      {templates.map(({ key, map }) => (
+        <svg class={"community-map-base community-map-base--" + key} viewBox={`0 0 ${map.width} ${map.height}`} aria-hidden="true" focusable="false">
+          <polygon class="community-map-river" points={pointsAttribute(map.river)} />
+          <polygon class="community-map-park" points={pointsAttribute(map.park)} />
+          <polygon class="community-map-plaza" points={pointsAttribute(map.plaza)} />
+          {map.lots.map((lot, slot) => (
+            <g data-community-landmark data-landmark={plots.some((plot)=>plot.block===block && plot.slot===slot) ? "" : ["park","school","square","culture"][slot%4]}>
+              <polygon class="community-map-vacant" points={pointsAttribute(lot.points)} />
+              {placeIcons.map((icon,index)=><svg data-landmark-icon={communityPlaces[index].kind} x={lot.label[0]-22} y={lot.label[1]-50} width="44" height="44" viewBox="0 0 256 256" set:html={icon.replace(/^<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "")} />)}
+              <text x={lot.label[0]} y={lot.label[1]+18} text-anchor="middle" dominant-baseline="middle">{communityPlaces[slot%4].names[0]}</text>
+            </g>
+          ))}
+        </svg>
+      ))}
+      {plots.filter((plot) => plot.block === block).map((plot) => {
+        const entity = entityById.get(plot.id)!;
+        const icon = entity.kind === "player" ? playerIcon : entity.kind === "group" ? usersIcon : buildingsIcon;
+        return (
+          <details class="community-plot" id={entity.id} style={geometryStyle(plot.desktop, communityDesktopMap) + geometryStyle(plot.mobile, communityMobileMap, "-mobile")} data-community-disclosure data-community-entity={entity.kind}>
+            <summary aria-label={entity.displayName + " · " + copy[entity.kind]} aria-controls={entity.id + "-panel"} aria-haspopup="dialog">
+              {templates.map(({ key }) => {
+                const geometry = plot[key as "desktop" | "mobile"];
+                return <svg class={"community-plot__outline community-plot__outline--" + key} viewBox={`0 0 ${geometry.bounds.width} ${geometry.bounds.height}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                  <polygon points={pointsAttribute(geometry.points.map(([x,y]) => [x - geometry.bounds.left, y - geometry.bounds.top]))} />
+                </svg>;
+              })}
+              <span class="community-plot__label">
+                <span class="community-plot__portrait">
+                  {entity.avatar ? <img src={entity.avatar.src} width="64" height="64" alt="" loading="lazy" decoding="async" /> : <span set:html={icon} aria-hidden="true" />}
+                </span>
+                <span class="community-plot__name">{entity.displayName}</span>
+              </span>
+            </summary>
+            <div class="community-panel community-profile" id={entity.id + "-panel"} role="dialog" aria-labelledby={entity.id + "-name"} data-community-panel>
+              <button type="button" class="community-panel__close" data-community-close aria-label={copy.close}><span set:html={xIcon} aria-hidden="true" /></button>
+              <header class="community-profile__identity">
+                <span class="community-profile__portrait">
+                  {entity.avatar ? <img src={entity.avatar.src} width="48" height="48" alt="" loading="lazy" /> : <span set:html={icon} aria-hidden="true" />}
+                </span>
+                <div><span class="community-profile__kind">{copy[entity.kind]}</span><h3 id={entity.id + "-name"}>{entity.displayName}</h3></div>
+              </header>
+              <p class="community-profile__description" tabindex="0">{entity.kind === "player" ? copy.playerIntro : copy.partnerIntro}</p>
+              <p class="community-profile__note">{entity.kind === "player" ? copy.playerNote : copy.partnerNote}</p>
+              <footer class="community-profile__footer">
+                {entity.href ? <a href={entity.href} target="_blank" rel="noopener noreferrer">{copy.visit}<span set:html={arrowIcon} aria-hidden="true" /></a> : <span>{copy.pending}</span>}
+              </footer>
+            </div>
+          </details>
+        );
+      })}
+    </div>
+  ))}
+</div>

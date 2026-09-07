@@ -11,6 +11,17 @@ const globalStylesSource = readFileSync(
   "utf8",
 );
 
+test("Header 关闭动画不抢回已经转入正文或社区列车的焦点", () => {
+  assert.match(
+    siteHeaderSource,
+    /const shouldRestoreFocus = restoreFocus && menu\.contains\(document\.activeElement\)/,
+  );
+  assert.match(
+    siteHeaderSource,
+    /if \(shouldRestoreFocus\) \{\s*menu\.querySelector<HTMLElement>\("summary"\)\?\.focus\(\)/,
+  );
+});
+
 test("手机 Header 保持统一尺寸，滚动时不再排队 compact 动画帧", () => {
   assert.match(
     siteHeaderSource,

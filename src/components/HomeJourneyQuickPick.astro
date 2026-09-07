@@ -4,19 +4,21 @@ import { getRailwayLineTextColor } from "@/data/palette";
 import {
   getHomeJourneySectionName,
   type HomeJourneySection,
-  type HomeJourneySectionId,
 } from "@/data/home-journey";
 import { railwayLineByKey } from "@/data/railway";
 import type { Locale } from "@/i18n/config";
+import type { JourneyQuickPickStop } from "@/data/journey";
 
 /** 列车快选面板的属性。 */
 export interface Props {
   /** 当前公开语言决定章节站名的显示字段。 */
   locale: Locale;
   /** 初次渲染时正在停靠的章节；客户端会在滚动时同步更新。 */
-  currentSectionId: HomeJourneySectionId;
+  currentSectionId: string;
   /** 由首页导视数据提供的可选章节路线。 */
-  sections: readonly HomeJourneySection[];
+  sections?: readonly HomeJourneySection[];
+  /** 独立页面使用已解析章节；与 sections 二选一，沿用首页的完整快选视图和样式。 */
+  routeStops?: readonly JourneyQuickPickStop[];
   /** 当前章节站名上方的短标签。 */
   currentSectionLabel: string;
   /** 仅供辅助技术识别下半部章节路线图的名称，不额外显示界面文案。 */
@@ -31,13 +33,24 @@ const {
   locale,
   currentSectionId,
   sections,
+  routeStops,
   currentSectionLabel,
   quickPickLabel,
   goToSectionLabel,
   closeLabel,
 } = Astro.props;
 
-const renderedSections = sections.map((section) => {
+if (Boolean(sections) === Boolean(routeStops)) {
+  throw new Error("列车快选必须且只能提供一种章节来源。");
+}
+
+const renderedSections = routeStops ? routeStops.map((stop) => ({
+  id: stop.id,
+  displayName: stop.name,
+  lineColor: stop.color,
+  lineTextColor: getRailwayLineTextColor(stop.color),
+  transferFrom: undefined,
+})) : (sections ?? []).map((section) => {
   const line = railwayLineByKey.get(section.lineKey);
 
   if (!line) {

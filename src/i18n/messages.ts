@@ -278,10 +278,11 @@ export interface SiteMessages {
   headerLabel: string;
   /** 固定顶部主导航的无障碍标签。 */
   navigationLabel: string;
-  /** 当前两个首页章节锚点对应的导航标签。 */
+  /** 首页章节与独立页面共用的站内导航标签。 */
   navigation: {
     home: string;
     features: string;
+    community: string;
   };
   /** 顶栏语言切换链接组的无障碍标签。 */
   languageNavigationLabel: string;
@@ -357,6 +358,7 @@ const messages: Record<Locale, SiteMessages> = {
     navigation: {
       home: "首页",
       features: "旅程",
+      community: "社区",
     },
     languageNavigationLabel: "选择语言",
     serviceDeskLabel: "服务台",
@@ -650,6 +652,7 @@ const messages: Record<Locale, SiteMessages> = {
     navigation: {
       home: "首頁",
       features: "旅程",
+      community: "社區",
     },
     languageNavigationLabel: "選擇語言",
     serviceDeskLabel: "服務台",
@@ -944,6 +947,7 @@ const messages: Record<Locale, SiteMessages> = {
     navigation: {
       home: "Home",
       features: "Journey",
+      community: "Community",
     },
     languageNavigationLabel: "Choose language",
     serviceDeskLabel: "Service desk",

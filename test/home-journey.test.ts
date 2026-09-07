@@ -25,7 +25,9 @@ const homePageSource = readFileSync(
   new URL("../src/components/HomePage.astro", import.meta.url),
   "utf8",
 );
-const homeStylesSource = readFileSync(new URL("../src/styles/home.css", import.meta.url), "utf8");
+const homeStylesSource =
+  readFileSync(new URL("../src/styles/home.css", import.meta.url), "utf8") +
+  readFileSync(new URL("../src/styles/journey-tooltip.css", import.meta.url), "utf8");
 
 test("同岸站本身把服联快线 SL07 明确换乘到湾岸支线 BS05", () => {
   const triServerJoint = homeJourneySections.find((section) => section.id === "tri-server-joint");

@@ -162,6 +162,10 @@ GitHub Pages 只能提供静态文件，不能针对 `/` 读取 `Accept-Language
 
 ## 目录结构
 
+社区页原型通过 `/zh-Hans/community/`、`/zh-Hant/community/` 和 `/en/community/`
+访问，也已注册为 Header 的并列社区主导航牌及手机更多菜单入口，桌面出口仅含外部服务。占位资料确认前仍使用
+`noindex`；地图资料、布局约定和浏览器验证方法见[社区地图原型](community-map.md)。
+
 ```text
 public/                 浏览器图标、Web App Manifest 与构建生成的社交分享卡等需原样发布的品牌文件
 fonts-source/           完整字体源文件，仅用于本地生成子集，不直接发布
@@ -174,6 +178,7 @@ src/
     fonts/            生成的浏览器 woff2 字体子集
     pages/
       home/           首页场景图等按页面归类的源图片；构建时生成 AVIF/WebP
+      community/      社区导视画板导出的原始站点标记
   components/        可复用 Astro 组件
   content/           公告、指南等内容
   data/              站点级静态数据
