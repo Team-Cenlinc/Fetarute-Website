@@ -207,12 +207,16 @@
   width: 100%;
   height: var(--community-rail-width);
   background: var(--community-connection);
-  /* PN 在浦蓝竖轨上方交会，圆标再覆盖两线，表达同一站换乘。 */
+  /* PN 覆盖浦蓝竖轨，双圆标分别落在蓝线和粉线，表达同一站换乘。 */
   z-index: 2;
 }
 .community-district__crossing > .community-station {
   top: 50%;
   transform: translateY(-50%);
+}
+.community-district__crossing > .community-station--approach {
+  /* 两枚圆心相距一个线宽，使上方圆标完整留在蓝线上，随桌面和手机线宽同步缩放。 */
+  top: -50%;
 }
 .community-neighborhood {
   position: relative;

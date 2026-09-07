@@ -126,7 +126,16 @@ export function updateCommunityArrival(root: HTMLElement): void {
   const end = marker.getBoundingClientRect();
   const x = end.left - bounds.left + end.width / 2;
   /* 与社区地图的CSS切换点一致，避免761–767px仍使用桌面折点但已经换上手机线距。 */
-  const y = bounds.height * (window.innerWidth <= 767 ? 0.55 : 0.5954);
+  const preferredY = bounds.height * (window.innerWidth <= 767 ? 0.55 : 0.5954);
+  const wall = landing.querySelector<HTMLElement>(".community-mosaic")?.getBoundingClientRect();
+  const halfStroke = parseFloat(getComputedStyle(path).strokeWidth) / 2;
+  /* 45°斜线的 x+y 恒定；按头像墙左上角和完整线宽退让16px，窄屏提前并线而不遮住头像。 */
+  const y = wall?.width
+    ? Math.min(
+        preferredY,
+        wall.left - bounds.left + wall.top - bounds.top - x - Math.SQRT2 * (halfStroke + 16),
+      )
+    : preferredY;
   const bottom = end.bottom - bounds.top + end.width * 0.55;
   const reach = Math.max(bounds.width, bounds.height) * 2;
   path.setAttribute("d", `M ${x + reach} ${y - reach} L ${x} ${y} L ${x} ${bottom}`);

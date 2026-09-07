@@ -442,29 +442,43 @@ test(`${engine}: 新增主导航牌在中间断点不挤出 Header`, async () =>
   }
 });
 
-test(`${engine}: PN 在浦蓝线上方交会，站点标记位于换乘交点`, async () => {
+test(`${engine}: PN 覆盖浦蓝线，两枚站点上下对齐并分属两线`, async () => {
   const { default: sharp } = await import("sharp");
   const { page, errors } = await openPage({ reducedMotion: "reduce" });
   try {
     for (const width of [1440, 390, 320]) {
       await page.setViewportSize({ width, height: 900 });
-      await page
-        .locator(".community-district__crossing")
-        .evaluate((element) => element.scrollIntoView({ block: "center", behavior: "instant" }));
+      await page.locator(".community-district__crossing").evaluate((element) => {
+        /* 把站点放到列车下方再采样，避免把途经圆标的固定列车误判为站点底色。 */
+        const box = element.getBoundingClientRect();
+        scrollTo({
+          top: scrollY + box.y + box.height / 2 - innerHeight * 0.72,
+          behavior: "instant",
+        });
+      });
+      assert.equal(await page.locator("#community-connections .community-station").count(), 2);
       const sample = await page.locator("#community-connections").evaluate((section) => {
         const root = section.closest("[data-community-page]");
         const rail = parseFloat(getComputedStyle(root, "::before").left);
         const crossing = section.querySelector(".community-district__crossing");
-        const station = section.querySelector(".community-station");
+        const station = crossing.querySelector(
+          ".community-station:not(.community-station--approach)",
+        );
+        const approach = crossing.querySelector(".community-station--approach");
         const a = crossing.getBoundingClientRect(),
-          b = station.getBoundingClientRect();
+          b = station.getBoundingClientRect(),
+          c = approach.getBoundingClientRect();
         return {
           crossingY: a.y + a.height / 2,
           stationY: b.y + b.height / 2,
           stationX: b.x + b.width / 2,
+          approachY: c.y + c.height / 2,
+          approachX: c.x + c.width / 2,
+          railWidth: a.height,
           railX: rail + parseFloat(getComputedStyle(root, "::before").width) / 2,
           linePoint: [Math.floor(rail + 1), Math.floor(a.y + 1)],
           stationPoint: [Math.floor(b.x + b.width / 2), Math.floor(b.y + b.height / 2)],
+          approachPoint: [Math.floor(c.x + c.width / 2), Math.floor(c.y + c.height / 2)],
           lineColor: getComputedStyle(crossing)
             .backgroundColor.match(/\d+/g)
             .slice(0, 3)
@@ -477,6 +491,11 @@ test(`${engine}: PN 在浦蓝线上方交会，站点标记位于换乘交点`, 
       });
       assert.ok(Math.abs(sample.crossingY - sample.stationY) < 1, "站点应落在换乘交点而不是标题旁");
       assert.ok(Math.abs(sample.railX - sample.stationX) < 1);
+      assert.ok(Math.abs(sample.railX - sample.approachX) < 1, "上方站点也应对准蓝线中心");
+      assert.ok(
+        Math.abs(sample.stationY - sample.approachY - sample.railWidth) < 1,
+        "两枚圆标相距一个线宽：上方留在蓝线，下方落在粉线交点",
+      );
       const { data, info } = await sharp(await page.screenshot())
         .removeAlpha()
         .raw()
@@ -484,6 +503,7 @@ test(`${engine}: PN 在浦蓝线上方交会，站点标记位于换乘交点`, 
       for (const [point, expected] of [
         [sample.linePoint, sample.lineColor],
         [sample.stationPoint, sample.stationColor],
+        [sample.approachPoint, sample.stationColor],
       ]) {
         const offset = (point[1] * info.width + point[0]) * info.channels;
         assert.deepEqual(
@@ -557,6 +577,52 @@ test(`${engine}: 河道两端在不同视口均流出画面，不能在屏内截
         mouths[1].some((x) => x < 0),
         `出水口应跨过屏幕左边缘: ${mouths[1]}`,
       );
+    }
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test(`${engine}: DS 提前转入竖轨，完整线宽避开头像墙`, async () => {
+  const { page, errors } = await openPage({ reducedMotion: "reduce" });
+  try {
+    for (const [width, height] of [
+      [320, 568],
+      [390, 844],
+      [440, 956],
+      [760, 390],
+      [767, 1200],
+      [768, 1200],
+      [1024, 768],
+      [1440, 900],
+      [1920, 1080],
+    ]) {
+      await page.setViewportSize({ width, height });
+      await page.evaluate(
+        () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+      );
+      const clearance = await page.locator(".community-landing").evaluate((landing) => {
+        const wall = landing.querySelector(".community-mosaic").getBoundingClientRect();
+        const path = landing.querySelector("[data-community-arrival-path]");
+        const matrix = path.getScreenCTM();
+        const halfStroke = parseFloat(getComputedStyle(path).strokeWidth) / 2;
+        const length = path.getTotalLength();
+        let nearest = Infinity;
+        /* 沿实际SVG路径检查到整面头像墙的距离，包含空格占位；不能只靠遮住交叉部分过关。 */
+        for (let distance = 0; distance <= length; distance += 2) {
+          const point = path.getPointAtLength(distance).matrixTransform(matrix);
+          nearest = Math.min(
+            nearest,
+            Math.hypot(
+              Math.max(wall.left - point.x, 0, point.x - wall.right),
+              Math.max(wall.top - point.y, 0, point.y - wall.bottom),
+            ),
+          );
+        }
+        return nearest - halfStroke;
+      });
+      assert.ok(clearance >= 12, `${width}×${height}: 橙线需与头像墙保持间距，实际 ${clearance}px`);
     }
     assert.deepEqual(errors, []);
   } finally {

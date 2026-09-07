@@ -111,7 +111,10 @@ const chapters = [
       <header class="community-district__heading">
         <h2 id="community-connections-title">{copy.connectionsTitle}</h2>
       </header>
-      <span class="community-district__crossing" aria-hidden="true"><span class="community-station"></span></span>
+      <span class="community-district__crossing" aria-hidden="true">
+        <span class="community-station community-station--approach"></span>
+        <span class="community-station"></span>
+      </span>
       <CommunityMap locale={locale} entities={entities.filter((entity) => entity.kind !== "player")} />
     </section>
     <svg class="community-river-mouth community-river-mouth--out" aria-hidden="true" focusable="false"><polygon data-community-river-out /></svg>
