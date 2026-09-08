@@ -39,6 +39,8 @@ export interface Props {
   availableLocales?: readonly Locale[];
   /** 未完成资料核实的原型可直接访问，但不应进入公开搜索索引。 */
   noindex?: boolean;
+  /** 兼容内容页对可索引性的显式控制；关闭时同样输出 noindex。 */
+  indexable?: boolean;
 }
 
 const {
@@ -51,16 +53,23 @@ const {
   pagePath = "",
   availableLocales = locales,
   noindex = false,
+  indexable = true,
 } = Astro.props;
 const messages = getMessages(locale);
 const pageDescription = description ?? messages.description;
 const pageTitle = title === siteInfo.name ? title : `${title} | ${siteInfo.name}`;
+const shouldIndex = indexable && !noindex;
 const canonicalUrl = getLocalizedAbsoluteUrl(locale, pagePath);
 const socialImageUrl = new URL(image, siteInfo.url);
 const brandImageUrl = new URL(siteInfo.brandImage, siteInfo.url);
 const siteHomeUrl = new URL("/", siteInfo.url).toString();
 // 首页的 x-default 交给语言推断入口；未来内容页仍回落到同一内容的默认语言版本，避免误指向首页。
-const xDefaultUrl = pagePath.length === 0 ? siteHomeUrl : getLocalizedAbsoluteUrl(defaultLocale, pagePath);
+const xDefaultLocale = availableLocales.includes(defaultLocale)
+  ? defaultLocale
+  : (availableLocales[0] ?? locale);
+const xDefaultUrl = pagePath.length === 0
+  ? siteHomeUrl
+  : getLocalizedAbsoluteUrl(xDefaultLocale, pagePath);
 const languageAlternates = availableLocales.map((alternateLocale) => ({
   locale: alternateLocale,
   href: getLocalizedAbsoluteUrl(alternateLocale, pagePath),
@@ -179,7 +188,7 @@ const pageStructuredData = {
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="generator" content={Astro.generator} />
     <meta name="application-name" content={siteInfo.name} />
-    <meta name="robots" content={noindex ? "noindex, follow" : "index, follow, max-image-preview:large"} />
+    <meta name="robots" content={shouldIndex ? "index, follow, max-image-preview:large" : "noindex, follow"} />
     <meta name="theme-color" content={interfacePalette.light.canvas} media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content={interfacePalette.dark.canvas} media="(prefers-color-scheme: dark)" />
 
@@ -332,7 +341,7 @@ const pageStructuredData = {
   </head>
   <body>
     {showLaunchSequence && <LaunchSequence locale={locale} />}
-    <SiteHeader locale={locale} pagePath={pagePath} />
+    <SiteHeader locale={locale} pagePath={pagePath} availableLocales={availableLocales} />
     <!-- 首页叙事遮罩在 main 之外接收焦点；这样它锁定正文时仍能作为独立的可操作层淡出到第一站。 -->
     <slot name="overlay" />
     <main class:list={{ "main--full-bleed": fullBleedMain }}>

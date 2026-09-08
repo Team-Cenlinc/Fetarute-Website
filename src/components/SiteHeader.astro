@@ -25,9 +25,11 @@ export interface Props {
   locale: Locale;
   /** 切换语言时保留当前逻辑页面；品牌与首页按钮仍指向语言首页。 */
   pagePath?: string;
+  /** 当前逻辑页面已发布的语言集合，避免语言切换指向不存在的页面。 */
+  availableLocales?: readonly Locale[];
 }
 
-const { locale, pagePath = "" } = Astro.props;
+const { locale, pagePath = "", availableLocales = locales } = Astro.props;
 const messages = getMessages(locale);
 
 /** 页面导视在构建期解析固定线路 token；首页继续使用会话信号，缺失线路则阻止输出错误导航。 */
@@ -230,7 +232,7 @@ const appearanceOptions = [
           </h2>
           <nav class="language-links" aria-label={messages.languageNavigationLabel}>
             {
-              locales.map((alternateLocale) => (
+              availableLocales.map((alternateLocale) => (
                 <a
                   class="language-link"
                   href={getLocalizedRelativeUrl(alternateLocale, pagePath)}
@@ -292,8 +294,8 @@ const appearanceOptions = [
       >
         <DestinationMenu
           locale={locale}
-          headingId="mobile-destination-menu-label"
           pagePath={pagePath}
+          headingId="mobile-destination-menu-label"
           includePrimaryNavigation
         />
       </div>
@@ -347,7 +349,7 @@ const appearanceOptions = [
         </h2>
         <nav class="language-links" aria-label={messages.languageNavigationLabel}>
           {
-            locales.map((alternateLocale) => (
+            availableLocales.map((alternateLocale) => (
               <a
                 class="language-link"
                 href={getLocalizedRelativeUrl(alternateLocale, pagePath)}

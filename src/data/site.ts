@@ -156,6 +156,9 @@ export const primaryNavItems: readonly PrimaryNavItem[] = [
  * 从官网离开后仍能继续了解或探索 Fetarute 的正式服务。
  * QQ 联系入口不放入 Header，而由续行首次到访帮助承接；这里仅保留知识库与世界地图两类探索工具。
  */
+/** Public comprehensive status dashboard, separate from Minecraft player telemetry. */
+export const statusDashboardUrl = "https://status.fetarute.info/";
+
 export const externalDestinations: ExternalDestinationMenu = {
   wiki: { key: "wiki", href: "https://wiki.fetarute.org", icon: "wiki" },
   maps: [

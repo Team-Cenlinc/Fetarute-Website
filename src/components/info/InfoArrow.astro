@@ -1,0 +1,11 @@
+---
+import arrow from "@phosphor-icons/core/assets/bold/arrow-up-right-bold.svg?raw";
+
+interface Props {
+  direction?: "right" | "up-right" | "down" | "up" | "left";
+  class?: string;
+}
+const { direction = "right", class: className } = Astro.props;
+---
+
+<span class:list={["info-arrow", `info-arrow--${direction}`, className]} aria-hidden="true" set:html={arrow} />

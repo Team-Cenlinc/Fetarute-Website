@@ -1,0 +1,74 @@
+---
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import InfoArrow from "@/components/info/InfoArrow.astro";
+import InfoMarker from "@/components/info/InfoMarker.astro";
+import InfoFooter from "@/components/info/InfoFooter.astro";
+import { infoMessages } from "@/i18n/info";
+import { getLocalizedRelativeUrl } from "@/i18n/links";
+import type { Locale } from "@/i18n/config";
+import "@/styles/info.css";
+
+export async function getStaticPaths() {
+  const news = await getCollection("news");
+  return news.map((entry) => ({
+    params: { locale: entry.data.locale, slug: entry.data.translationKey },
+    props: {
+      entry,
+      availableLocales: news
+        .filter((translation) => translation.data.translationKey === entry.data.translationKey)
+        .map((translation) => translation.data.locale),
+    },
+  }));
+}
+
+interface Props {
+  entry: CollectionEntry<"news">;
+  availableLocales: Locale[];
+}
+const { entry, availableLocales } = Astro.props;
+const { locale, title, description, publishedAt, updatedAt, translationKey } = entry.data;
+const copy = infoMessages[locale];
+const { Content } = await render(entry);
+const dateFormat = new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" });
+---
+
+<BaseLayout
+  locale={locale}
+  title={title}
+  description={description}
+  pagePath={`news/${translationKey}`}
+  availableLocales={availableLocales}
+  fullBleedMain
+  indexable={false}
+>
+  <div class="info-page info-article" id="top">
+    <a class="info-article__back" href={getLocalizedRelativeUrl(locale, "info", "news")}>
+      <InfoArrow direction="left" /> {copy.backInfo}
+    </a>
+    <article>
+      <header class="info-article__header">
+        <div class="info-article__category">
+          <InfoMarker kind="news" />
+          <span>{copy.sections.news}</span>
+        </div>
+        <h1>{title}</h1>
+        <div class="info-article__dates">
+          <span>
+            {copy.published}
+            <time datetime={publishedAt.toISOString()}>{dateFormat.format(publishedAt)}</time>
+          </span>
+          {updatedAt && (
+            <span>
+              {copy.updated}
+              <time datetime={updatedAt.toISOString()}>{dateFormat.format(updatedAt)}</time>
+            </span>
+          )}
+        </div>
+        <p class="info-article__description">{description}</p>
+      </header>
+      <div class="info-prose"><Content /></div>
+    </article>
+  </div>
+  <InfoFooter locale={locale} />
+</BaseLayout>
