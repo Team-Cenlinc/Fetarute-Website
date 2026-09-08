@@ -1,4 +1,5 @@
 ---
+import "@/styles/train-feedback.css";
 import RailwayLineHint from "@/components/RailwayLineHint.astro";
 // 两种首页换乘构图复用同一条 Figma Bézier；composition 只负责选择紧凑或展开的连接方向。
 import ServerlinkBend from "@/assets/pages/home/serverlink-bend.svg";
@@ -108,7 +109,7 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
     ></span>
     <span class="home-transfer-breaker__left-track" data-home-transfer-left-track aria-hidden="true"></span>
     <button
-      class="home-transfer-breaker__train home-transfer-breaker__train--incoming"
+      class="train-feedback home-transfer-breaker__train home-transfer-breaker__train--incoming"
       data-home-transfer-incoming-train
       data-home-transfer-tooltip-trigger="incoming"
       data-tooltip-open="false"
@@ -120,7 +121,7 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
       disabled
     ></button>
     <button
-      class="home-transfer-breaker__train home-transfer-breaker__train--outgoing"
+      class="train-feedback home-transfer-breaker__train home-transfer-breaker__train--outgoing"
       data-home-transfer-outgoing-train
       data-home-transfer-tooltip-trigger="outgoing"
       data-tooltip-open="false"
@@ -178,7 +179,8 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
     --home-transfer-outgoing-track-top: 69.17svh;
     --home-transfer-copy-top: 26.48svh;
     --home-transfer-name-gap: clamp(12px, 1.2vw, 24px);
-    --home-transfer-joint-overlap: 1px;
+    /* 直轨压入 SVG 端点 2px，覆盖 Safari 在小数坐标处的双层抗锯齿，避免细缝。 */
+    --home-transfer-joint-overlap: 2px;
     --home-transfer-train-width: clamp(116px, 10.42vw, 200px);
     /* 厚度随车长保持 2:1；不能按 svh 独立放大，否则窄高窗口的竖向列车会变成宽方块。 */
     --home-transfer-train-height: calc(var(--home-transfer-train-width) / 2);
@@ -302,6 +304,9 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
   }
 
   .home-transfer-breaker__train--incoming {
+    /* 本地列车与路径车共用偏色反馈，只注入各自线路数据。 */
+    --train-feedback-base-color: var(--home-transfer-incoming-train-color);
+    --train-feedback-line-color: var(--home-transfer-incoming-color);
     top: calc(
       var(--home-transfer-incoming-track-top) +
         (var(--home-transfer-track-width) - var(--home-transfer-train-height)) / 2
@@ -311,12 +316,15 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
     height: var(--home-transfer-train-height);
     padding: 0;
     border: 0;
-    background: var(--home-transfer-incoming-train-color);
+    background: var(--train-feedback-active-color);
     cursor: pointer;
     touch-action: manipulation;
   }
 
   .home-transfer-breaker__train--outgoing {
+    /* 本地列车与路径车共用偏色反馈，只注入各自线路数据。 */
+    --train-feedback-base-color: var(--home-transfer-outgoing-train-color);
+    --train-feedback-line-color: var(--home-transfer-outgoing-color);
     top: calc(
       var(--home-transfer-outgoing-track-top) +
         (var(--home-transfer-track-width) - var(--home-transfer-train-height)) / 2
@@ -326,39 +334,13 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
     height: var(--home-transfer-train-height);
     padding: 0;
     border: 0;
-    background: var(--home-transfer-outgoing-train-color);
+    background: var(--train-feedback-active-color);
     cursor: pointer;
     touch-action: manipulation;
   }
 
-  .home-transfer-breaker__train:focus-visible {
-    outline: none;
-    filter: brightness(0.92) saturate(1.08);
-  }
-
-  .home-transfer-breaker[data-home-transfer-composition="open"]
-    .home-transfer-breaker__train:focus-visible {
-    /* 续行新增的常驻列车入口保留明确键盘焦点，同岸 compact 则维持 HEAD 的既有外观。 */
-    outline: 3px solid var(--palette-text);
-    outline-offset: 4px;
-  }
-
-  .home-transfer-breaker__train:not(:disabled):hover,
-  .home-transfer-breaker__train:not(:disabled):active,
-  .home-transfer-breaker__train[data-tooltip-open="true"] {
-    filter: brightness(0.92) saturate(1.08);
-  }
-
   .home-transfer-breaker__train:disabled {
     cursor: default;
-  }
-
-  @media (forced-colors: active), (prefers-contrast: more) {
-    .home-transfer-breaker__train:focus-visible {
-      outline: 3px solid currentColor;
-      outline-offset: 4px;
-      filter: none;
-    }
   }
 
   .home-transfer-breaker[data-route-enhanced="true"][data-train-visual-owner="global-incoming"]
@@ -450,7 +432,7 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
       --home-transfer-bend-size: calc(var(--home-transfer-track-width) * 4.01613);
       --home-transfer-bend-height: calc(var(--home-transfer-track-width) * 4.03226);
       /* Figma 原始弯轨使用 butt 端帽；直轨只跨过端点 2px，避免半轨宽重叠形成生硬的粗接头。 */
-      --home-transfer-open-joint-depth: 2px;
+      --home-transfer-open-joint-depth: var(--home-transfer-joint-overlap);
       /* 上轨保留 Figma 高度，右侧竖轨再从弯轨的实际底边接续。 */
       --home-transfer-open-upper-track-top: 12.31svh;
       /* 左弯起点保留 Figma 高度，下轨中心由 SVG 翻转后的水平端点反算。 */
@@ -619,16 +601,19 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
       );
       width: 44px;
       height: clamp(76px, 10.43svh, 88px);
-      background: var(--home-transfer-incoming-train-color);
+      background: var(--train-feedback-active-color);
       transform: translate3d(0, var(--home-transfer-mobile-train-translate-y), 0);
       will-change: transform;
     }
 
     .home-transfer-breaker[data-home-transfer-composition="open"]
       .home-transfer-breaker__train--incoming::after {
+      /* 伪元素只切换出站线路的数据，交互比例继承同一辆车。 */
+      --train-feedback-base-color: var(--home-transfer-outgoing-train-color);
+      --train-feedback-line-color: var(--home-transfer-outgoing-color);
       position: absolute;
       inset: 0;
-      background: var(--home-transfer-outgoing-train-color);
+      background: var(--train-feedback-active-color);
       content: "";
       opacity: var(--home-transfer-mobile-train-color-progress);
       pointer-events: none;

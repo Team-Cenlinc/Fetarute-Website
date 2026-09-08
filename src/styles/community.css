@@ -1,0 +1,809 @@
+/* 线路色由铁路资料注入；其余地图材料通过全局 palette 随系统或手动外观切换。 */
+.community-page {
+  /* 页面、地块、文字和浮层复用站点材料，不允许局部 style 固定浅色外观。 */
+  --community-canvas: var(--palette-canvas);
+  --community-plot: var(--palette-journey-map);
+  --community-text: var(--palette-text);
+  --community-muted: var(--palette-muted);
+  --community-surface: var(--palette-surface-raised);
+  /* 地貌保留类别色相，实际深浅色值和文字对比由 palette.ts 统一提供。 */
+  --community-river: var(--palette-map-river);
+  --community-park: var(--palette-map-park);
+  --community-square: var(--palette-map-square);
+  --community-school: var(--palette-map-school);
+  --community-culture: var(--palette-map-culture);
+  /* 主线和标题锚点保持 Figma 1920 px 画板中的 162 / 311 px 比例。 */
+  --community-rail-x: 8.4375vw;
+  --community-rail-width: clamp(28px, 3.2292vw, 62px);
+  /* 换乘双线以线宽决定紧邻间距，并限制在4–8px，避免超宽屏的vw坐标把同站拆远。 */
+  --community-interchange-gap: clamp(4px, calc(var(--community-rail-width) * 0.125), 8px);
+  --community-copy-x: 16.1979vw;
+  --community-right-inset: 8vw;
+  /* 地块大小可以不同，头像与展开面板共用统一尺度，不暗示贡献等级。 */
+  --community-avatar-size: clamp(32px, 3.3333vw, 64px);
+  --community-panel-width: 360px;
+  --community-panel-height: 320px;
+  /* 首屏完整玩家墙的视觉尺度独立于旧的六乘六马赛克，新增成员后仍保持可辨识头像。 */
+  --community-mosaic-size: clamp(260px, 32vw, 620px);
+  /* 完整桌面 Header 的底边为 96px；墙体再留 8px，避免首行头像被固定导视牌遮挡。 */
+  --community-mosaic-header-safe-top: 104px;
+  /* 列车是首页相同的扁平几何触发器；颜色由首页的 HSL 规则派生。 */
+  --community-train-width: clamp(44px, 4.2vw, 80px);
+  position: relative;
+  overflow-x: clip;
+  background: var(--community-canvas);
+  color: var(--community-text);
+}
+
+.community-page::before {
+  position: absolute;
+  inset-block: 0;
+  left: var(--community-rail-x);
+  width: var(--community-rail-width);
+  background: var(--community-route);
+  content: "";
+  pointer-events: none;
+  z-index: 1;
+}
+
+.community-page h1,
+.community-page h2,
+.community-page h3,
+.community-page p {
+  margin: 0;
+}
+.community-page button,
+.community-page summary,
+.community-page a {
+  -webkit-tap-highlight-color: transparent;
+}
+:where(.community-page) :is(button, a, summary):focus-visible {
+  outline: 3px solid var(--community-text);
+  outline-offset: 5px;
+}
+.community-page :is(button, summary) {
+  font: inherit;
+}
+.community-page summary {
+  list-style: none;
+  cursor: pointer;
+}
+.community-page summary::-webkit-details-marker {
+  display: none;
+}
+
+.community-landing {
+  position: relative;
+  /* 首屏标题是 0% 滑行时的内容，Landing 不得因最小画布高度把它推到可视区之外。 */
+  height: 100svh;
+}
+.community-landing h1 {
+  position: absolute;
+  left: var(--community-copy-x);
+  right: var(--community-right-inset);
+  bottom: 6%;
+  font-size: clamp(80px, 10.4167vw, 200px);
+  font-weight: 750;
+  line-height: 1.18;
+  letter-spacing: -0.035em;
+}
+.community-landing h1 > span {
+  display: block;
+}
+.community-landing h1 .community-landing__english {
+  margin-top: 8px;
+  font-size: clamp(36px, 5vw, 96px);
+  letter-spacing: -0.025em;
+}
+.community-page:lang(en) .community-landing h1 {
+  font-size: clamp(80px, 8vw, 160px);
+  max-width: 10ch;
+}
+.community-landing__tracks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  stroke: var(--community-arrival);
+  stroke-width: var(--community-rail-width);
+  stroke-linejoin: miter;
+  pointer-events: none;
+}
+/* 有脚本时，布局模块会先以实际像素重写 SVG 路径；在此之前绝不绘制服务器后备坐标。 */
+[data-community-page]:not([data-community-arrival-ready]) [data-community-arrival-path],
+[data-community-page]:not([data-community-arrival-ready]) .community-landing__arrival-end {
+  visibility: hidden;
+}
+.community-station,
+.community-landing__arrival-end {
+  z-index: 2;
+  position: absolute;
+  left: calc(var(--community-rail-x) + var(--community-rail-width) * 0.0645);
+  width: calc(var(--community-rail-width) * 0.871);
+  height: calc(var(--community-rail-width) * 0.871);
+  pointer-events: none;
+}
+.community-station::before,
+.community-landing__arrival-end::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--community-canvas);
+}
+.community-landing__arrival-end {
+  left: calc(
+    var(--community-rail-x) - var(--community-rail-width) * 0.9355 -
+      var(--community-interchange-gap)
+  );
+  bottom: calc(18.06% + 1.2vw);
+}
+.community-landing__station {
+  bottom: calc(18.06% + 1.2vw);
+}
+.community-mosaic {
+  /* 八乘八棋盘墙体从右上锚点向左下生长；头像保持马赛克留白，坐标不能随刷新洗牌。 */
+  --community-mosaic-columns: 8;
+  --community-mosaic-rows: 8;
+  position: absolute;
+  top: max(12%, var(--community-mosaic-header-safe-top));
+  right: 4vw;
+  display: grid;
+  grid-template: repeat(var(--community-mosaic-rows), 1fr) / repeat(
+      var(--community-mosaic-columns),
+      1fr
+    );
+  width: var(--community-mosaic-size);
+  aspect-ratio: var(--community-mosaic-columns) / var(--community-mosaic-rows);
+}
+.community-mosaic > span {
+  background: var(--community-plot);
+}
+.community-mosaic img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+.community-mosaic__placeholder {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: var(--community-text);
+}
+.community-mosaic__placeholder svg {
+  width: 54%;
+  height: 54%;
+}
+
+.community-district {
+  position: relative;
+  padding-top: clamp(100px, 8vw, 154px);
+  scroll-margin-top: 90px;
+}
+.community-district__heading {
+  position: relative;
+  padding-inline: var(--community-copy-x) var(--community-right-inset);
+}
+.community-district__heading > .community-station {
+  top: 0.85em;
+  font-size: clamp(56px, 5.7vw, 112px);
+}
+.community-district h2 {
+  font-size: clamp(52px, 5.7vw, 112px);
+  font-weight: 750;
+  line-height: 1.16;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.community-atlas {
+  /* 河口衔接区随视口缩放；入水在标题上方，出水在街区下方，不挤占成员地块。 */
+  --community-river-in-height: clamp(100px, 8vw, 154px);
+  --community-river-out-height: clamp(120px, 16vw, 260px);
+  position: relative;
+  padding-bottom: var(--community-river-out-height);
+}
+.community-river-joins {
+  /* 衔接真实的穿城河口，不再用地图右侧固定宽度的背景冒充贯通河道。 */
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--community-river);
+  pointer-events: none;
+}
+.community-river-mouth {
+  position: absolute;
+  width: 100%;
+  left: 0;
+  fill: var(--community-river);
+  pointer-events: none;
+  overflow: hidden;
+}
+.community-river-mouth--in {
+  top: 0;
+  height: var(--community-river-in-height);
+}
+.community-river-mouth--out {
+  bottom: 0;
+  height: var(--community-river-out-height);
+}
+.community-district__heading h2,
+.community-district__hint {
+  position: relative;
+  max-width: 90%;
+}
+.community-district__heading :is(h2, p) {
+  /* 水道从章节下方通过；画纸底色只托住文字，避免细河穿过笔画影响阅读。 */
+  width: fit-content;
+  background: var(--community-canvas);
+}
+.community-district__hint {
+  max-width: 44em;
+  margin-top: 24px !important;
+  font-size: clamp(15px, 1.14vw, 20px);
+  line-height: 1.7;
+  color: var(--community-muted);
+}
+.community-district__crossing {
+  position: relative;
+  display: block;
+  margin-top: clamp(32px, 3vw, 58px);
+  width: 100%;
+  height: var(--community-rail-width);
+  background: var(--community-connection);
+  /* PN 覆盖浦蓝竖轨，双圆标分别落在蓝线和粉线，表达同一站换乘。 */
+  z-index: 2;
+}
+.community-district__crossing > .community-station {
+  top: 50%;
+  transform: translateY(-50%);
+}
+.community-district__crossing > .community-station--approach {
+  /* 两枚圆心相距一个线宽，使上方圆标完整留在蓝线上，随桌面和手机线宽同步缩放。 */
+  top: -50%;
+}
+.community-neighborhood {
+  position: relative;
+  margin: clamp(48px, 4vw, 76px) var(--community-right-inset) 0 var(--community-copy-x);
+}
+.community-map-block {
+  position: relative;
+  aspect-ratio: 1200 / 780;
+  margin-bottom: 0;
+}
+.community-map-block + .community-map-block {
+  /* 超过八处地点时，在新增街区之间为直线河口衔接留出空地。 */
+  margin-top: clamp(48px, 4vw, 76px);
+}
+.community-map-base {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.community-map-base--mobile,
+.community-plot__outline--mobile {
+  display: none;
+}
+.community-map-river {
+  fill: var(--community-river);
+}
+.community-map-park {
+  fill: var(--community-park);
+}
+.community-map-plaza {
+  fill: var(--community-square);
+}
+.community-map-vacant {
+  fill: var(--community-plot);
+}
+[data-landmark="park"] .community-map-vacant {
+  fill: var(--community-park);
+}
+[data-landmark="school"] .community-map-vacant {
+  fill: var(--community-school);
+}
+[data-landmark="square"] .community-map-vacant {
+  fill: var(--community-square);
+}
+[data-landmark="culture"] .community-map-vacant {
+  fill: var(--community-culture);
+}
+[data-community-landmark] text {
+  fill: var(--community-text);
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+}
+[data-landmark=""] text {
+  display: none;
+}
+[data-landmark-icon] {
+  display: none;
+  fill: var(--community-text);
+}
+[data-landmark="park"] [data-landmark-icon="park"],
+[data-landmark="school"] [data-landmark-icon="school"],
+[data-landmark="square"] [data-landmark-icon="square"],
+[data-landmark="culture"] [data-landmark-icon="culture"] {
+  display: block;
+}
+.community-plot {
+  /* 包围盒、实际轮廓和标注点都由地图坐标派生；只有 summary 裁切，浮层仍可离开地块。 */
+  position: absolute;
+  left: var(--plot-left);
+  top: var(--plot-top);
+  width: var(--plot-width);
+  height: var(--plot-height);
+  min-width: 0;
+  /* 外接矩形的凹口必须穿透到公园/道路；交互仅由真实轮廓和介绍面板接收。 */
+  pointer-events: none;
+}
+.community-plot > summary {
+  pointer-events: auto;
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  background: var(--community-plot);
+  clip-path: var(--plot-shape);
+  transition: background-color 150ms ease;
+}
+.community-plot > summary:focus-visible {
+  outline: none;
+}
+.community-plot[open] > summary {
+  background: var(--community-surface);
+}
+.community-plot__outline {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.community-plot__outline polygon {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 4px;
+  vector-effect: non-scaling-stroke;
+}
+.community-plot[open] .community-plot__outline polygon,
+.community-plot > summary:focus-visible .community-plot__outline polygon {
+  stroke: var(--community-text);
+}
+.community-plot__label {
+  position: absolute;
+  left: var(--plot-label-x);
+  top: var(--plot-label-y);
+  width: var(--plot-label-width);
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.community-plot__portrait {
+  display: block;
+  flex: 0 0 auto;
+  width: var(--community-avatar-size);
+  height: var(--community-avatar-size);
+}
+.community-plot__portrait :is(img, svg),
+.community-profile__portrait :is(img, svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.community-plot__avatar,
+.community-profile__avatar {
+  image-rendering: pixelated;
+}
+.community-plot__partner-image,
+.community-profile__partner-image {
+  image-rendering: auto;
+  object-fit: cover;
+}
+.community-plot__portrait > span,
+.community-profile__portrait > span {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.community-plot__name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(12px, 1vw, 16px);
+  font-weight: 650;
+}
+.community-profile__description:focus-visible {
+  outline: 2px solid var(--community-text);
+  outline-offset: 3px;
+}
+.community-train {
+  z-index: 8;
+  width: var(--community-train-width);
+  height: calc(var(--community-train-width) * 1.65);
+}
+.community-train--route {
+  /* 主线列车以阅读进度在可见轨段内行驶；车身可见但容器不占用 Landing 之前的文档流高度。 */
+  --community-route-train-offset: 0px;
+  position: sticky;
+  top: 42svh;
+  height: 0;
+  margin-left: calc(
+    var(--community-rail-x) - (var(--community-train-width) - var(--community-rail-width)) / 2
+  );
+  transform: translateY(var(--community-route-train-offset));
+  will-change: transform;
+}
+.community-train--arrival {
+  /* 到达列车同时采用 SVG 路径的坐标和切线角度，车体必须顺着 DS 线而非只是浮在线上。 */
+  --community-arrival-train-x: -200px;
+  --community-arrival-train-y: -200px;
+  --community-arrival-train-angle: 45deg;
+  position: absolute;
+  left: var(--community-arrival-train-x);
+  top: var(--community-arrival-train-y);
+  transform: translate(-50%, -50%) rotate(var(--community-arrival-train-angle));
+  will-change: left, top, transform;
+}
+.community-train--connection {
+  /* PN 列车横向穿过换乘线，旋转后的实际按钮边界仍是 Tooltip 的定位锚点。 */
+  --community-connection-train-offset: 50%;
+  position: absolute;
+  top: 50%;
+  left: var(--community-connection-train-offset);
+  transform: translate(-50%, -50%);
+  will-change: left;
+}
+.community-train > button {
+  /* 三条社区线路都复用首页的偏色反馈，具体线路身份由下方修饰类单独声明。 */
+  --train-feedback-base-color: var(--community-train-color);
+  --train-feedback-line-color: var(--community-route);
+  width: var(--community-train-width);
+  height: calc(var(--community-train-width) * 1.65);
+  display: block;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  background: var(--train-feedback-active-color);
+}
+.community-train--arrival > button {
+  --train-feedback-base-color: var(--community-arrival-train-color);
+  --train-feedback-line-color: var(--community-arrival);
+}
+.community-train--connection > button {
+  --train-feedback-base-color: var(--community-connection-train-color);
+  --train-feedback-line-color: var(--community-connection);
+  transform: rotate(90deg);
+}
+.community-panel {
+  pointer-events: auto;
+  /* 所有地图对象、所有输入方式共用这两个尺寸，内容长短只影响内部正文滚动。 */
+  width: min(var(--community-panel-width), calc(100vw - 32px));
+  height: var(--community-panel-height);
+  max-height: calc(100svh - 100px);
+  margin: 0;
+  padding: 20px;
+  border: 2px solid var(--community-text);
+  background: var(--community-surface);
+  color: var(--community-text);
+  box-sizing: border-box;
+  position: absolute;
+  z-index: 30;
+  font-family: var(--font-fetarute-ui), sans-serif;
+}
+.community-panel[data-floating] {
+  /* 以固定原点加 transform 定位，不在滚动热路径反复修改 top/left。 */
+  --community-panel-x: 0px;
+  --community-panel-y: 0px;
+  position: fixed;
+  inset: 0 auto auto 0;
+  transform: translate3d(var(--community-panel-x), var(--community-panel-y), 0);
+}
+.community-panel::backdrop {
+  background: transparent;
+  pointer-events: none;
+}
+.community-panel__close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  padding: 10px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.community-panel__close span,
+.community-panel__close svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+.community-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.community-profile[popover]:not(:popover-open) {
+  display: none;
+}
+.community-profile__identity {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  min-height: 64px;
+  padding-right: 26px;
+}
+.community-profile__identity > div {
+  min-width: 0;
+}
+.community-profile__portrait {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+}
+.community-profile__kind {
+  display: block;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--community-muted);
+}
+.community-profile h3 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.community-profile__description-wrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+.community-profile__description-wrap::before,
+.community-profile__description-wrap::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  left: 0;
+  height: 32px;
+  pointer-events: none;
+}
+.community-profile__description-wrap[data-scroll-hint~="top"]::before {
+  top: 0;
+  background: linear-gradient(to bottom, var(--community-surface), transparent);
+}
+.community-profile__description-wrap[data-scroll-hint~="bottom"]::after {
+  bottom: 0;
+  background: linear-gradient(to top, var(--community-surface), transparent);
+}
+.community-profile__description {
+  height: 100%;
+  margin: 0;
+  overflow-y: auto;
+  font-size: 16px;
+  line-height: 1.65;
+  overscroll-behavior: contain;
+}
+.community-profile__note {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--community-muted);
+}
+.community-profile__footer {
+  display: flex;
+  align-items: center;
+  flex: 0 0 36px;
+  border-top: 1px solid var(--community-plot);
+  padding-top: 8px;
+  font-size: 13px;
+  color: var(--community-muted);
+}
+.community-profile__footer a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--community-text);
+  min-height: 44px;
+}
+.community-profile__footer svg {
+  width: 20px;
+  height: 20px;
+}
+
+.community-contact {
+  /* 共享首页 Footer 的高度、排版和主题反色，只把轨道与版心接回社区地图。 */
+  --journey-footer-track-x: var(--community-rail-x);
+  --journey-footer-track-width: var(--community-rail-width);
+  --journey-footer-copy-x: var(--community-copy-x);
+  --journey-footer-right-inset: var(--community-right-inset);
+  --journey-footer-margin-right: 0px;
+  /* 复制与键盘焦点继承页尾反色，保持地图入口共用的可读性规则。 */
+  --community-text: var(--palette-surface);
+  --community-surface: var(--palette-text);
+  scroll-margin-top: 90px;
+}
+.community-contact__entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 20px;
+}
+.community-contact__number {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.community-contact__number span {
+  font-size: 22px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  user-select: all;
+}
+.community-contact__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  text-underline-offset: 0.3em;
+}
+.community-contact__copy svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+.community-contact__copy:hover {
+  color: color-mix(in srgb, var(--community-text) 84%, var(--community-route));
+  text-decoration: underline;
+}
+.community-contact__copy:active {
+  opacity: 0.72;
+}
+.community-contact__feedback {
+  min-height: 20px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 767px) {
+  .community-page {
+    --community-rail-x: 20px;
+    --community-rail-width: 20px;
+    --community-copy-x: 64px;
+    --community-right-inset: 20px;
+    --community-train-width: 44px;
+    --community-avatar-size: 32px;
+    /* 小屏让完整玩家墙保持可辨识，同时不侵入左侧双线与下方标题。 */
+    --community-mosaic-size: min(54vw, 260px);
+    /* 手机 Header 的底边为 68px；同样保留 8px，横屏短视口也不会压住头像。 */
+    --community-mosaic-header-safe-top: 76px;
+  }
+  .community-landing {
+    height: 100svh;
+  }
+  .community-landing h1 {
+    /* 小屏把 DS 放到浦蓝右侧，标题另留双线空间；地图正文仍沿用64px锚点。 */
+    left: 80px;
+    font-size: clamp(54px, 17vw, 96px);
+    bottom: 12%;
+  }
+  .community-page:lang(en) .community-landing h1 {
+    font-size: clamp(44px, 12vw, 72px);
+  }
+  .community-landing h1 .community-landing__english {
+    font-size: clamp(22px, 7.4vw, 38px);
+    margin-top: 10px;
+  }
+  .community-mosaic {
+    top: max(20%, var(--community-mosaic-header-safe-top));
+    right: 24px;
+  }
+  .community-landing__arrival-end {
+    /* 小屏在浦蓝右侧沿用紧邻换乘间距；站点大小和线宽不变，也不侵入标题。 */
+    left: calc(
+      var(--community-rail-x) + var(--community-rail-width) * 1.0645 +
+        var(--community-interchange-gap)
+    );
+    bottom: calc(19% + 14px);
+  }
+  .community-landing__station {
+    bottom: calc(19% + 14px);
+  }
+  .community-district {
+    padding-top: 74px;
+  }
+  .community-district h2 {
+    font-size: clamp(32px, 9.5vw, 50px);
+    line-height: 1.22;
+    text-align: left;
+    text-wrap: initial;
+  }
+  .community-district__heading > .community-station {
+    top: 14px;
+  }
+  .community-district__hint {
+    font-size: 14px;
+    margin-top: 18px !important;
+  }
+  .community-district__crossing {
+    margin-top: 28px;
+  }
+  .community-neighborhood {
+    margin-top: 40px;
+  }
+  .community-map-block {
+    aspect-ratio: 600 / 1080;
+  }
+  .community-map-base--desktop,
+  .community-plot__outline--desktop {
+    display: none;
+  }
+  .community-map-base--mobile,
+  .community-plot__outline--mobile {
+    display: block;
+  }
+  .community-plot {
+    left: var(--plot-mobile-left);
+    top: var(--plot-mobile-top);
+    width: var(--plot-mobile-width);
+    height: var(--plot-mobile-height);
+  }
+  .community-plot > summary {
+    clip-path: var(--plot-mobile-shape);
+  }
+  .community-plot__label {
+    left: var(--plot-mobile-label-x);
+    top: var(--plot-mobile-label-y);
+    width: var(--plot-mobile-label-width);
+    gap: 6px;
+  }
+  .community-plot__name {
+    font-size: 12px;
+  }
+  .community-train--route {
+    top: 31svh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .community-plot > summary {
+    transition: none;
+  }
+  .community-page {
+    scroll-behavior: auto;
+  }
+}
+@media (forced-colors: active) {
+  .community-plot > summary,
+  .community-train > button {
+    border: 2px solid ButtonText;
+  }
+  .community-panel {
+    border-color: CanvasText;
+  }
+}

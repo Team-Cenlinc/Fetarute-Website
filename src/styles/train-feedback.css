@@ -1,0 +1,32 @@
+/* 各列车只提供原车色与当前线路色；直车体和弯曲路径车共用首页的 12% 线路偏色。 */
+.train-feedback,
+.train-feedback::after,
+.train-feedback-color {
+  --train-feedback-active-color: color-mix(
+    in oklch,
+    var(--train-feedback-base-color) var(--train-feedback-rest-weight, 88%),
+    var(--train-feedback-line-color)
+  );
+}
+
+.train-feedback {
+  /* 常态保留原车色；伪元素颜色层继承交互比例，窄屏换乘过程也得到相同反馈。 */
+  --train-feedback-rest-weight: 100%;
+}
+
+.train-feedback:not(:disabled):is(:hover, :active, :focus-visible),
+.train-feedback[data-tooltip-open="true"] {
+  --train-feedback-rest-weight: 88%;
+}
+
+.train-feedback:focus-visible {
+  /* 与首页路径车一致，用车身偏色表达普通焦点，避免框线切断轨道。 */
+  outline: none;
+}
+
+@media (forced-colors: active), (prefers-contrast: more) {
+  .train-feedback:focus-visible {
+    outline: 3px solid currentColor;
+    outline-offset: 4px;
+  }
+}

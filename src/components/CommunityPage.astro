@@ -1,0 +1,224 @@
+---
+import type { ImageMetadata } from "astro";
+import copyIcon from "@phosphor-icons/core/assets/bold/copy-bold.svg?raw";
+import playerIcon from "@phosphor-icons/core/assets/bold/user-bold.svg?raw";
+import JourneyFooter from "@/components/JourneyFooter.astro";
+import { getCommunityJourneyStops } from "@/data/community-journey";
+import acatine from "@/assets/pages/home/community/presence/players/acatine.png";
+import hot945 from "@/assets/pages/home/community/presence/players/hot945.png";
+import lanyuvu from "@/assets/pages/home/community/presence/players/lanyuvu.png";
+import complexColors from "@/assets/pages/home/community/presence/players/complex-colors.png";
+import katsuta from "@/assets/pages/home/community/presence/players/katsuta-minamoto.png";
+import erichSpt from "@/assets/pages/home/community/presence/players/erich-spt.png";
+import habqi from "@/assets/pages/home/community/presence/players/habqi.png";
+import johnMail from "@/assets/pages/home/community/presence/players/john-mail.png";
+import odeinjul from "@/assets/pages/home/community/presence/players/odeinjul.png";
+import tudo from "@/assets/pages/home/community/presence/players/tudo-.png";
+import extravagate from "@/assets/pages/home/community/presence/players/extravagate.png";
+import thomasxyx from "@/assets/pages/home/community/presence/players/thomasxyx.png";
+import thirteenRoil from "@/assets/pages/home/community/presence/players/thirteenroil.png";
+import dylanAndy1107 from "@/assets/pages/home/community/presence/players/dylanandy1107.png";
+import kuroh1ro from "@/assets/pages/home/community/presence/players/kuroh1ro.png";
+import sadTsui from "@/assets/pages/home/community/presence/players/sad-tsui.png";
+import scienRyz from "@/assets/pages/home/community/presence/players/scienryz.png";
+import urasaka from "@/assets/pages/community/partners/urasaka.webp";
+import hydcraft from "@/assets/pages/community/partners/hydcraft.webp";
+import nebulaecraft from "@/assets/pages/community/partners/nebulaecraft.webp";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import CommunityMap from "@/components/CommunityMap.astro";
+import TrainJourneyTooltip from "@/components/TrainJourneyTooltip.astro";
+import {
+  communityEntities,
+  createCommunityMosaicLayout,
+  type CommunityPartnerId,
+} from "@/data/community";
+import { communityMapPalette } from "@/data/palette";
+import { createHexColor, shiftRailwayLineColor } from "@/data/railway";
+import { onwardEntryPoints, wayfindingPrototype } from "@/data/site";
+import { communityMessages } from "@/i18n/community";
+import type { Locale } from "@/i18n/config";
+import { getLocalizedRelativeUrl } from "@/i18n/links";
+import "@/styles/community.css";
+
+/** 三语社区页共用街区布局和交互，仅替换公开文案。 */
+export interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = communityMessages[locale];
+/** 复用已经缓存且公开署名的本地头像，不引入访客侧第三方图片请求。 */
+const avatars: Readonly<Record<string, ImageMetadata>> = {
+  "044741a8b61048f4aed1553b7e2ca8da": acatine,
+  "5b8c1dec528a4a6286fc49fdc94a7b23": hot945,
+  "6c921ad9ee8e42ddae447558e76239e5": lanyuvu,
+  "49a9cb104b224aceb91f7605df0b34a6": complexColors,
+  "302c6dad42bd46f996e3a4b239ab88ca": katsuta,
+  "8502d0b70e0d4433a674d111734efa25": erichSpt,
+  "00df8f3fb6e041ceabdcaf7e31ec0091": habqi,
+  "57633e720389457f9caacd4b48413c47": johnMail,
+  "0431570389964c64a55e1aa767cbf892": odeinjul,
+  "323de256767145b7a2f1659c543addff": tudo,
+  "96d8840b3c3142908b98a2b43a00c088": extravagate,
+  "ba4fa89850a04a4bb3ee2d5ece82d7a7": thomasxyx,
+  "7a740f60cf96481aa74a8a618569eb3b": thirteenRoil,
+  "3dcd73e42dba43e6b0fab656cf758132": dylanAndy1107,
+  "1d445d97397c499aa1f57beaf5818914": kuroh1ro,
+  "8aa71543257a4a5598b489776ed0258c": sadTsui,
+  "f0cbeb4c89ee40cbb411e84b153f0a8b": scienRyz,
+};
+/** 已确认服务器只使用仓库内图片，避免在访客侧加载第三方图床。 */
+const partnerImages: Readonly<Record<CommunityPartnerId, ImageMetadata>> = {
+  urasaka,
+  hydcraft,
+  nebulaecraft,
+};
+const entities = communityEntities.map((entity) => ({
+  ...entity,
+  profile: entity.partnerId ? copy.partnerProfiles[entity.partnerId] : undefined,
+  displayName: entity.name ?? (
+    entity.kind === "server" ? copy.serverPlaceholder : copy.groupPlaceholder
+  ),
+  avatar: entity.playerUuid ? avatars[entity.playerUuid] : undefined,
+  image: entity.partnerId ? partnerImages[entity.partnerId] : undefined,
+}));
+const members = entities.filter((entity) => entity.kind === "player");
+/** 头像墙始终从右上角按成员顺序扩展，刷新和脚本增强都不改变构图。 */
+const mosaicCells = createCommunityMosaicLayout(members.length);
+const trainColor = shiftRailwayLineColor(createHexColor(communityMapPalette.route), wayfindingPrototype.homeTrainColorShift);
+const arrivalTrainColor = shiftRailwayLineColor(
+  createHexColor(communityMapPalette.arrival),
+  wayfindingPrototype.homeTrainColorShift,
+);
+const connectionTrainColor = shiftRailwayLineColor(
+  createHexColor(communityMapPalette.connection),
+  wayfindingPrototype.homeTrainColorShift,
+);
+/** 页面只注入不会随主题改变的线路与列车色；材料色通过 CSS 消费全局 palette。 */
+const paletteStyle = Object.entries(communityMapPalette)
+  .map(([key, value]) => "--community-" + key + ": " + value + ";").join(" ") +
+  " --community-train-color: " + trainColor +
+  "; --community-arrival-train-color: " + arrivalTrainColor +
+  "; --community-connection-train-color: " + connectionTrainColor + ";";
+const chapters = getCommunityJourneyStops(locale);
+---
+
+<BaseLayout locale={locale} title={copy.title} description={copy.description} pagePath="community/" fullBleedMain noindex>
+  <div class="community-page" style={paletteStyle} data-community-page data-community-arrival-ready>
+    <script is:inline>
+      // JS 页面先撤销静态后备标记，避免尚未按实际视口计算的到达线参与首帧绘制。
+      document.querySelector("[data-community-page]")?.removeAttribute("data-community-arrival-ready");
+    </script>
+    <div class="community-train community-train--route">
+      <button class="train-feedback" type="button" data-community-train data-community-train-line="route" aria-label={copy.guide} aria-haspopup="dialog" aria-controls="community-train-panel" aria-expanded="false">
+        <span aria-hidden="true"></span>
+      </button>
+    </div>
+    <TrainJourneyTooltip
+      id="community-train-panel"
+      className="community-guide"
+      title={copy.chapters}
+      initiallyHidden={false}
+      locale={locale}
+      currentSectionId="community-center"
+      routeStops={chapters}
+      currentSectionLabel={copy.current}
+      quickPickLabel={copy.chapters}
+      goToSectionLabel={copy.goToSection}
+      closeLabel={copy.close}
+    />
+
+    <section class="community-landing" id="community-center" aria-labelledby="community-title" data-community-stop={copy.title}>
+      <svg class="community-landing__tracks" aria-hidden="true" focusable="false"><path d="M 3000 -2258 L 119 623 L 119 900" data-community-arrival-path fill="none" /></svg>
+      <div class="community-train community-train--arrival">
+        <button class="train-feedback" type="button" data-community-train data-community-train-line="arrival" aria-label={copy.guide} aria-haspopup="dialog" aria-controls="community-train-panel" aria-expanded="false">
+          <span aria-hidden="true"></span>
+        </button>
+      </div>
+      <span class="community-landing__arrival-end" aria-hidden="true"></span>
+      <span class="community-station community-landing__station" aria-hidden="true"></span>
+      <a class="community-mosaic" href="#community-district" aria-label={copy.mapLabel}>
+        {members.map((member, index) => (
+          <span data-community-mosaic-cell style={"grid-column: " + (mosaicCells[index][0] + 1) + "; grid-row: " + (mosaicCells[index][1] + 1) + ";"}>
+            {member.avatar ? <img src={member.avatar.src} width="77" height="77" alt="" decoding="async" /> : <span class="community-mosaic__placeholder" set:html={playerIcon} aria-hidden="true" />}
+          </span>
+        ))}
+      </a>
+      <h1 id="community-title">
+        <span>{copy.title}</span>
+        {locale !== "en" && <span class="community-landing__english" lang="en">Community Center</span>}
+      </h1>
+    </section>
+
+    <div class="community-atlas" data-community-atlas>
+    <svg class="community-river-joins" aria-hidden="true" focusable="false"><path data-community-river-links /></svg>
+    <svg class="community-river-mouth community-river-mouth--in" aria-hidden="true" focusable="false"><polygon data-community-river-in /></svg>
+    <section class="community-district" id="community-district" aria-labelledby="community-district-title" data-community-stop={copy.districtStop} data-community-zone="players">
+      <header class="community-district__heading">
+        <span class="community-station" aria-hidden="true"></span>
+        <h2 id="community-district-title">{copy.districtTitle}</h2>
+        <p class="community-district__hint">{copy.mapHint}</p>
+      </header>
+      <CommunityMap locale={locale} entities={members} singleBlock />
+    </section>
+    <section class="community-district" id="community-connections" aria-labelledby="community-connections-title" data-community-stop={copy.connectionsTitle} data-community-zone="connections">
+      <header class="community-district__heading">
+        <h2 id="community-connections-title">{copy.connectionsTitle}</h2>
+      </header>
+      <div class="community-district__crossing">
+        <span class="community-station community-station--approach" aria-hidden="true"></span>
+        <span class="community-station" aria-hidden="true"></span>
+        <div class="community-train community-train--connection">
+          <button class="train-feedback" type="button" data-community-train data-community-train-line="connection" aria-label={copy.guide} aria-haspopup="dialog" aria-controls="community-train-panel" aria-expanded="false">
+            <span aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+      <CommunityMap locale={locale} entities={entities.filter((entity) => entity.kind !== "player")} />
+    </section>
+    <svg class="community-river-mouth community-river-mouth--out" aria-hidden="true" focusable="false"><polygon data-community-river-out /></svg>
+    </div>
+
+    <JourneyFooter
+      id="community-contact"
+      className="community-contact"
+      stopName={copy.contactStop}
+      title={copy.contact}
+      lineColor={communityMapPalette.route}
+      returnHref={getLocalizedRelativeUrl(locale)}
+      returnLabel={copy.home}
+      returnDirection="left"
+    >
+      <div class="community-contact__details">
+        <div class="community-contact__entry">
+          <p class="community-contact__number">QQ <span>{onwardEntryPoints.qqPortalGroupNumber}</span></p>
+          <button type="button" class="community-contact__copy" data-community-copy={onwardEntryPoints.qqPortalGroupNumber} data-copied-label={copy.copied} data-copy-failed-label={copy.copyFailed}>
+            <span aria-hidden="true" set:html={copyIcon}></span>
+            <span>{copy.copy}</span>
+          </button>
+        </div>
+        <p class="community-contact__feedback" aria-live="polite" data-community-copy-feedback></p>
+      </div>
+    </JourneyFooter>
+  </div>
+  <noscript>
+    <style>
+      .community-map-block { aspect-ratio: auto; }
+      .community-map-block [hidden] { display: block !important; }
+      .community-plot { position: relative; inset: auto; width: 100%; height: auto; margin-block: 16px; }
+      .community-plot > summary { position: relative; min-height: 120px; clip-path: none; }
+      .community-plot__label { left: 50%; top: 50%; width: 90%; }
+      .community-map-base, .community-plot__outline, .community-river-mouth, .community-river-joins { display: none; }
+      .community-panel { position: static; width: 100%; height: auto; max-height: none; }
+      .community-guide { position: static; width: 100%; translate: none; transform: none; opacity: 1; pointer-events: auto; }
+      .community-train { display: none; }
+      .community-contact__copy { display: none; }
+    </style>
+  </noscript>
+</BaseLayout>
+
+<script>
+  import { setupCommunityPage } from "@/lib/community/controller";
+  const root = document.querySelector<HTMLElement>("[data-community-page]");
+  if (root) setupCommunityPage(root);
+</script>

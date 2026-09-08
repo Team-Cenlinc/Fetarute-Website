@@ -5,7 +5,7 @@ import mouseSimpleIcon from "@phosphor-icons/core/assets/regular/mouse-simple.sv
 import DepartureGate from "@/components/DepartureGate.astro";
 import HomeCommunitySection from "@/components/HomeCommunitySection.astro";
 import HomeFooter from "@/components/HomeFooter.astro";
-import HomeJourneyQuickPick from "@/components/HomeJourneyQuickPick.astro";
+import TrainJourneyTooltip from "@/components/TrainJourneyTooltip.astro";
 import HomeOnwardSection from "@/components/HomeOnwardSection.astro";
 import HomeSectionBreaker from "@/components/HomeSectionBreaker.astro";
 import HomeTransferSectionBreaker from "@/components/HomeTransferSectionBreaker.astro";
@@ -601,7 +601,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
     <!-- 直轨平移，弯轨只绘制一个车长的局部曲线；保留变形而不扩大到全视口。 -->
     <span class="home-arrival__train-visual" data-home-arrival-train-visual aria-hidden="true">
       <span
-        class="home-arrival__train-color-layer home-arrival__train-color-layer--incoming"
+        class="train-feedback-color home-arrival__train-color-layer home-arrival__train-color-layer--incoming"
         data-home-arrival-train-color-layer="incoming"
       >
         <svg class="home-arrival__train-curve" aria-hidden="true" focusable="false">
@@ -609,7 +609,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         </svg>
       </span>
       <span
-        class="home-arrival__train-color-layer home-arrival__train-color-layer--outgoing"
+        class="train-feedback-color home-arrival__train-color-layer home-arrival__train-color-layer--outgoing"
         data-home-arrival-train-color-layer="outgoing"
       >
         <svg class="home-arrival__train-curve" aria-hidden="true" focusable="false">
@@ -640,28 +640,23 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         {messages.home.arrival.trainTooltip.tapHint}
       </span>
     </p>
-    <aside
-      class="home-arrival__train-tooltip"
+    <TrainJourneyTooltip
       id="home-arrival-train-tooltip"
-      data-home-arrival-tooltip-locale={locale}
-      role="dialog"
-      aria-label={messages.home.arrival.trainTooltip.title}
-      aria-hidden="true"
-      inert
-    >
-      <HomeJourneyQuickPick
-        locale={locale}
-        currentSectionId="beginning-bay"
-        sections={homeJourneySections}
-        currentSectionLabel={messages.home.arrival.trainTooltip.currentSectionLabel}
-        quickPickLabel={messages.home.arrival.trainTooltip.quickPickLabel}
-        goToSectionLabel={messages.home.arrival.trainTooltip.goToSectionLabel}
-        closeLabel={messages.home.arrival.trainTooltip.closeLabel}
-      />
-    </aside>
+      title={messages.home.arrival.trainTooltip.title}
+      locale={locale}
+      currentSectionId="beginning-bay"
+      sections={homeJourneySections}
+      currentSectionLabel={messages.home.arrival.trainTooltip.currentSectionLabel}
+      quickPickLabel={messages.home.arrival.trainTooltip.quickPickLabel}
+      goToSectionLabel={messages.home.arrival.trainTooltip.goToSectionLabel}
+      closeLabel={messages.home.arrival.trainTooltip.closeLabel}
+    />
   </section>
 
   <script>
+    import { bindTrainJourneyNavigation, selectTrainJourneySection } from "@/lib/train-journey";
+    import { bindTrainTooltipInteractions } from "@/lib/train-tooltip-interactions";
+    import { readTrainTooltipStyle, type TrainTooltipStyle } from "@/lib/train-tooltip-layout";
     import {
       getHomeFooterRouteState,
       getHomeFooterRevealProgress,
@@ -1042,12 +1037,6 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         offsetTop: number;
         clientHeight: number;
       }
-      /** Tooltip 的语言宽度和边框只需随样式失效重读，定位帧直接消费这些纯数值。 */
-      interface HomeRouteTooltipStyleMeasurement {
-        preferredInlineSize: number;
-        anchorGap: number;
-        borderBlockSize: number;
-      }
       /** 与 DOMRect 同时采样的文档滚动位置，避免 Safari 在写样式后同步更新布局。 */
       interface HomeRouteScrollPosition {
         x: number;
@@ -1059,7 +1048,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         viewportChange: ReturnType<typeof classifyHomeRouteViewportChange>;
         renderViewportSnapshot: ReturnType<typeof readHomeRouteViewportSnapshot>;
         elementMeasurements: ReadonlyMap<Element, HomeRouteElementMeasurement>;
-        tooltipStyle: HomeRouteTooltipStyleMeasurement;
+        tooltipStyle: TrainTooltipStyle;
       }
       const homeJourneyTargetElements = Array.from(
         homeJourneyPicker.querySelectorAll<HTMLAnchorElement>("[data-home-journey-target]"),
@@ -1276,23 +1265,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         return nextMeasurements;
       };
       /** Tooltip 的计算样式与元素边界一样在 read 阶段冻结，避免先写尺寸后强制回流。 */
-      const readHomeRouteTooltipStyle = (): HomeRouteTooltipStyleMeasurement => {
-        const tooltipStyle = window.getComputedStyle(homeArrivalTrainTooltip);
-
-        return {
-          preferredInlineSize:
-            Number.parseFloat(
-              tooltipStyle.getPropertyValue("--home-arrival-tooltip-preferred-inline-size"),
-            ) || 232,
-          anchorGap:
-            Number.parseFloat(
-              tooltipStyle.getPropertyValue("--home-arrival-tooltip-anchor-gap"),
-            ) || 8,
-          borderBlockSize:
-            (Number.parseFloat(tooltipStyle.borderTopWidth) || 0) +
-            (Number.parseFloat(tooltipStyle.borderBottomWidth) || 0),
-        };
-      };
+      const readHomeRouteTooltipStyle = () => readTrainTooltipStyle(homeArrivalTrainTooltip);
       homeRouteElementMeasurements = readHomeRouteFrameMeasurements({
         scrollPosition: routeScrollPosition,
         measureAll: true,
@@ -1366,10 +1339,6 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           setStylePropertyIfChanged(outgoingTrain, "visibility", outgoingVisible ? "" : "hidden");
         }
       };
-      /** 判断事件目标是否属于任一列车入口，供焦点与点击外部关闭逻辑共用。 */
-      const isTrainTooltipTrigger = (target: EventTarget | null) =>
-        target instanceof Node && trainTooltipTriggers.some((trigger) => trigger.contains(target));
-
       /** 只在可见状态改变时写入有界车身，避免每个滚动帧重复触发样式失效。 */
       const setRouteTrainVisualVisible = (visible: boolean) => {
         const nextValue = String(visible);
@@ -4188,6 +4157,8 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
         }
 
         if (isOpen) {
+          // 先用本帧缓存确定首次贴车坐标，避免静态构建中显现后才从布局原点跳入。
+          updateTrainTooltipPlacement();
           window.requestAnimationFrame(updateTrainTooltipPlacement);
         }
       };
@@ -4245,252 +4216,40 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       const journeyLinks = Array.from(
         homeJourneyPicker.querySelectorAll<HTMLAnchorElement>("[data-home-journey-target]"),
       );
-      const currentJourneyName =
-        homeJourneyPicker.querySelector<HTMLElement>("[data-home-journey-current-name]");
       let activeJourneySectionId: string | undefined;
       /** 同步路线图的章节高亮与上半部当前站名；同一章节的连续帧不会重复改写 DOM。 */
       const setActiveJourneySection = (sectionId: string) => {
         if (activeJourneySectionId === sectionId) return;
-        const currentLink = journeyLinks.find((link) => link.dataset.homeJourneySectionId === sectionId);
-
-        if (!currentLink) {
-          return;
-        }
-
-        const currentStop = currentLink.closest<HTMLElement>("[data-home-journey-stop]");
-        const currentLineColor = currentStop?.dataset.homeJourneyLineColor;
-
-        if (currentLineColor) {
-          setStylePropertyIfChanged(
-            homeJourneyPicker,
-            "--home-journey-current-line-color",
-            currentLineColor,
-          );
-        }
-
-        journeyLinks.forEach((link) => {
-          const isCurrent = link === currentLink;
-          const stop = link.closest<HTMLElement>("[data-home-journey-stop]");
-
-          if (isCurrent) {
-            setAttributeIfChanged(link, "aria-current", "step");
-          } else if (link.hasAttribute("aria-current")) {
-            link.removeAttribute("aria-current");
-          }
-
-          stop?.classList.toggle("home-journey-quick-pick__stop--current", isCurrent);
-        });
-
-        const sectionName = currentLink.dataset.homeJourneySectionName;
-
-        if (currentJourneyName && sectionName && currentJourneyName.textContent !== sectionName) {
-          currentJourneyName.textContent = sectionName;
-        }
-
+        if (!selectTrainJourneySection(homeJourneyPicker, sectionId)) return;
         activeJourneySectionId = sectionId;
         requestRouteTrainUpdate({ placeTooltip: true });
       };
-      /** 判断焦点或指针是否已进入可交互路线图，避免从列车移入快选窗时意外关闭。 */
-      const isInsideTrainDialog = (target: EventTarget | null) =>
-        target instanceof Node && homeArrivalTrainTooltip.contains(target);
-      /** 悬停先确认短暂意图，避免列车从静止指针下经过时让面板闪现。 */
-      const trainTooltipHoverOpenDelay = 140;
-      /** 列车与快选窗之间保留短距离移动缓冲，同时让未固定的预览及时收起。 */
-      const trainTooltipHoverCloseDelay = 180;
-      let pendingTrainTooltipOpen: number | undefined;
-      let pendingTrainTooltipClose: number | undefined;
-      const cancelTrainTooltipOpen = () => {
-        if (pendingTrainTooltipOpen !== undefined) {
-          window.clearTimeout(pendingTrainTooltipOpen);
-          pendingTrainTooltipOpen = undefined;
-        }
-      };
-      const cancelTrainTooltipClose = () => {
-        if (pendingTrainTooltipClose !== undefined) {
-          window.clearTimeout(pendingTrainTooltipClose);
-          pendingTrainTooltipClose = undefined;
-        }
-      };
-      const scheduleTrainTooltipOpen = () => {
-        cancelTrainTooltipOpen();
-        if (isTrainTooltipPassiveOpenSuppressed) {
-          return;
-        }
-        pendingTrainTooltipOpen = window.setTimeout(() => {
-          if (!isTrainTooltipPassiveOpenSuppressed) {
-            setTrainTooltipOpen(true);
-          }
-          pendingTrainTooltipOpen = undefined;
-        }, trainTooltipHoverOpenDelay);
-      };
-      const scheduleTrainTooltipClose = () => {
-        cancelTrainTooltipClose();
-        pendingTrainTooltipClose = window.setTimeout(() => {
-          setTrainTooltipOpen(false);
-          pendingTrainTooltipClose = undefined;
-        }, trainTooltipHoverCloseDelay);
-      };
-      /** 从面板关闭时恢复列车焦点，但跳过这一次 focus 自动预览，避免 Escape 或关闭按钮把面板重新打开。 */
-      const closeTrainTooltipAndRestoreFocus = () => {
-        cancelTrainTooltipOpen();
-        cancelTrainTooltipClose();
-        activeTrainTooltipTrigger.focus({ preventScroll: true });
-        setTrainTooltipOpen(false);
-      };
-      /** 细指针以悬停预览 Tooltip；粗指针则保留点击开关，避免触屏首点被 focus 事件反向关闭。 */
-      const fineHoverQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
-      let pendingTouchTooltipOpen: boolean | undefined;
-      let pendingTrainTooltipTriggerSwitch = false;
+      /** 两页共享输入规则；首页只补充多列车交接与路线定位。 */
+      const trainTooltipInteractions = bindTrainTooltipInteractions({
+        triggers: trainTooltipTriggers,
+        panel: homeArrivalTrainTooltip,
+        activateTrigger: (trigger) => activateTrainTooltipTrigger(trigger as HTMLButtonElement),
+        getActiveTrigger: () => activeTrainTooltipTrigger,
+        isOpen: () => homeArrivalTrain.dataset.tooltipOpen === "true",
+        isPinned: () => isTrainTooltipPinned,
+        setPinned: (pinned) => { isTrainTooltipPinned = pinned; },
+        setOpen: setTrainTooltipOpen,
+        canPreview: () => !isTrainTooltipPassiveOpenSuppressed,
+        isHandoffInProgress: () => isTrainTooltipTriggerHandoffInProgress,
+      });
+      const cancelTrainTooltipOpen = trainTooltipInteractions.cancelOpen;
+      const cancelTrainTooltipClose = trainTooltipInteractions.cancelClose;
 
-      trainTooltipTriggers.forEach((trigger) => {
-        trigger.addEventListener("pointerenter", () => {
-          if (fineHoverQuery.matches) {
-            activateTrainTooltipTrigger(trigger);
-            cancelTrainTooltipClose();
-            if (!isTrainTooltipPinned && homeArrivalTrain.dataset.tooltipOpen !== "true") {
-              scheduleTrainTooltipOpen();
-            }
-          }
-        });
-        trigger.addEventListener("pointerleave", () => {
-          if (fineHoverQuery.matches && !isTrainTooltipPinned) {
-            cancelTrainTooltipOpen();
-            scheduleTrainTooltipClose();
-          }
-        });
-        trigger.addEventListener("focus", () => {
-          activateTrainTooltipTrigger(trigger);
+      bindTrainJourneyNavigation({
+        picker: homeJourneyPicker,
+        selectSection: setActiveJourneySection,
+        beforeNavigate: () => {
           cancelTrainTooltipOpen();
           cancelTrainTooltipClose();
-          setTrainTooltipOpen(true, true);
-        });
-        trigger.addEventListener("blur", (event) => {
-          if (
-            !isTrainTooltipTriggerHandoffInProgress &&
-            !isInsideTrainDialog(event.relatedTarget)
-          ) {
-            setTrainTooltipOpen(false);
-          }
-        });
-        trigger.addEventListener("pointerdown", (event) => {
-          pendingTrainTooltipTriggerSwitch =
-            homeArrivalTrain.dataset.tooltipOpen === "true" &&
-            activeTrainTooltipTrigger !== trigger;
-          activateTrainTooltipTrigger(trigger);
-          pendingTouchTooltipOpen =
-            event.pointerType === "touch" ? homeArrivalTrain.dataset.tooltipOpen !== "true" : undefined;
-        });
-        trigger.addEventListener("click", () => {
-          activateTrainTooltipTrigger(trigger);
-          cancelTrainTooltipOpen();
-          cancelTrainTooltipClose();
-          if (pendingTrainTooltipTriggerSwitch) {
-            isTrainTooltipPinned = true;
-            setTrainTooltipOpen(true, true);
-            pendingTrainTooltipTriggerSwitch = false;
-            pendingTouchTooltipOpen = undefined;
-            return;
-          }
-          if (pendingTouchTooltipOpen !== undefined) {
-            isTrainTooltipPinned = pendingTouchTooltipOpen;
-            setTrainTooltipOpen(pendingTouchTooltipOpen, true);
-            pendingTouchTooltipOpen = undefined;
-            return;
-          }
-
-          const shouldOpen = !isTrainTooltipPinned;
-          isTrainTooltipPinned = shouldOpen;
-          setTrainTooltipOpen(shouldOpen, true);
-        });
-        trigger.addEventListener("keydown", (event) => {
-          if (event.key === "Escape") {
-            event.preventDefault();
-            setTrainTooltipOpen(false);
-          }
-        });
-      });
-      homeArrivalTrainTooltip.addEventListener("pointerenter", () => {
-        if (fineHoverQuery.matches) {
-          cancelTrainTooltipOpen();
-          cancelTrainTooltipClose();
-        }
-      });
-      homeArrivalTrainTooltip.addEventListener("pointerleave", () => {
-        if (fineHoverQuery.matches && !isTrainTooltipPinned) {
-          scheduleTrainTooltipClose();
-        }
-      });
-      homeArrivalTrainTooltip.addEventListener("focusin", () => {
-        cancelTrainTooltipClose();
-        setTrainTooltipOpen(true, true);
-      });
-      homeArrivalTrainTooltip.addEventListener("focusout", (event) => {
-        if (!isTrainTooltipTrigger(event.relatedTarget) && !isInsideTrainDialog(event.relatedTarget)) {
-          setTrainTooltipOpen(false);
-        }
-      });
-      homeArrivalTrainTooltip.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
-          event.preventDefault();
-          event.stopPropagation();
-          closeTrainTooltipAndRestoreFocus();
-        }
-      });
-      homeJourneyClose.addEventListener("click", closeTrainTooltipAndRestoreFocus);
-
-      document.addEventListener("pointerdown", (event) => {
-        if (
-          event.target instanceof Node &&
-          !isTrainTooltipTrigger(event.target) &&
-          !homeArrivalTrainTooltip.contains(event.target)
-        ) {
-          cancelTrainTooltipOpen();
-          cancelTrainTooltipClose();
-          setTrainTooltipOpen(false);
-        }
-      });
-
-      homeJourneyPicker.addEventListener("click", (event) => {
-        if (!(event.target instanceof Element)) {
-          return;
-        }
-
-        const journeyLink = event.target.closest<HTMLAnchorElement>("[data-home-journey-target]");
-
-        if (!journeyLink || !homeJourneyPicker.contains(journeyLink)) {
-          return;
-        }
-
-        const targetId = journeyLink.dataset.homeJourneyTargetId;
-        const sectionId = journeyLink.dataset.homeJourneySectionId as HomeJourneySectionId | undefined;
-        const targetSection = targetId ? document.getElementById(targetId) : null;
-
-        if (!targetId || !sectionId || !targetSection) {
-          return;
-        }
-
-        event.preventDefault();
-        cancelTrainTooltipOpen();
-        cancelTrainTooltipClose();
-        suppressTrainTooltipDuringJourneyJump();
-        setActiveJourneySection(sectionId);
-        /** 先让新站牌的线路色完整展开，再开始章节滚动，保留一次可感知的选择反馈。 */
-        window.setTimeout(
-          () => {
-            setTrainTooltipOpen(false);
-            targetSection.focus({ preventScroll: true });
-            targetSection.scrollIntoView({
-              behavior: reducedMotionQuery.matches ? "auto" : "smooth",
-              block: "start",
-            });
-            window.history.pushState(
-              window.history.state,
-              "",
-              getHomeJourneySectionHash(sectionId),
-            );
-          },
-          reducedMotionQuery.matches ? 0 : 260,
-        );
+          suppressTrainTooltipDuringJourneyJump();
+        },
+        close: () => setTrainTooltipOpen(false),
+        getHash: (id) => getHomeJourneySectionHash(id as HomeJourneySectionId),
       });
 
       const journeyTargets = journeyLinks
@@ -4694,15 +4453,6 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       window.addEventListener(
         "scroll",
         () => {
-          cancelTrainTooltipOpen();
-          cancelTrainTooltipClose();
-          if (
-            !isTrainTooltipPinned &&
-            !isTrainTooltipTrigger(document.activeElement) &&
-            !isInsideTrainDialog(document.activeElement)
-          ) {
-            setTrainTooltipOpen(false);
-          }
           const viewportChange = captureRouteViewportChange();
           requestRouteScrollUpdate({
             measureGeometry: viewportChange === "effective",

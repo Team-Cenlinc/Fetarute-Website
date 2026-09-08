@@ -14,18 +14,20 @@ import { getMessages } from "@/i18n/messages";
 
 /**
  * 可复用于完整、紧凑与小屏 Header 的目的地菜单属性。
- * 小屏额外展示站内导航，桌面出口只呈现会离开官网的正式服务，避免混淆两个导航层级。
+ * 站内页面与外部服务分组展示，完整、紧凑与小屏 Header 共享同一份目的地。
  */
 export interface Props {
   /** 当前页面语言决定站内锚点、本地化目的地名称与辅助技术提示。 */
   locale: Locale;
   /** 当前菜单标题的唯一 DOM id，保证多个响应式菜单同时存在时不重复引用。 */
   headingId: string;
-  /** 是否在出口服务前补充站内首页章节导航；仅三点移动菜单需要。 */
+  /** 是否在出口服务前补充站内导航，以独立分组区分跳转范围。 */
   includePrimaryNavigation?: boolean;
+  /** 当前语言相对路径，用于标记真实所在页面，而不是恒定把首页标为当前。 */
+  pagePath?: string;
 }
 
-const { locale, headingId, includePrimaryNavigation = false } = Astro.props;
+const { locale, headingId, includePrimaryNavigation = false, pagePath = "" } = Astro.props;
 const messages = getMessages(locale);
 const externalHeadingId = `${headingId}-external`;
 const mapHeadingId = `${headingId}-maps`;
@@ -58,11 +60,9 @@ const externalDestinationIcons = {
           class="destination-menu__link"
           data-header-menu-link
           href={
-            item.fragment === "home"
-              ? getLocalizedRelativeUrl(locale)
-              : getLocalizedRelativeUrl(locale, "", item.fragment)
+            getLocalizedRelativeUrl(locale, item.pagePath ?? "", item.fragment === "home" ? undefined : item.fragment)
           }
-          aria-current={item.fragment === "home" ? "page" : undefined}
+          aria-current={(item.pagePath ?? "") === pagePath && item.fragment !== "tri-server-joint" ? "page" : undefined}
         >
           <span>{messages.navigation[item.labelKey]}</span>
           <span class="destination-menu__link-arrow" aria-hidden="true" set:html={arrowUpRightIcon}></span>

@@ -29,9 +29,13 @@ export interface SiteInfo {
  */
 export interface PrimaryNavItem {
   /** 对应 i18n navigation 消息中的键名。 */
-  labelKey: "home" | "features";
+  labelKey: "home" | "features" | "community";
   /** 首页中可长期引用的章节锚点。 */
-  fragment: "home" | "tri-server-joint";
+  fragment?: "home" | "tri-server-joint";
+  /** 独立页面的语言相对路径；省略时仍指向首页章节。 */
+  pagePath?: "community/";
+  /** 独立页面固定使用的导视线路；首页随机信号排除这些身份，避免相邻入口同色。 */
+  navigationLineKey?: RailwayLineKey;
 }
 
 /** 出口菜单中可公开访问的外部服务类型；图标由 Header 按类型统一派生，避免数据层耦合视图资产。 */
@@ -142,6 +146,11 @@ export const siteInfo: SiteInfo = {
 export const primaryNavItems: readonly PrimaryNavItem[] = [
   { labelKey: "home", fragment: "home" },
   { labelKey: "features", fragment: "tri-server-joint" },
+  {
+    labelKey: "community",
+    pagePath: "community/",
+    navigationLineKey: getRailwayLineKey("SURC", "WS"),
+  },
 ];
 
 /**
@@ -177,10 +186,16 @@ export const onwardEntryPoints: OnwardEntryPoints = {
 
 /**
  * 首页装饰信号的候选线路身份。
- * 灰色主线保留给真实线路语义，首页只轮换高辨识度的支线与城市线，避免 Header 在不同会话中显得失焦。
+ * 灰色主线与独立页面的固定线路不参与轮换，保证首页和相邻页面始终拥有不同的导视色。
  */
 const homeNavigationSignalLineKeys: readonly RailwayLineKey[] = railwayLines
-  .filter((line) => line.code !== "Main")
+  .filter(
+    (line) =>
+      line.code !== "Main" &&
+      !primaryNavItems.some(
+        (item) => item.navigationLineKey === getRailwayLineKey(line.operatorCode, line.code),
+      ),
+  )
   .map((line) => getRailwayLineKey(line.operatorCode, line.code));
 
 /**

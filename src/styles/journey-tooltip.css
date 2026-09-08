@@ -1,0 +1,61 @@
+.home-arrival__train-tooltip {
+  /* 脚本会按实测 Header 底边覆盖该上限；默认值保证首帧和无脚本样式仍不会超出视口。 */
+  --home-arrival-tooltip-content-max-block-size: calc(100svh - 44px);
+  /* 中文四站以 232px 紧凑成组；脚本仍会把宽度限制在真实 visual viewport 内。 */
+  --home-arrival-tooltip-preferred-inline-size: 232px;
+  /* 小屏让弹窗贴近车身，维持列车与快选窗是一组控件的空间关系。 */
+  --home-arrival-tooltip-anchor-gap: 8px;
+  position: fixed;
+  /* 以面板实际可用宽度触发窄版导视，支持 pinch zoom 而不依赖未变化的布局视口。 */
+  container: train-tooltip / inline-size;
+  /* Tooltip 覆盖页面内容与固定 Header，不会在三服汇图片或地图层下方消失。 */
+  z-index: 21;
+  /* 固定布局原点，跟随坐标由脚本直接写 translate；避免逐帧 top/left 回流及定位变量向子树继承。 */
+  inset: 0 auto auto 0;
+  /* 首次定位前保留安全边距；独立位移不参与下方 transform 的开合过渡，滚动时紧跟列车。 */
+  translate: 20px 20px;
+  display: block;
+  /* inline-size 由 visual viewport 实测宽度注入，地址栏、缩放和软键盘出现后仍保留两侧安全区。 */
+  width: var(--home-arrival-tooltip-inline-size, min(320px, calc(100vw - 40px)));
+  max-block-size: calc(100svh - 40px);
+  border: 2px solid var(--palette-text);
+  background: var(--palette-canvas);
+  color: var(--palette-text);
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition:
+    opacity 180ms var(--motion-header-standard-effects),
+    transform 180ms var(--motion-header-standard-spatial);
+}
+
+.home-arrival__train-tooltip[data-home-arrival-tooltip-locale="en"] {
+  /* 英文最长站名需要略宽行盒，但不沿用中文之外的无意义空白。 */
+  --home-arrival-tooltip-preferred-inline-size: 300px;
+}
+
+@media (min-width: 761px) {
+  .home-arrival__train-tooltip {
+    /* 桌面列车尺寸更大，保留一档稍宽的光学间距，仍比原来的 16px 更紧。 */
+    --home-arrival-tooltip-anchor-gap: 12px;
+  }
+
+  .home-arrival__train-tooltip[data-home-arrival-tooltip-locale="en"] {
+    --home-arrival-tooltip-preferred-inline-size: 328px;
+  }
+}
+
+/* 共用外框与显隐状态，页面只提供章节数据及实际贴车坐标。 */
+.home-arrival__train-tooltip[aria-hidden="false"] {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-arrival__train-tooltip {
+    transition: none;
+  }
+}

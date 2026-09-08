@@ -13,7 +13,18 @@ import {
 export type InterfaceAppearance = "light" | "dark";
 
 /**
- * 不承载线路语义的全站中性界面色。
+ * 社区概念地图的线路分别复用浦蓝线、探索线和 PN 的真实品牌色，不随外观切换。
+ * 画纸、地块与地貌交给下方界面 palette，避免页面把浅色值固定写进 style。
+ */
+export const communityMapPalette = {
+  route: railwayLines.find((line) => line.operatorCode === "SURC" && line.code === "WS")!.color,
+  arrival: railwayLines.find((line) => line.operatorCode === "SURC" && line.code === "DS")!.color,
+  connection: railwayLines.find((line) => line.operatorCode === "SURN" && line.code === "PN")!
+    .color,
+} as const;
+
+/**
+ * 不承载线路语义的全站界面材料与功能色。
  * 颜色由 Layout 输出为 CSS custom properties，组件只能使用语义名称，避免重新引入偏绿的局部灰阶。
  */
 export interface InterfacePalette {
@@ -25,6 +36,16 @@ export interface InterfacePalette {
   surfaceRaised: string;
   /** 列车章节图下半部的路线底色；与上半部的白色当前站牌保持明确材料分界。 */
   journeyMap: string;
+  /** 社区河道的实体水面色，深色外观降低亮度，保持与画纸的分界。 */
+  mapRiver: string;
+  /** 公园地块的绿色识别，与当前主题文字保持可读对比。 */
+  mapPark: string;
+  /** 广场地块的黄色识别，不占用铁路线路 token。 */
+  mapSquare: string;
+  /** 学校地块的土色识别，深浅外观只调整材料明度。 */
+  mapSchool: string;
+  /** 文化场所地块的粉色识别，与主题前景成对使用。 */
+  mapCulture: string;
   /** 主信息与轮廓使用的高对比中性色。 */
   text: string;
   /** 长说明、次级标签使用的低对比中性色。 */
@@ -88,8 +109,8 @@ export interface InterfacePalette {
 }
 
 /**
- * 每种外观模式的中性界面色。
- * 这里刻意不放绿色、蓝色或其他线路色；线路识别只能从 railway.ts 派生，避免全局 CTA 误读为某一线路。
+ * 每种外观模式的界面材料与功能色。
+ * 地貌与状态色只表达各自功能；铁路线路识别仍从 railway.ts 派生，不能挪用界面色。
  */
 export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePalette>> = {
   light: {
@@ -97,6 +118,11 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     surface: "#FAFBFA",
     surfaceRaised: "#FCFDFC",
     journeyMap: "#E0E0E0",
+    mapRiver: "#DCFDFF",
+    mapPark: "#129D00",
+    mapSquare: "#E5D200",
+    mapSchool: "#B98362",
+    mapCulture: "#F3CBDD",
     text: "#1B2022",
     muted: "#626A6D",
     border: "#C9CED0",
@@ -133,6 +159,11 @@ export const interfacePalette: Readonly<Record<InterfaceAppearance, InterfacePal
     surface: "#1A1E20",
     surfaceRaised: "#24292B",
     journeyMap: "#1A1E20",
+    mapRiver: "#19383E",
+    mapPark: "#164E2E",
+    mapSquare: "#51480D",
+    mapSchool: "#604333",
+    mapCulture: "#5A364C",
     text: "#EEF0EF",
     muted: "#B2B8B9",
     border: "#3D474A",
@@ -175,6 +206,11 @@ const interfacePaletteCssVariableByKey: Readonly<Record<keyof InterfacePalette, 
   surface: "--palette-surface",
   surfaceRaised: "--palette-surface-raised",
   journeyMap: "--palette-journey-map",
+  mapRiver: "--palette-map-river",
+  mapPark: "--palette-map-park",
+  mapSquare: "--palette-map-square",
+  mapSchool: "--palette-map-school",
+  mapCulture: "--palette-map-culture",
   text: "--palette-text",
   muted: "--palette-muted",
   border: "--palette-border",

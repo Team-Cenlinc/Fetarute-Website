@@ -11,7 +11,7 @@ import fetaruteLogo from "@/assets/fetarute-branding/fetarute-logo.svg?raw";
 import DestinationMenu from "@/components/DestinationMenu.astro";
 import { getRailwayLineCssVariableName } from "@/data/palette";
 import { railwayLineByKey } from "@/data/railway";
-import { wayfindingPrototype } from "@/data/site";
+import { primaryNavItems, wayfindingPrototype } from "@/data/site";
 import { localeMetadata, locales, type Locale } from "@/i18n/config";
 import { getLocalizedRelativeUrl } from "@/i18n/links";
 import { getMessages } from "@/i18n/messages";
@@ -23,10 +23,29 @@ import { getMessages } from "@/i18n/messages";
 export interface Props {
   /** 当前页面所属的公开语言。 */
   locale: Locale;
+  /** 切换语言时保留当前逻辑页面；品牌与首页按钮仍指向语言首页。 */
+  pagePath?: string;
 }
 
-const { locale } = Astro.props;
+const { locale, pagePath = "" } = Astro.props;
 const messages = getMessages(locale);
+
+/** 页面导视在构建期解析固定线路 token；首页继续使用会话信号，缺失线路则阻止输出错误导航。 */
+const headerNavItems = primaryNavItems
+  .filter((item) => item.fragment !== "tri-server-joint")
+  .map((item) => {
+    const line = item.navigationLineKey ? railwayLineByKey.get(item.navigationLineKey) : undefined;
+    if (item.navigationLineKey && !line) {
+      throw new Error(`页面导视引用了未录入的线路：${item.navigationLineKey}。`);
+    }
+    return {
+      ...item,
+      // 固定页面在入口自身覆盖线路色，避免继承根节点的首页随机色。
+      lineStyle: line
+        ? `--home-nav-line-color: var(${getRailwayLineCssVariableName(line)});`
+        : undefined,
+    };
+  });
 
 /**
  * 供首页装饰信号选择的 CSS 线路 token。
@@ -216,7 +235,7 @@ const appearanceOptions = [
               locales.map((alternateLocale) => (
                 <a
                   class="language-link"
-                  href={getLocalizedRelativeUrl(alternateLocale)}
+                  href={getLocalizedRelativeUrl(alternateLocale, pagePath)}
                   lang={localeMetadata[alternateLocale].languageTag}
                   aria-label={localeMetadata[alternateLocale].label}
                   aria-current={alternateLocale === locale ? "page" : undefined}
@@ -276,6 +295,7 @@ const appearanceOptions = [
         <DestinationMenu
           locale={locale}
           headingId="mobile-destination-menu-label"
+          pagePath={pagePath}
           includePrimaryNavigation
         />
       </div>
@@ -284,18 +304,29 @@ const appearanceOptions = [
 
   <span class="site-header__spacer" aria-hidden="true"></span>
 
-  <a class="home-nav" href={getLocalizedRelativeUrl(locale)} aria-label={messages.navigation.home}>
-    <span class="home-nav__primary">
-      <span class="home-nav__text-stack">
-        <span class="home-nav__label">{messages.navigation.home}</span>
-        <span class="home-nav__indicator" aria-hidden="true">
-          <span class="home-nav__indicator-dot"></span>
-          <span class="home-nav__indicator-band"></span>
+  {
+    headerNavItems.map((item) => (
+      <a
+        class:list={["home-nav", { "community-nav": item.labelKey === "community" }]}
+        href={getLocalizedRelativeUrl(locale, item.pagePath ?? "")}
+        aria-label={messages.navigation[item.labelKey]}
+        aria-current={(item.pagePath ?? "") === pagePath ? "page" : undefined}
+        data-home-nav-signal={item.navigationLineKey ? "fixed" : "session"}
+        style={item.lineStyle}
+      >
+        <span class="home-nav__primary">
+          <span class="home-nav__text-stack">
+            <span class="home-nav__label">{messages.navigation[item.labelKey]}</span>
+            <span class="home-nav__indicator" aria-hidden="true">
+              <span class="home-nav__indicator-dot" />
+              <span class="home-nav__indicator-band" />
+            </span>
+          </span>
+          <span class="home-nav__arrow" aria-hidden="true" set:html={arrowUpRightIcon} />
         </span>
-      </span>
-      <span class="home-nav__arrow" aria-hidden="true" set:html={arrowUpRightIcon}></span>
-    </span>
-  </a>
+      </a>
+    ))
+  }
 
   <details class="service-desk" data-header-menu>
     <summary class="service-desk__summary" aria-label={messages.serviceDeskLabel}>
@@ -321,7 +352,7 @@ const appearanceOptions = [
             locales.map((alternateLocale) => (
               <a
                 class="language-link"
-                href={getLocalizedRelativeUrl(alternateLocale)}
+                href={getLocalizedRelativeUrl(alternateLocale, pagePath)}
                 lang={localeMetadata[alternateLocale].languageTag}
                 aria-label={localeMetadata[alternateLocale].label}
                 aria-current={alternateLocale === locale ? "page" : undefined}
@@ -1020,13 +1051,15 @@ const appearanceOptions = [
     }
 
     const finishClosing = () => {
+      // Escape 关闭动画期间用户可能已点到正文；只在焦点仍留在原菜单时归还触发牌。
+      const shouldRestoreFocus = restoreFocus && menu.contains(document.activeElement);
       menu.removeAttribute("open");
       delete menu.dataset.closing;
       headerMenuAnimations.delete(menu);
       headerHoverPreviewMenus.delete(menu);
       headerPinnedMenus.delete(menu);
 
-      if (restoreFocus) {
+      if (shouldRestoreFocus) {
         menu.querySelector<HTMLElement>("summary")?.focus();
       }
     };

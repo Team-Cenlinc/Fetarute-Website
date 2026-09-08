@@ -1,0 +1,272 @@
+---
+import arrowUpIcon from "@phosphor-icons/core/assets/bold/arrow-up-bold.svg?raw";
+import arrowLeftIcon from "@phosphor-icons/core/assets/bold/arrow-left-bold.svg?raw";
+import fetaruteLogo from "@/assets/fetarute-branding/fetarute-logo.svg?raw";
+import { siteInfo } from "@/data/site";
+
+/** 铁路页面共用页尾骨架；章节提供文案和正文插槽，轨道位置通过 CSS 变量接续各页主线。 */
+export interface Props {
+  id: string;
+  title: string;
+  description?: string;
+  lineColor: string;
+  returnHref: string;
+  returnLabel: string;
+  returnDirection?: "up" | "left";
+  className?: string;
+  /** 社区阅读进度使用的末站名称；未传时不附加社区状态。 */
+  stopName?: string;
+}
+
+const { id, title, description, lineColor, returnHref, returnLabel, returnDirection = "up", className, stopName } = Astro.props;
+const currentYear = new Date().getFullYear();
+---
+
+<footer
+  class:list={["home-footer", className]}
+  id={id}
+  data-home-footer={id === "footer" ? "" : undefined}
+  data-community-stop={stopName}
+  style={`--home-footer-line-color: ${lineColor};`}
+>
+  <span class="home-footer__track" aria-hidden="true"></span>
+  <div class="home-footer__content">
+    <div class="home-footer__introduction">
+      <div class="home-footer__closing-copy">
+        <h2>{title}</h2>
+        <slot>
+          {description && <p class="home-footer__description">{description}</p>}
+        </slot>
+      </div>
+      <a class="home-footer__restart" href={returnHref} data-direction={returnDirection}>
+        <span>{returnLabel}</span>
+        <span class="home-footer__restart-icon" aria-hidden="true" set:html={returnDirection === "up" ? arrowUpIcon : arrowLeftIcon}></span>
+      </a>
+    </div>
+    <div class="home-footer__signature">
+      <span class="home-footer__wordmark" aria-hidden="true" set:html={fetaruteLogo}></span>
+      <p class="home-footer__legal">© {currentYear} {siteInfo.name}</p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  /* --journey-footer-{background,text,track-x,track-width,margin-right,right-inset,copy-x}
+     允许章节接续本页配色和轨道；高度、字体与签名间距保持同一套响应式规则。 */
+  .home-footer {
+    /* 页尾轨道宽度与续行探索线保持同一比例，并在小屏切换为左侧窄轨。 */
+    --home-footer-track-width: clamp(36px, 3.23vw, 62px);
+    /* 无脚本与减少动态模式默认直接显示最终态；滚动增强只在 Footer 将进入视口时覆写。 */
+    --home-footer-content-offset: 0px;
+    --home-footer-content-opacity: 1;
+    /* 页尾轨道复用续行桌面右轨公式，保证 section 与 footer 在任意桌面宽度都原位接缝。 */
+    --home-footer-right-track-x: calc(77.71vw + var(--home-footer-track-width) * 3.01613);
+    position: relative;
+    /* Footer 是首页网格子项；允许窄屏收缩，避免英文最小内容宽度撑开整页。 */
+    min-width: 0;
+    min-height: 300px;
+    overflow: clip;
+    background: var(--journey-footer-background, var(--palette-text));
+    color: var(--journey-footer-text, var(--palette-surface));
+  }
+
+  .home-footer__track {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--journey-footer-track-x, var(--home-footer-right-track-x));
+    width: var(--journey-footer-track-width, var(--home-footer-track-width));
+    background: var(--home-footer-line-color);
+  }
+
+  .home-footer__content {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: auto;
+    min-height: inherit;
+    margin-right: var(--journey-footer-margin-right, calc(100% - var(--home-footer-right-track-x) + 72px));
+    padding: 40px var(--journey-footer-right-inset, 0px) 24px var(--journey-footer-copy-x, 7.92vw);
+    opacity: var(--home-footer-content-opacity);
+    transform: translateY(var(--home-footer-content-offset));
+  }
+
+  .home-footer__introduction {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px clamp(32px, 4vw, 72px);
+    align-items: start;
+  }
+
+  /* 结束语与返回操作各自对齐顶部，避免单个链接撑开正文行距。 */
+  .home-footer__closing-copy {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+  }
+
+  .home-footer__introduction h2,
+  .home-footer__description,
+  .home-footer__legal {
+    margin: 0;
+  }
+
+  .home-footer__introduction h2 {
+    font-size: clamp(28px, 2.6vw, 42px);
+    font-weight: 700;
+    line-height: 1.18;
+    text-wrap: balance;
+  }
+
+  .home-footer__description {
+    max-width: 48ch;
+    font-size: clamp(14px, 0.94vw, 17px);
+    font-weight: 480;
+    line-height: 1.65;
+    opacity: 0.76;
+  }
+
+  /* 返回入口统一使用文字与方向箭头，整条链接保留触摸高度。 */
+  .home-footer__restart {
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+    justify-self: end;
+    min-height: 44px;
+    color: inherit;
+    font-size: 14px;
+    font-weight: 650;
+    line-height: 1.4;
+    text-decoration: none;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.32em;
+  }
+
+  .home-footer__restart-icon {
+    display: block;
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    transition: transform 180ms var(--motion-header-standard-spatial);
+  }
+
+  .home-footer__restart:hover {
+    text-decoration-line: underline;
+  }
+
+  .home-footer__restart:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
+  }
+
+  .home-footer__restart:active {
+    opacity: 0.72;
+  }
+
+  .home-footer__restart[data-direction="left"]:hover .home-footer__restart-icon {
+    transform: translateX(-3px);
+  }
+
+  .home-footer__restart[data-direction="up"]:hover .home-footer__restart-icon {
+    transform: translateY(-3px);
+  }
+
+  /* 品牌签名独立成行，Logo 与版权共享两端锚点；宽度不足时按内容自然换行。 */
+  .home-footer__signature {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px 24px;
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 2px solid color-mix(in srgb, currentColor 24%, transparent);
+  }
+
+  .home-footer__wordmark {
+    display: block;
+    flex: 0 0 auto;
+    width: clamp(144px, 12.22vw, 176px);
+    max-width: 100%;
+    line-height: 0;
+  }
+
+  .home-footer__wordmark :global(svg) {
+    width: 100%;
+    height: auto;
+  }
+
+  .home-footer__restart-icon :global(svg) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .home-footer__legal {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    opacity: 0.72;
+  }
+
+  @media (max-width: 1023px) {
+    .home-footer {
+      --home-footer-track-width: clamp(20px, 5.8vw, 30px);
+      min-height: 320px;
+    }
+
+    .home-footer__track {
+      left: var(--journey-footer-track-x, 7vw);
+    }
+
+    .home-footer__content {
+      width: auto;
+      margin-right: 0;
+      padding: 34px var(--journey-footer-right-inset, 22px) 24px var(--journey-footer-copy-x, max(calc(7vw + var(--home-footer-track-width) + 50px), 20.9vw));
+    }
+
+    .home-footer__introduction {
+      grid-template-columns: minmax(0, 1fr);
+      /* 小屏缩短正文与返回入口的空白，使两页短文案都落在共用的 320px 高度内。 */
+      gap: 12px;
+    }
+
+    .home-footer__introduction h2 {
+      font-size: clamp(28px, 8vw, 38px);
+    }
+
+    .home-footer__description {
+      max-width: 27ch;
+      font-size: clamp(14px, 3.8vw, 17px);
+    }
+
+    .home-footer__restart {
+      justify-self: start;
+    }
+
+    .home-footer__signature {
+      gap: 12px 16px;
+      margin-top: 20px;
+      padding-top: 16px;
+    }
+  }
+
+  @media (forced-colors: active), (prefers-contrast: more) {
+    .home-footer__track {
+      border: 2px solid currentColor;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-footer__restart-icon,
+    .home-footer__restart[data-direction]:hover .home-footer__restart-icon {
+      transition: none;
+      transform: none;
+    }
+
+    .home-footer__content {
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>

@@ -69,6 +69,9 @@ node --test test/*.browser.mjs
 CDP；WebKit 覆盖弹窗边界、触摸开关、键盘与跳站关闭。本机浏览器结果不替代 iPhone
 Safari 真机滚动验收。
 
+`test/train-tooltip-zoom.browser.mjs` 覆盖两页共用站牌的原生 200% 缩放（Chromium
+CDP）、短屏末站触控、关闭按钮的键盘可达性，以及正常尺寸不产生多余滚动。缩放时允许整张站牌原生滚动与站名换行；WebKit 运行短屏触控回归，跳过仅支持 CDP 的缩放用例。
+
 `test/home-scroll-frame.browser.mjs`
 在真实页面的动画帧中检查列车样式写入与窗口布局读取顺序，并验证静止列车不会重复提交样式。滚动位置必须与 DOMRect 在 read 阶段一起采样，后续路线与章节同步只消费快照；WebKit 的
 `scrollY` getter 会进入同步布局更新，不能把它当作 write 阶段的普通数值读取。
@@ -162,6 +165,10 @@ GitHub Pages 只能提供静态文件，不能针对 `/` 读取 `Accept-Language
 
 ## 目录结构
 
+社区页原型通过 `/zh-Hans/community/`、`/zh-Hant/community/` 和 `/en/community/`
+访问，也已注册为 Header 的并列社区主导航牌及手机更多菜单入口，桌面出口仅含外部服务。占位资料确认前仍使用
+`noindex`；地图资料、布局约定和浏览器验证方法见[社区地图原型](community-map.md)。
+
 ```text
 public/                 浏览器图标、Web App Manifest 与构建生成的社交分享卡等需原样发布的品牌文件
 fonts-source/           完整字体源文件，仅用于本地生成子集，不直接发布
@@ -174,6 +181,7 @@ src/
     fonts/            生成的浏览器 woff2 字体子集
     pages/
       home/           首页场景图等按页面归类的源图片；构建时生成 AVIF/WebP
+      community/      社区导视画板导出的原始站点标记
   components/        可复用 Astro 组件
   content/           公告、指南等内容
   data/              站点级静态数据
