@@ -14,62 +14,52 @@ import {
 } from "../src/data/community.ts";
 import { createCommunityLayout, placeCommunityPanel } from "../src/lib/community/layout.ts";
 
-/** 验证头像墙只用斜向边，且图遍历可抵达每一块头像。 */
-function assertDiagonalMosaic(cells: readonly CommunityMosaicCell[]) {
+/** 验证头像墙以右上角为锚点沿对角格连续生长，保留棋盘马赛克的留白规则。 */
+function assertUpperRightMosaic(cells: readonly CommunityMosaicCell[]) {
   assert.equal(new Set(cells.map(([column, row]) => `${column},${row}`)).size, cells.length);
-  for (const [column, row] of cells) {
+  assert.deepEqual(cells[0], [7, 0], "第一位玩家必须从右上锚点长出");
+  const occupied = new Set<string>();
+  for (const [index, [column, row]] of cells.entries()) {
     assert.ok(
-      cells.some(
-        ([otherColumn, otherRow]) =>
-          (column !== otherColumn || row !== otherRow) &&
-          Math.abs(column - otherColumn) === 1 &&
-          Math.abs(row - otherRow) === 1,
-      ),
-      `头像墙格 ${column},${row} 必须斜向相邻`,
+      column >= 0 && column < 8 && row >= 0 && row < 8,
+      `头像墙格 ${column},${row} 超出边界`,
     );
+    assert.equal((column + row) % 2, 1, `头像墙格 ${column},${row} 必须保留棋盘马赛克色序`);
+    if (index > 0)
+      assert.ok(
+        [-1, 1].some((columnStep) =>
+          [-1, 1].some((rowStep) => occupied.has(`${column + columnStep},${row + rowStep}`)),
+        ),
+        `头像墙格 ${column},${row} 必须从已有头像的对角格生长`,
+      );
+    occupied.add(`${column},${row}`);
   }
-  const connected = new Set([0]);
-  const pending = [0];
-  while (pending.length) {
-    const index = pending.pop()!;
-    const [column, row] = cells[index];
-    for (const candidate of cells.keys()) {
-      const [otherColumn, otherRow] = cells[candidate];
-      if (
-        !connected.has(candidate) &&
-        Math.abs(column - otherColumn) === 1 &&
-        Math.abs(row - otherRow) === 1
-      ) {
-        connected.add(candidate);
-        pending.push(candidate);
-      }
-    }
-  }
-  assert.equal(connected.size, cells.length, "头像墙不能出现独立的子组件");
 }
 
-test("头像墙保留离散马赛克，并通过斜对角连成一个整体", () => {
+test("头像墙从右上锚点向左下长成棋盘马赛克", () => {
   assert.ok(
     communityPlayerMapEntityLimit < communityDesktopMap.lots.length,
     "玩家地图必须为公共设施保留地块",
   );
-  assertDiagonalMosaic(communityMosaicCells);
+  assertUpperRightMosaic(communityMosaicCells);
 });
 
-test("头像墙每次可换位，但任何种子都保持斜向连通", () => {
-  const first = createCommunityMosaicLayout(17, 1);
-  assert.notDeepEqual(first, createCommunityMosaicLayout(17, 2));
-  for (let seed = 0; seed < 100; seed += 1) {
-    const layout = createCommunityMosaicLayout(17, seed);
-    assertDiagonalMosaic(layout);
-    assert.ok(layout.every(([column, row]) => (column + row) % 2 === 1));
-  }
-  assertDiagonalMosaic(createCommunityMosaicLayout(25, 20260907));
-});
-
-test("消融：移除关键斜向桥格时，头像墙连通性守卫必须拒绝版面", () => {
-  const withoutBridge = communityMosaicCells.filter(([column, row]) => column !== 6 || row !== 1);
-  assert.throws(() => assertDiagonalMosaic(withoutBridge), /斜向相邻|子组件/);
+test("头像墙不因访问种子换位，扩容时仍延续右上棋盘生长方向", () => {
+  const first = createCommunityMosaicLayout(17);
+  assert.deepEqual(first, createCommunityMosaicLayout(17));
+  assertUpperRightMosaic(first);
+  assertUpperRightMosaic(createCommunityMosaicLayout(25));
+  assertUpperRightMosaic(createCommunityMosaicLayout(32));
+  assert.throws(() => createCommunityMosaicLayout(0), /1 到 32/);
+  assert.throws(() => createCommunityMosaicLayout(33), /1 到 32/);
+  assert.throws(
+    () =>
+      assertUpperRightMosaic([
+        [7, 0],
+        [5, 0],
+      ]),
+    /对角格/,
+  );
 });
 
 test("街区布局覆盖每个成员，固定种子稳定且不会修改输入", () => {

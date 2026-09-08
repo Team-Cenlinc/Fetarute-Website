@@ -29,9 +29,7 @@ import CommunityMap from "@/components/CommunityMap.astro";
 import TrainJourneyTooltip from "@/components/TrainJourneyTooltip.astro";
 import {
   communityEntities,
-  communityMosaicCells,
   createCommunityMosaicLayout,
-  communityLayoutSeed,
   type CommunityPartnerId,
 } from "@/data/community";
 import { communityMapPalette } from "@/data/palette";
@@ -85,23 +83,34 @@ const entities = communityEntities.map((entity) => ({
   image: entity.partnerId ? partnerImages[entity.partnerId] : undefined,
 }));
 const members = entities.filter((entity) => entity.kind === "player");
-/** 玩家墙优先复用预设离散格位；扩至预留格以外时也必须生成唯一、斜向连通的稳定后备版面。 */
-const mosaicCells =
-  members.length <= communityMosaicCells.length
-    ? communityMosaicCells.slice(0, members.length)
-    : createCommunityMosaicLayout(members.length, communityLayoutSeed);
+/** 头像墙始终从右上角按成员顺序扩展，刷新和脚本增强都不改变构图。 */
+const mosaicCells = createCommunityMosaicLayout(members.length);
 const trainColor = shiftRailwayLineColor(createHexColor(communityMapPalette.route), wayfindingPrototype.homeTrainColorShift);
+const arrivalTrainColor = shiftRailwayLineColor(
+  createHexColor(communityMapPalette.arrival),
+  wayfindingPrototype.homeTrainColorShift,
+);
+const connectionTrainColor = shiftRailwayLineColor(
+  createHexColor(communityMapPalette.connection),
+  wayfindingPrototype.homeTrainColorShift,
+);
 /** 页面只注入不会随主题改变的线路与列车色；材料色通过 CSS 消费全局 palette。 */
 const paletteStyle = Object.entries(communityMapPalette)
   .map(([key, value]) => "--community-" + key + ": " + value + ";").join(" ") +
-  " --community-train-color: " + trainColor + ";";
+  " --community-train-color: " + trainColor +
+  "; --community-arrival-train-color: " + arrivalTrainColor +
+  "; --community-connection-train-color: " + connectionTrainColor + ";";
 const chapters = getCommunityJourneyStops(locale);
 ---
 
 <BaseLayout locale={locale} title={copy.title} description={copy.description} pagePath="community/" fullBleedMain noindex>
-  <div class="community-page" style={paletteStyle} data-community-page>
-    <div class="community-train">
-      <button class="train-feedback" type="button" data-community-train aria-label={copy.guide} aria-haspopup="dialog" aria-controls="community-train-panel" aria-expanded="false">
+  <div class="community-page" style={paletteStyle} data-community-page data-community-arrival-ready>
+    <script is:inline>
+      // JS 页面先撤销静态后备标记，避免尚未按实际视口计算的到达线参与首帧绘制。
+      document.querySelector("[data-community-page]")?.removeAttribute("data-community-arrival-ready");
+    </script>
+    <div class="community-train community-train--route">
+      <button class="train-feedback" type="button" data-community-train data-community-train-line="route" aria-label={copy.guide} aria-haspopup="dialog" aria-controls="community-train-panel" aria-expanded="false">
         <span aria-hidden="true"></span>
       </button>
     </div>
@@ -121,6 +130,11 @@ const chapters = getCommunityJourneyStops(locale);
 
     <section class="community-landing" id="community-center" aria-labelledby="community-title" data-community-stop={copy.title}>
       <svg class="community-landing__tracks" aria-hidden="true" focusable="false"><path d="M 3000 -2258 L 119 623 L 119 900" data-community-arrival-path fill="none" /></svg>
+      <div class="community-train community-train--arrival">
+        <button class="train-feedback" type="button" data-community-train data-community-train-line="arrival" aria-label={copy.guide} aria-haspopup="dialog" aria-controls="community-train-panel" aria-expanded="false">
+          <span aria-hidden="true"></span>
+        </button>
+      </div>
       <span class="community-landing__arrival-end" aria-hidden="true"></span>
       <span class="community-station community-landing__station" aria-hidden="true"></span>
       <a class="community-mosaic" href="#community-district" aria-label={copy.mapLabel}>
@@ -151,10 +165,15 @@ const chapters = getCommunityJourneyStops(locale);
       <header class="community-district__heading">
         <h2 id="community-connections-title">{copy.connectionsTitle}</h2>
       </header>
-      <span class="community-district__crossing" aria-hidden="true">
-        <span class="community-station community-station--approach"></span>
-        <span class="community-station"></span>
-      </span>
+      <div class="community-district__crossing">
+        <span class="community-station community-station--approach" aria-hidden="true"></span>
+        <span class="community-station" aria-hidden="true"></span>
+        <div class="community-train community-train--connection">
+          <button class="train-feedback" type="button" data-community-train data-community-train-line="connection" aria-label={copy.guide} aria-haspopup="dialog" aria-controls="community-train-panel" aria-expanded="false">
+            <span aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
       <CommunityMap locale={locale} entities={entities.filter((entity) => entity.kind !== "player")} />
     </section>
     <svg class="community-river-mouth community-river-mouth--out" aria-hidden="true" focusable="false"><polygon data-community-river-out /></svg>

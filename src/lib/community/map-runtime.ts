@@ -5,10 +5,7 @@ import {
 } from "../../data/community-map.ts";
 import { communityGeometryStyle, createCommunityLayout } from "./layout.ts";
 import { communityPlaces } from "../../data/community-places.ts";
-import {
-  communityPlayerMapEntityLimit,
-  createCommunityMosaicLayout,
-} from "../../data/community.ts";
+import { communityPlayerMapEntityLimit } from "../../data/community.ts";
 
 /** 从完整玩家名单中取出一片街区可容纳的样本；显式种子仍可复现同一批成员。 */
 function pickSingleBlockDetails(
@@ -25,16 +22,6 @@ function pickSingleBlockDetails(
   return shuffled.slice(0, capacity);
 }
 
-/** 首屏头像墙只随机变换斜向连通的格位；玩家身份顺序不变，锚点与无脚本后备也仍可用。 */
-function initializeCommunityMosaic(root: HTMLElement, seed: number): void {
-  const cells = [...root.querySelectorAll<HTMLElement>("[data-community-mosaic-cell]")];
-  const layout = createCommunityMosaicLayout(cells.length, seed);
-  cells.forEach((cell, index) => {
-    cell.style.gridColumn = String(layout[index][0] + 1);
-    cell.style.gridRow = String(layout[index][1] + 1);
-  });
-}
-
 /** 首次进入时选择访问种子；显式 mapSeed 可复现设计，不持久化访客身份。 */
 export function initializeCommunityMap(root: HTMLElement): void {
   const query = new URL(window.location.href).searchParams.get("mapSeed");
@@ -43,7 +30,6 @@ export function initializeCommunityMap(root: HTMLElement): void {
       ? Number(query)
       : crypto.getRandomValues(new Uint32Array(1))[0];
   root.dataset.communitySeed = String(seed);
-  initializeCommunityMosaic(root, seed);
   const points = (vertices: readonly CommunityMapPoint[]) =>
     vertices.map((point) => point.join(",")).join(" ");
   const usedPlaces = new Set<string>();
@@ -189,6 +175,8 @@ export function updateCommunityArrival(root: HTMLElement): void {
   const reach = Math.max(bounds.width, bounds.height) * 2;
   path.setAttribute("d", `M ${x + reach} ${y - reach} L ${x} ${y} L ${x} ${bottom}`);
   updateCommunityRiver(root);
+  /* 占位路径只供无脚本后备；真实几何和河口都写完后才允许到达线出现在屏幕上。 */
+  root.dataset.communityArrivalReady = "true";
 }
 
 /** 少量45°转折的河口用等宽折线描出两岸，转角取交点而不是叠放矩形留下缺口。 */

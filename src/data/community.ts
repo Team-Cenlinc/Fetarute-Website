@@ -1,5 +1,4 @@
 import { homeCommunityStories } from "./home-community.ts";
-import { createCommunityRandom } from "./community-map.ts";
 
 /** 共享地图只区分玩家、其他服务器/社区、外部团体，不增加内部组织或贡献等级。 */
 export type CommunityEntityKind = "player" | "server" | "group";
@@ -160,7 +159,7 @@ export const communityEntities: readonly CommunityEntity[] = [
   { id: "group-placeholder", kind: "group" },
 ];
 
-/** SSG 后备地图种子；脚本增强时生成本次访问种子，浏览过程中绝不洗牌。 */
+/** SSG 首帧地图的固定种子；运行时可替换街区地块，但绝不参与头像墙的构图。 */
 export const communityLayoutSeed = 20260907;
 
 /**
@@ -169,71 +168,47 @@ export const communityLayoutSeed = 20260907;
  */
 export const communityPlayerMapEntityLimit = 4;
 
-/**
- * 首屏玩家墙的离散格位；八乘八墙体保留旧版留白节奏，并为继续收录玩家预留位置。
- * 顺序与社区玩家资料一致，墙体展示所有已收录玩家而非随机抽样。
- */
-export const communityMosaicCells = [
-  [7, 0],
-  [6, 1],
-  [7, 2],
-  [5, 2],
-  [4, 1],
-  [3, 2],
-  [2, 1],
-  [1, 2],
-  [0, 1],
-  [0, 3],
-  [1, 4],
-  [2, 3],
-  [3, 4],
-  [4, 3],
-  [5, 4],
-  [6, 3],
-  [7, 4],
-  [6, 5],
-  [5, 6],
-  [6, 7],
-  [4, 5],
-  [3, 6],
-  [2, 5],
-  [1, 6],
-] as const;
+/** 头像墙使用八乘八棋盘网格，兼顾马赛克留白、首屏密度与后续成员增长空间。 */
+const communityMosaicColumns = 8;
+const communityMosaicRows = 8;
 
-/** 头像墙中一个格子的零起始列、行坐标；仅允许落在同一棋盘色，才能维持纯斜向连接。 */
+/** 头像墙中一个格子的零起始列、行坐标；只落在右上锚点所在的棋盘色，保持像素马赛克留白。 */
 export type CommunityMosaicCell = readonly [number, number];
 
 /**
- * 为本次访问长出一片斜向连通的头像马赛克。
- * 每步只从既有格子的四个对角邻居继续延伸，因此随机布局不会拆成彼此孤立的子组件；显式种子可重现同一版面。
+ * 依玩家数量从右上角长出稳定的棋盘马赛克头像墙。
+ * 每次只向已有头像的对角邻格延伸；反对角线上的优先顺序固定，刷新和访问种子都不会把它洗成随机簇。
  */
-export function createCommunityMosaicLayout(
-  itemCount: number,
-  seed: number,
-): readonly CommunityMosaicCell[] {
+export function createCommunityMosaicLayout(itemCount: number): readonly CommunityMosaicCell[] {
+  const capacity = (communityMosaicColumns * communityMosaicRows) / 2;
+  if (!Number.isInteger(itemCount) || itemCount < 1 || itemCount > capacity)
+    throw new Error(`头像墙数量必须介于 1 到 ${capacity} 之间。`);
   const cells: CommunityMosaicCell[] = [];
-  for (let row = 0; row < 8; row += 1)
-    for (let column = 0; column < 8; column += 1)
-      if ((column + row) % 2 === 1) cells.push([column, row]);
-  if (!Number.isInteger(itemCount) || itemCount < 1 || itemCount > cells.length)
-    throw new Error("头像墙数量必须介于 1 到 32 之间。");
-  const random = createCommunityRandom(seed ^ 0x7f4a7c15);
-  const selected = [cells[Math.floor(random() * cells.length)]];
-  const selectedKeys = new Set(selected.map(([column, row]) => `${column},${row}`));
-  while (selected.length < itemCount) {
-    const frontier = selected
-      .flatMap(([column, row]) =>
-        [-1, 1].flatMap((columnStep) =>
-          [-1, 1].map((rowStep): CommunityMosaicCell => [column + columnStep, row + rowStep]),
-        ),
-      )
-      .filter(
-        ([column, row]) =>
-          column >= 0 && column < 8 && row >= 0 && row < 8 && !selectedKeys.has(`${column},${row}`),
-      );
-    const next = frontier[Math.floor(random() * frontier.length)];
-    selected.push(next);
-    selectedKeys.add(`${next[0]},${next[1]}`);
+  for (
+    let depth = 0;
+    depth < communityMosaicColumns + communityMosaicRows - 1 && cells.length < itemCount;
+    depth += 2
+  ) {
+    const firstRow = Math.max(0, depth - (communityMosaicColumns - 1));
+    const lastRow = Math.min(communityMosaicRows - 1, depth);
+    const middleRow = Math.max(firstRow, Math.min(lastRow, Math.floor(depth / 2)));
+    const rows = [middleRow];
+    for (
+      let offset = 1;
+      middleRow - offset >= firstRow || middleRow + offset <= lastRow;
+      offset += 1
+    ) {
+      if (middleRow - offset >= firstRow) rows.push(middleRow - offset);
+      if (middleRow + offset <= lastRow) rows.push(middleRow + offset);
+    }
+    for (const row of rows) {
+      if (cells.length >= itemCount) break;
+      const column = communityMosaicColumns - 1 - (depth - row);
+      cells.push([column, row]);
+    }
   }
-  return selected;
+  return cells;
 }
+
+/** 首屏成员墙的默认 24 格容量；页面会按实际成员数量从同一右上增长序列截取。 */
+export const communityMosaicCells = createCommunityMosaicLayout(24);

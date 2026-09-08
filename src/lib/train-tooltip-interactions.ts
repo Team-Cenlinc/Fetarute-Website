@@ -65,12 +65,18 @@ export function bindTrainTooltipInteractions(options: TrainTooltipInteractionOpt
     }, 180);
   }
 
+  /** 悬停、焦点和按下的事件顺序因浏览器而异；切换意图必须在改写活动锚点前统一记录。 */
+  function activateTrigger(trigger: HTMLElement) {
+    pendingTriggerSwitch ||= options.isOpen() && options.getActiveTrigger() !== trigger;
+    options.activateTrigger(trigger);
+  }
+
   for (const trigger of triggers) {
     trigger.addEventListener(
       "pointerenter",
       () => {
         if (!fineHover.matches) return;
-        options.activateTrigger(trigger);
+        activateTrigger(trigger);
         cancelClose();
         if (!options.isPinned() && !options.isOpen()) scheduleOpen();
       },
@@ -89,7 +95,7 @@ export function bindTrainTooltipInteractions(options: TrainTooltipInteractionOpt
     trigger.addEventListener(
       "focus",
       () => {
-        options.activateTrigger(trigger);
+        activateTrigger(trigger);
         cancelOpen();
         cancelClose();
         options.setOpen(true, true);
@@ -107,8 +113,7 @@ export function bindTrainTooltipInteractions(options: TrainTooltipInteractionOpt
     trigger.addEventListener(
       "pointerdown",
       (event) => {
-        pendingTriggerSwitch = options.isOpen() && options.getActiveTrigger() !== trigger;
-        options.activateTrigger(trigger);
+        activateTrigger(trigger);
         pendingTouchOpen = event.pointerType === "touch" ? !options.isOpen() : undefined;
       },
       { signal },
@@ -116,7 +121,7 @@ export function bindTrainTooltipInteractions(options: TrainTooltipInteractionOpt
     trigger.addEventListener(
       "click",
       () => {
-        options.activateTrigger(trigger);
+        activateTrigger(trigger);
         cancelOpen();
         cancelClose();
         const open = pendingTriggerSwitch ? true : (pendingTouchOpen ?? !options.isPinned());

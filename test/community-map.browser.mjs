@@ -42,6 +42,149 @@ async function openPage(options = {}, locale = "zh-Hans", mapSeed) {
   return { page, errors };
 }
 
+test(`${engine}: 社区到达线在运行时几何完成前不显示占位路径`, async () => {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const errors = [];
+  let releaseMapRuntime;
+  const mapRuntimeRequested = Promise.withResolvers();
+  const mapRuntimeReleased = new Promise((resolve) => {
+    releaseMapRuntime = resolve;
+  });
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  try {
+    await page.route("**/src/lib/community/map-runtime.ts*", async (route) => {
+      mapRuntimeRequested.resolve();
+      await mapRuntimeReleased;
+      await route.continue();
+    });
+    void page.goto(`${baseUrl}/zh-Hans/community/`, { waitUntil: "commit" });
+    const path = page.locator("[data-community-arrival-path]");
+    await path.waitFor({ state: "attached" });
+    assert.equal(
+      await Promise.race([
+        mapRuntimeRequested.promise.then(() => true),
+        page.waitForTimeout(3000).then(() => false),
+      ]),
+      true,
+      "测试必须拦截到写入到达线几何的运行时模块",
+    );
+    const initial = await path.evaluate((element) => ({
+      d: element.getAttribute("d"),
+      visibility: getComputedStyle(element).visibility,
+    }));
+    assert.equal(initial.d, "M 3000 -2258 L 119 623 L 119 900");
+    assert.equal(initial.visibility, "hidden", JSON.stringify(initial));
+    releaseMapRuntime();
+    await page.waitForSelector('[data-community-enhanced="true"]', { timeout: 5000 });
+    const final = await path.evaluate((element) => ({
+      d: element.getAttribute("d"),
+      visibility: getComputedStyle(element).visibility,
+    }));
+    assert.notEqual(final.d, initial.d, JSON.stringify(final));
+    assert.equal(final.visibility, "visible", JSON.stringify(final));
+    assert.deepEqual(errors, []);
+  } finally {
+    releaseMapRuntime?.();
+    await page.close();
+  }
+});
+
+test(`${engine}: 社区列车随阅读进度换站、移动并把章节写回 hash`, async () => {
+  const { page, errors } = await openPage();
+  try {
+    const trains = page.locator("[data-community-train]");
+    assert.equal(await trains.count(), 3, "三条已绘制线路都应有可操作的列车");
+    const routeTrain = page.locator('[data-community-train-line="route"]');
+    const arrivalTrain = page.locator('[data-community-train-line="arrival"]');
+    const connectionTrain = page.locator('[data-community-train-line="connection"]');
+    const getArrivalPose = () =>
+      page.locator(".community-landing").evaluate((landing) => {
+        const path = landing.querySelector("[data-community-arrival-path]");
+        const train = landing.querySelector(".community-train--arrival");
+        const x = Number.parseFloat(train.style.getPropertyValue("--community-arrival-train-x"));
+        const y = Number.parseFloat(train.style.getPropertyValue("--community-arrival-train-y"));
+        const angle = Number.parseFloat(
+          train.style.getPropertyValue("--community-arrival-train-angle"),
+        );
+        const length = path.getTotalLength();
+        let nearestDistance = 0;
+        let nearestDistanceSquared = Number.POSITIVE_INFINITY;
+        for (let sample = 0; sample <= 4096; sample += 1) {
+          const distance = (length * sample) / 4096;
+          const point = path.getPointAtLength(distance);
+          const distanceSquared = (point.x - x) ** 2 + (point.y - y) ** 2;
+          if (distanceSquared < nearestDistanceSquared) {
+            nearestDistance = distance;
+            nearestDistanceSquared = distanceSquared;
+          }
+        }
+        const span = Math.min(12, Math.max(1, length * 0.002));
+        const before = path.getPointAtLength(Math.max(0, nearestDistance - span));
+        const after = path.getPointAtLength(Math.min(length, nearestDistance + span));
+        const tangentAngle =
+          Math.atan2(after.y - before.y, after.x - before.x) * (180 / Math.PI) - 90;
+        const angleDelta = ((angle - tangentAngle + 540) % 360) - 180;
+        return { x, y, angle, tangentAngle, angleDelta, nearestDistanceSquared };
+      });
+    const arrivalBefore = await getArrivalPose();
+    assert.ok(
+      arrivalBefore.nearestDistanceSquared < 4,
+      `DS 列车必须落在路径上: ${JSON.stringify(arrivalBefore)}`,
+    );
+    assert.ok(
+      Math.abs(arrivalBefore.angleDelta) < 1,
+      `DS 列车必须与路径切线同向: ${JSON.stringify(arrivalBefore)}`,
+    );
+    const routeTopBefore = (await routeTrain.boundingBox()).y;
+    const connectionOffsetBefore = await connectionTrain.evaluate((train) =>
+      train.parentElement.style.getPropertyValue("--community-connection-train-offset"),
+    );
+    await arrivalTrain.click();
+    assert.equal(await arrivalTrain.getAttribute("aria-expanded"), "true");
+    assert.equal(await page.locator(".community-guide").getAttribute("aria-hidden"), "false");
+    const arrivalTooltipTranslate = await page
+      .locator(".community-guide")
+      .evaluate((panel) => getComputedStyle(panel).translate);
+    await page
+      .locator("#community-connections")
+      .evaluate((element) => element.scrollIntoView({ behavior: "instant", block: "start" }));
+    await page.waitForFunction(() => window.location.hash === "#community-connections");
+    const routeTopAfter = (await routeTrain.boundingBox()).y;
+    assert.notEqual(Math.round(routeTopAfter), Math.round(routeTopBefore));
+    const arrivalAfter = await getArrivalPose();
+    assert.notEqual(
+      `${arrivalAfter.x},${arrivalAfter.y}`,
+      `${arrivalBefore.x},${arrivalBefore.y}`,
+      "DS 列车应随阅读进度沿路径旅行",
+    );
+    assert.ok(
+      Math.abs(arrivalAfter.angleDelta) < 1,
+      `DS 列车滚动后仍必须与路径切线同向: ${JSON.stringify(arrivalAfter)}`,
+    );
+    const connectionOffsetAfter = await connectionTrain.evaluate((train) =>
+      train.parentElement.style.getPropertyValue("--community-connection-train-offset"),
+    );
+    assert.notEqual(connectionOffsetAfter, connectionOffsetBefore, "PN 列车应随阅读进度横向旅行");
+    await connectionTrain.click();
+    assert.equal(await connectionTrain.getAttribute("aria-expanded"), "true");
+    assert.equal(await page.locator(".community-guide").getAttribute("aria-hidden"), "false");
+    const connectionTooltipTranslate = await page
+      .locator(".community-guide")
+      .evaluate((panel) => getComputedStyle(panel).translate);
+    assert.notEqual(
+      connectionTooltipTranslate,
+      arrivalTooltipTranslate,
+      "切换到 PN 列车时 Tooltip 必须改用新的真实锚点",
+    );
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
 test(`${engine}: 社区正文与地图跟随系统和手动 palette，刷新后保持所选外观`, async () => {
   const { page, errors } = await openPage({ colorScheme: "dark" });
   try {
@@ -164,7 +307,7 @@ test(`${engine}: 无脚本首帧也继承系统深浅底色`, async () => {
 test(`${engine}: 列车预览与首页一致，滚动关闭预览但保留点击固定的导览`, async () => {
   const { page, errors } = await openPage();
   try {
-    const train = page.locator("[data-community-train]");
+    const train = page.locator('[data-community-train-line="route"]');
     await train.hover();
     await page.waitForTimeout(180);
     assert.equal(await train.getAttribute("aria-expanded"), "true");
@@ -186,7 +329,7 @@ test(`${engine}: 列车预览与首页一致，滚动关闭预览但保留点击
 test(`${engine}: 列车导览沿用首页站牌节奏，中文站名不被固定窄宽度挤成两行`, async () => {
   const { page, errors } = await openPage();
   try {
-    await page.locator("[data-community-train]").click();
+    await page.locator('[data-community-train-line="route"]').click();
     const lines = await page.locator(".community-guide").evaluate((panel) =>
       [
         ...panel.querySelectorAll(
@@ -211,7 +354,7 @@ test(`${engine}: 列车导览沿用首页站牌节奏，中文站名不被固定
 test(`${engine}: 社区列车以偏色回应交互，浦蓝线贯穿两个换乘站`, async () => {
   const { page, errors } = await openPage();
   try {
-    const train = page.locator("[data-community-train]");
+    const train = page.locator('[data-community-train-line="route"]');
     const restingColor = await train.evaluate(
       (element) => getComputedStyle(element).backgroundColor,
     );
@@ -308,7 +451,7 @@ test(`${engine}: 共用地图保留不同地块，所有 hover 面板同尺寸�
   const { page, errors } = await openPage();
   try {
     await screenshot(page, "landing");
-    const plots = page.locator("[data-community-entity]");
+    const plots = page.locator("[data-community-entity]:not([hidden])");
     assert.equal(await plots.count(), 8);
     const widths = new Set();
     for (let index = 0; index < (await plots.count()); index++) {
@@ -475,7 +618,7 @@ test(`${engine}: 预览可进入、点击固定、Escape 恢复焦点，列车�
         }),
       "键盘聚焦必须把姓名标注带入Header下方的可见区",
     );
-    await page.locator("[data-community-train]").click();
+    await page.locator('[data-community-train-line="route"]').click();
     assert.equal(await page.locator("[data-community-entity][open]").count(), 0);
     await assertPanel(page, page.locator(".community-guide"));
     await screenshot(page, "train-guide");
@@ -532,7 +675,7 @@ for (const scenario of [
         await panel.locator("[data-community-close]").tap();
         assert.equal(await panel.isVisible(), false);
       }
-      await page.locator("[data-community-train]").tap();
+      await page.locator('[data-community-train-line="route"]').tap();
       const guide = page.locator(".community-guide");
       await assertPanel(page, guide);
       assert.equal(
@@ -610,7 +753,7 @@ test(`${engine}: L 形空缺不是点击热区，Header 注册社区且导览抵
       );
       if (width > 760) assert.equal(await page.locator(".community-nav").isVisible(), true);
       await page.keyboard.press("Escape");
-      await page.locator("[data-community-train]").click();
+      await page.locator('[data-community-train-line="route"]').click();
       const guide = page.locator(".community-guide");
       assert.equal(await guide.locator("[data-home-journey-picker]").count(), 1);
       await guide.locator('[data-home-journey-section-id="community-contact"]').click();
@@ -1094,6 +1237,213 @@ test(`${engine}: 小屏 DS 保留完整线宽、站点和标题间距`, async ()
       assert.ok(geometry.stationDelta < 1, "两条线的到站标记应水平对齐");
     }
     assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test(`${engine}: 0% 首屏完整呈现社区中心与英文副标题`, async () => {
+  const errors = [];
+  for (const [width, height] of [
+    [320, 568],
+    [390, 844],
+    [768, 1024],
+    [1024, 768],
+    [1280, 720],
+    [1512, 863],
+    [1920, 1080],
+  ]) {
+    /* svh 的小视口基准需在导航前确定；复用已打开页面会把首个尺寸错误带入后续断点。 */
+    const { page, errors: pageErrors } = await openPage({
+      reducedMotion: "reduce",
+      viewport: { width, height },
+    });
+    try {
+      await page.evaluate(
+        () =>
+          new Promise((resolve) =>
+            requestAnimationFrame(() =>
+              requestAnimationFrame(() => {
+                scrollTo({ top: 0, behavior: "instant" });
+                resolve(undefined);
+              }),
+            ),
+          ),
+      );
+      const geometry = await page.locator(".community-landing").evaluate((landing) => {
+        const heading = landing.querySelector("h1");
+        const title = heading.querySelector("span:first-child").getBoundingClientRect();
+        const subtitle = landing
+          .querySelector(".community-landing__english")
+          .getBoundingClientRect();
+        const header = document.querySelector(".site-header").getBoundingClientRect();
+        return {
+          scrollY,
+          viewportWidth: innerWidth,
+          viewportHeight: innerHeight,
+          headerBottom: header.bottom,
+          landingTop: landing.getBoundingClientRect().top,
+          title: { left: title.left, top: title.top, right: title.right, bottom: title.bottom },
+          subtitle: {
+            left: subtitle.left,
+            top: subtitle.top,
+            right: subtitle.right,
+            bottom: subtitle.bottom,
+          },
+        };
+      });
+      assert.equal(geometry.scrollY, 0, `${width}×${height}: 必须在 0% 滑行位置断言首屏`);
+      assert.ok(
+        Math.abs(geometry.landingTop) < 1,
+        `${width}×${height}: Landing 不得被列车容器推离首屏起点: ${JSON.stringify(geometry)}`,
+      );
+      for (const [label, bounds] of Object.entries({
+        communityTitle: geometry.title,
+        englishSubtitle: geometry.subtitle,
+      })) {
+        assert.ok(
+          bounds.left >= 0 && bounds.right <= geometry.viewportWidth,
+          `${width}×${height}: ${label} 不能横向裁切: ${JSON.stringify(geometry)}`,
+        );
+        assert.ok(
+          bounds.top >= geometry.headerBottom && bounds.bottom <= geometry.viewportHeight,
+          `${width}×${height}: ${label} 必须完整留在 Header 下方的首屏: ${JSON.stringify(geometry)}`,
+        );
+      }
+      errors.push(...pageErrors);
+    } finally {
+      await page.close();
+    }
+  }
+  assert.deepEqual(errors, []);
+});
+
+test(`${engine}: 首屏玩家墙始终避开固定 Header`, async () => {
+  const errors = [];
+  for (const [width, height] of [
+    [768, 1024],
+    [1024, 768],
+    [1280, 720],
+    [1512, 863],
+    [1920, 1080],
+    [390, 844],
+    [320, 568],
+    [568, 320],
+  ]) {
+    const { page, errors: pageErrors } = await openPage({
+      reducedMotion: "reduce",
+      viewport: { width, height },
+    });
+    try {
+      const geometry = await page.locator(".community-landing").evaluate((landing) => {
+        const header = document.querySelector(".site-header").getBoundingClientRect();
+        const mosaic = landing.querySelector(".community-mosaic").getBoundingClientRect();
+        return {
+          headerBottom: header.bottom,
+          mosaicTop: mosaic.top,
+        };
+      });
+      assert.ok(
+        geometry.mosaicTop >= geometry.headerBottom + 8,
+        `${width}×${height}: 玩家墙必须给固定 Header 留出 8px 以上空间: ${JSON.stringify(geometry)}`,
+      );
+      errors.push(...pageErrors);
+    } finally {
+      await page.close();
+    }
+  }
+  assert.deepEqual(errors, []);
+});
+
+test(`${engine}: 社区列车滚动帧只在统一读取后写入状态`, async () => {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  try {
+    await page.addInitScript(() => {
+      const nativeRequestAnimationFrame = requestAnimationFrame.bind(window);
+      const mutations = new MutationObserver(() => {});
+      mutations.observe(document, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["style", "class", "aria-current"],
+      });
+      let inFrame = false;
+      let wroteCommunityState = false;
+      window.communityTrainFrameReadProbe = {
+        enabled: false,
+        reads: 0,
+        writes: 0,
+        readsAfterWrite: {},
+      };
+      const consumeCommunityWrites = () => {
+        const writes = mutations
+          .takeRecords()
+          .filter(
+            ({ target }) =>
+              target instanceof Element && Boolean(target.closest("[data-community-page]")),
+          ).length;
+        window.communityTrainFrameReadProbe.writes += writes;
+        wroteCommunityState ||= writes > 0;
+      };
+      const recordLayoutRead = (name) => {
+        if (!inFrame || !window.communityTrainFrameReadProbe.enabled) return;
+        window.communityTrainFrameReadProbe.reads += 1;
+        consumeCommunityWrites();
+        if (wroteCommunityState)
+          window.communityTrainFrameReadProbe.readsAfterWrite[name] =
+            (window.communityTrainFrameReadProbe.readsAfterWrite[name] ?? 0) + 1;
+      };
+      const nativeGetBoundingClientRect = Element.prototype.getBoundingClientRect;
+      Element.prototype.getBoundingClientRect = function (...args) {
+        recordLayoutRead("getBoundingClientRect");
+        return nativeGetBoundingClientRect.apply(this, args);
+      };
+      for (const property of ["scrollY", "innerHeight"]) {
+        const descriptor = Object.getOwnPropertyDescriptor(window, property);
+        if (!descriptor?.get) continue;
+        Object.defineProperty(window, property, {
+          ...descriptor,
+          get() {
+            recordLayoutRead(property);
+            return descriptor.get.call(window);
+          },
+        });
+      }
+      window.requestAnimationFrame = (callback) =>
+        nativeRequestAnimationFrame((timestamp) => {
+          mutations.takeRecords();
+          wroteCommunityState = false;
+          inFrame = true;
+          try {
+            callback(timestamp);
+          } finally {
+            if (window.communityTrainFrameReadProbe.enabled) consumeCommunityWrites();
+            inFrame = false;
+          }
+        });
+    });
+    await page.goto(`${baseUrl}/zh-Hans/community/`, { waitUntil: "networkidle" });
+    await page.waitForSelector('[data-community-enhanced="true"]');
+    await page.evaluate(() => document.fonts.ready);
+    const start = await page.locator("#community-district").evaluate((element) => {
+      const top = element.getBoundingClientRect().top + scrollY - 160;
+      scrollTo({ top, behavior: "instant" });
+      return top;
+    });
+    await page.evaluate(async (top) => {
+      window.communityTrainFrameReadProbe.enabled = true;
+      for (let frame = 0; frame < 24; frame += 1) {
+        await new Promise(requestAnimationFrame);
+        scrollTo({ top: top + frame * 12, behavior: "instant" });
+      }
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      window.communityTrainFrameReadProbe.enabled = false;
+    }, start);
+    const probe = await page.evaluate(() => window.communityTrainFrameReadProbe);
+    assert.deepEqual(errors, []);
+    assert.ok(probe.reads > 0 && probe.writes > 0, `列车帧必须实际读写: ${JSON.stringify(probe)}`);
+    assert.deepEqual(probe.readsAfterWrite, {}, JSON.stringify(probe));
   } finally {
     await page.close();
   }

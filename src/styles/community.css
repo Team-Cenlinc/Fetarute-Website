@@ -25,6 +25,8 @@
   --community-panel-height: 320px;
   /* 首屏完整玩家墙的视觉尺度独立于旧的六乘六马赛克，新增成员后仍保持可辨识头像。 */
   --community-mosaic-size: clamp(260px, 32vw, 620px);
+  /* 完整桌面 Header 的底边为 96px；墙体再留 8px，避免首行头像被固定导视牌遮挡。 */
+  --community-mosaic-header-safe-top: 104px;
   /* 列车是首页相同的扁平几何触发器；颜色由首页的 HSL 规则派生。 */
   --community-train-width: clamp(44px, 4.2vw, 80px);
   position: relative;
@@ -72,7 +74,8 @@
 
 .community-landing {
   position: relative;
-  height: max(760px, 100svh);
+  /* 首屏标题是 0% 滑行时的内容，Landing 不得因最小画布高度把它推到可视区之外。 */
+  height: 100svh;
 }
 .community-landing h1 {
   position: absolute;
@@ -106,6 +109,11 @@
   stroke-linejoin: miter;
   pointer-events: none;
 }
+/* 有脚本时，布局模块会先以实际像素重写 SVG 路径；在此之前绝不绘制服务器后备坐标。 */
+[data-community-page]:not([data-community-arrival-ready]) [data-community-arrival-path],
+[data-community-page]:not([data-community-arrival-ready]) .community-landing__arrival-end {
+  visibility: hidden;
+}
 .community-station,
 .community-landing__arrival-end {
   z-index: 2;
@@ -134,11 +142,11 @@
   bottom: calc(18.06% + 1.2vw);
 }
 .community-mosaic {
-  /* 八乘八墙体扩展收录容量，实际头像由预设离散格位维持旧版的留白节奏。 */
+  /* 八乘八棋盘墙体从右上锚点向左下生长；头像保持马赛克留白，坐标不能随刷新洗牌。 */
   --community-mosaic-columns: 8;
   --community-mosaic-rows: 8;
   position: absolute;
-  top: 12%;
+  top: max(12%, var(--community-mosaic-header-safe-top));
   right: 4vw;
   display: grid;
   grid-template: repeat(var(--community-mosaic-rows), 1fr) / repeat(
@@ -421,17 +429,44 @@
   outline-offset: 3px;
 }
 .community-train {
-  position: sticky;
-  top: 34svh;
   z-index: 8;
-  height: 0;
   width: var(--community-train-width);
+  height: calc(var(--community-train-width) * 1.65);
+}
+.community-train--route {
+  /* 主线列车以阅读进度在可见轨段内行驶；车身可见但容器不占用 Landing 之前的文档流高度。 */
+  --community-route-train-offset: 0px;
+  position: sticky;
+  top: 42svh;
+  height: 0;
   margin-left: calc(
     var(--community-rail-x) - (var(--community-train-width) - var(--community-rail-width)) / 2
   );
+  transform: translateY(var(--community-route-train-offset));
+  will-change: transform;
+}
+.community-train--arrival {
+  /* 到达列车同时采用 SVG 路径的坐标和切线角度，车体必须顺着 DS 线而非只是浮在线上。 */
+  --community-arrival-train-x: -200px;
+  --community-arrival-train-y: -200px;
+  --community-arrival-train-angle: 45deg;
+  position: absolute;
+  left: var(--community-arrival-train-x);
+  top: var(--community-arrival-train-y);
+  transform: translate(-50%, -50%) rotate(var(--community-arrival-train-angle));
+  will-change: left, top, transform;
+}
+.community-train--connection {
+  /* PN 列车横向穿过换乘线，旋转后的实际按钮边界仍是 Tooltip 的定位锚点。 */
+  --community-connection-train-offset: 50%;
+  position: absolute;
+  top: 50%;
+  left: var(--community-connection-train-offset);
+  transform: translate(-50%, -50%);
+  will-change: left;
 }
 .community-train > button {
-  /* 浦蓝线车身接入首页共用的偏色反馈。 */
+  /* 三条社区线路都复用首页的偏色反馈，具体线路身份由下方修饰类单独声明。 */
   --train-feedback-base-color: var(--community-train-color);
   --train-feedback-line-color: var(--community-route);
   width: var(--community-train-width);
@@ -441,6 +476,15 @@
   border: 0;
   cursor: pointer;
   background: var(--train-feedback-active-color);
+}
+.community-train--arrival > button {
+  --train-feedback-base-color: var(--community-arrival-train-color);
+  --train-feedback-line-color: var(--community-arrival);
+}
+.community-train--connection > button {
+  --train-feedback-base-color: var(--community-connection-train-color);
+  --train-feedback-line-color: var(--community-connection);
+  transform: rotate(90deg);
 }
 .community-panel {
   pointer-events: auto;
@@ -656,9 +700,11 @@
     --community-avatar-size: 32px;
     /* 小屏让完整玩家墙保持可辨识，同时不侵入左侧双线与下方标题。 */
     --community-mosaic-size: min(54vw, 260px);
+    /* 手机 Header 的底边为 68px；同样保留 8px，横屏短视口也不会压住头像。 */
+    --community-mosaic-header-safe-top: 76px;
   }
   .community-landing {
-    height: max(700px, 100svh);
+    height: 100svh;
   }
   .community-landing h1 {
     /* 小屏把 DS 放到浦蓝右侧，标题另留双线空间；地图正文仍沿用64px锚点。 */
@@ -674,7 +720,7 @@
     margin-top: 10px;
   }
   .community-mosaic {
-    top: 20%;
+    top: max(20%, var(--community-mosaic-header-safe-top));
     right: 24px;
   }
   .community-landing__arrival-end {
@@ -739,7 +785,7 @@
   .community-plot__name {
     font-size: 12px;
   }
-  .community-train {
+  .community-train--route {
     top: 31svh;
   }
 }
