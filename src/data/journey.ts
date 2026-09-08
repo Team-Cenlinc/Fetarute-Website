@@ -5,4 +5,6 @@ export interface JourneyQuickPickStop {
   id: string;
   name: string;
   color: HexColor;
+  /** 同线继续行驶时也可停靠换乘站；站标语义与线路换色独立。 */
+  isTransfer?: boolean;
 }

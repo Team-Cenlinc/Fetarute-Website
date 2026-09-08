@@ -139,22 +139,92 @@ export function updateCommunityArrival(root: HTMLElement): void {
   const bottom = end.bottom - bounds.top + end.width * 0.55;
   const reach = Math.max(bounds.width, bounds.height) * 2;
   path.setAttribute("d", `M ${x + reach} ${y - reach} L ${x} ${y} L ${x} ${bottom}`);
-  const map = root.querySelector<HTMLElement>(".community-map-block");
+  updateCommunityRiver(root);
+}
+
+/** 少量45°转折的河口用等宽折线描出两岸，转角取交点而不是叠放矩形留下缺口。 */
+function riverRibbon(
+  centerline: readonly CommunityMapPoint[],
+  halfWidth: number,
+): CommunityMapPoint[] {
+  const normals = centerline.slice(1).map(([x, y], i) => {
+    const [px, py] = centerline[i];
+    const length = Math.hypot(x - px, y - py);
+    return [-(y - py) / length, (x - px) / length] as const;
+  });
+  const bank = (side: number): CommunityMapPoint[] =>
+    centerline.map(([x, y], i) => {
+      const before = normals[Math.max(0, i - 1)];
+      const after = normals[Math.min(i, normals.length - 1)];
+      const scale = (side * halfWidth) / (1 + before[0] * after[0] + before[1] * after[1]);
+      return [x + (before[0] + after[0]) * scale, y + (before[1] + after[1]) * scale];
+    });
+  return [...bank(1), ...bank(-1).reverse()];
+}
+
+/** 从当前响应式地图读取河口，按真实章节高度连接；窗口缩放和字体重排不重新生成土地。 */
+function updateCommunityRiver(root: HTMLElement): void {
+  const atlas = root.querySelector<HTMLElement>("[data-community-atlas]");
   const inlet = root.querySelector<SVGPolygonElement>("[data-community-river-in]");
   const outlet = root.querySelector<SVGPolygonElement>("[data-community-river-out]");
-  if (map && inlet && outlet) {
-    const mapBounds = map.getBoundingClientRect();
-    const right = mapBounds.right - bounds.left;
-    const left = right - mapBounds.width * 0.1;
-    const inHeight = inlet.ownerSVGElement!.getBoundingClientRect().height;
-    const outHeight = outlet.ownerSVGElement!.getBoundingClientRect().height;
-    inlet.setAttribute(
-      "points",
-      `${bounds.width + 80},-30 ${bounds.width + 80},${inHeight * 0.4} ${right},${inHeight} ${left},${inHeight} ${left},${inHeight * 0.7}`,
-    );
-    outlet.setAttribute(
-      "points",
-      `${left},0 ${right},0 ${right},${outHeight * 0.25} ${right - outHeight * 0.55},${outHeight * 0.85} -80,${outHeight * 0.85} -80,${outHeight * 0.4} ${left - outHeight * 0.2},${outHeight * 0.4} ${left},${outHeight * 0.18}`,
-    );
-  }
+  const joins = root.querySelector<SVGPathElement>("[data-community-river-links]");
+  if (!atlas || !inlet || !outlet || !joins) return;
+  const bounds = atlas.getBoundingClientRect();
+  const rivers = [...atlas.querySelectorAll<SVGPolygonElement>(".community-map-river")]
+    .filter((river) => river.getBoundingClientRect().width > 0)
+    .map((river) => {
+      const matrix = river.getScreenCTM()!;
+      return [...river.points].map((point) => {
+        const screen = new DOMPoint(point.x, point.y).matrixTransform(matrix);
+        return [screen.x - bounds.left, screen.y - bounds.top] as CommunityMapPoint;
+      });
+    });
+  if (!rivers.length) return;
+  const points = (vertices: readonly CommunityMapPoint[]) =>
+    vertices.map((point) => point.join(",")).join(" ");
+  joins.setAttribute(
+    "d",
+    rivers
+      .slice(1)
+      .map((river, i) => `M ${points([rivers[i][1], rivers[i][2], river[3], river[0]])} Z`)
+      .join(" "),
+  );
+
+  const first = rivers[0],
+    last = rivers[rivers.length - 1];
+  const inHeight = first[0][1];
+  inlet.ownerSVGElement!.style.height = `${inHeight}px`;
+  const outHeight = outlet.ownerSVGElement!.getBoundingClientRect().height;
+  const inX = (first[0][0] + first[3][0]) / 2;
+  const outX = (last[1][0] + last[2][0]) / 2;
+  const inTurn = Math.min(inHeight * 0.45, bounds.width - inX - 40);
+  const outTurn = Math.min(outHeight * 0.45, outX - 40);
+  inlet.setAttribute(
+    "points",
+    points(
+      riverRibbon(
+        [
+          [bounds.width + 80, inHeight * 0.16],
+          [inX + inTurn, inHeight * 0.16],
+          [inX, inHeight * 0.16 + inTurn],
+          [inX, inHeight],
+        ],
+        (first[3][0] - first[0][0]) / 2,
+      ),
+    ),
+  );
+  outlet.setAttribute(
+    "points",
+    points(
+      riverRibbon(
+        [
+          [outX, 0],
+          [outX, outHeight * 0.2],
+          [outX - outTurn, outHeight * 0.2 + outTurn],
+          [-80, outHeight * 0.2 + outTurn],
+        ],
+        (last[2][0] - last[1][0]) / 2,
+      ),
+    ),
+  );
 }

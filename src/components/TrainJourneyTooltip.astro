@@ -1,0 +1,28 @@
+---
+import HomeJourneyQuickPick, { type Props as QuickPickProps } from "./HomeJourneyQuickPick.astro";
+import "@/styles/journey-tooltip.css";
+import "@/styles/train-feedback.css";
+
+/** 首页与独立页面共用完整列车对话框；调用方只提供章节、文案和触发器对应的身份。 */
+export interface Props extends QuickPickProps {
+  id: string;
+  title: string;
+  className?: string;
+  /** 无脚本时需要静态展示导览的页面由增强控制器设置隐藏状态。 */
+  initiallyHidden?: boolean;
+}
+
+const { id, title, className, initiallyHidden = true, ...quickPick } = Astro.props;
+---
+
+<aside
+  class:list={["home-arrival__train-tooltip", className]}
+  id={id}
+  data-home-arrival-tooltip-locale={quickPick.locale}
+  role="dialog"
+  aria-label={title}
+  aria-hidden={initiallyHidden ? "true" : undefined}
+  inert={initiallyHidden}
+>
+  <HomeJourneyQuickPick {...quickPick} />
+</aside>

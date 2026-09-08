@@ -6,6 +6,8 @@
   /* 小屏让弹窗贴近车身，维持列车与快选窗是一组控件的空间关系。 */
   --home-arrival-tooltip-anchor-gap: 8px;
   position: fixed;
+  /* 以面板实际可用宽度触发窄版导视，支持 pinch zoom 而不依赖未变化的布局视口。 */
+  container: train-tooltip / inline-size;
   /* Tooltip 覆盖页面内容与固定 Header，不会在三服汇图片或地图层下方消失。 */
   z-index: 21;
   /* 固定布局原点，跟随坐标由脚本直接写 translate；避免逐帧 top/left 回流及定位变量向子树继承。 */
@@ -21,6 +23,7 @@
   color: var(--palette-text);
   overflow: hidden;
   padding: 0;
+  margin: 0;
   opacity: 0;
   pointer-events: none;
   transform: translateY(8px);
@@ -45,9 +48,8 @@
   }
 }
 
-/* 共用外框供首页与社区使用；各页仅控制开关和实际贴车坐标。 */
-.home-arrival__train-tooltip[data-community-panel]:popover-open,
-.community-train[open] > .home-arrival__train-tooltip {
+/* 共用外框与显隐状态，页面只提供章节数据及实际贴车坐标。 */
+.home-arrival__train-tooltip[aria-hidden="false"] {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);

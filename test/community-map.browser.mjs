@@ -24,20 +24,257 @@ async function screenshot(page, name, fullPage = false) {
 }
 
 /** 所有场景通过公开路由和真实初始化进入地图，收集脚本异常和加载错误。 */
-async function openPage(options = {}, locale = "zh-Hans") {
+async function openPage(options = {}, locale = "zh-Hans", mapSeed) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, ...options });
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
   });
-  await page.goto(`${baseUrl}/${locale}/community/`, { waitUntil: "networkidle" });
+  await page.goto(
+    `${baseUrl}/${locale}/community/${mapSeed === undefined ? "" : `?mapSeed=${mapSeed}`}`,
+    { waitUntil: "networkidle" },
+  );
   if (options.javaScriptEnabled !== false) {
     await page.waitForSelector('[data-community-enhanced="true"]');
   }
   await page.evaluate(() => document.fonts.ready);
   return { page, errors };
 }
+
+test(`${engine}: 社区正文与地图跟随系统和手动 palette，刷新后保持所选外观`, async () => {
+  const { page, errors } = await openPage({ colorScheme: "dark" });
+  try {
+    const initialLines = await page.locator("[data-community-page]").evaluate((element) => {
+      const style = getComputedStyle(element);
+      return ["route", "arrival", "connection"].map((name) =>
+        style.getPropertyValue(`--community-${name}`).trim(),
+      );
+    });
+    const checkPalette = async () => {
+      const result = await page.locator("[data-community-page]").evaluate((root) => {
+        const probe = document.createElement("span");
+        root.append(probe);
+        const color = (token) => {
+          probe.style.color = `var(${token})`;
+          return getComputedStyle(probe).color;
+        };
+        const pairs = [
+          ["正文底色", getComputedStyle(root).backgroundColor, color("--palette-canvas")],
+          ["正文文字", getComputedStyle(root).color, color("--palette-text")],
+          [
+            "地块底色",
+            getComputedStyle(root.querySelector(".community-plot > summary")).backgroundColor,
+            color("--palette-journey-map"),
+          ],
+          [
+            "资料浮层",
+            getComputedStyle(root.querySelector(".community-panel")).backgroundColor,
+            color("--palette-surface-raised"),
+          ],
+          [
+            "章节文字衬底",
+            getComputedStyle(root.querySelector(".community-district__heading h2")).backgroundColor,
+            color("--palette-canvas"),
+          ],
+          [
+            "页尾底色",
+            getComputedStyle(root.querySelector(".community-contact")).backgroundColor,
+            color("--palette-text"),
+          ],
+          [
+            "页尾文字",
+            getComputedStyle(root.querySelector(".community-contact")).color,
+            color("--palette-surface"),
+          ],
+        ];
+        for (const [selector, token] of [
+          [".community-map-river", "river"],
+          [".community-map-park", "park"],
+          [".community-map-plaza", "square"],
+        ]) {
+          pairs.push([
+            token,
+            getComputedStyle(root.querySelector(selector)).fill,
+            color(`--palette-map-${token}`),
+          ]);
+        }
+        probe.remove();
+        return {
+          pairs,
+          scheme: getComputedStyle(root).colorScheme,
+          rootScheme: getComputedStyle(document.documentElement).colorScheme,
+          lines: ["route", "arrival", "connection"].map((name) =>
+            getComputedStyle(root).getPropertyValue(`--community-${name}`).trim(),
+          ),
+        };
+      });
+      for (const [label, actual, expected] of result.pairs) assert.equal(actual, expected, label);
+      assert.equal(result.scheme, result.rootScheme, "社区不能把原生控件锁在浅色");
+      assert.deepEqual(result.lines, initialLines, "外观变化不能改铁路线路身份色");
+    };
+    await checkPalette();
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const system of ["light", "dark"]) {
+        await page.emulateMedia({ colorScheme: system });
+        for (const choice of ["light", "dark", "system"]) {
+          const menu = page.locator(
+            width > 760
+              ? ".service-desk"
+              : ".mobile-header-tool--service:has([data-appearance-choice])",
+          );
+          await menu.locator(":scope > summary").click();
+          await menu.locator(`[data-appearance-choice="${choice}"]`).click();
+          await page.keyboard.press("Escape");
+          /* 地块已有 150ms 背景过渡，核对过渡结束后的材料色。 */
+          await page.waitForTimeout(180);
+          await checkPalette();
+          await page.reload({ waitUntil: "networkidle" });
+          await checkPalette();
+        }
+      }
+    }
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test(`${engine}: 无脚本首帧也继承系统深浅底色`, async () => {
+  for (const colorScheme of ["light", "dark"]) {
+    const { page, errors } = await openPage({ javaScriptEnabled: false, colorScheme });
+    try {
+      const colors = await page.evaluate(() => ({
+        body: getComputedStyle(document.body).backgroundColor,
+        community: getComputedStyle(document.querySelector("[data-community-page]"))
+          .backgroundColor,
+        bodyText: getComputedStyle(document.body).color,
+        communityText: getComputedStyle(document.querySelector("[data-community-page]")).color,
+      }));
+      assert.equal(colors.community, colors.body);
+      assert.equal(colors.communityText, colors.bodyText);
+      assert.deepEqual(errors, []);
+    } finally {
+      await page.close();
+    }
+  }
+});
+
+test(`${engine}: 列车预览与首页一致，滚动关闭预览但保留点击固定的导览`, async () => {
+  const { page, errors } = await openPage();
+  try {
+    const train = page.locator("[data-community-train]");
+    await train.hover();
+    await page.waitForTimeout(180);
+    assert.equal(await train.getAttribute("aria-expanded"), "true");
+    await page.evaluate(() => scrollTo({ top: 200, behavior: "instant" }));
+    await page.waitForTimeout(200);
+    assert.equal(await train.getAttribute("aria-expanded"), "false");
+    await train.click();
+    await page.evaluate(() => scrollTo({ top: 400, behavior: "instant" }));
+    await page.waitForTimeout(200);
+    assert.equal(await train.getAttribute("aria-expanded"), "true");
+    await page.keyboard.press("Escape");
+    assert.equal(await train.getAttribute("aria-expanded"), "false");
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test(`${engine}: 列车导览沿用首页站牌节奏，中文站名不被固定窄宽度挤成两行`, async () => {
+  const { page, errors } = await openPage();
+  try {
+    await page.locator("[data-community-train]").click();
+    const lines = await page.locator(".community-guide").evaluate((panel) =>
+      [
+        ...panel.querySelectorAll(
+          "[data-home-journey-current-name], .home-journey-quick-pick__stop-label",
+        ),
+      ].map((label) => {
+        const range = document.createRange();
+        range.selectNodeContents(label);
+        return { text: label.textContent, lines: range.getClientRects().length };
+      }),
+    );
+    assert.ok(
+      lines.every((label) => label.lines === 1),
+      JSON.stringify(lines),
+    );
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test(`${engine}: 社区列车以偏色回应交互，浦蓝线贯穿两个换乘站`, async () => {
+  const { page, errors } = await openPage();
+  try {
+    const train = page.locator("[data-community-train]");
+    const restingColor = await train.evaluate(
+      (element) => getComputedStyle(element).backgroundColor,
+    );
+    await train.hover();
+    await page.waitForTimeout(250);
+    const hovered = await train.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { color: style.backgroundColor, outline: style.outlineStyle };
+    });
+    assert.notEqual(hovered.color, restingColor, "鼠标预览必须改变车身颜色");
+    assert.equal(hovered.outline, "none", "普通 hover 不给车身加矩形框");
+    const stops = await page.locator("[data-home-journey-stop]").evaluateAll((elements) =>
+      elements.map((element) => ({
+        id: element.dataset.homeJourneyStop,
+        color: element.dataset.homeJourneyLineColor,
+        transfer: Boolean(element.querySelector("[data-home-journey-transfer]")),
+      })),
+    );
+    assert.equal(new Set(stops.map((stop) => stop.color)).size, 1, "换乘站不能改变本页主线");
+    assert.deepEqual(
+      stops.filter((stop) => stop.transfer).map((stop) => stop.id),
+      ["community-center", "community-connections"],
+    );
+    await train.click();
+    await page.mouse.move(1000, 850);
+    assert.equal(await train.getAttribute("aria-expanded"), "true");
+    assert.notEqual(
+      await train.evaluate((element) => getComputedStyle(element).backgroundColor),
+      restingColor,
+    );
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test(`${engine}: 社区 Footer 复用首页高度与签名节奏，窄屏内容完整`, async () => {
+  const { page, errors } = await openPage();
+  try {
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      const sizes = [];
+      for (const path of ["/zh-Hans/", "/zh-Hans/community/"]) {
+        await page.goto(`${baseUrl}${path}`, { waitUntil: "networkidle" });
+        await page.evaluate(() => document.fonts.ready);
+        const footer = page.locator("footer").last();
+        sizes.push(
+          await footer.evaluate((element) => {
+            const style = getComputedStyle(element);
+            return { height: element.getBoundingClientRect().height, minimum: style.minHeight };
+          }),
+        );
+        assert.equal(await footer.locator(".home-footer__signature").count(), 1);
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      }
+      assert.equal(sizes[1].minimum, sizes[0].minimum);
+      assert.equal(sizes[1].height, sizes[0].height);
+    }
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});
 
 /** 检查浮层没有越过可见视口，尺寸容许亚像素舍入但不能因资料类别而变化。 */
 async function assertPanel(page, panel, expected) {
@@ -52,13 +289,18 @@ async function assertPanel(page, panel, expected) {
     assert.ok(Math.abs(box.height - expected.height) < 1, JSON.stringify(box));
   }
   if (await panel.evaluate((element) => element.classList.contains("community-guide"))) {
+    assert.equal(await panel.getAttribute("aria-hidden"), "false");
+    assert.equal(await panel.evaluate((element) => element.inert), false);
     const content = await panel.locator("[data-home-journey-picker]").boundingBox();
     assert.ok(
       Math.abs(box.height - content.height - 4) < 2,
       "列车外框应贴合内容，不能被 Popover 的默认 inset 撑满视口",
     );
   }
-  assert.equal(await page.locator("[data-community-disclosure][open]").count(), 1);
+  assert.equal(
+    await page.locator("[data-community-disclosure][open]").count(),
+    (await panel.getAttribute("id")) === "community-train-panel" ? 0 : 1,
+  );
   return { width: box.width, height: box.height };
 }
 
@@ -188,7 +430,8 @@ test(`${engine}: 1920×1080 原画板比例下保留线路和头像，展开仍�
 });
 
 test(`${engine}: 预览可进入、点击固定、Escape 恢复焦点，列车和地点互斥`, async () => {
-  const { page, errors } = await openPage();
+  /* 种子5的下一地块外框可见但姓名在屏外，防止只在偶然布局中通过键盘回归。 */
+  const { page, errors } = await openPage({}, "zh-Hans", 5);
   try {
     const plot = page.locator("[data-community-entity]").first();
     const trigger = plot.locator(":scope > summary");
@@ -216,7 +459,19 @@ test(`${engine}: 预览可进入、点击固定、Escape 恢复焦点，列车�
     await page.keyboard.press("Escape");
     await page.keyboard.press("Tab");
     assert.equal(await page.locator("[data-community-entity]").nth(1).getAttribute("open"), "");
-    await page.locator(".community-train > summary").click();
+    assert.ok(
+      await page
+        .locator("[data-community-entity]")
+        .nth(1)
+        .locator(".community-plot__label")
+        .evaluate((label) => {
+          const bounds = label.getBoundingClientRect();
+          const header = document.querySelector(".site-header").getBoundingClientRect();
+          return bounds.top >= header.bottom && bounds.bottom <= innerHeight;
+        }),
+      "键盘聚焦必须把姓名标注带入Header下方的可见区",
+    );
+    await page.locator("[data-community-train]").click();
     assert.equal(await page.locator("[data-community-entity][open]").count(), 0);
     await assertPanel(page, page.locator(".community-guide"));
     await screenshot(page, "train-guide");
@@ -273,7 +528,7 @@ for (const scenario of [
         await panel.locator("[data-community-close]").tap();
         assert.equal(await panel.isVisible(), false);
       }
-      await page.locator(".community-train > summary").tap();
+      await page.locator("[data-community-train]").tap();
       const guide = page.locator(".community-guide");
       await assertPanel(page, guide);
       assert.equal(
@@ -282,7 +537,11 @@ for (const scenario of [
       );
       await screenshot(page, `${scenario.locale}-${scenario.width}-guide`);
       await guide.locator("[data-home-journey-close]").tap();
-      assert.equal(await guide.isVisible(), false);
+      assert.equal(await guide.getAttribute("aria-hidden"), "true");
+      assert.equal(await guide.evaluate((element) => element.inert), true);
+      await page.waitForFunction(
+        () => getComputedStyle(document.querySelector(".community-guide")).opacity === "0",
+      );
       assert.equal(
         await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
         true,
@@ -311,7 +570,7 @@ test(`${engine}: 无脚本时原生 details 仍可展开，未确认伙伴没有
   }
 });
 
-test(`${engine}: L 形空缺不是点击热区，Header 注册社区且页尾保持反色`, async () => {
+test(`${engine}: L 形空缺不是点击热区，Header 注册社区且导览抵达页尾`, async () => {
   for (const width of [1440, 390]) {
     const { page, errors } = await openPage({ viewport: { width, height: 900 } });
     try {
@@ -347,15 +606,7 @@ test(`${engine}: L 形空缺不是点击热区，Header 注册社区且页尾保
       );
       if (width > 760) assert.equal(await page.locator(".community-nav").isVisible(), true);
       await page.keyboard.press("Escape");
-      for (const colorScheme of ["light", "dark"]) {
-        await page.emulateMedia({ colorScheme });
-        const colors = await page.locator(".community-contact").evaluate((element) => {
-          const style = getComputedStyle(element);
-          return [style.backgroundColor, style.color];
-        });
-        assert.deepEqual(colors, ["rgb(27, 32, 34)", "rgb(250, 251, 250)"]);
-      }
-      await page.locator(".community-train > summary").click();
+      await page.locator("[data-community-train]").click();
       const guide = page.locator(".community-guide");
       assert.equal(await guide.locator("[data-home-journey-picker]").count(), 1);
       await guide.locator('[data-home-journey-section-id="community-contact"]').click();
@@ -520,6 +771,49 @@ test(`${engine}: PN 覆盖浦蓝线，两枚站点上下对齐并分属两线`, 
   }
 });
 
+test(`${engine}: 窄屏英文 Footer 保留复制结果与手动选择群号的空间`, async () => {
+  const { page, errors } = await openPage({ viewport: { width: 320, height: 568 } }, "en");
+  try {
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: async (text) => {
+            if (window.communityCopyShouldFail) throw new Error("Clipboard unavailable");
+            window.communityCopiedText = text;
+          },
+        },
+      });
+    });
+    const copy = page.locator("[data-community-copy]");
+    const feedback = page.locator("[data-community-copy-feedback]");
+    await copy.click();
+    assert.equal(
+      await page.evaluate(() => window.communityCopiedText),
+      await copy.getAttribute("data-community-copy"),
+    );
+    assert.equal(await feedback.textContent(), await copy.getAttribute("data-copied-label"));
+    await page.evaluate(() => {
+      window.communityCopyShouldFail = true;
+    });
+    await copy.click();
+    assert.equal(await feedback.textContent(), await copy.getAttribute("data-copy-failed-label"));
+    const message = await feedback.boundingBox();
+    const signature = await page.locator(".home-footer__signature").boundingBox();
+    assert.ok(message.y + message.height <= signature.y, "两行失败提示不能盖住品牌签名");
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    assert.equal(
+      await page
+        .locator(".community-contact__number span")
+        .evaluate((element) => getComputedStyle(element).userSelect),
+      "all",
+    );
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
 test(`${engine}: 真正卸载后迟到的复制结果不得写入已释放页面`, async () => {
   const { page, errors } = await openPage();
   try {
@@ -550,7 +844,7 @@ test(`${engine}: 真正卸载后迟到的复制结果不得写入已释放页面
   }
 });
 
-test(`${engine}: 河道两端在不同视口均流出画面，不能在屏内截止`, async () => {
+test(`${engine}: 穿城河口在缩放后连续衔接，河道两端仍流出画面`, async () => {
   const { page, errors } = await openPage();
   try {
     for (const width of [320, 390, 760, 768, 1440]) {
@@ -577,7 +871,105 @@ test(`${engine}: 河道两端在不同视口均流出画面，不能在屏内截
         mouths[1].some((x) => x < 0),
         `出水口应跨过屏幕左边缘: ${mouths[1]}`,
       );
+      const seams = await page.locator("[data-community-atlas]").evaluate((atlas) => {
+        const screenPoints = (node) =>
+          [...node.points].map((point) =>
+            new DOMPoint(point.x, point.y).matrixTransform(node.getScreenCTM()),
+          );
+        const rivers = [...atlas.querySelectorAll(".community-map-river")]
+          .filter((node) => node.getBoundingClientRect().width > 0)
+          .map(screenPoints);
+        const inlet = screenPoints(atlas.querySelector("[data-community-river-in]"));
+        const outlet = screenPoints(atlas.querySelector("[data-community-river-out]"));
+        const distance = (point, options) =>
+          Math.min(...options.map((other) => Math.hypot(point.x - other.x, point.y - other.y)));
+        const first = rivers[0],
+          last = rivers.at(-1);
+        const links = atlas.querySelector("[data-community-river-links]");
+        const linkSamples = [];
+        if (links) {
+          const matrix = links.getScreenCTM();
+          const length = links.getTotalLength();
+          for (let offset = 0; offset <= length; offset += 0.5)
+            linkSamples.push(links.getPointAtLength(offset).matrixTransform(matrix));
+        }
+        return {
+          distances: [
+            distance(first[0], inlet),
+            distance(first.at(-1), inlet),
+            distance(last[1], outlet),
+            distance(last[2], outlet),
+            ...rivers
+              .slice(1)
+              .flatMap((river, index) =>
+                [rivers[index][1], rivers[index][2], river[0], river[3]].map((point) =>
+                  distance(point, linkSamples),
+                ),
+              ),
+          ],
+          links: links?.getAttribute("d"),
+        };
+      });
+      assert.ok(
+        seams.distances.every((distance) => distance < 1),
+        `河口不得再连接旧的地图右边缘: ${JSON.stringify(seams)}`,
+      );
+      assert.ok(seams.links?.includes("Z"), "章节之间需要连接真实上下河口");
     }
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test(`${engine}: 正文增高后河口重新对齐，卸载后不再更新连接`, async () => {
+  const { page, errors } = await openPage({ reducedMotion: "reduce" });
+  try {
+    const geometry = await page
+      .locator(".community-map-river")
+      .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("points")));
+    const before = await page.locator("[data-community-river-in]").getAttribute("points");
+    await page.locator(".community-district__hint").evaluate((hint) => {
+      hint.style.maxWidth = "180px";
+      hint.textContent = hint.textContent.repeat(3);
+    });
+    await page.waitForFunction(
+      (previous) =>
+        document.querySelector("[data-community-river-in]").getAttribute("points") !== previous,
+      before,
+    );
+    const distance = await page.evaluate(() => {
+      const inlet = document.querySelector("[data-community-river-in]");
+      const river = [...document.querySelectorAll(".community-map-river")].find(
+        (node) => node.getBoundingClientRect().width > 0,
+      );
+      const start = new DOMPoint(river.points[0].x, river.points[0].y).matrixTransform(
+        river.getScreenCTM(),
+      );
+      return Math.min(
+        ...[...inlet.points].map((point) => {
+          const end = new DOMPoint(point.x, point.y).matrixTransform(inlet.getScreenCTM());
+          return Math.hypot(start.x - end.x, start.y - end.y);
+        }),
+      );
+    });
+    assert.ok(distance < 1, "正文重排后必须仍连接地图入口");
+    assert.deepEqual(
+      await page
+        .locator(".community-map-river")
+        .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("points"))),
+      geometry,
+      "正文重排不能洗牌地图",
+    );
+    const settled = await page.locator("[data-community-river-in]").getAttribute("points");
+    await page.evaluate(() => {
+      dispatchEvent(new PageTransitionEvent("pagehide", { persisted: false }));
+      document.querySelector(".community-district__hint").style.maxWidth = "300px";
+    });
+    await page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    );
+    assert.equal(await page.locator("[data-community-river-in]").getAttribute("points"), settled);
     assert.deepEqual(errors, []);
   } finally {
     await page.close();
@@ -623,6 +1015,37 @@ test(`${engine}: DS 提前转入竖轨，完整线宽避开头像墙`, async () 
         return nearest - halfStroke;
       });
       assert.ok(clearance >= 12, `${width}×${height}: 橙线需与头像墙保持间距，实际 ${clearance}px`);
+    }
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test(`${engine}: 进站双线保持紧邻换乘，超宽屏也不拉开站距`, async () => {
+  const { page, errors } = await openPage({ reducedMotion: "reduce" });
+  try {
+    for (const width of [320, 390, 767, 768, 1024, 1440, 1920, 2560, 3840]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.evaluate(
+        () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+      );
+      const geometry = await page.locator(".community-landing").evaluate((landing) => {
+        const ds = landing.querySelector(".community-landing__arrival-end").getBoundingClientRect();
+        const ws = landing.querySelector(".community-landing__station").getBoundingClientRect();
+        const path = landing.querySelector("[data-community-arrival-path]");
+        const lineWidth = parseFloat(getComputedStyle(path).strokeWidth);
+        return {
+          gap: Math.abs(ds.left + ds.width / 2 - ws.left - ws.width / 2) - lineWidth,
+          heightDelta: Math.abs(ds.top + ds.height / 2 - ws.top - ws.height / 2),
+          lineWidth,
+        };
+      });
+      assert.ok(
+        geometry.gap >= 3.8 && geometry.gap <= 8.2,
+        `${width}px: 换乘双线的边缘间距应为4–8px，不随超宽视口持续增大: ${JSON.stringify(geometry)}`,
+      );
+      assert.ok(geometry.heightDelta < 1, "换乘双圆仍须水平对齐");
     }
     assert.deepEqual(errors, []);
   } finally {

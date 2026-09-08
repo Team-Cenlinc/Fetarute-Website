@@ -50,6 +50,7 @@ const renderedSections = routeStops ? routeStops.map((stop) => ({
   lineColor: stop.color,
   lineTextColor: getRailwayLineTextColor(stop.color),
   transferFrom: undefined,
+  isTransfer: stop.isTransfer ?? false,
 })) : (sections ?? []).map((section) => {
   const line = railwayLineByKey.get(section.lineKey);
 
@@ -62,6 +63,7 @@ const renderedSections = routeStops ? routeStops.map((stop) => ({
     displayName: getHomeJourneySectionName(section, locale),
     lineColor: line.color,
     lineTextColor: getRailwayLineTextColor(line.color),
+    isTransfer: Boolean(section.transferFrom),
   };
 });
 
@@ -142,7 +144,7 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
             class:list={{
               "home-journey-quick-pick__stop": true,
               "home-journey-quick-pick__stop--current": section.id === currentSectionId,
-              "home-journey-quick-pick__stop--transfer": Boolean(section.transferFrom),
+              "home-journey-quick-pick__stop--transfer": section.isTransfer,
             }}
             data-home-journey-stop={section.id}
             data-home-journey-line-color={section.lineColor}
@@ -160,7 +162,7 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
               <span class="home-journey-quick-pick__stop-label">{section.displayName}</span>
             </a>
             {
-              section.transferFrom && (
+              section.isTransfer && (
                 <span
                   class="home-journey-quick-pick__transfer-station"
                   data-home-journey-transfer
@@ -177,7 +179,7 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
 
 <style>
   .home-journey-quick-pick {
-    /* 四个章节按紧凑站距一次完整显示；路线直接穿过面板底边，不制造终点或内层滚动。 */
+    /* 正常视口一次显示四站；缩放后空间不足时允许整张站牌滚动，不截掉后续章节。 */
     --home-journey-stop-height: 46px;
     --home-journey-stop-gap: 10px;
     /* 轨道与站点分支共用同一组比例，保持 Figma 的连续铁路语言。 */
@@ -187,6 +189,8 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
     --home-journey-branch-width: 28px;
     --home-journey-branch-height: 28px;
     --home-journey-branch-gap: 14px;
+    /* 横支线向竖轨内多覆盖 2px，避免 Safari 对两个贴边图层分别抗锯齿时露出底色。 */
+    --home-journey-branch-overlap: 2px;
     /* 换乘胶囊横跨两段线路的接缝；尺寸按 Figma 58:98 缩放到现有 Tooltip 轨宽。 */
     --home-journey-transfer-marker-width: 58px;
     --home-journey-transfer-marker-height: 26px;
@@ -196,10 +200,11 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
     /* hover 仅作路线预览；暗色外观会提升该不透明度，避免亮色提示沉入地图底。 */
     --home-journey-hover-fill-opacity: 0.18;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: max-content max-content;
     max-block-size: var(--home-arrival-tooltip-content-max-block-size, none);
     min-block-size: 0;
-    overflow: hidden;
+    overflow: auto;
     background: var(--palette-surface-raised);
   }
 
@@ -211,7 +216,7 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
     gap: 2px;
     padding: 10px 72px 12px 14px;
     background: var(--palette-surface-raised);
-    /* 快选窗已无内层滚动，标题区也保留页面平移，避免手指从此处起滑时被截断。 */
+    /* 标题区保留原生平移；有溢出时滚动站牌，正常尺寸继续滚动页面。 */
     touch-action: manipulation;
   }
 
@@ -263,6 +268,8 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
   }
 
   .home-journey-quick-pick__current strong {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
     color: var(--palette-text);
     font-size: clamp(32px, 3.4vw, 42px);
     font-weight: 800;
@@ -273,7 +280,8 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
   .home-journey-quick-pick__map {
     position: relative;
     min-block-size: 0;
-    overflow: hidden;
+    /* 由外层统一处理溢出，避免嵌套裁切让键盘滚动到的站名仍不可见。 */
+    overflow: visible;
     padding: var(--home-journey-map-inset);
     background: var(--palette-journey-map);
     isolation: isolate;
@@ -321,6 +329,7 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
     position: relative;
     z-index: 1;
     min-height: var(--home-journey-stop-height);
+    min-inline-size: 0;
     padding-left: calc(
       var(--home-journey-track-left) + var(--home-journey-track-width) +
         var(--home-journey-branch-width) + var(--home-journey-branch-gap) - var(--home-journey-map-inset)
@@ -334,6 +343,7 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
     align-items: center;
     isolation: isolate;
     width: fit-content;
+    max-inline-size: 100%;
     min-height: var(--home-journey-stop-height);
     border: 0;
     color: var(--palette-text);
@@ -349,7 +359,9 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
     position: relative;
     z-index: 0;
     display: inline-flex;
+    min-inline-size: 0;
     align-items: center;
+    overflow-wrap: anywhere;
     min-height: var(--home-journey-stop-height);
     padding-inline: 4px;
     isolation: isolate;
@@ -396,7 +408,7 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
     position: absolute;
     top: 50%;
     right: calc(100% + var(--home-journey-branch-gap));
-    width: var(--home-journey-branch-width);
+    width: calc(var(--home-journey-branch-width) + var(--home-journey-branch-overlap));
     height: var(--home-journey-branch-height);
     background: var(--home-journey-line-color);
     content: "";
@@ -474,10 +486,6 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
     background: var(--home-journey-line-color);
     clip-path: inset(0);
     opacity: 1;
-  }
-
-  .home-journey-quick-pick__stop--current a::before {
-    width: var(--home-journey-branch-width);
   }
 
   /* 鼠标悬停先以低不透明度预览该章节线路色；确认选中后才变为完整站牌。 */
@@ -597,7 +605,7 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
 
   @media (max-height: 440px) {
     .home-journey-quick-pick {
-      /* 极矮视口把标题栏与站距压到可访问下限；仍一次展示四站，不重新引入嵌套滚动。 */
+      /* 短屏保留至少44px的站点；若缩放后仍放不下，由整张站牌提供滚动退路。 */
       --home-journey-stop-height: 44px;
       --home-journey-stop-gap: 4px;
       --home-journey-map-inset: 4px;
@@ -641,6 +649,31 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
       .home-journey-quick-pick__stop
       a {
       font-size: 22px;
+    }
+  }
+
+  /* 放大后面板可能小于200px；缩减导视装饰而不缩小文字，让站名占据主要阅读宽度。 */
+  @container train-tooltip (max-width: 220px) {
+    .home-journey-quick-pick {
+      --home-journey-map-inset: 4px;
+      --home-journey-track-left: 10px;
+      --home-journey-track-width: 12px;
+      --home-journey-branch-width: 10px;
+      --home-journey-branch-gap: 8px;
+      --home-journey-transfer-marker-width: 24px;
+      --home-journey-transfer-marker-height: 20px;
+      --home-journey-transfer-marker-border-width: 2px;
+    }
+
+    .home-journey-quick-pick[data-home-journey-locale] .home-journey-quick-pick__current {
+      padding-inline: 10px;
+    }
+
+    .home-journey-quick-pick__current > span {
+      display: flex;
+      align-items: center;
+      min-block-size: 44px;
+      padding-inline-end: 44px;
     }
   }
 

@@ -1,5 +1,3 @@
-@import "./journey-tooltip.css";
-
 /*
  * 首页开屏的线路变量由 HomePage 在 SSG 阶段注入。
  * --home-arrival-line-color 始终引用 railway.ts 的 Serverlink 官方色；
@@ -200,6 +198,15 @@
 }
 
 .home-arrival__train-color-layer {
+  /* 路径车的两层分别提供当前车色和线路色，共用列车交互偏色公式。 */
+  --train-feedback-base-color: var(
+    --home-route-incoming-train-color,
+    var(--home-arrival-train-color)
+  );
+  --train-feedback-line-color: var(
+    --home-route-incoming-line-color,
+    var(--home-arrival-line-color)
+  );
   position: absolute;
   inset: 0;
   color: var(--home-route-incoming-train-color, var(--home-arrival-train-color));
@@ -208,6 +215,14 @@
 }
 
 .home-arrival__train-color-layer--outgoing {
+  --train-feedback-base-color: var(
+    --home-route-outgoing-train-color,
+    var(--home-arrival-train-color)
+  );
+  --train-feedback-line-color: var(
+    --home-route-outgoing-line-color,
+    var(--home-arrival-line-color)
+  );
   color: var(--home-route-outgoing-train-color, var(--home-arrival-train-color));
   opacity: 0;
   will-change: opacity;
@@ -354,28 +369,14 @@
 .home-arrival:has(.home-arrival__train[data-tooltip-open="true"][data-tooltip-visual-active="true"])
   .home-arrival__train-color-layer--incoming {
   /* 本地换乘车打开共享 Tooltip 时不染色全局路径车；两班车保持各自线路状态。 */
-  color: color-mix(
-    in oklch,
-    var(--home-route-incoming-train-color, var(--home-arrival-train-color)) 88%,
-    var(--home-route-incoming-line-color, var(--home-arrival-line-color))
-  );
+  color: var(--train-feedback-active-color);
 }
 
 .home-arrival:has(.home-arrival__train:hover) .home-arrival__train-color-layer--outgoing,
 .home-arrival:has(.home-arrival__train:focus-visible) .home-arrival__train-color-layer--outgoing,
 .home-arrival:has(.home-arrival__train[data-tooltip-open="true"][data-tooltip-visual-active="true"])
   .home-arrival__train-color-layer--outgoing {
-  color: color-mix(
-    in oklch,
-    var(--home-route-outgoing-train-color, var(--home-arrival-train-color)) 88%,
-    var(--home-route-outgoing-line-color, var(--home-arrival-line-color))
-  );
-}
-
-.home-arrival__train[data-tooltip-open="true"] ~ .home-arrival__train-tooltip {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
+  color: var(--train-feedback-active-color);
 }
 
 .home-introduction {

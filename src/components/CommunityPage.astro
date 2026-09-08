@@ -1,6 +1,8 @@
 ---
 import type { ImageMetadata } from "astro";
-import logo from "@/assets/fetarute-branding/fetarute-logo.svg?raw";
+import copyIcon from "@phosphor-icons/core/assets/bold/copy-bold.svg?raw";
+import JourneyFooter from "@/components/JourneyFooter.astro";
+import { getCommunityJourneyStops } from "@/data/community-journey";
 import acatine from "@/assets/pages/home/community/presence/players/acatine.png";
 import hot945 from "@/assets/pages/home/community/presence/players/hot945.png";
 import lanyuvu from "@/assets/pages/home/community/presence/players/lanyuvu.png";
@@ -8,16 +10,15 @@ import complexColors from "@/assets/pages/home/community/presence/players/comple
 import katsuta from "@/assets/pages/home/community/presence/players/katsuta-minamoto.png";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import CommunityMap from "@/components/CommunityMap.astro";
-import HomeJourneyQuickPick from "@/components/HomeJourneyQuickPick.astro";
+import TrainJourneyTooltip from "@/components/TrainJourneyTooltip.astro";
 import { communityEntities, communityMosaicCells } from "@/data/community";
-import { communityMapPalette, interfacePalette } from "@/data/palette";
+import { communityMapPalette } from "@/data/palette";
 import { createHexColor, shiftRailwayLineColor } from "@/data/railway";
-import { onwardEntryPoints, siteInfo, wayfindingPrototype } from "@/data/site";
+import { onwardEntryPoints, wayfindingPrototype } from "@/data/site";
 import { communityMessages } from "@/i18n/community";
 import type { Locale } from "@/i18n/config";
 import { getLocalizedRelativeUrl } from "@/i18n/links";
 import "@/styles/community.css";
-import "@/styles/journey-tooltip.css";
 
 /** 三语社区页共用街区布局和交互，仅替换公开文案。 */
 export interface Props {
@@ -44,39 +45,33 @@ const entities = communityEntities.map((entity) => ({
 }));
 const members = entities.filter((entity) => entity.kind === "player");
 const trainColor = shiftRailwayLineColor(createHexColor(communityMapPalette.route), wayfindingPrototype.homeTrainColorShift);
-/** 地图与浮层共用画纸 token；实际色值只在 palette.ts 维护，列车按首页偏移派生。 */
+/** 页面只注入不会随主题改变的线路与列车色；材料色通过 CSS 消费全局 palette。 */
 const paletteStyle = Object.entries(communityMapPalette)
   .map(([key, value]) => "--community-" + key + ": " + value + ";").join(" ") +
-  " --community-train-color: " + trainColor + ";" +
-  /* 地图固定为浅色画纸，页尾使用首页浅色外观的反色对，不被系统深色偏好反转成白底。 */
-  ` --community-inverse-surface: ${interfacePalette.light.text}; --community-inverse-text: ${interfacePalette.light.surface};`;
-/** 同一地图上的两个区域独立设站，玩家与外部社区不混排。 */
-const chapters = [
-  { id: "community-center", name: copy.title, color: createHexColor(communityMapPalette.route) },
-  { id: "community-district", name: copy.districtStop, color: createHexColor(communityMapPalette.route) },
-  { id: "community-connections", name: copy.connectionsTitle, color: createHexColor(communityMapPalette.connection) },
-  { id: "community-contact", name: copy.contactStop, color: createHexColor(communityMapPalette.route) },
-];
+  " --community-train-color: " + trainColor + ";";
+const chapters = getCommunityJourneyStops(locale);
 ---
 
 <BaseLayout locale={locale} title={copy.title} description={copy.description} pagePath="community/" fullBleedMain noindex>
   <div class="community-page" style={paletteStyle} data-community-page>
-    <details class="community-train" data-community-disclosure>
-      <summary aria-label={copy.guide} aria-haspopup="dialog" aria-controls="community-train-panel">
+    <div class="community-train">
+      <button class="train-feedback" type="button" data-community-train aria-label={copy.guide} aria-haspopup="dialog" aria-controls="community-train-panel" aria-expanded="false">
         <span aria-hidden="true"></span>
-      </summary>
-      <div class="home-arrival__train-tooltip community-guide" data-home-arrival-tooltip-locale={locale} id="community-train-panel" role="dialog" aria-label={copy.chapters} data-community-panel>
-        <HomeJourneyQuickPick
-          locale={locale}
-          currentSectionId="community-center"
-          routeStops={chapters}
-          currentSectionLabel={copy.current}
-          quickPickLabel={copy.chapters}
-          goToSectionLabel={copy.goToSection}
-          closeLabel={copy.close}
-        />
-      </div>
-    </details>
+      </button>
+    </div>
+    <TrainJourneyTooltip
+      id="community-train-panel"
+      className="community-guide"
+      title={copy.chapters}
+      initiallyHidden={false}
+      locale={locale}
+      currentSectionId="community-center"
+      routeStops={chapters}
+      currentSectionLabel={copy.current}
+      quickPickLabel={copy.chapters}
+      goToSectionLabel={copy.goToSection}
+      closeLabel={copy.close}
+    />
 
     <section class="community-landing" id="community-center" aria-labelledby="community-title" data-community-stop={copy.title}>
       <svg class="community-landing__tracks" aria-hidden="true" focusable="false"><path d="M 3000 -2258 L 119 623 L 119 900" data-community-arrival-path fill="none" /></svg>
@@ -98,6 +93,7 @@ const chapters = [
     </section>
 
     <div class="community-atlas" data-community-atlas>
+    <svg class="community-river-joins" aria-hidden="true" focusable="false"><path data-community-river-links /></svg>
     <svg class="community-river-mouth community-river-mouth--in" aria-hidden="true" focusable="false"><polygon data-community-river-in /></svg>
     <section class="community-district" id="community-district" aria-labelledby="community-district-title" data-community-stop={copy.districtStop} data-community-zone="players">
       <header class="community-district__heading">
@@ -120,19 +116,27 @@ const chapters = [
     <svg class="community-river-mouth community-river-mouth--out" aria-hidden="true" focusable="false"><polygon data-community-river-out /></svg>
     </div>
 
-    <footer class="community-contact" id="community-contact" data-community-stop={copy.contactStop}>
-      <div>
-        <h2>{copy.contact}</h2>
-        <p class="community-contact__number">QQ <span>{onwardEntryPoints.qqPortalGroupNumber}</span></p>
-        <button type="button" class="community-contact__copy" data-community-copy={onwardEntryPoints.qqPortalGroupNumber} data-copied-label={copy.copied} data-copy-failed-label={copy.copyFailed}>{copy.copy}</button>
+    <JourneyFooter
+      id="community-contact"
+      className="community-contact"
+      stopName={copy.contactStop}
+      title={copy.contact}
+      lineColor={communityMapPalette.route}
+      returnHref={getLocalizedRelativeUrl(locale)}
+      returnLabel={copy.home}
+      returnDirection="left"
+    >
+      <div class="community-contact__details">
+        <div class="community-contact__entry">
+          <p class="community-contact__number">QQ <span>{onwardEntryPoints.qqPortalGroupNumber}</span></p>
+          <button type="button" class="community-contact__copy" data-community-copy={onwardEntryPoints.qqPortalGroupNumber} data-copied-label={copy.copied} data-copy-failed-label={copy.copyFailed}>
+            <span aria-hidden="true" set:html={copyIcon}></span>
+            <span>{copy.copy}</span>
+          </button>
+        </div>
         <p class="community-contact__feedback" aria-live="polite" data-community-copy-feedback></p>
       </div>
-      <div class="community-contact__signature">
-        <span class="community-contact__logo" set:html={logo} aria-hidden="true" />
-        <span>© {new Date().getFullYear()} {siteInfo.name}</span>
-        <a href={getLocalizedRelativeUrl(locale)}>{copy.home}</a>
-      </div>
-    </footer>
+    </JourneyFooter>
   </div>
   <noscript>
     <style>
@@ -140,11 +144,10 @@ const chapters = [
       .community-plot { position: relative; inset: auto; width: 100%; height: auto; margin-block: 16px; }
       .community-plot > summary { position: relative; min-height: 120px; clip-path: none; }
       .community-plot__label { left: 50%; top: 50%; width: 90%; }
-      .community-map-base, .community-plot__outline { display: none; }
+      .community-map-base, .community-plot__outline, .community-river-mouth, .community-river-joins { display: none; }
       .community-panel { position: static; width: 100%; height: auto; max-height: none; }
-      .community-guide { position: static; width: 100%; translate: none; transform: none; }
-      .community-train { position: relative; height: auto; margin: 100px 24px 0; width: auto; }
-      .community-train > summary { width: 64px; }
+      .community-guide { position: static; width: 100%; translate: none; transform: none; opacity: 1; pointer-events: auto; }
+      .community-train { display: none; }
       .community-contact__copy { display: none; }
     </style>
   </noscript>

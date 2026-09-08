@@ -1,8 +1,8 @@
 import { placeCommunityPanel } from "./layout.ts";
 import { initializeCommunityMap, updateCommunityArrival } from "./map-runtime.ts";
-import { getHomeTrainTooltipPlacement } from "../../data/home-route-train.ts";
+import { setupCommunityTrain } from "./train-controller.ts";
 
-/** 一处可展开的地图地点或列车导览；统一控制器保证同时最多展开一个面板。 */
+/** 一处可展开的地图地点；列车由共享 Tooltip 控制器提供相同的输入规则。 */
 interface CommunityDisclosure {
   details: HTMLDetailsElement;
   trigger: HTMLElement;
@@ -30,6 +30,13 @@ export function setupCommunityPage(root: HTMLElement): () => void {
   const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
   const supportsPopover = "showPopover" in HTMLElement.prototype;
   const header = document.querySelector<HTMLElement>(".site-header");
+  const train = setupCommunityTrain(root, (dismissPreview) => close(false, dismissPreview), signal);
+  /* 字体加载或章节正文换行会移动河口；仅更新连接几何，保留本次地图种子和成员位置。 */
+  const mapObserver = new ResizeObserver(() => {
+    if (!disposed) updateCommunityArrival(root);
+  });
+  const atlas = root.querySelector<HTMLElement>("[data-community-atlas]");
+  if (atlas) mapObserver.observe(atlas);
 
   for (const details of root.querySelectorAll<HTMLDetailsElement>("[data-community-disclosure]")) {
     const trigger = details.querySelector<HTMLElement>(":scope > summary");
@@ -85,42 +92,6 @@ export function setupCommunityPage(root: HTMLElement): () => void {
       close();
       return;
     }
-    if (active.details.classList.contains("community-train")) {
-      const panel = active.panel;
-      const style = getComputedStyle(panel);
-      const safeTop =
-        height <= 440 ? viewportTop + 20 : Math.max(viewportTop + 20, headerBottom + 12);
-      panel.style.setProperty(
-        "--home-arrival-tooltip-inline-size",
-        Math.min(
-          parseFloat(style.getPropertyValue("--home-arrival-tooltip-preferred-inline-size")),
-          width - 40,
-        ) + "px",
-      );
-      panel.style.setProperty(
-        "--home-arrival-tooltip-content-max-block-size",
-        Math.max(80, viewportTop + height - safeTop - 24) + "px",
-      );
-      const placement = getHomeTrainTooltipPlacement({
-        anchorBounds: anchor,
-        tooltipSize: { width: panel.offsetWidth, height: panel.offsetHeight },
-        viewportBounds: {
-          left,
-          top: viewportTop,
-          width,
-          height,
-          right: left + width,
-          bottom: viewportTop + height,
-        },
-        preferredSafeTop: safeTop,
-        preferBlockPlacement: false,
-        edge: 20,
-        gap: parseFloat(style.getPropertyValue("--home-arrival-tooltip-anchor-gap")),
-      });
-      panel.style.translate = `${placement.left}px ${placement.top}px`;
-      panel.dataset.homeArrivalTooltipPlacement = placement.placement;
-      return;
-    }
     active.panel.style.maxHeight = Math.max(120, available.height - 16) + "px";
     const point = placeCommunityPanel(anchor, active.panel.getBoundingClientRect(), available);
     active.panel.style.setProperty("--community-panel-x", point.x + "px");
@@ -130,6 +101,7 @@ export function setupCommunityPage(root: HTMLElement): () => void {
   /** 自动聚焦/悬停只作预览，首次点击总是固定展开，避免 touch 的 focus→click 双重翻转。 */
   function open(entry: CommunityDisclosure, shouldPin: boolean) {
     if (disposed) return;
+    train.close();
     cancelClose();
     if (active !== entry) {
       close();
@@ -197,7 +169,21 @@ export function setupCommunityPage(root: HTMLElement): () => void {
     entry.trigger.addEventListener(
       "focus",
       () => {
-        if (!suppressFocus && pointerKind !== "touch") open(entry, false);
+        if (suppressFocus || pointerKind === "touch") return;
+        /* 键盘按外框顺序聚焦时，异形地块的姓名可能仍在屏外；先让实际标注可见再定位面板。 */
+        if (!pointerKind) {
+          const label = entry.trigger.querySelector<HTMLElement>(".community-plot__label");
+          const bounds = label?.getBoundingClientRect();
+          const viewport = window.visualViewport;
+          const top = Math.max(
+            viewport?.offsetTop ?? 0,
+            (header?.getBoundingClientRect().bottom ?? 0) + 8,
+          );
+          const bottom = (viewport?.offsetTop ?? 0) + (viewport?.height ?? innerHeight);
+          if (bounds && (bounds.top < top || bounds.bottom > bottom))
+            label!.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
+        }
+        open(entry, false);
       },
       { signal },
     );
@@ -215,7 +201,7 @@ export function setupCommunityPage(root: HTMLElement): () => void {
     entry.panel.addEventListener("pointerleave", () => scheduleClose(entry), { signal });
     entry.panel.addEventListener("focusin", cancelClose, { signal });
     entry.panel
-      .querySelector("[data-community-close], [data-home-journey-close]")
+      .querySelector("[data-community-close]")
       ?.addEventListener("click", () => close(true, true), { signal });
   }
 
@@ -262,42 +248,13 @@ export function setupCommunityPage(root: HTMLElement): () => void {
     },
     { signal },
   );
-  root.querySelectorAll<HTMLAnchorElement>("[data-home-journey-target]").forEach((link) => {
-    link.addEventListener("click", () => close(false, true), { signal });
-  });
-
-  const stops = [...root.querySelectorAll<HTMLElement>("[data-community-stop]")];
-  const currentLabel = root.querySelector<HTMLElement>("[data-home-journey-current-name]");
-  const chapterLinks = [...root.querySelectorAll<HTMLAnchorElement>("[data-home-journey-target]")];
-  let currentChapterId = "";
-  /** 与页面阅读位置同步章节名称，不在概念地图中伪造真实站点或运营状态。 */
-  function updateChapter() {
-    const readingLine = window.innerHeight * 0.5;
-    /* 短页尾无法滚到视口中线；抵达页面底部时仍应正确停靠最后一站。 */
-    const atEnd = root.getBoundingClientRect().bottom <= window.innerHeight + 2;
-    const current = atEnd
-      ? stops.at(-1)
-      : (stops.filter((stop) => stop.getBoundingClientRect().top <= readingLine).at(-1) ??
-        stops[0]);
-    if (!current || current.id === currentChapterId) return;
-    currentChapterId = current.id;
-    if (currentLabel) currentLabel.textContent = current.dataset.communityStop ?? "";
-    for (const link of chapterLinks) {
-      const isCurrent = link.dataset.homeJourneySectionId === current.id;
-      link
-        .closest("[data-home-journey-stop]")
-        ?.classList.toggle("home-journey-quick-pick__stop--current", isCurrent);
-      if (isCurrent) link.setAttribute("aria-current", "step");
-      else link.removeAttribute("aria-current");
-    }
-  }
   /** 合并滚动和视口变化，离开页面后不再提交帧或写入已释放的 DOM。 */
   function scheduleFrame() {
     if (disposed || frame) return;
     frame = window.requestAnimationFrame(() => {
       frame = 0;
       if (disposed) return;
-      updateChapter();
+      train.update();
       position();
     });
   }
@@ -335,6 +292,7 @@ export function setupCommunityPage(root: HTMLElement): () => void {
     close();
     disposed = true;
     lifecycle.abort();
+    mapObserver.disconnect();
     window.cancelAnimationFrame(frame);
     frame = 0;
     delete root.dataset.communityEnhanced;
@@ -351,6 +309,6 @@ export function setupCommunityPage(root: HTMLElement): () => void {
   );
   window.addEventListener("pageshow", scheduleFrame, { signal });
   root.dataset.communityEnhanced = "true";
-  updateChapter();
+  train.update();
   return dispose;
 }

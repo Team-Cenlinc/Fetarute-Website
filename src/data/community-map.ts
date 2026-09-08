@@ -8,13 +8,14 @@ export interface CommunityMapLot {
   labelWidth: number;
 }
 
-/** 地形和热区共享几何，河口坐标固定以便上下区域拼成连续地图。 */
+/** 地形和热区共享几何；上下河口供视图衔接，不能再假定水域贴在地图右边。 */
 export interface CommunityMapTemplate {
   width: number;
   height: number;
   lots: readonly CommunityMapLot[];
   park: readonly CommunityMapPoint[];
   plaza: readonly CommunityMapPoint[];
+  /** 平行两岸的四个端点依次为左入、左出、右出、右入；街区之间只连接这些河口。 */
   river: readonly CommunityMapPoint[];
 }
 
@@ -114,7 +115,7 @@ function labelFor(
 }
 
 /**
- * 从河岸围合的整片土地开始，以随机方向、比例递归划街道，而不是移动固定格子。
+ * 从穿城河道两侧的土地开始，以随机方向、比例递归划街道，而不是移动固定格子。
  * 随机选择可分割街块，允许保留大片土地并继续细分邻地，避免最大面积优先导致平均分栏。
  */
 function generateMap(seed: number, mobile: boolean): CommunityMapTemplate | undefined {
@@ -125,23 +126,33 @@ function generateMap(seed: number, mobile: boolean): CommunityMapTemplate | unde
   /* 320px 手机地图宽 236px，56px 标注需约143逻辑单位；768px桌面需约120。额外留出字形/舍入余量。 */
   const minimumLabelHeight = mobile ? 156 : 128;
   const minimumLabelWidth = mobile ? 110 : 130;
-  const bends = 3 + Math.floor(random() * 3);
-  const bank: CommunityMapPoint[] = [[width * 0.9, 0]];
-  for (let i = 1; i < bends; i++)
-    bank.push([width * (0.7 + random() * 0.18), height * (i / bends + (random() - 0.5) * 0.08)]);
-  bank.push([width * 0.9, height]);
-  const land = clipPolygon(
-    clipPolygon(
-      [[0, 0], ...bank.map(([x, y]): CommunityMapPoint => [x - gap, y]), [0, height]],
-      1,
-      gap,
-      false,
-    ),
-    1,
-    height - gap,
-    true,
+  /* 只随机平直水道的位置与斜率；垂直于河岸的宽度为地图宽6%，两侧均预留可建设土地。 */
+  const entry = width * (0.38 + random() * 0.24);
+  const exit = width * (0.38 + random() * 0.24);
+  const halfRiver = width * 0.03 * Math.hypot(1, (exit - entry) / height);
+  const river: CommunityMapPoint[] = [
+    [entry - halfRiver, 0],
+    [exit - halfRiver, height],
+    [exit + halfRiver, height],
+    [entry + halfRiver, 0],
+  ];
+  const banks: CommunityMapPoint[][] = [
+    [
+      [0, 0],
+      [entry - halfRiver - gap, 0],
+      [exit - halfRiver - gap, height],
+      [0, height],
+    ],
+    [
+      [entry + halfRiver + gap, 0],
+      [width, 0],
+      [width, height],
+      [exit + halfRiver + gap, height],
+    ],
+  ];
+  const parcels = banks.map((land) =>
+    clipPolygon(clipPolygon(land, 1, gap, false), 1, height - gap, true),
   );
-  const parcels: CommunityMapPoint[][] = [land];
   while (parcels.length < 8) {
     const candidates = parcels
       .map((points, index) => {
@@ -188,38 +199,45 @@ function generateMap(seed: number, mobile: boolean): CommunityMapTemplate | unde
     points,
     ...labelFor(points, minimumLabelHeight)!,
   }));
-  const rectangular = lots
+  const landscapeCandidates = lots
     .map((lot, index) => ({ lot, index, rank: random() }))
-    .filter(({ lot }) =>
-      lot.points.every(([x, y], i) => {
-        const next = lot.points[(i + 1) % lot.points.length];
-        return x === next[0] || y === next[1];
-      }),
-    )
     .sort((a, b) => a.rank - b.rank);
   const landscapes: CommunityMapPoint[][] = [];
-  for (const { lot, index } of rectangular) {
+  for (const { lot, index } of landscapeCandidates) {
     if (landscapes.length === 2) break;
     const b = boundsOf(lot.points);
-    const cutX = b.right - (b.right - b.left) * (0.28 + random() * 0.12);
-    const cutY = b.top + (b.bottom - b.top) * 0.28;
-    const points: CommunityMapPoint[] = [
-      [b.left, b.top],
+    /* 沿岸梯形也可以在远离河岸的直角留出公园，手机两岸不必退化为整齐矩形。 */
+    const cornerIndex = lot.points.findIndex(([x, y], i) => {
+      const prev = lot.points[(i + lot.points.length - 1) % lot.points.length];
+      const next = lot.points[(i + 1) % lot.points.length];
+      return y === b.top && ((prev[0] === x && next[1] === y) || (next[0] === x && prev[1] === y));
+    });
+    if (cornerIndex < 0) continue;
+    const corner = lot.points[cornerIndex];
+    const prev = lot.points[(cornerIndex + lot.points.length - 1) % lot.points.length];
+    const next = lot.points[(cornerIndex + 1) % lot.points.length];
+    const horizontal = prev[1] === corner[1] ? prev : next;
+    const vertical = prev[0] === corner[0] ? prev : next;
+    const cutX = corner[0] + (horizontal[0] - corner[0]) * (0.28 + random() * 0.12);
+    const cutY = corner[1] + (vertical[1] - corner[1]) * 0.28;
+    const notch: CommunityMapPoint[] = [
       [cutX, b.top],
       [cutX, cutY],
-      [b.right, cutY],
-      [b.right, b.bottom],
-      [b.left, b.bottom],
+      [corner[0], cutY],
     ];
+    if (prev[0] === corner[0]) notch.reverse();
+    const points = lot.points.flatMap((point, i) => (i === cornerIndex ? notch : [point]));
     const label = labelFor(points, minimumLabelHeight);
     /* 小地块切出公园后可能无法容纳标注；保留原轮廓，改从另一块合适土地围合。 */
     if (!label || label.labelWidth < minimumLabelWidth) continue;
     lots[index] = { points, ...label };
+    const left = corner[0] < cutX ? corner[0] : cutX + gap / 2;
+    const right = corner[0] > cutX ? corner[0] : cutX - gap / 2;
     landscapes.push([
-      [cutX + gap / 2, b.top],
-      [b.right, b.top],
-      [b.right, cutY - gap / 2],
-      [cutX + gap / 2, cutY - gap / 2],
+      [left, b.top],
+      [right, b.top],
+      [right, cutY - gap / 2],
+      [left, cutY - gap / 2],
     ]);
   }
   return {
@@ -228,7 +246,7 @@ function generateMap(seed: number, mobile: boolean): CommunityMapTemplate | unde
     lots,
     park: landscapes[0] ?? [],
     plaza: landscapes[1] ?? [],
-    river: [...bank, [width, height], [width, 0]],
+    river,
   };
 }
 

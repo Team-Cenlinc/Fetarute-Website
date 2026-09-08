@@ -69,6 +69,9 @@ node --test test/*.browser.mjs
 CDP；WebKit 覆盖弹窗边界、触摸开关、键盘与跳站关闭。本机浏览器结果不替代 iPhone
 Safari 真机滚动验收。
 
+`test/train-tooltip-zoom.browser.mjs` 覆盖两页共用站牌的原生 200% 缩放（Chromium
+CDP）、短屏末站触控、关闭按钮的键盘可达性，以及正常尺寸不产生多余滚动。缩放时允许整张站牌原生滚动与站名换行；WebKit 运行短屏触控回归，跳过仅支持 CDP 的缩放用例。
+
 `test/home-scroll-frame.browser.mjs`
 在真实页面的动画帧中检查列车样式写入与窗口布局读取顺序，并验证静止列车不会重复提交样式。滚动位置必须与 DOMRect 在 read 阶段一起采样，后续路线与章节同步只消费快照；WebKit 的
 `scrollY` getter 会进入同步布局更新，不能把它当作 write 阶段的普通数值读取。

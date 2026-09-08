@@ -112,13 +112,11 @@ test("随机地图为最窄视口的整个身份标注盒保留空间", () => {
   }
 });
 
-test("随机几何可复现，河口连续，100 个种子的两种布局保持无重叠", () => {
+test("随机几何可复现，100 个种子的两种布局保持无重叠", () => {
   assert.deepEqual(createCommunityMaps(7), createCommunityMaps(7));
   assert.notDeepEqual(createCommunityMaps(7), createCommunityMaps(8));
   for (let seed = 0; seed < 100; seed++) {
     for (const map of Object.values(createCommunityMaps(seed))) {
-      assert.deepEqual(map.river[0], [map.width * 0.9, 0]);
-      assert.deepEqual(map.river.at(-3), [map.width * 0.9, map.height]);
       for (const lot of map.lots) assert.ok(inside(...lot.label, lot.points));
       const areas = [...map.lots.map((lot) => lot.points), map.park, map.plaza, map.river];
       for (let y = 0.3; y < map.height; y += 20)
@@ -129,4 +127,42 @@ test("随机几何可复现，河口连续，100 个种子的两种布局保持�
           );
     }
   }
+});
+
+test("穿城河道两岸平直等宽，收窄水面后两侧都有可用街区", () => {
+  const routes = new Set<string>();
+  for (let seed = 0; seed < 200; seed++) {
+    for (const map of Object.values(createCommunityMaps(seed))) {
+      const top = map.river
+        .filter(([, y]) => y === 0)
+        .map(([x]) => x)
+        .sort((a, b) => a - b);
+      const bottom = map.river
+        .filter(([, y]) => y === map.height)
+        .map(([x]) => x)
+        .sort((a, b) => a - b);
+      assert.equal(map.river.length, 4, "河岸各是一条长直线，不增加随机折点");
+      assert.equal(top.length, 2);
+      assert.equal(bottom.length, 2);
+      assert.ok(top[0] > map.width * 0.25 && top[1] < map.width * 0.75);
+      assert.ok(bottom[0] > map.width * 0.25 && bottom[1] < map.width * 0.75);
+      assert.ok(Math.abs(top[1] - top[0] - (bottom[1] - bottom[0])) < 0.000001, "两岸必须平行");
+      const slope = (bottom[0] - top[0]) / map.height;
+      const riverWidth = (top[1] - top[0]) / Math.hypot(1, slope);
+      assert.ok(
+        riverWidth >= map.width * 0.05 && riverWidth <= map.width * 0.08,
+        "河面应是较细的水道",
+      );
+      for (const side of [-1, 1]) {
+        assert.ok(
+          map.lots.filter(
+            ({ label: [x, y] }) => side * (x - (top[0] + top[1]) / 2 - slope * y) > riverWidth / 2,
+          ).length >= 2,
+          "两岸都要有多块土地，不能只剩水边单侧的城镇",
+        );
+      }
+      routes.add(JSON.stringify(map.river));
+    }
+  }
+  assert.ok(routes.size > 100, "随机种子仍改变穿城位置与方向");
 });

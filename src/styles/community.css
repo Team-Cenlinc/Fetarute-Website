@@ -1,9 +1,22 @@
-/* 社区地图色值由 palette.ts 注入 --community-{canvas,plot,text,muted,surface,route,
-   arrival,connection,river,park,square,school,culture}；线路色来自铁路资料，土地位置仍是概念地图。 */
+/* 线路色由铁路资料注入；其余地图材料通过全局 palette 随系统或手动外观切换。 */
 .community-page {
+  /* 页面、地块、文字和浮层复用站点材料，不允许局部 style 固定浅色外观。 */
+  --community-canvas: var(--palette-canvas);
+  --community-plot: var(--palette-journey-map);
+  --community-text: var(--palette-text);
+  --community-muted: var(--palette-muted);
+  --community-surface: var(--palette-surface-raised);
+  /* 地貌保留类别色相，实际深浅色值和文字对比由 palette.ts 统一提供。 */
+  --community-river: var(--palette-map-river);
+  --community-park: var(--palette-map-park);
+  --community-square: var(--palette-map-square);
+  --community-school: var(--palette-map-school);
+  --community-culture: var(--palette-map-culture);
   /* 主线和标题锚点保持 Figma 1920 px 画板中的 162 / 311 px 比例。 */
   --community-rail-x: 8.4375vw;
   --community-rail-width: clamp(28px, 3.2292vw, 62px);
+  /* 换乘双线以线宽决定紧邻间距，并限制在4–8px，避免超宽屏的vw坐标把同站拆远。 */
+  --community-interchange-gap: clamp(4px, calc(var(--community-rail-width) * 0.125), 8px);
   --community-copy-x: 16.1979vw;
   --community-right-inset: 8vw;
   /* 地块大小可以不同，头像与展开面板共用统一尺度，不暗示贡献等级。 */
@@ -16,7 +29,6 @@
   overflow-x: clip;
   background: var(--community-canvas);
   color: var(--community-text);
-  color-scheme: light;
 }
 
 .community-page::before {
@@ -41,7 +53,7 @@
 .community-page a {
   -webkit-tap-highlight-color: transparent;
 }
-.community-page :is(button, a, summary):focus-visible {
+:where(.community-page) :is(button, a, summary):focus-visible {
   outline: 3px solid var(--community-text);
   outline-offset: 5px;
 }
@@ -110,7 +122,10 @@
   background: var(--community-canvas);
 }
 .community-landing__arrival-end {
-  left: calc(4.5833vw + var(--community-rail-width) * 0.0645);
+  left: calc(
+    var(--community-rail-x) - var(--community-rail-width) * 0.9355 -
+      var(--community-interchange-gap)
+  );
   bottom: calc(18.06% + 1.2vw);
 }
 .community-landing__station {
@@ -162,14 +177,13 @@
   position: relative;
   padding-bottom: var(--community-river-out-height);
 }
-.community-atlas::before {
-  /* 两区共享河口；章节空地也保留水系，地图不会在标题间断开。 */
-  content: "";
+.community-river-joins {
+  /* 衔接真实的穿城河口，不再用地图右侧固定宽度的背景冒充贯通河道。 */
   position: absolute;
-  inset-block: var(--community-river-in-height) var(--community-river-out-height);
-  right: var(--community-right-inset);
-  width: calc((100% - var(--community-copy-x) - var(--community-right-inset)) * 0.1);
-  background: var(--community-river);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--community-river);
   pointer-events: none;
 }
 .community-river-mouth {
@@ -192,6 +206,11 @@
 .community-district__hint {
   position: relative;
   max-width: 90%;
+}
+.community-district__heading :is(h2, p) {
+  /* 水道从章节下方通过；画纸底色只托住文字，避免细河穿过笔画影响阅读。 */
+  width: fit-content;
+  background: var(--community-canvas);
 }
 .community-district__hint {
   max-width: 44em;
@@ -226,6 +245,10 @@
   position: relative;
   aspect-ratio: 1200 / 780;
   margin-bottom: 0;
+}
+.community-map-block + .community-map-block {
+  /* 超过八处地点时，在新增街区之间为直线河口衔接留出空地。 */
+  margin-top: clamp(48px, 4vw, 76px);
 }
 .community-map-base {
   position: absolute;
@@ -380,14 +403,17 @@
     var(--community-rail-x) - (var(--community-train-width) - var(--community-rail-width)) / 2
   );
 }
-.community-train > summary {
+.community-train > button {
+  /* 浦蓝线车身接入首页共用的偏色反馈。 */
+  --train-feedback-base-color: var(--community-train-color);
+  --train-feedback-line-color: var(--community-route);
   width: var(--community-train-width);
   height: calc(var(--community-train-width) * 1.65);
-  background: var(--community-train-color);
-}
-.community-train[open] > summary {
-  outline: 2px solid var(--community-text);
-  outline-offset: 3px;
+  display: block;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  background: var(--train-feedback-active-color);
 }
 .community-panel {
   pointer-events: auto;
@@ -505,86 +531,68 @@
   width: 20px;
   height: 20px;
 }
-.community-guide {
-  height: auto;
-  padding: 0;
-  margin: 0;
-}
 
 .community-contact {
-  /* 固定浅色地图的反色页尾，复用首页浅色外观的中性色对。 */
-  --community-text: var(--community-inverse-text);
-  --community-surface: var(--community-inverse-surface);
-  --community-plot: color-mix(in srgb, var(--community-inverse-text) 24%, transparent);
-  position: relative;
-  padding: 64px var(--community-right-inset) 28px var(--community-copy-x);
-  background: var(--community-inverse-surface);
-  color: var(--community-inverse-text);
+  /* 共享首页 Footer 的高度、排版和主题反色，只把轨道与版心接回社区地图。 */
+  --journey-footer-track-x: var(--community-rail-x);
+  --journey-footer-track-width: var(--community-rail-width);
+  --journey-footer-copy-x: var(--community-copy-x);
+  --journey-footer-right-inset: var(--community-right-inset);
+  --journey-footer-margin-right: 0px;
+  /* 复制与键盘焦点继承页尾反色，保持地图入口共用的可读性规则。 */
+  --community-text: var(--palette-surface);
+  --community-surface: var(--palette-text);
   scroll-margin-top: 90px;
 }
-.community-contact::before {
-  content: "";
-  position: absolute;
-  inset-block: 0;
-  left: var(--community-rail-x);
-  width: var(--community-rail-width);
-  background: var(--community-route);
-}
-.community-contact h2 {
-  font-size: clamp(28px, 3vw, 52px);
-  line-height: 1.2;
-  font-weight: 700;
-}
-.community-contact__number {
-  margin-top: 24px !important;
-  font-size: 16px;
-}
-.community-contact__number span {
-  margin-left: 8px;
-  font-size: 24px;
-  font-weight: 650;
-}
-.community-contact__copy {
-  margin-top: 16px;
-  padding: 10px 20px;
-  min-height: 48px;
-  border: 2px solid var(--community-text);
-  background: var(--community-text);
-  color: var(--community-surface);
-  font-size: 15px !important;
-  font-weight: 600 !important;
-  cursor: pointer;
-}
-.community-contact__feedback {
-  min-height: 32px;
-  padding-top: 8px;
-  font-size: 13px;
-}
-.community-contact__signature {
+.community-contact__entry {
   display: flex;
   flex-wrap: wrap;
-  gap: 24px;
   align-items: center;
-  justify-content: space-between;
-  margin-top: 60px;
-  padding-top: 24px;
-  border-top: 1px solid var(--community-plot);
-  font-size: 13px;
+  gap: 4px 20px;
 }
-.community-contact__logo {
-  width: 140px;
-  display: block;
+.community-contact__number {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.5;
 }
-.community-contact__logo svg {
-  display: block;
-  width: 100%;
-  height: auto;
+.community-contact__number span {
+  font-size: 22px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  user-select: all;
 }
-.community-contact__signature a {
-  display: flex;
+.community-contact__copy {
+  display: inline-flex;
   align-items: center;
+  gap: 8px;
   min-height: 44px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
   color: inherit;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  text-underline-offset: 0.3em;
+}
+.community-contact__copy svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+.community-contact__copy:hover {
+  color: color-mix(in srgb, var(--community-text) 84%, var(--community-route));
+  text-decoration: underline;
+}
+.community-contact__copy:active {
+  opacity: 0.72;
+}
+.community-contact__feedback {
+  min-height: 20px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 @media (max-width: 767px) {
@@ -618,8 +626,11 @@
     width: 41vw;
   }
   .community-landing__arrival-end {
-    /* 两线保留8px间距，站点大小和线宽共用原有比例，不在屏幕左缘裁掉DS竖段。 */
-    left: calc(var(--community-rail-x) + var(--community-rail-width) * 1.0645 + 8px);
+    /* 小屏在浦蓝右侧沿用紧邻换乘间距；站点大小和线宽不变，也不侵入标题。 */
+    left: calc(
+      var(--community-rail-x) + var(--community-rail-width) * 1.0645 +
+        var(--community-interchange-gap)
+    );
     bottom: calc(19% + 14px);
   }
   .community-landing__station {
@@ -679,16 +690,6 @@
   .community-train {
     top: 31svh;
   }
-  .community-contact {
-    padding-top: 84px;
-  }
-  .community-contact h2 {
-    font-size: 28px;
-  }
-  .community-contact__signature {
-    gap: 16px;
-    margin-top: 36px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -701,7 +702,7 @@
 }
 @media (forced-colors: active) {
   .community-plot > summary,
-  .community-train > summary {
+  .community-train > button {
     border: 2px solid ButtonText;
   }
   .community-panel {
