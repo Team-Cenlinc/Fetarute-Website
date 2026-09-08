@@ -5,7 +5,11 @@ import arrowIcon from "@phosphor-icons/core/assets/bold/arrow-up-right-bold.svg?
 import buildingsIcon from "@phosphor-icons/core/assets/bold/buildings-bold.svg?raw";
 import usersIcon from "@phosphor-icons/core/assets/bold/users-three-bold.svg?raw";
 import playerIcon from "@phosphor-icons/core/assets/bold/user-bold.svg?raw";
-import { communityLayoutSeed, type CommunityEntity } from "@/data/community";
+import {
+  communityLayoutSeed,
+  communityPlayerMapEntityLimit,
+  type CommunityEntity,
+} from "@/data/community";
 import { communityPlaces } from "@/data/community-places";
 import parkIcon from "@phosphor-icons/core/assets/bold/park-bold.svg?raw";
 import schoolIcon from "@phosphor-icons/core/assets/bold/graduation-cap-bold.svg?raw";
@@ -17,24 +21,57 @@ import { communityMessages } from "@/i18n/community";
 import type { Locale } from "@/i18n/config";
 
 /** 构建期已经完成本地化和头像解析的成员，不在访客侧请求身份或图片服务。 */
+/** 地图展示层补充构建期图片和三语资料，不改变原始社区关系数据。 */
 interface DisplayEntity extends CommunityEntity {
   displayName: string;
   avatar?: ImageMetadata;
+  image?: ImageMetadata;
+  /** 玩家主动提交的签名优先于未投稿玩家的通用提示。 */
+  signature?: string;
+  profile?: {
+    description: string;
+    note: string;
+    status?: string;
+    imageAlt: string;
+  };
 }
-/** 同一地图渲染全部公开成员，桌面和手机只更换几何，不复制交互对象。 */
+/** 同一地图复用成员资料与交互；玩家区可限制为一片随机街区，伙伴区则完整展示。 */
 export interface Props {
   locale: Locale;
   entities: readonly DisplayEntity[];
+  /** 玩家区只保留一片可容纳的街区，浏览器初始化时从全部成员随机挑选。 */
+  singleBlock?: boolean;
 }
-const { locale, entities } = Astro.props;
+const { locale, entities, singleBlock = false } = Astro.props;
 const copy = communityMessages[locale];
 /** 与站点现有图标库一致的公共场所标识，不引入新的图片请求。 */
 const placeIcons = [parkIcon,schoolIcon,squareIcon,museumIcon];
 const entityById = new Map(entities.map((entity) => [entity.id, entity]));
 const plots = createCommunityLayout(entities.map((entity) => entity.id), communityLayoutSeed);
-const blockCount = Math.ceil(plots.length / communityDesktopMap.lots.length);
+const blockCount = singleBlock ? 1 : Math.ceil(plots.length / communityDesktopMap.lots.length);
 /** 两种视口使用相同资料和绘制顺序，只有地图坐标发生变化。 */
 const templates = [{ key: "desktop", map: communityDesktopMap }, { key: "mobile", map: communityMobileMap }];
+
+/** 单片玩家街区在无脚本首帧也只占用四块土地，其余土地直接呈现公共设施。 */
+const initialPlotsForBlock = (block: number) =>
+  singleBlock
+    ? plots.slice(0, communityPlayerMapEntityLimit)
+    : plots.filter((plot) => plot.block === block);
+
+/**
+ * 每一片保留地各用一种公共设施，令公园、学校、广场和文化设施同时出现。
+ * 设施名只在同类已确认地名中轮换，仍由运行时种子决定本次街区的具体名称。
+ */
+const initialLandmarkForSlot = (block: number, slot: number) => {
+  const occupiedSlots = new Set(initialPlotsForBlock(block).map((plot) => plot.slot));
+  const vacantSlots = Array.from({ length: communityDesktopMap.lots.length }, (_, index) => index)
+    .filter((index) => !occupiedSlots.has(index));
+  const position = vacantSlots.indexOf(slot);
+  if (position < 0) return undefined;
+  const kind = (communityLayoutSeed + block + position) % communityPlaces.length;
+  const names = communityPlaces[kind].names;
+  return { kind, name: names[(communityLayoutSeed + slot) % names.length] };
+};
 
 /** 从逻辑坐标输出 SVG，河岸与地块的接缝只由数据层决定。 */
 const pointsAttribute = (points: readonly CommunityMapPoint[]) => points.map((point) => point.join(",")).join(" ");
@@ -42,27 +79,33 @@ const pointsAttribute = (points: readonly CommunityMapPoint[]) => points.map((po
 
 <div class="community-neighborhood" role="group" aria-label={copy.mapLabel}>
   {Array.from({ length: blockCount }, (_, block) => (
-    <div class="community-map-block" data-community-map-block={block}>
+    <div class="community-map-block" data-community-map-block={block} data-community-single-block={singleBlock ? "true" : undefined}>
       {templates.map(({ key, map }) => (
         <svg class={"community-map-base community-map-base--" + key} viewBox={`0 0 ${map.width} ${map.height}`} aria-hidden="true" focusable="false">
           <polygon class="community-map-river" points={pointsAttribute(map.river)} />
           <polygon class="community-map-park" points={pointsAttribute(map.park)} />
           <polygon class="community-map-plaza" points={pointsAttribute(map.plaza)} />
-          {map.lots.map((lot, slot) => (
-            <g data-community-landmark data-landmark={plots.some((plot)=>plot.block===block && plot.slot===slot) ? "" : ["park","school","square","culture"][slot%4]}>
+          {map.lots.map((lot, slot) => {
+            const landmark = initialLandmarkForSlot(block, slot);
+            return <g data-community-landmark data-landmark={landmark ? communityPlaces[landmark.kind].kind : ""}>
               <polygon class="community-map-vacant" points={pointsAttribute(lot.points)} />
               {placeIcons.map((icon,index)=><svg data-landmark-icon={communityPlaces[index].kind} x={lot.label[0]-22} y={lot.label[1]-50} width="44" height="44" viewBox="0 0 256 256" set:html={icon.replace(/^<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "")} />)}
-              <text x={lot.label[0]} y={lot.label[1]+18} text-anchor="middle" dominant-baseline="middle">{communityPlaces[slot%4].names[0]}</text>
-            </g>
-          ))}
+              <text x={lot.label[0]} y={lot.label[1]+18} text-anchor="middle" dominant-baseline="middle">{landmark?.name ?? ""}</text>
+            </g>;
+          })}
         </svg>
       ))}
-      {plots.filter((plot) => plot.block === block).map((plot) => {
+      {(singleBlock ? plots : plots.filter((plot) => plot.block === block)).map((plot) => {
         const entity = entityById.get(plot.id)!;
         const icon = entity.kind === "player" ? playerIcon : entity.kind === "group" ? usersIcon : buildingsIcon;
+        const roleLabel = entity.playerRole ? copy.playerRoles[entity.playerRole] : copy[entity.kind];
+        const portrait = entity.avatar ?? entity.image;
+        const portraitClass = entity.avatar
+          ? "community-plot__avatar"
+          : "community-plot__partner-image";
         return (
-          <details class="community-plot" id={entity.id} style={geometryStyle(plot.desktop, communityDesktopMap) + geometryStyle(plot.mobile, communityMobileMap, "-mobile")} data-community-disclosure data-community-entity={entity.kind}>
-            <summary aria-label={entity.displayName + " · " + copy[entity.kind]} aria-controls={entity.id + "-panel"} aria-haspopup="dialog">
+          <details class="community-plot" id={entity.id} style={geometryStyle(plot.desktop, communityDesktopMap) + geometryStyle(plot.mobile, communityMobileMap, "-mobile")} data-community-disclosure data-community-entity={entity.kind} hidden={singleBlock && !initialPlotsForBlock(block).includes(plot)}>
+            <summary aria-label={entity.displayName + " · " + roleLabel} aria-controls={entity.id + "-panel"} aria-haspopup="dialog">
               {templates.map(({ key }) => {
                 const geometry = plot[key as "desktop" | "mobile"];
                 return <svg class={"community-plot__outline community-plot__outline--" + key} viewBox={`0 0 ${geometry.bounds.width} ${geometry.bounds.height}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
@@ -71,7 +114,7 @@ const pointsAttribute = (points: readonly CommunityMapPoint[]) => points.map((po
               })}
               <span class="community-plot__label">
                 <span class="community-plot__portrait">
-                  {entity.avatar ? <img src={entity.avatar.src} width="64" height="64" alt="" loading="lazy" decoding="async" /> : <span set:html={icon} aria-hidden="true" />}
+                  {portrait ? <img class={portraitClass} src={portrait.src} width="64" height="64" alt={entity.avatar ? "" : entity.profile?.imageAlt ?? ""} loading="lazy" decoding="async" /> : <span set:html={icon} aria-hidden="true" />}
                 </span>
                 <span class="community-plot__name">{entity.displayName}</span>
               </span>
@@ -80,14 +123,16 @@ const pointsAttribute = (points: readonly CommunityMapPoint[]) => points.map((po
               <button type="button" class="community-panel__close" data-community-close aria-label={copy.close}><span set:html={xIcon} aria-hidden="true" /></button>
               <header class="community-profile__identity">
                 <span class="community-profile__portrait">
-                  {entity.avatar ? <img src={entity.avatar.src} width="48" height="48" alt="" loading="lazy" /> : <span set:html={icon} aria-hidden="true" />}
+                  {portrait ? <img class={entity.avatar ? "community-profile__avatar" : "community-profile__partner-image"} src={portrait.src} width="48" height="48" alt={entity.avatar ? "" : entity.profile?.imageAlt ?? ""} loading="lazy" /> : <span set:html={icon} aria-hidden="true" />}
                 </span>
-                <div><span class="community-profile__kind">{copy[entity.kind]}</span><h3 id={entity.id + "-name"}>{entity.displayName}</h3></div>
+                <div><span class="community-profile__kind">{roleLabel}</span><h3 id={entity.id + "-name"}>{entity.displayName}</h3></div>
               </header>
-              <p class="community-profile__description" tabindex="0">{entity.kind === "player" ? copy.playerIntro : copy.partnerIntro}</p>
-              <p class="community-profile__note">{entity.kind === "player" ? copy.playerNote : copy.partnerNote}</p>
+              <div class="community-profile__description-wrap" data-community-description>
+                <p class="community-profile__description" tabindex="0">{entity.profile?.description ?? (entity.kind === "player" ? copy.playerIntro : copy.partnerIntro)}</p>
+              </div>
+              <p class="community-profile__note">{entity.signature ?? entity.profile?.note ?? (entity.kind === "player" ? copy.playerNote : copy.partnerNote)}</p>
               <footer class="community-profile__footer">
-                {entity.href ? <a href={entity.href} target="_blank" rel="noopener noreferrer">{copy.visit}<span set:html={arrowIcon} aria-hidden="true" /></a> : <span>{copy.pending}</span>}
+                {entity.href ? <a href={entity.href} target="_blank" rel="noopener noreferrer">{copy.visit}<span set:html={arrowIcon} aria-hidden="true" /></a> : <span>{entity.profile?.status ?? copy.pending}</span>}
               </footer>
             </div>
           </details>

@@ -7,6 +7,10 @@ interface CommunityDisclosure {
   details: HTMLDetailsElement;
   trigger: HTMLElement;
   panel: HTMLElement;
+  /** 承载白色渐变的简介外框，数据属性不会随正文滚动离开可见区域。 */
+  description?: HTMLElement;
+  /** 实际接收滚动的简介正文；与外框分离以保持提示固定在边缘。 */
+  descriptionScroller?: HTMLElement;
 }
 
 /** 渐进增强原生 details：无脚本仍能读取资料，增强后支持 hover、键盘和触屏固定展开。 */
@@ -42,7 +46,14 @@ export function setupCommunityPage(root: HTMLElement): () => void {
     const trigger = details.querySelector<HTMLElement>(":scope > summary");
     const panel = details.querySelector<HTMLElement>(":scope > [data-community-panel]");
     if (!trigger || !panel) continue;
-    entries.push({ details, trigger, panel });
+    entries.push({
+      details,
+      trigger,
+      panel,
+      description: panel.querySelector<HTMLElement>("[data-community-description]") ?? undefined,
+      descriptionScroller:
+        panel.querySelector<HTMLElement>(".community-profile__description") ?? undefined,
+    });
     panel.dataset.floating = "true";
     if (supportsPopover) panel.setAttribute("popover", "manual");
     trigger.setAttribute("aria-expanded", "false");
@@ -52,6 +63,24 @@ export function setupCommunityPage(root: HTMLElement): () => void {
   function cancelClose() {
     window.clearTimeout(closeTimer);
     closeTimer = 0;
+  }
+
+  /** 仅在简介实际溢出时标出可继续阅读的方向，渐变不遮挡无滚动内容的卡片。 */
+  function updateDescriptionScrollHint(entry: CommunityDisclosure) {
+    const description = entry.description;
+    const scroller = entry.descriptionScroller;
+    if (!description || !scroller) return;
+    const overflow = scroller.scrollHeight - scroller.clientHeight > 1;
+    const hint = [
+      overflow && scroller.scrollTop > 1 ? "top" : "",
+      overflow && scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 1
+        ? "bottom"
+        : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    if (hint) description.dataset.scrollHint = hint;
+    else delete description.dataset.scrollHint;
   }
 
   /** 关闭后可恢复触发点焦点；同步抑制恢复焦点导致的再次预览。 */
@@ -96,6 +125,7 @@ export function setupCommunityPage(root: HTMLElement): () => void {
     const point = placeCommunityPanel(anchor, active.panel.getBoundingClientRect(), available);
     active.panel.style.setProperty("--community-panel-x", point.x + "px");
     active.panel.style.setProperty("--community-panel-y", point.y + "px");
+    updateDescriptionScrollHint(active);
   }
 
   /** 自动聚焦/悬停只作预览，首次点击总是固定展开，避免 touch 的 focus→click 双重翻转。 */
@@ -203,6 +233,11 @@ export function setupCommunityPage(root: HTMLElement): () => void {
     entry.panel
       .querySelector("[data-community-close]")
       ?.addEventListener("click", () => close(true, true), { signal });
+    entry.descriptionScroller?.addEventListener(
+      "scroll",
+      () => updateDescriptionScrollHint(entry),
+      { passive: true, signal },
+    );
   }
 
   document.addEventListener(

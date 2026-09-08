@@ -1,6 +1,39 @@
-import { createCommunityMaps, type CommunityMapPoint } from "../../data/community-map.ts";
+import {
+  createCommunityMaps,
+  createCommunityRandom,
+  type CommunityMapPoint,
+} from "../../data/community-map.ts";
 import { communityGeometryStyle, createCommunityLayout } from "./layout.ts";
 import { communityPlaces } from "../../data/community-places.ts";
+import {
+  communityPlayerMapEntityLimit,
+  createCommunityMosaicLayout,
+} from "../../data/community.ts";
+
+/** 从完整玩家名单中取出一片街区可容纳的样本；显式种子仍可复现同一批成员。 */
+function pickSingleBlockDetails(
+  details: readonly HTMLElement[],
+  seed: number,
+  capacity: number,
+): HTMLElement[] {
+  const shuffled = [...details];
+  const random = createCommunityRandom(seed ^ 0x51f15e);
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const other = Math.floor(random() * (index + 1));
+    [shuffled[index], shuffled[other]] = [shuffled[other], shuffled[index]];
+  }
+  return shuffled.slice(0, capacity);
+}
+
+/** 首屏头像墙只随机变换斜向连通的格位；玩家身份顺序不变，锚点与无脚本后备也仍可用。 */
+function initializeCommunityMosaic(root: HTMLElement, seed: number): void {
+  const cells = [...root.querySelectorAll<HTMLElement>("[data-community-mosaic-cell]")];
+  const layout = createCommunityMosaicLayout(cells.length, seed);
+  cells.forEach((cell, index) => {
+    cell.style.gridColumn = String(layout[index][0] + 1);
+    cell.style.gridRow = String(layout[index][1] + 1);
+  });
+}
 
 /** 首次进入时选择访问种子；显式 mapSeed 可复现设计，不持久化访客身份。 */
 export function initializeCommunityMap(root: HTMLElement): void {
@@ -10,6 +43,7 @@ export function initializeCommunityMap(root: HTMLElement): void {
       ? Number(query)
       : crypto.getRandomValues(new Uint32Array(1))[0];
   root.dataset.communitySeed = String(seed);
+  initializeCommunityMosaic(root, seed);
   const points = (vertices: readonly CommunityMapPoint[]) =>
     vertices.map((point) => point.join(",")).join(" ");
   const usedPlaces = new Set<string>();
@@ -20,22 +54,37 @@ export function initializeCommunityMap(root: HTMLElement): void {
         const blockSeed = (seed + Math.imul(zoneIndex + blockIndex, 2654435761)) >>> 0;
         const maps = createCommunityMaps(blockSeed);
         const details = [...block.querySelectorAll<HTMLElement>("[data-community-entity]")];
+        const singleBlock = block.dataset.communitySingleBlock === "true";
+        const visibleDetails = singleBlock
+          ? pickSingleBlockDetails(
+              details,
+              blockSeed,
+              Math.min(communityPlayerMapEntityLimit, maps.desktop.lots.length),
+            )
+          : details;
+        const visibleSet = new Set(visibleDetails);
+        for (const detail of details) detail.hidden = !visibleSet.has(detail);
+        if (singleBlock)
+          block.append(...visibleDetails, ...details.filter((detail) => !visibleSet.has(detail)));
         const plots = createCommunityLayout(
-          details.map((element) => element.id),
+          visibleDetails.map((element) => element.id),
           blockSeed,
           maps,
         );
         const occupied = new Set(plots.map((plot) => plot.slot));
         const landmarks = new Map<number, { kind: number; name: string }>();
-        for (let index = 0; index < maps.desktop.lots.length; index++) {
-          if (occupied.has(index)) continue;
-          const candidates = communityPlaces
-            .flatMap((place, kind) => place.names.map((name) => ({ kind, name })))
-            .filter((place) => !usedPlaces.has(place.name));
-          if (!candidates.length) continue;
-          const place = candidates[(blockSeed + index) % candidates.length];
-          landmarks.set(index, place);
-          usedPlaces.add(place.name);
+        const vacantSlots = Array.from(
+          { length: maps.desktop.lots.length },
+          (_, index) => index,
+        ).filter((index) => !occupied.has(index));
+        for (const [position, slot] of vacantSlots.entries()) {
+          /* 同一片地图的空地按四种设施轮换，避免随机抽样后只剩同一种装饰。 */
+          const kind = (blockSeed + position) % communityPlaces.length;
+          const candidates = communityPlaces[kind].names.filter((name) => !usedPlaces.has(name));
+          const names = candidates.length ? candidates : communityPlaces[kind].names;
+          const name = names[(blockSeed + slot) % names.length];
+          landmarks.set(slot, { kind, name });
+          usedPlaces.add(name);
         }
         for (const key of ["desktop", "mobile"] as const) {
           const map = maps[key];
@@ -91,7 +140,7 @@ export function initializeCommunityMap(root: HTMLElement): void {
           });
         }
         for (const plot of plots) {
-          const detail = details.find((element) => element.id === plot.id)!;
+          const detail = visibleDetails.find((element) => element.id === plot.id)!;
           detail.style.cssText =
             communityGeometryStyle(plot.desktop, maps.desktop) +
             communityGeometryStyle(plot.mobile, maps.mobile, "-mobile");

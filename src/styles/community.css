@@ -23,6 +23,8 @@
   --community-avatar-size: clamp(32px, 3.3333vw, 64px);
   --community-panel-width: 360px;
   --community-panel-height: 320px;
+  /* 首屏完整玩家墙的视觉尺度独立于旧的六乘六马赛克，新增成员后仍保持可辨识头像。 */
+  --community-mosaic-size: clamp(260px, 32vw, 620px);
   /* 列车是首页相同的扁平几何触发器；颜色由首页的 HSL 规则派生。 */
   --community-train-width: clamp(44px, 4.2vw, 80px);
   position: relative;
@@ -132,13 +134,19 @@
   bottom: calc(18.06% + 1.2vw);
 }
 .community-mosaic {
+  /* 八乘八墙体扩展收录容量，实际头像由预设离散格位维持旧版的留白节奏。 */
+  --community-mosaic-columns: 8;
+  --community-mosaic-rows: 8;
   position: absolute;
   top: 12%;
   right: 4vw;
   display: grid;
-  grid-template: repeat(6, 1fr) / repeat(6, 1fr);
-  width: 24.06vw;
-  aspect-ratio: 1;
+  grid-template: repeat(var(--community-mosaic-rows), 1fr) / repeat(
+      var(--community-mosaic-columns),
+      1fr
+    );
+  width: var(--community-mosaic-size);
+  aspect-ratio: var(--community-mosaic-columns) / var(--community-mosaic-rows);
 }
 .community-mosaic > span {
   background: var(--community-plot);
@@ -148,6 +156,17 @@
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
+}
+.community-mosaic__placeholder {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: var(--community-text);
+}
+.community-mosaic__placeholder svg {
+  width: 54%;
+  height: 54%;
 }
 
 .community-district {
@@ -373,7 +392,15 @@
   display: block;
   width: 100%;
   height: 100%;
+}
+.community-plot__avatar,
+.community-profile__avatar {
   image-rendering: pixelated;
+}
+.community-plot__partner-image,
+.community-profile__partner-image {
+  image-rendering: auto;
+  object-fit: cover;
 }
 .community-plot__portrait > span,
 .community-profile__portrait > span {
@@ -498,9 +525,33 @@
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
-.community-profile__description {
+.community-profile__description-wrap {
   flex: 1;
   min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+.community-profile__description-wrap::before,
+.community-profile__description-wrap::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  left: 0;
+  height: 32px;
+  pointer-events: none;
+}
+.community-profile__description-wrap[data-scroll-hint~="top"]::before {
+  top: 0;
+  background: linear-gradient(to bottom, var(--community-surface), transparent);
+}
+.community-profile__description-wrap[data-scroll-hint~="bottom"]::after {
+  bottom: 0;
+  background: linear-gradient(to top, var(--community-surface), transparent);
+}
+.community-profile__description {
+  height: 100%;
+  margin: 0;
   overflow-y: auto;
   font-size: 16px;
   line-height: 1.65;
@@ -603,6 +654,8 @@
     --community-right-inset: 20px;
     --community-train-width: 44px;
     --community-avatar-size: 32px;
+    /* 小屏让完整玩家墙保持可辨识，同时不侵入左侧双线与下方标题。 */
+    --community-mosaic-size: min(54vw, 260px);
   }
   .community-landing {
     height: max(700px, 100svh);
@@ -623,7 +676,6 @@
   .community-mosaic {
     top: 20%;
     right: 24px;
-    width: 41vw;
   }
   .community-landing__arrival-end {
     /* 小屏在浦蓝右侧沿用紧邻换乘间距；站点大小和线宽不变，也不侵入标题。 */

@@ -6,7 +6,71 @@ import {
   createCommunityMaps,
   type CommunityMapPoint,
 } from "../src/data/community-map.ts";
+import {
+  communityMosaicCells,
+  communityPlayerMapEntityLimit,
+  createCommunityMosaicLayout,
+  type CommunityMosaicCell,
+} from "../src/data/community.ts";
 import { createCommunityLayout, placeCommunityPanel } from "../src/lib/community/layout.ts";
+
+/** 验证头像墙只用斜向边，且图遍历可抵达每一块头像。 */
+function assertDiagonalMosaic(cells: readonly CommunityMosaicCell[]) {
+  assert.equal(new Set(cells.map(([column, row]) => `${column},${row}`)).size, cells.length);
+  for (const [column, row] of cells) {
+    assert.ok(
+      cells.some(
+        ([otherColumn, otherRow]) =>
+          (column !== otherColumn || row !== otherRow) &&
+          Math.abs(column - otherColumn) === 1 &&
+          Math.abs(row - otherRow) === 1,
+      ),
+      `头像墙格 ${column},${row} 必须斜向相邻`,
+    );
+  }
+  const connected = new Set([0]);
+  const pending = [0];
+  while (pending.length) {
+    const index = pending.pop()!;
+    const [column, row] = cells[index];
+    for (const candidate of cells.keys()) {
+      const [otherColumn, otherRow] = cells[candidate];
+      if (
+        !connected.has(candidate) &&
+        Math.abs(column - otherColumn) === 1 &&
+        Math.abs(row - otherRow) === 1
+      ) {
+        connected.add(candidate);
+        pending.push(candidate);
+      }
+    }
+  }
+  assert.equal(connected.size, cells.length, "头像墙不能出现独立的子组件");
+}
+
+test("头像墙保留离散马赛克，并通过斜对角连成一个整体", () => {
+  assert.ok(
+    communityPlayerMapEntityLimit < communityDesktopMap.lots.length,
+    "玩家地图必须为公共设施保留地块",
+  );
+  assertDiagonalMosaic(communityMosaicCells);
+});
+
+test("头像墙每次可换位，但任何种子都保持斜向连通", () => {
+  const first = createCommunityMosaicLayout(17, 1);
+  assert.notDeepEqual(first, createCommunityMosaicLayout(17, 2));
+  for (let seed = 0; seed < 100; seed += 1) {
+    const layout = createCommunityMosaicLayout(17, seed);
+    assertDiagonalMosaic(layout);
+    assert.ok(layout.every(([column, row]) => (column + row) % 2 === 1));
+  }
+  assertDiagonalMosaic(createCommunityMosaicLayout(25, 20260907));
+});
+
+test("消融：移除关键斜向桥格时，头像墙连通性守卫必须拒绝版面", () => {
+  const withoutBridge = communityMosaicCells.filter(([column, row]) => column !== 6 || row !== 1);
+  assert.throws(() => assertDiagonalMosaic(withoutBridge), /斜向相邻|子组件/);
+});
 
 test("街区布局覆盖每个成员，固定种子稳定且不会修改输入", () => {
   const ids = Array.from({ length: 23 }, (_, index) => "member-" + index);

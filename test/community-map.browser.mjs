@@ -417,7 +417,11 @@ test(`${engine}: 1920×1080 原画板比例下保留线路和头像，展开仍�
       await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
       true,
     );
-    assert.equal(await page.locator(".community-mosaic img").count(), 5);
+    assert.equal(await page.locator(".community-mosaic > span").count(), 17);
+    assert.equal(
+      await page.locator('[data-community-zone="players"] [data-community-map-block]').count(),
+      1,
+    );
     await page.locator(".community-mosaic").click();
     await screenshot(page, "native-map");
     const plot = page.locator("[data-community-entity]").first();
