@@ -37,6 +37,8 @@ export interface Props {
   pagePath?: string;
   /** 已发布当前逻辑页面的语言，用于精确生成 hreflang 而不声明尚未翻译的页面。 */
   availableLocales?: readonly Locale[];
+  /** Keep unfinished structural previews out of search results. */
+  indexable?: boolean;
 }
 
 const {
@@ -48,6 +50,7 @@ const {
   fullBleedMain = false,
   pagePath = "",
   availableLocales = locales,
+  indexable = true,
 } = Astro.props;
 const messages = getMessages(locale);
 const pageDescription = description ?? messages.description;
@@ -57,7 +60,12 @@ const socialImageUrl = new URL(image, siteInfo.url);
 const brandImageUrl = new URL(siteInfo.brandImage, siteInfo.url);
 const siteHomeUrl = new URL("/", siteInfo.url).toString();
 // 首页的 x-default 交给语言推断入口；未来内容页仍回落到同一内容的默认语言版本，避免误指向首页。
-const xDefaultUrl = pagePath.length === 0 ? siteHomeUrl : getLocalizedAbsoluteUrl(defaultLocale, pagePath);
+const xDefaultLocale = availableLocales.includes(defaultLocale)
+  ? defaultLocale
+  : (availableLocales[0] ?? locale);
+const xDefaultUrl = pagePath.length === 0
+  ? siteHomeUrl
+  : getLocalizedAbsoluteUrl(xDefaultLocale, pagePath);
 const languageAlternates = availableLocales.map((alternateLocale) => ({
   locale: alternateLocale,
   href: getLocalizedAbsoluteUrl(alternateLocale, pagePath),
@@ -176,7 +184,7 @@ const pageStructuredData = {
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="generator" content={Astro.generator} />
     <meta name="application-name" content={siteInfo.name} />
-    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="robots" content={indexable ? "index, follow, max-image-preview:large" : "noindex, follow"} />
     <meta name="theme-color" content={interfacePalette.light.canvas} media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content={interfacePalette.dark.canvas} media="(prefers-color-scheme: dark)" />
 
@@ -329,7 +337,7 @@ const pageStructuredData = {
   </head>
   <body>
     {showLaunchSequence && <LaunchSequence locale={locale} />}
-    <SiteHeader locale={locale} />
+    <SiteHeader locale={locale} pagePath={pagePath} availableLocales={availableLocales} />
     <!-- 首页叙事遮罩在 main 之外接收焦点；这样它锁定正文时仍能作为独立的可操作层淡出到第一站。 -->
     <slot name="overlay" />
     <main class:list={{ "main--full-bleed": fullBleedMain }}>

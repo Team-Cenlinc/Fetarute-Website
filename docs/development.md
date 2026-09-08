@@ -82,6 +82,19 @@ Safari 真机滚动验收。
 `test/home-departure-gate.browser.mjs`
 覆盖拖卡期间的可见高度与顶部偏移变化：前景重排必须保留卡片相对指针的位置，并同步重建 Validator 命中基准；连续小步拖动仍按最初按下位置判断，松手早于视口刷新帧也使用最新命中区。桌面退回 Home 后停止 Gate 视口监听，重新激活时恢复；相同视口读数不重复写样式。
 
+## Info 与公告
+
+Info 结构预览位于 `/zh-Hans/info`、`/zh-Hant/info` 和
+`/en/info`，以 Figma 的彩色章节导视为骨架。页面文案在 `src/i18n/info.ts`，图标和自然流页尾在
+`src/components/info/`，样式在
+`src/styles/info.css`。服务器状态和玩家名单尚未接入数据源，页面明确显示暂不可用，不将未知状态当作离线或零人。加入帮助链接返回首页续行章节；地图和 Wiki 地址复用
+`src/data/site.ts`。
+
+公告继续使用 `src/content/news/<locale>/*.md`，构建时生成
+`/<locale>/news/<translationKey>`。同一公告的翻译应使用相同的
+`translationKey`，语言菜单只显示实际存在的翻译。列表优先显示置顶公告，再按发布日期降序显示最近三条；正文由 Markdown 渲染。结构预览和公告页暂设
+`noindex`，不加入 sitemap 与发现白名单；内容准备完成后再统一开放收录。
+
 ## 图片与字体资产
 
 社交分享卡会在普通构建前自动生成；需要单独更新时运行：

@@ -23,9 +23,10 @@ export interface Props {
   headingId: string;
   /** 是否在出口服务前补充站内首页章节导航；仅三点移动菜单需要。 */
   includePrimaryNavigation?: boolean;
+  pagePath?: string;
 }
 
-const { locale, headingId, includePrimaryNavigation = false } = Astro.props;
+const { locale, headingId, includePrimaryNavigation = false, pagePath = "" } = Astro.props;
 const messages = getMessages(locale);
 const externalHeadingId = `${headingId}-external`;
 const mapHeadingId = `${headingId}-maps`;
@@ -62,7 +63,7 @@ const externalDestinationIcons = {
               ? getLocalizedRelativeUrl(locale)
               : getLocalizedRelativeUrl(locale, "", item.fragment)
           }
-          aria-current={item.fragment === "home" ? "page" : undefined}
+          aria-current={pagePath === "" && item.fragment === "home" ? "page" : undefined}
         >
           <span>{messages.navigation[item.labelKey]}</span>
           <span class="destination-menu__link-arrow" aria-hidden="true" set:html={arrowUpRightIcon}></span>

@@ -23,9 +23,11 @@ import { getMessages } from "@/i18n/messages";
 export interface Props {
   /** 当前页面所属的公开语言。 */
   locale: Locale;
+  pagePath?: string;
+  availableLocales?: readonly Locale[];
 }
 
-const { locale } = Astro.props;
+const { locale, pagePath = "", availableLocales = locales } = Astro.props;
 const messages = getMessages(locale);
 
 /**
@@ -213,10 +215,10 @@ const appearanceOptions = [
           </h2>
           <nav class="language-links" aria-label={messages.languageNavigationLabel}>
             {
-              locales.map((alternateLocale) => (
+              availableLocales.map((alternateLocale) => (
                 <a
                   class="language-link"
-                  href={getLocalizedRelativeUrl(alternateLocale)}
+                  href={getLocalizedRelativeUrl(alternateLocale, pagePath)}
                   lang={localeMetadata[alternateLocale].languageTag}
                   aria-label={localeMetadata[alternateLocale].label}
                   aria-current={alternateLocale === locale ? "page" : undefined}
@@ -275,6 +277,7 @@ const appearanceOptions = [
       >
         <DestinationMenu
           locale={locale}
+          pagePath={pagePath}
           headingId="mobile-destination-menu-label"
           includePrimaryNavigation
         />
@@ -318,10 +321,10 @@ const appearanceOptions = [
         </h2>
         <nav class="language-links" aria-label={messages.languageNavigationLabel}>
           {
-            locales.map((alternateLocale) => (
+            availableLocales.map((alternateLocale) => (
               <a
                 class="language-link"
-                href={getLocalizedRelativeUrl(alternateLocale)}
+                href={getLocalizedRelativeUrl(alternateLocale, pagePath)}
                 lang={localeMetadata[alternateLocale].languageTag}
                 aria-label={localeMetadata[alternateLocale].label}
                 aria-current={alternateLocale === locale ? "page" : undefined}
