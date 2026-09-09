@@ -1,0 +1,246 @@
+---
+import InfoArrow from "@/components/info/InfoArrow.astro";
+import { getInfoMarkerStyle } from "@/data/info-palette";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import InfoMarker from "@/components/info/InfoMarker.astro";
+import InfoFooter from "@/components/info/InfoFooter.astro";
+import { externalDestinations, statusDashboardUrl } from "@/data/site";
+import type { Locale } from "@/i18n/config";
+import { getLocalizedNews } from "@/i18n/content";
+import { infoMessages } from "@/i18n/info";
+import { getLocalizedRelativeUrl } from "@/i18n/links";
+import "@/styles/info.css";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const copy = infoMessages[locale];
+const news = await getLocalizedNews(locale);
+const sectionOrder = ["status", "news", "game", "other"] as const;
+const servers = (["creative", "lobby", "survival"] as const).map((id) => ({
+  id,
+  name: copy.statusCopy.serverNames[id],
+  mapHref: externalDestinations.maps.find((map) => map.key === `${id}Map`)!.href,
+}));
+const dateFormat = new Intl.DateTimeFormat(locale, {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: "UTC",
+});
+---
+
+<BaseLayout
+  locale={locale}
+  title={copy.title}
+  description={copy.description}
+  pagePath="info/"
+  fullBleedMain
+  indexable={false}
+>
+  <div class:list={["info-page", { "info-page--en": locale === "en" }]} id="top">
+    <header class="info-hero">
+      <nav class="info-directory" aria-label={copy.navigation}>
+        {sectionOrder.map((kind) => (
+          <a class="info-directory__link" href={`#${kind}`}>
+            <InfoMarker kind={kind} />
+            <span>{copy.sections[kind]}</span>
+            <InfoArrow class="info-directory__arrow" direction="down" />
+          </a>
+        ))}
+      </nav>
+      <div class="info-hero__title">
+        <InfoMarker kind="info" />
+        <div class="info-sign-title">
+          <h1>{copy.title}</h1>
+          {locale !== "en" && <p class="info-sign-caption" lang="en">{infoMessages.en.title}</p>}
+        </div>
+      </div>
+    </header>
+
+    <section class="info-section" id="status" aria-labelledby="status-title">
+      <div class="info-section__heading">
+        <InfoMarker kind="status" />
+        <div class="info-sign-title">
+          <h2 id="status-title">{copy.sections.status}</h2>
+          {locale !== "en" && <p class="info-sign-caption" lang="en">{infoMessages.en.sections.status}</p>}
+        </div>
+        <nav class="info-server-shortcuts" aria-label={copy.serverNavigation}>
+          {servers.map((server) => (
+            <a
+              href={`#server-${server.id}`}
+              aria-label={server.name}
+              data-instance-shortcut={server.id}
+              data-instance-shortcut-name={server.name}
+            >{server.name}</a>
+          ))}
+        </nav>
+      </div>
+      <div class="info-section__body" data-minecraft-status data-locale={locale} data-copy={JSON.stringify({ ...copy.statusCopy, unavailable: copy.unavailable, playersUnavailable: copy.playersUnavailable })}>
+        <p class="info-section__intro">{copy.statusNote}</p>
+        <p class="info-status-feedback" data-status-feedback role="status">{copy.unavailable}</p>
+        <article class="info-server info-entry">
+          <div class="info-server__identity"><h3>{copy.statusCopy.entry}</h3></div>
+          <span class="info-availability" data-entry-state>{copy.unavailable}</span>
+          <div class="info-server__count"><strong data-player-count>—</strong><span>{copy.online}</span></div>
+          <details class="info-server__players">
+            <summary>{copy.players}</summary>
+            <p>{copy.statusCopy.sampleNote}</p>
+            <p data-player-names>{copy.playersUnavailable}</p>
+          </details>
+        </article>
+        <div class="info-server-list">
+          {servers.map((server) => (
+            <article
+              class="info-server"
+              id={`server-${server.id}`}
+              aria-labelledby={`server-${server.id}-title`}
+            >
+              <div class="info-server__identity">
+                <h3 id={`server-${server.id}-title`}>{server.name}</h3>
+              </div>
+              <span class="info-availability" data-instance-state={server.id}>{copy.unavailable}</span>
+            </article>
+          ))}
+        </div>
+        <a class="info-resource-link info-status-link" href={statusDashboardUrl}>
+          <span class="info-status-link__copy">
+            <strong>{copy.statusDashboard}</strong>
+            <span>status.fetarute.info</span>
+          </span>
+          <InfoArrow class="info-link-arrow" direction="up-right" />
+        </a>
+      </div>
+    </section>
+
+    <section class="info-section" id="news" aria-labelledby="news-title">
+      <div class="info-section__heading">
+        <InfoMarker kind="news" />
+        <div class="info-sign-title">
+          <h2 id="news-title">{copy.sections.news}</h2>
+          {locale !== "en" && <p class="info-sign-caption" lang="en">{infoMessages.en.sections.news}</p>}
+        </div>
+      </div>
+      <div class="info-section__body">
+        <p class="info-section__intro">{copy.newsNote}</p>
+        {news.length === 0 ? <p>{copy.noNews}</p> : (
+          <div class="info-news-slider" data-news-slider data-news-count={news.length}>
+            <div
+              class="info-news-slider__viewport"
+              data-news-slider-viewport
+              tabindex="0"
+              role="region"
+              aria-roledescription="carousel"
+              aria-label={copy.newsSlider}
+            >
+              <ol class="info-news-slider__track">
+                {news.map((entry) => (
+                  <li class="info-news-slider__item">
+                    <a
+                      class="info-news"
+                      href={getLocalizedRelativeUrl(locale, `news/${entry.data.translationKey}`)}
+                    >
+                      <div class="info-news__meta">
+                        <time datetime={entry.data.publishedAt.toISOString()}>
+                          {dateFormat.format(entry.data.publishedAt)}
+                        </time>
+                        {entry.data.pinned && <span class="info-news__pin" style={getInfoMarkerStyle("news")}>{copy.pinned}</span>}
+                      </div>
+                      <div class="info-news__copy">
+                        <h3>{entry.data.title}</h3>
+                        <p>{entry.data.description}</p>
+                      </div>
+                      <InfoArrow class="info-link-arrow" />
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <div class="info-news-slider__controls" data-news-slider-controls>
+              <button type="button" data-news-slider-previous aria-label={copy.previousNews}>
+                <InfoArrow direction="left" />
+              </button>
+              <div class="info-news-slider__scrollbar" data-news-slider-scrollbar aria-hidden="true" hidden>
+                <span></span>
+              </div>
+              <button type="button" data-news-slider-next aria-label={copy.nextNews}>
+                <InfoArrow />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+
+    <section class="info-section" id="game" aria-labelledby="game-title">
+      <div class="info-section__heading">
+        <InfoMarker kind="game" />
+        <div class="info-sign-title">
+          <h2 id="game-title">{copy.sections.game}</h2>
+          {locale !== "en" && <p class="info-sign-caption" lang="en">{infoMessages.en.sections.game}</p>}
+        </div>
+      </div>
+      <div class="info-section__body info-resources">
+        <div class="info-resource-group">
+          <h3>{copy.maps}</h3>
+          <p>{copy.mapNote}</p>
+          <div class="info-resource-links">
+            {servers.map((server) => (
+              <a class="info-resource-link" href={server.mapHref}>
+                <span>{server.name}</span>
+                <InfoArrow class="info-link-arrow" direction="up-right" />
+              </a>
+            ))}
+          </div>
+        </div>
+        <div class="info-resource-group">
+          <h3>{copy.wiki}</h3>
+          <p>{copy.wikiNote}</p>
+          <a class="info-resource-link" href={externalDestinations.wiki.href}>
+            <span>{copy.openWiki}</span>
+            <InfoArrow class="info-link-arrow" direction="up-right" />
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="info-section info-section--last" id="other" aria-labelledby="other-title">
+      <div class="info-section__heading">
+        <InfoMarker kind="other" />
+        <div class="info-sign-title">
+          <h2 id="other-title">{copy.sections.other}</h2>
+          {locale !== "en" && <p class="info-sign-caption" lang="en">{infoMessages.en.sections.other}</p>}
+        </div>
+      </div>
+      <div class="info-section__body">
+        <p class="info-section__intro">{copy.otherNote}</p>
+        <div class="info-other-links">
+          {[
+            { title: copy.join, description: copy.joinNote, path: "guides/join" },
+            { title: copy.community, description: copy.communityNote, fragment: "tri-server-joint" },
+          ].map((item) => (
+            <a class="info-other-link" href={getLocalizedRelativeUrl(locale, item.path ?? "", item.fragment)}>
+              <div>
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+              </div>
+              <InfoArrow class="info-link-arrow" />
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  </div>
+  <InfoFooter locale={locale} />
+</BaseLayout>
+
+<script>
+  import { initInfoNavigation } from "@/lib/info-navigation";
+  import { initInfoNewsSlider } from "@/lib/info-news-slider";
+  const infoRoot = document.querySelector<HTMLElement>(".info-page");
+  if (infoRoot) initInfoNavigation(infoRoot);
+  document.querySelectorAll<HTMLElement>("[data-news-slider]").forEach(initInfoNewsSlider);
+  import { initMinecraftStatus } from "@/lib/minecraft-status-client";
+  document.querySelectorAll<HTMLElement>("[data-minecraft-status]").forEach(initMinecraftStatus);
+</script>

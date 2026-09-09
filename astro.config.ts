@@ -1,10 +1,26 @@
 import { defineConfig, fontProviders } from "astro/config";
+import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import { isIndexablePublicUrl } from "./src/data/discovery";
 import { siteInfo } from "./src/data/site";
 import { defaultLocale, localeMetadata, locales } from "./src/i18n/config";
 
+// Local-only, fixed-target forwarding lets preview read the production API without
+// expanding the Worker's CORS policy. No request data chooses the upstream URL.
+const minecraftPreviewProxy = {
+  "^/__minecraft-status$": {
+    target: "https://site-api.fetarute.info",
+    changeOrigin: true,
+    rewrite: () => "/v1/minecraft",
+    proxyTimeout: 8000,
+  },
+};
+
 export default defineConfig({
+  vite: {
+    server: { proxy: minecraftPreviewProxy },
+    preview: { proxy: minecraftPreviewProxy },
+  },
   // Fetarute 官网默认按静态站点发布；需要账号、订单或后台能力时再评估 SSR。
   output: "static",
   // 压缩静态 HTML，同时由输出测试守护内联文字、导视代码与 SVG 的空白语义。
@@ -29,6 +45,8 @@ export default defineConfig({
    * 这个过滤器复用 discovery 白名单，避免 noindex 跳转页和将来的占位路由被静态构建器自动暴露。
    */
   integrations: [
+    // MDX 仅为文章中的受控富媒体组件保留；普通公告和指南继续优先使用标准 Markdown。
+    mdx(),
     sitemap({
       filter: isIndexablePublicUrl,
       i18n: {

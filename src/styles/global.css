@@ -1,4 +1,8 @@
 :root {
+  /* 完整态 Header 的两端基线供首屏、页尾等全宽章节复用，避免各自用近似 vw 值导致视觉断开。 */
+  --site-header-inline-start: 7.5vw;
+  /* 右侧单独保留变量，以便安全区或未来非对称版式仍能保持实际外缘一致。 */
+  --site-header-inline-end: 7.5vw;
   /* 桌面正文与锚点避开顶部悬浮导视牌，预留展开牌高和一行舒适阅读间隔。 */
   --home-desktop-reading-inset: 128px;
   /* 同岸短故事使用中等圆角，区别于全屏 Gallery 的大幅场景圆角。 */
@@ -208,6 +212,7 @@ main.main--full-bleed {
   grid-template-columns:
     minmax(190px, 1.15fr)
     minmax(48px, 1.6fr)
+    max-content
     max-content
     max-content
     max-content
@@ -1170,6 +1175,7 @@ html[data-home-nav-indicator-pattern="double"]
       max-content
       max-content
       max-content
+      max-content
       max-content;
   }
 
@@ -1218,7 +1224,9 @@ html[data-home-nav-indicator-pattern="double"]
   html[data-header-compact]:not([data-header-hover-expanded]) .site-header {
     width: min(520px, calc(100% - 40px));
     min-height: 56px;
-    grid-template-columns: minmax(148px, 1fr) 44px 44px 56px 56px;
+    /* 线路点保持为一个连续 cluster，同时保留原实现与服务台之间的右侧留白。 */
+    --home-nav-compact-cluster-offset: 26px;
+    grid-template-columns: minmax(148px, 1fr) 44px 44px 44px 56px 56px;
     /* 收束只改变 live DOM 的尺寸；展开回到基础规则的 240ms，避免整块导视牌被快照缩放。 */
     transition:
       opacity 440ms var(--motion-header-standard-spatial),
@@ -1275,7 +1283,9 @@ html[data-home-nav-indicator-pattern="double"]
 
   html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__indicator-dot {
     top: 0;
-    right: calc(var(--home-nav-indicator-dot-gap) / 2);
+    right: calc(
+      var(--home-nav-indicator-dot-gap) / 2 - var(--home-nav-compact-cluster-offset, 0px)
+    );
   }
 
   html[data-header-compact]:not(
@@ -1285,16 +1295,19 @@ html[data-home-nav-indicator-pattern="double"]
     .home-nav__indicator-dot {
     right: calc(
       var(--home-nav-indicator-dot-gap) / 2 + var(--home-nav-indicator-dot-diameter) +
-        var(--home-nav-indicator-dot-gap)
+        var(--home-nav-indicator-dot-gap) - var(--home-nav-compact-cluster-offset, 0px)
     );
   }
 
   html[data-header-compact]:not([data-header-hover-expanded])
-    .community-nav
+    .home-nav[data-home-nav-signal="fixed"]
     .home-nav__indicator-dot {
-    /* 两个入口各留半个圆点间距，跨页面与首页双线内部都保持同样的 2px 节奏。 */
+    /* 所有固定线路点使用同一顺序偏移，回收各自点击格里的空白后首尾相接。 */
     right: auto;
-    left: calc(var(--home-nav-indicator-dot-gap) / 2);
+    left: calc(
+      var(--home-nav-indicator-dot-gap) / 2 - var(--home-nav-compact-dot-shift, 0px) +
+        var(--home-nav-compact-cluster-offset, 0px)
+    );
   }
 
   html[data-header-compact]:not([data-header-hover-expanded])
@@ -1490,6 +1503,12 @@ html[data-home-nav-indicator-pattern="double"]
 }
 
 @media (max-width: 760px) {
+  :root {
+    /* 紧凑 Header 改用触控安全边距时，同步改写共享基线，让 Footer 等全宽章节仍贴齐可见外缘。 */
+    --site-header-inline-start: calc(12px + env(safe-area-inset-left));
+    --site-header-inline-end: calc(12px + env(safe-area-inset-right));
+  }
+
   main {
     gap: 64px;
     padding-top: calc(94px + env(safe-area-inset-top));

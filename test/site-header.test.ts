@@ -43,3 +43,28 @@ test("手机 Header 保持统一尺寸，滚动时不再排队 compact 动画帧
   assert.match(mobileStyles, /left:\s*calc\(12px \+ env\(safe-area-inset-left\)\)/);
   assert.match(mobileStyles, /width:\s*auto;[\s\S]*?transform:\s*none/);
 });
+
+test("紧凑 Header 用统一顺序规则将所有固定线路点拼成连续色组", () => {
+  const compactHeaderStyles = globalStylesSource.slice(
+    globalStylesSource.indexOf(
+      "html[data-header-compact]:not([data-header-hover-expanded]) .site-header",
+    ),
+  );
+
+  assert.match(
+    compactHeaderStyles,
+    /html\[data-header-compact\][\s\S]*?\.site-header\s*\{[\s\S]*?--home-nav-compact-cluster-offset:\s*26px;/,
+  );
+  assert.match(
+    compactHeaderStyles,
+    /html\[data-header-compact\][\s\S]*?\.home-nav__indicator-dot\s*\{[\s\S]*?right:\s*calc\([\s\S]*?var\(--home-nav-compact-cluster-offset,\s*0px\)/,
+  );
+  assert.match(
+    compactHeaderStyles,
+    /html\[data-header-compact\][\s\S]*?\.home-nav\[data-home-nav-signal="fixed"\]\s+\.home-nav__indicator-dot\s*\{[\s\S]*?right:\s*auto;[\s\S]*?left:\s*calc\([\s\S]*?var\(--home-nav-compact-dot-shift,\s*0px\)[\s\S]*?var\(--home-nav-compact-cluster-offset,\s*0px\)/,
+  );
+  assert.doesNotMatch(
+    compactHeaderStyles,
+    /html\[data-header-compact\][\s\S]*?\.info-nav\s+\.home-nav__indicator-dot\s*\{/,
+  );
+});

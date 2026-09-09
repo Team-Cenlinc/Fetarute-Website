@@ -1,4 +1,6 @@
 ---
+import arrowRightIcon from "@phosphor-icons/core/assets/bold/arrow-right-bold.svg?raw";
+import arrowUpIcon from "@phosphor-icons/core/assets/bold/arrow-up-bold.svg?raw";
 import arrowUpRightIcon from "@phosphor-icons/core/assets/bold/arrow-up-right-bold.svg?raw";
 import circleHalfIcon from "@phosphor-icons/core/assets/bold/circle-half-bold.svg?raw";
 import dotsThreeIcon from "@phosphor-icons/core/assets/bold/dots-three-bold.svg?raw";
@@ -11,7 +13,11 @@ import fetaruteLogo from "@/assets/fetarute-branding/fetarute-logo.svg?raw";
 import DestinationMenu from "@/components/DestinationMenu.astro";
 import { getRailwayLineCssVariableName } from "@/data/palette";
 import { railwayLineByKey } from "@/data/railway";
-import { primaryNavItems, wayfindingPrototype } from "@/data/site";
+import {
+  primaryNavItems,
+  type PrimaryNavArrowDirection,
+  wayfindingPrototype,
+} from "@/data/site";
 import { localeMetadata, locales, type Locale } from "@/i18n/config";
 import { getLocalizedRelativeUrl } from "@/i18n/links";
 import { getMessages } from "@/i18n/messages";
@@ -25,23 +31,48 @@ export interface Props {
   locale: Locale;
   /** 切换语言时保留当前逻辑页面；品牌与首页按钮仍指向语言首页。 */
   pagePath?: string;
+  /** 当前逻辑页面已发布的语言集合，避免语言切换指向不存在的页面。 */
+  availableLocales?: readonly Locale[];
 }
 
-const { locale, pagePath = "" } = Astro.props;
+const { locale, pagePath = "", availableLocales = locales } = Astro.props;
 const messages = getMessages(locale);
 
+/** 主导航统一使用 Phosphor Bold 箭头，仅由站点配置决定方向，避免组件内散落图标选择。 */
+const primaryNavArrowIcons = {
+  up: arrowUpIcon,
+  right: arrowRightIcon,
+  "up-right": arrowUpRightIcon,
+} satisfies Record<PrimaryNavArrowDirection, string>;
+
+/** 紧凑导视牌的线路圆点共享同一组几何；固定页面只按出现顺序回收各自点击格里的空白。 */
+const compactHeaderNavCellWidth = 44;
+const compactHeaderIndicatorDotDiameter = 16;
+const compactHeaderIndicatorDotGap = 2;
+const compactHeaderFixedDotStep =
+  compactHeaderNavCellWidth - compactHeaderIndicatorDotDiameter - compactHeaderIndicatorDotGap;
+
 /** 页面导视在构建期解析固定线路 token；首页继续使用会话信号，缺失线路则阻止输出错误导航。 */
+let fixedNavigationIndex = 0;
 const headerNavItems = primaryNavItems.map((item) => {
   const line = item.navigationLineKey ? railwayLineByKey.get(item.navigationLineKey) : undefined;
   if (item.navigationLineKey && !line) {
     throw new Error(`页面导视引用了未录入的线路：${item.navigationLineKey}。`);
   }
+  const compactDotShift = item.navigationLineKey
+    ? `${fixedNavigationIndex++ * compactHeaderFixedDotStep}px`
+    : undefined;
   return {
     ...item,
+    arrowIcon: primaryNavArrowIcons[item.navigationArrow],
     // 固定页面在入口自身覆盖线路色，避免继承根节点的首页随机色。
-    lineStyle: line
-      ? `--home-nav-line-color: var(${getRailwayLineCssVariableName(line)});`
-      : undefined,
+    lineStyle:
+      [
+        line ? `--home-nav-line-color: var(${getRailwayLineCssVariableName(line)});` : undefined,
+        compactDotShift ? `--home-nav-compact-dot-shift: ${compactDotShift};` : undefined,
+      ]
+        .filter(Boolean)
+        .join(" ") || undefined,
   };
 });
 
@@ -230,7 +261,7 @@ const appearanceOptions = [
           </h2>
           <nav class="language-links" aria-label={messages.languageNavigationLabel}>
             {
-              locales.map((alternateLocale) => (
+              availableLocales.map((alternateLocale) => (
                 <a
                   class="language-link"
                   href={getLocalizedRelativeUrl(alternateLocale, pagePath)}
@@ -292,8 +323,8 @@ const appearanceOptions = [
       >
         <DestinationMenu
           locale={locale}
-          headingId="mobile-destination-menu-label"
           pagePath={pagePath}
+          headingId="mobile-destination-menu-label"
           includePrimaryNavigation
         />
       </div>
@@ -305,10 +336,17 @@ const appearanceOptions = [
   {
     headerNavItems.map((item) => (
       <a
-        class:list={["home-nav", { "community-nav": item.labelKey === "community" }]}
+        class:list={[
+          "home-nav",
+          {
+            "community-nav": item.labelKey === "community",
+          },
+        ]}
         href={getLocalizedRelativeUrl(locale, item.pagePath ?? "")}
         aria-label={messages.navigation[item.labelKey]}
         aria-current={(item.pagePath ?? "") === pagePath ? "page" : undefined}
+        data-header-nav={item.labelKey}
+        data-header-nav-direction={item.navigationArrow}
         data-home-nav-signal={item.navigationLineKey ? "fixed" : "session"}
         style={item.lineStyle}
       >
@@ -320,7 +358,7 @@ const appearanceOptions = [
               <span class="home-nav__indicator-band" />
             </span>
           </span>
-          <span class="home-nav__arrow" aria-hidden="true" set:html={arrowUpRightIcon} />
+          <span class="home-nav__arrow" aria-hidden="true" set:html={item.arrowIcon} />
         </span>
       </a>
     ))
@@ -347,7 +385,7 @@ const appearanceOptions = [
         </h2>
         <nav class="language-links" aria-label={messages.languageNavigationLabel}>
           {
-            locales.map((alternateLocale) => (
+            availableLocales.map((alternateLocale) => (
               <a
                 class="language-link"
                 href={getLocalizedRelativeUrl(alternateLocale, pagePath)}

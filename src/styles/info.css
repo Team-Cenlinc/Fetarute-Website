@@ -1,0 +1,982 @@
+/* Share the home page neutral palette and existing railway accents. */
+.info-page {
+  --info-canvas: var(--color-background);
+  --info-ink: var(--color-text);
+  --info-muted: var(--color-muted);
+  --info-rule: var(--color-border);
+  --info-gutter: clamp(24px, 7.5vw, 144px);
+  --info-marker-size: clamp(48px, 5vw, 80px);
+  --info-heading-gap: clamp(16px, 2.03vw, 39px);
+  color: var(--info-ink);
+  background: var(--info-canvas);
+  padding-inline: max(var(--info-gutter), calc((100% - 1632px) / 2));
+  overflow-wrap: anywhere;
+}
+
+.info-page :is(h1, h2, h3, p) {
+  margin: 0;
+}
+.info-page a {
+  color: inherit;
+  text-decoration: none;
+}
+.info-page .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.info-page :is(a, summary):focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 6px;
+}
+.info-page :is(section, article, #top) {
+  scroll-margin-top: 130px;
+}
+.info-marker {
+  display: grid;
+  place-items: center;
+  width: var(--info-marker-size);
+  height: var(--info-marker-size);
+  flex: 0 0 var(--info-marker-size);
+}
+.info-marker svg {
+  width: 55%;
+  height: 55%;
+  fill: currentColor;
+}
+.info-hero {
+  /* Keep the complete directory readable in the initial viewport, even on short desktop screens. */
+  min-height: 100svh;
+  padding-block: min(clamp(112px, 7vw, 144px), 14svh) min(clamp(24px, 2vw, 40px), 4svh);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: min(clamp(24px, 2.5vw, 48px), 4svh);
+}
+.info-directory {
+  /* Directory type and markers scale to viewport height as well as width. */
+  --info-marker-size: min(clamp(48px, 6.40625vw, 123px), 11svh);
+  width: fit-content;
+  max-width: 100%;
+  display: grid;
+  gap: min(clamp(12px, 0.95vw, 18px), 1.8svh);
+}
+.info-directory__link {
+  display: grid;
+  grid-template-columns: var(--info-marker-size) minmax(0, 1fr) 0.8em;
+  padding-right: 12px;
+  gap: clamp(16px, 1.15vw, 22px);
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  font-weight: 700;
+  font-size: min(clamp(26px, 4.6vw, 80px), 8.4svh);
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+/* Reuse the Header exit arrow, with consistent weight and direction variants. */
+.info-arrow {
+  display: inline-flex;
+  width: 1.5em;
+  height: 1.5em;
+  flex: 0 0 auto;
+  vertical-align: middle;
+}
+.info-arrow svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.info-arrow--right {
+  transform: rotate(45deg);
+}
+.info-arrow--down {
+  transform: rotate(135deg);
+}
+.info-arrow--up {
+  transform: rotate(-45deg);
+}
+.info-arrow--left {
+  transform: rotate(225deg);
+}
+.info-directory__arrow {
+  width: 0.8em;
+  height: 0.8em;
+  margin-left: auto;
+}
+.info-directory__arrow svg {
+  /* Keep the existing directional silhouette; the same-color outline adds visual weight. */
+  stroke: currentColor;
+  stroke-linejoin: round;
+  stroke-width: 12;
+}
+.info-directory__link > span:nth-child(2) {
+  min-width: 0;
+}
+.info-hero__title {
+  display: flex;
+  align-items: center;
+  gap: clamp(20px, 2.0833vw, 40px);
+}
+.info-hero__title .info-marker {
+  --info-marker-size: min(clamp(72px, 11.0417vw, 212px), 19svh);
+}
+.info-hero h1 {
+  font-size: min(clamp(46px, 10.4167vw, 200px), 17svh);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+.info-page--en .info-hero h1 {
+  font-size: clamp(40px, 7.2vw, 138px);
+  line-height: 1.05;
+  max-width: 12ch;
+}
+.info-page--en .info-directory__link {
+  font-size: min(clamp(25px, 4.3vw, 72px), 8.4svh);
+}
+
+.info-section {
+  padding-block: clamp(56px, 5vw, 88px) clamp(72px, 7vw, 120px);
+  border-top: 1px solid var(--info-rule);
+}
+.info-section__heading {
+  display: flex;
+  align-items: center;
+  gap: var(--info-heading-gap);
+  flex-wrap: wrap;
+}
+.info-section__heading h2 {
+  font-size: clamp(32px, 4.6vw, 80px);
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.info-page--en .info-section__heading h2 {
+  font-size: clamp(32px, 4.4vw, 76px);
+}
+.info-section__body {
+  margin-top: clamp(32px, 3vw, 48px);
+  margin-left: calc(var(--info-marker-size) + var(--info-heading-gap));
+}
+.info-section__intro {
+  color: var(--info-muted);
+  font-size: clamp(16px, 1.25vw, 20px);
+  max-width: 34em;
+  line-height: 1.75;
+  padding-bottom: 28px;
+}
+.info-server-shortcuts {
+  display: flex;
+  gap: clamp(10px, 1.1vw, 22px);
+  margin-left: auto;
+}
+.info-server-shortcuts a {
+  display: grid;
+  place-items: center;
+  width: clamp(44px, 4.22vw, 81px);
+  aspect-ratio: 1;
+  background: var(--palette-surface-raised);
+  color: var(--info-muted);
+  font-size: clamp(18px, 1.67vw, 32px);
+  font-weight: 700;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+/* 快捷入口的颜色只由实时实例 health 决定；未知状态保持中性，避免把未验证数据画成可用。 */
+.info-server-shortcuts a[data-state="healthy"] {
+  background: var(--palette-status-ok);
+  color: var(--palette-status-ok-text);
+}
+.info-server-shortcuts a[data-state="unhealthy"] {
+  background: var(--palette-status-error);
+  color: var(--palette-status-error-text);
+}
+.info-server-shortcuts a:hover {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+.info-server {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(130px, 0.6fr);
+  align-items: center;
+  gap: 24px 32px;
+  padding-block: 32px;
+  border-top: 1px solid var(--info-rule);
+}
+.info-server:last-child {
+  border-bottom: 1px solid var(--info-rule);
+}
+.info-server__identity {
+  display: flex;
+  gap: 20px;
+  align-items: baseline;
+}
+.info-server h3 {
+  font-size: clamp(22px, 1.9vw, 32px);
+  font-weight: 650;
+}
+.info-availability {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--info-ink);
+  font-size: 16px;
+}
+.info-server__count {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 16px;
+}
+.info-server__count strong {
+  font-size: 32px;
+  font-weight: 500;
+}
+.info-server__count span {
+  font-size: 16px;
+  color: var(--info-ink);
+}
+.info-server__players {
+  grid-column: 1 / -1;
+  font-size: 16px;
+  color: var(--info-ink);
+}
+.info-server__players summary {
+  cursor: pointer;
+  width: fit-content;
+  padding: 8px 0;
+}
+.info-server__players p {
+  padding: 12px 0 0 16px;
+}
+
+/* 群号始终可见可选；复制功能只是缩短申请步骤，失效时不阻断读者。 */
+.guide-qq-portal {
+  margin-block: 32px;
+  padding: clamp(20px, 3vw, 32px);
+  border: 1px solid var(--info-rule);
+  background: var(--palette-surface-raised);
+}
+.guide-qq-portal strong {
+  font-size: 20px;
+}
+.guide-qq-portal p {
+  margin: 8px 0 0;
+  color: var(--info-muted);
+}
+.guide-qq-portal__actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+.guide-qq-portal__number {
+  font-size: clamp(24px, 3vw, 34px);
+  font-variant-numeric: tabular-nums;
+  -webkit-user-select: all;
+  user-select: all;
+}
+.guide-qq-portal button {
+  border: 1px solid var(--info-ink);
+  padding: 10px 14px;
+  background: transparent;
+  color: var(--info-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.guide-qq-portal button:hover,
+.guide-qq-portal button:focus-visible {
+  background: var(--info-ink);
+  color: var(--palette-surface-raised);
+}
+.guide-qq-portal__feedback {
+  min-height: 1.5em;
+}
+
+.info-news-slider {
+  margin-top: 28px;
+}
+.info-news-slider__viewport {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-behavior: smooth;
+  scroll-snap-type: inline mandatory;
+}
+/* 增强模式才隐藏原生滚动条；无脚本时保留浏览器提供的完整横向阅读入口。 */
+[data-news-slider-enhanced="true"] .info-news-slider__viewport {
+  scrollbar-width: none;
+}
+[data-news-slider-enhanced="true"] .info-news-slider__viewport::-webkit-scrollbar {
+  display: none;
+}
+.info-news-slider__viewport:focus-visible {
+  outline: 3px solid var(--info-ink);
+  outline-offset: 6px;
+}
+.info-news-slider__track {
+  display: flex;
+  gap: clamp(12px, 1.6vw, 28px);
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.info-news-slider__item {
+  flex: 0 0 min(78%, 720px);
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.info-news-slider[data-news-count="1"] .info-news-slider__item {
+  flex-basis: 100%;
+}
+.info-news {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 48px;
+  min-height: 100%;
+  align-items: center;
+  gap: 32px;
+  padding-block: 30px;
+  border: 1px solid var(--info-rule);
+}
+.info-news__meta {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.info-news__pin {
+  padding: 4px 10px;
+  border: 0;
+  font-size: 14px;
+  font-weight: 650;
+}
+.info-news-slider__controls {
+  display: grid;
+  grid-template-columns: 44px minmax(100px, 1fr) 44px;
+  align-items: center;
+  gap: 16px;
+  margin-top: 18px;
+}
+.info-news-slider[data-news-count="1"] .info-news-slider__controls {
+  display: none;
+}
+.info-news-slider__controls button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid var(--info-rule);
+  background: transparent;
+  color: var(--info-ink);
+  cursor: pointer;
+}
+.info-news-slider__controls button:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+.info-news-slider__controls button:not(:disabled):hover {
+  background: var(--info-ink);
+  color: var(--info-canvas);
+}
+.info-news-slider__controls button:focus-visible {
+  outline: 3px solid var(--info-ink);
+  outline-offset: 3px;
+}
+.info-news-slider__controls .info-arrow {
+  width: 24px;
+  height: 24px;
+}
+.info-news-slider__scrollbar {
+  /* 滑块宽度与位置由原生 scrollLeft 派生，确保拖动、触控与按钮始终显示同一进度。 */
+  --info-news-slider-thumb-width: 100%;
+  --info-news-slider-thumb-offset: 0%;
+  position: relative;
+  height: 12px;
+  cursor: pointer;
+  touch-action: none;
+}
+.info-news-slider__scrollbar::before,
+.info-news-slider__scrollbar > span {
+  position: absolute;
+  top: 50%;
+  height: 3px;
+  transform: translateY(-50%);
+}
+.info-news-slider__scrollbar::before {
+  right: 0;
+  left: 0;
+  content: "";
+  background: var(--info-rule);
+}
+.info-news-slider__scrollbar > span {
+  left: var(--info-news-slider-thumb-offset);
+  width: var(--info-news-slider-thumb-width);
+  background: var(--info-ink);
+}
+.info-news h3,
+.info-other-link h3 {
+  font-size: clamp(22px, 1.9vw, 32px);
+  line-height: 1.4;
+  font-weight: 700;
+}
+.info-news p,
+.info-other-link p,
+.info-resource-group > p {
+  margin-top: 12px;
+  color: var(--info-muted);
+  line-height: 1.8;
+  font-size: clamp(16px, 1.05vw, 20px);
+}
+.info-link-arrow {
+  display: block;
+  width: clamp(28px, 2.2vw, 40px);
+  height: clamp(28px, 2.2vw, 40px);
+  flex: 0 0 auto;
+}
+.info-link-arrow svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.info-resources {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: clamp(40px, 6vw, 116px);
+}
+.info-resource-group > h3 {
+  font-size: clamp(26px, 2.1vw, 36px);
+  font-weight: 700;
+}
+.info-resource-links,
+.info-resource-group > .info-resource-link {
+  margin-top: 32px;
+}
+.info-resource-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  border-top: 1px solid var(--info-rule);
+  padding-block: 24px;
+  font-size: clamp(20px, 1.5vw, 28px);
+  font-weight: 650;
+}
+.info-resource-link:last-child {
+  border-bottom: 1px solid var(--info-rule);
+}
+.info-other-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  padding-block: 32px;
+  border-top: 1px solid var(--info-rule);
+}
+.info-other-link:last-child {
+  border-bottom: 1px solid var(--info-rule);
+}
+.info-section--last {
+  min-height: auto;
+}
+/* Markdown uses natural document flow, independent of the home page's scroll effects. */
+.info-article {
+  /* 公告正文先完整占用首屏；短文不会让下一站页尾提前进入初始视窗。 */
+  min-height: 100svh;
+  box-sizing: border-box;
+  padding-top: 170px;
+}
+.info-article__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 64px;
+  font-size: 16px;
+}
+/* 加入与探索沿用黄线导视，返回资讯的 hover 不应回退到新闻默认的青色。 */
+.info-article--guide .info-article__back {
+  --info-hover-line: var(--line-surn-frn);
+}
+.info-article__header {
+  max-width: 1080px;
+  margin-inline: auto;
+}
+.info-article__category {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 36px;
+}
+.info-article__category .info-marker {
+  --info-marker-size: 48px;
+}
+.info-article h1 {
+  font-size: clamp(36px, 4.4vw, 84px);
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+.info-article__dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  margin-top: 28px;
+  color: var(--info-muted);
+  font-size: 14px;
+}
+.info-article__description {
+  font-size: 22px;
+  line-height: 1.75;
+  margin-top: 32px !important;
+}
+.info-prose {
+  max-width: 760px;
+  margin: 64px auto 100px;
+  font-size: 18px;
+  line-height: 1.9;
+}
+.info-prose > * + * {
+  margin-top: 1.5em;
+}
+.info-prose :is(h2, h3, h4) {
+  margin-top: 2em;
+  line-height: 1.4;
+}
+.info-prose a {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.info-prose img {
+  max-width: 100%;
+  height: auto;
+}
+.article-image {
+  max-width: min(100%, 760px);
+  margin: 40px 0;
+}
+.article-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.article-image figcaption {
+  margin-top: 10px;
+  color: var(--info-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.info-prose pre {
+  overflow-x: auto;
+  padding: 20px;
+}
+.info-prose blockquote {
+  border-left: 4px solid var(--line-surc-ws);
+  padding-left: 24px;
+  margin-inline: 0;
+}
+.info-prose table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.info-prose :is(th, td) {
+  border: 1px solid var(--info-rule);
+  padding: 12px;
+}
+
+@media (max-width: 1100px) {
+  .info-section__body {
+    margin-left: 0;
+  }
+  .info-server-shortcuts {
+    flex-basis: 100%;
+    margin-left: calc(var(--info-marker-size) + var(--info-heading-gap));
+  }
+}
+@media (max-width: 600px) {
+  .info-hero {
+    min-height: min(100svh, 720px);
+    padding-block: 112px 56px;
+  }
+  .info-directory__link {
+    font-size: clamp(24px, 5.7vw, 34px);
+    gap: 16px;
+  }
+  .info-directory__arrow {
+    width: 30px;
+    height: 30px;
+  }
+  .info-hero__title {
+    align-items: center;
+  }
+  .info-hero h1 {
+    font-size: clamp(38px, 9.5vw, 56px);
+  }
+  .info-hero__title .info-marker {
+    --info-marker-size: 64px;
+  }
+
+  .info-page--en .info-hero h1 {
+    max-width: 100%;
+    font-size: clamp(32px, 8vw, 48px);
+    line-height: 1.15;
+    overflow-wrap: normal;
+  }
+  .info-section {
+    min-height: auto;
+    padding-block: 48px 64px;
+  }
+  .info-section__heading {
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .info-section__heading .info-sign-title {
+    flex: 1;
+    min-width: 0;
+  }
+  .info-section__heading h2 {
+    font-size: clamp(28px, 7vw, 40px);
+    line-height: 1.35;
+  }
+  .info-page--en .info-section__heading h2 {
+    font-size: clamp(26px, 6.5vw, 32px);
+    font-stretch: 85%;
+    overflow-wrap: normal;
+  }
+  .info-server-shortcuts {
+    margin-left: 62px;
+  }
+  .info-section__intro {
+    padding-bottom: 24px;
+  }
+  .info-server {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    padding-block: 24px;
+  }
+  .info-server__identity {
+    gap: 12px;
+  }
+  .info-server__count {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    flex-direction: row-reverse;
+    width: fit-content;
+  }
+  .info-server__count strong {
+    font-size: 24px;
+  }
+  .info-news {
+    grid-template-columns: minmax(0, 1fr) 28px;
+    gap: 18px;
+    padding-block: 28px;
+  }
+  .info-news-slider__item {
+    flex-basis: 100%;
+  }
+  .info-news__meta {
+    flex-direction: row;
+    align-items: center;
+    grid-column: 1 / -1;
+  }
+  .info-news .info-link-arrow {
+    width: 28px;
+    height: 28px;
+  }
+  .info-resources {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+  .info-article {
+    padding-top: 128px;
+  }
+  .info-article__back {
+    margin-bottom: 40px;
+  }
+  .info-article__description {
+    font-size: 18px;
+  }
+  .info-prose {
+    font-size: 17px;
+    margin-block: 40px 64px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.info-page) {
+    scroll-behavior: auto;
+  }
+}
+
+/* The tooltip's directional wipe, limited to interactive rows. */
+.info-page
+  :is(
+    .info-directory__link,
+    .info-news,
+    .info-resource-link,
+    .info-other-link,
+    .info-article__back
+  ) {
+  position: relative;
+  isolation: isolate;
+}
+.info-page
+  :is(
+    .info-directory__link,
+    .info-news,
+    .info-resource-link,
+    .info-other-link,
+    .info-article__back
+  )::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--info-hover-line, var(--line-surc-ws)) 18%, transparent);
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 240ms var(--motion-header-standard-spatial);
+}
+#game {
+  --info-hover-line: var(--line-surn-pn);
+}
+.info-page :is(.info-news, .info-other-link):is(:hover, :focus-visible) p {
+  color: var(--info-ink);
+}
+#other {
+  --info-hover-line: var(--line-surn-frn);
+}
+.info-directory a[href="#other"] {
+  --info-hover-line: var(--line-surn-frn);
+}
+.info-directory a[href="#game"] {
+  --info-hover-line: var(--line-surn-pn);
+}
+.info-directory a[href="#status"] {
+  --info-hover-line: var(--line-surn-bs);
+}
+@media (hover: hover) and (pointer: fine) {
+  .info-page
+    :is(
+      .info-directory__link,
+      .info-news,
+      .info-resource-link,
+      .info-other-link,
+      .info-article__back
+    ):hover::before {
+    clip-path: inset(0);
+  }
+}
+.info-page
+  :is(
+    .info-directory__link,
+    .info-news,
+    .info-resource-link,
+    .info-other-link,
+    .info-article__back
+  ):focus-visible::before {
+  clip-path: inset(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .info-page
+    :is(
+      .info-directory__link,
+      .info-news,
+      .info-resource-link,
+      .info-other-link,
+      .info-article__back
+    )::before {
+    transition: none;
+  }
+}
+
+.info-arrow svg path {
+  stroke: currentColor;
+  stroke-width: 4;
+  stroke-linejoin: round;
+}
+.info-resource-link,
+.info-news,
+.info-other-link {
+  padding-inline: clamp(12px, 1.25vw, 24px);
+}
+#status {
+  --info-hover-line: var(--line-surn-bs);
+}
+.info-status-link {
+  margin-bottom: 36px;
+  border-bottom: 1px solid var(--info-rule);
+}
+.info-status-link__copy {
+  display: grid;
+  gap: 8px;
+}
+.info-status-link__copy strong {
+  font-size: clamp(20px, 1.5vw, 28px);
+  font-weight: 650;
+}
+.info-status-link__copy > span {
+  font-size: 16px;
+  font-weight: 450;
+}
+
+@media (max-width: 360px) {
+  .info-directory__link {
+    grid-template-columns: var(--info-marker-size) minmax(0, 1fr) 28px;
+    column-gap: 12px;
+    padding-right: 8px;
+    font-size: 22px;
+  }
+}
+
+/* The entry owns player data; instance rows only show independent health. */
+.info-server-shortcuts a {
+  width: auto;
+  min-width: 64px;
+  min-height: 48px;
+  padding: 10px 12px;
+  aspect-ratio: auto;
+  font-size: clamp(16px, 1.4vw, 24px);
+  white-space: nowrap;
+}
+.info-server-shortcuts {
+  flex-wrap: wrap;
+}
+.info-server-list .info-server {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.info-status-feedback {
+  font-size: 16px;
+  line-height: 1.7;
+  padding-bottom: 24px;
+}
+.info-status-feedback {
+  min-height: 3.4em;
+}
+.info-server__players p {
+  overflow-wrap: anywhere;
+}
+.info-availability::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--palette-muted);
+  flex: 0 0 auto;
+}
+.info-availability[data-state="online"]::before,
+.info-availability[data-state="healthy"]::before {
+  background: var(--palette-status-ok);
+}
+.info-availability[data-state="offline"]::before,
+.info-availability[data-state="unhealthy"]::before {
+  background: var(--palette-status-error);
+}
+
+.info-server {
+  scroll-margin-top: 130px;
+}
+.info-directory__link[aria-current="location"] {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* Upright destination names carry navigation; true Latin italic is a secondary voice. */
+.info-sign-title {
+  min-width: 0;
+}
+.info-sign-caption {
+  margin-top: 8px !important;
+  font-family: var(--font-fetarute-italic);
+  font-style: italic;
+  font-synthesis: none;
+  font-weight: 650;
+  font-size: clamp(16px, 1.5vw, 24px);
+  line-height: 1.25;
+}
+.info-hero .info-sign-caption {
+  font-size: clamp(18px, 2vw, 32px);
+}
+.info-page--en .info-hero h1 {
+  font-family: var(--font-fetarute-italic);
+  font-style: italic;
+  font-synthesis: none;
+  padding-right: 0.12em;
+}
+.info-page--en .info-section__intro {
+  max-width: 62ch;
+}
+.info-section__heading > .info-sign-title {
+  flex: 1;
+}
+.info-server__count strong {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+.info-entry {
+  border-top: 3px solid var(--info-ink);
+  padding-inline: clamp(12px, 1.25vw, 24px);
+}
+.info-server-list .info-server {
+  padding: 24px clamp(12px, 1.25vw, 24px);
+}
+.info-server-list .info-server h3 {
+  font-size: clamp(20px, 1.5vw, 26px);
+  font-weight: 600;
+}
+.info-status-feedback {
+  max-width: 62ch;
+  font-variant-numeric: tabular-nums;
+  color: var(--info-muted);
+}
+.info-news p,
+.info-other-link p,
+.info-resource-group > p {
+  max-width: 42em;
+}
+.info-status-link {
+  margin-top: 24px;
+  margin-bottom: 0;
+}
+@media (max-width: 600px) {
+  .info-sign-caption {
+    margin-top: 6px !important;
+    font-size: 15px;
+  }
+  .info-server-shortcuts {
+    margin-top: 8px;
+  }
+  .info-server__count {
+    flex-direction: row;
+  }
+  .info-entry .info-availability {
+    justify-self: start;
+  }
+  .info-entry .info-server__identity {
+    grid-column: 1 / -1;
+  }
+  .info-entry .info-server__count {
+    grid-column: auto;
+    justify-self: end;
+    gap: 8px;
+  }
+  .info-page--en .info-directory__link {
+    font-size: clamp(20px, 5.2vw, 28px);
+    font-stretch: 75%;
+    overflow-wrap: normal;
+  }
+}

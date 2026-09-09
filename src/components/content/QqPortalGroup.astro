@@ -1,0 +1,56 @@
+---
+import { onwardEntryPoints } from "@/data/site";
+import type { Locale } from "@/i18n/config";
+
+/** QQ 门户群申请卡的文案按文章语言显示，群号只从站点数据读取。 */
+const copyByLocale: Record<Locale, { title: string; instruction: string; copy: string; copied: string; failed: string }> = {
+  "zh-Hans": { title: "QQ 门户群", instruction: "复制群号后，在 QQ 中搜索并申请加入。", copy: "复制群号", copied: "群号已复制", failed: "复制未成功，请手动选择群号复制。" },
+  "zh-Hant": { title: "QQ 門戶群", instruction: "複製群號後，在 QQ 中搜尋並申請加入。", copy: "複製群號", copied: "群號已複製", failed: "複製未成功，請手動選取群號複製。" },
+  en: { title: "QQ portal group", instruction: "Copy the group number, then search for it in QQ and request to join.", copy: "Copy group number", copied: "Group number copied", failed: "Copying did not work. Please select the number and copy it manually." },
+};
+
+/** 受控富文本组件接收文章语言，显示同一条 QQ 申请入口。 */
+interface Props { /** 当前指南的发布语言。 */ locale: Locale; }
+const { locale } = Astro.props;
+const copy = copyByLocale[locale];
+const number = onwardEntryPoints.qqPortalGroupNumber;
+---
+
+<aside class="guide-qq-portal" aria-label={copy.title}>
+  <strong>{copy.title}</strong>
+  <p>{copy.instruction}</p>
+  <div class="guide-qq-portal__actions">
+    <span class="guide-qq-portal__number">{number}</span>
+    <button type="button" data-guide-copy-qq data-copy-value={number} data-copy-label={copy.copy} data-copied-label={copy.copied} data-copy-failed-label={copy.failed}>{copy.copy}</button>
+  </div>
+  <p class="guide-qq-portal__feedback" data-guide-copy-feedback aria-live="polite"></p>
+</aside>
+
+<script>
+  /** Clipboard API 不可用时，临时字段仍提供兼容复制能力。 */
+  const copyWithFallback = (value: string) => {
+    const field = document.createElement("textarea");
+    field.value = value;
+    field.setAttribute("readonly", "");
+    field.style.position = "fixed";
+    field.style.opacity = "0";
+    document.body.append(field);
+    field.select();
+    const copied = document.execCommand("copy");
+    field.remove();
+    return copied;
+  };
+  document.querySelectorAll<HTMLButtonElement>("[data-guide-copy-qq]").forEach((button) => {
+    const feedback = button.closest(".guide-qq-portal")?.querySelector<HTMLElement>("[data-guide-copy-feedback]");
+    button.addEventListener("click", async () => {
+      const value = button.dataset.copyValue ?? "";
+      let copied = false;
+      try { await navigator.clipboard.writeText(value); copied = true; } catch { copied = copyWithFallback(value); }
+      button.dataset.copyState = copied ? "copied" : "failed";
+      button.textContent = copied
+        ? button.dataset.copiedLabel ?? ""
+        : button.dataset.copyLabel ?? "";
+      if (feedback) feedback.textContent = copied ? button.dataset.copiedLabel ?? "" : button.dataset.copyFailedLabel ?? "";
+    });
+  });
+</script>

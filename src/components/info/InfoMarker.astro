@@ -1,0 +1,16 @@
+---
+import info from "@phosphor-icons/core/assets/bold/info-bold.svg?raw";
+import pulse from "@phosphor-icons/core/assets/bold/pulse-bold.svg?raw";
+import megaphone from "@phosphor-icons/core/assets/bold/megaphone-bold.svg?raw";
+import gameController from "@phosphor-icons/core/assets/bold/game-controller-bold.svg?raw";
+import signpost from "@phosphor-icons/core/assets/bold/signpost-bold.svg?raw";
+import { getInfoMarkerStyle, type InfoCategory } from "@/data/info-palette";
+
+interface Props {
+  kind: InfoCategory;
+}
+const { kind } = Astro.props;
+const icons = { info, status: pulse, news: megaphone, game: gameController, other: signpost };
+---
+
+<span class={`info-marker info-marker--${kind}`} style={getInfoMarkerStyle(kind)} aria-hidden="true" set:html={icons[kind]} />

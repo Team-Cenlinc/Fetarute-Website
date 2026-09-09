@@ -13,12 +13,18 @@ export interface Props {
   returnHref: string;
   returnLabel: string;
   returnDirection?: "up" | "left";
+  /** 页面可用的内联 CSS 变量；用于在共享 Footer 之后仍保持专属几何契约。 */
+  footerStyle?: string;
+  /** 需要在页尾提供同页返回时的锚点；未传时不额外输出操作链接。 */
+  topHref?: string;
+  /** 同页返回链接的本地化可见文案。 */
+  topLabel?: string;
   className?: string;
   /** 社区阅读进度使用的末站名称；未传时不附加社区状态。 */
   stopName?: string;
 }
 
-const { id, title, description, lineColor, returnHref, returnLabel, returnDirection = "up", className, stopName } = Astro.props;
+const { id, title, description, lineColor, returnHref, returnLabel, returnDirection = "up", footerStyle, topHref, topLabel, className, stopName } = Astro.props;
 const currentYear = new Date().getFullYear();
 ---
 
@@ -27,7 +33,7 @@ const currentYear = new Date().getFullYear();
   id={id}
   data-home-footer={id === "footer" ? "" : undefined}
   data-community-stop={stopName}
-  style={`--home-footer-line-color: ${lineColor};`}
+  style={`--home-footer-line-color: ${lineColor}; ${footerStyle ?? ""}`}
 >
   <span class="home-footer__track" aria-hidden="true"></span>
   <div class="home-footer__content">
@@ -38,10 +44,18 @@ const currentYear = new Date().getFullYear();
           {description && <p class="home-footer__description">{description}</p>}
         </slot>
       </div>
-      <a class="home-footer__restart" href={returnHref} data-direction={returnDirection}>
-        <span>{returnLabel}</span>
-        <span class="home-footer__restart-icon" aria-hidden="true" set:html={returnDirection === "up" ? arrowUpIcon : arrowLeftIcon}></span>
-      </a>
+      <div class="home-footer__actions">
+        {topHref && topLabel && (
+          <a class="home-footer__restart" href={topHref} data-direction="up">
+            <span>{topLabel}</span>
+            <span class="home-footer__restart-icon" aria-hidden="true" set:html={arrowUpIcon}></span>
+          </a>
+        )}
+        <a class="home-footer__restart" href={returnHref} data-direction={returnDirection}>
+          <span>{returnLabel}</span>
+          <span class="home-footer__restart-icon" aria-hidden="true" set:html={returnDirection === "up" ? arrowUpIcon : arrowLeftIcon}></span>
+        </a>
+      </div>
     </div>
     <div class="home-footer__signature">
       <span class="home-footer__wordmark" aria-hidden="true" set:html={fetaruteLogo}></span>
@@ -52,7 +66,7 @@ const currentYear = new Date().getFullYear();
 
 <style>
   /* --journey-footer-{background,text,track-x,track-width,margin-right,right-inset,copy-x}
-     允许章节接续本页配色和轨道；高度、字体与签名间距保持同一套响应式规则。 */
+     允许章节接续本页配色和轨道；未覆盖的首页页尾复用 Header 两端基线，高度、字体与签名间距保持同一套响应式规则。 */
   .home-footer {
     /* 页尾轨道宽度与续行探索线保持同一比例，并在小屏切换为左侧窄轨。 */
     --home-footer-track-width: clamp(36px, 3.23vw, 62px);
@@ -61,6 +75,8 @@ const currentYear = new Date().getFullYear();
     --home-footer-content-opacity: 1;
     /* 页尾轨道复用续行桌面右轨公式，保证 section 与 footer 在任意桌面宽度都原位接缝。 */
     --home-footer-right-track-x: calc(77.71vw + var(--home-footer-track-width) * 3.01613);
+    /* 共享页尾默认不额外收窄正文；不同章节只能显式选择自己的轨道净空。 */
+    --home-footer-track-content-clearance: 0px;
     position: relative;
     /* Footer 是首页网格子项；允许窄屏收缩，避免英文最小内容宽度撑开整页。 */
     min-width: 0;
@@ -68,6 +84,16 @@ const currentYear = new Date().getFullYear();
     overflow: clip;
     background: var(--journey-footer-background, var(--palette-text));
     color: var(--journey-footer-text, var(--palette-surface));
+  }
+
+  /* 首页 Footer 外框贴齐 Header 后，正文仍在右侧轨道前留出净空，避免返回入口和版权穿过线路。 */
+  .home-footer--homepage {
+    --home-footer-track-content-clearance: max(
+      0px,
+      calc(
+        var(--site-header-inline-end) - (100% - var(--home-footer-right-track-x)) + 12px
+      )
+    );
   }
 
   .home-footer__track {
@@ -85,8 +111,10 @@ const currentYear = new Date().getFullYear();
     justify-content: space-between;
     width: auto;
     min-height: inherit;
-    margin-right: var(--journey-footer-margin-right, calc(100% - var(--home-footer-right-track-x) + 72px));
-    padding: 40px var(--journey-footer-right-inset, 0px) 24px var(--journey-footer-copy-x, 7.92vw);
+    /* 默认以完整态 Header 的左右外缘收束 Footer；社区、Info 等地图页仍可按自身轨道显式覆盖。 */
+    margin-right: var(--journey-footer-margin-right, 0px);
+    padding: 40px var(--journey-footer-right-inset, var(--site-header-inline-end)) 24px
+      var(--journey-footer-copy-x, var(--site-header-inline-start));
     opacity: var(--home-footer-content-opacity);
     transform: translateY(var(--home-footer-content-offset));
   }
@@ -96,6 +124,7 @@ const currentYear = new Date().getFullYear();
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 12px clamp(32px, 4vw, 72px);
     align-items: start;
+    padding-right: var(--home-footer-track-content-clearance);
   }
 
   /* 结束语与返回操作各自对齐顶部，避免单个链接撑开正文行距。 */
@@ -131,7 +160,6 @@ const currentYear = new Date().getFullYear();
     display: inline-flex;
     gap: 10px;
     align-items: center;
-    justify-self: end;
     min-height: 44px;
     color: inherit;
     font-size: 14px;
@@ -140,6 +168,16 @@ const currentYear = new Date().getFullYear();
     text-decoration: none;
     text-decoration-thickness: 2px;
     text-underline-offset: 0.32em;
+  }
+
+  /* 页尾操作作为一个右对齐组；同页返回只在传入明确锚点的页面出现。 */
+  .home-footer__actions {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-self: end;
+    gap: 4px;
   }
 
   .home-footer__restart-icon {
@@ -179,6 +217,7 @@ const currentYear = new Date().getFullYear();
     justify-content: space-between;
     gap: 16px 24px;
     margin-top: 40px;
+    padding-right: var(--home-footer-track-content-clearance);
     padding-top: 24px;
     border-top: 2px solid color-mix(in srgb, currentColor 24%, transparent);
   }
@@ -240,7 +279,8 @@ const currentYear = new Date().getFullYear();
       font-size: clamp(14px, 3.8vw, 17px);
     }
 
-    .home-footer__restart {
+    .home-footer__actions {
+      align-items: flex-start;
       justify-self: start;
     }
 

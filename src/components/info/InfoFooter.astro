@@ -1,0 +1,37 @@
+---
+import JourneyFooter from "@/components/JourneyFooter.astro";
+import { getLocalizedRelativeUrl } from "@/i18n/links";
+import { infoMessages } from "@/i18n/info";
+import type { Locale } from "@/i18n/config";
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const copy = infoMessages[locale];
+---
+
+<JourneyFooter
+  id="footer"
+  className="info-footer"
+  title={copy.footerTitle}
+  description={copy.footerDescription}
+  lineColor="var(--line-surn-frn)"
+  returnHref={getLocalizedRelativeUrl(locale)}
+  returnLabel={copy.backHome}
+  returnDirection="left"
+  topHref="#top"
+  topLabel={copy.top}
+  footerStyle="--journey-footer-copy-x: var(--site-header-inline-start); --journey-footer-right-inset: var(--site-header-inline-end); --journey-footer-margin-right: 0px; --home-footer-track-content-clearance: 0px;"
+/>
+
+<style>
+  /* Use the shared footer typography and return link, aligned to Info's content. */
+  /* Info 的几何变量以 footerStyle 内联写入，确保不被共享 Footer 的作用域规则覆盖。 */
+  :global(.home-footer.info-footer .home-footer__track) { display: none; }
+  /* 共享 Footer 在窄屏默认把操作靠左；Info 的双链接和版权仍应持续锚定 Header 右缘。 */
+  :global(.home-footer.info-footer .home-footer__actions) {
+    align-items: flex-end;
+    justify-self: end;
+  }
+  :global(.home-footer.info-footer .home-footer__signature) { justify-content: flex-start; }
+  :global(.home-footer.info-footer .home-footer__legal) { margin-left: auto; }
+</style>

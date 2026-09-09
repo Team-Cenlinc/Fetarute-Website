@@ -1,0 +1,36 @@
+---
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import ArticleImage from "@/components/content/ArticleImage.astro";
+import QqPortalGroup from "@/components/content/QqPortalGroup.astro";
+import InfoArrow from "@/components/info/InfoArrow.astro";
+import InfoFooter from "@/components/info/InfoFooter.astro";
+import InfoMarker from "@/components/info/InfoMarker.astro";
+import type { Locale } from "@/i18n/config";
+import { infoMessages } from "@/i18n/info";
+import { getLocalizedRelativeUrl } from "@/i18n/links";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import "@/styles/info.css";
+
+/** 每篇已发布指南都静态生成页面，并只显示已存在的语言翻译。 */
+export async function getStaticPaths() {
+  const guides = await getCollection("guides");
+  return guides.map((entry) => ({ params: { locale: entry.data.locale, slug: entry.data.translationKey }, props: { entry, availableLocales: guides.filter((translation) => translation.data.translationKey === entry.data.translationKey).map((translation) => translation.data.locale) } }));
+}
+/** 指南正文与其可用语言由 Content Collection 校验后注入。 */
+interface Props { entry: CollectionEntry<"guides">; availableLocales: Locale[]; }
+const { entry, availableLocales } = Astro.props;
+const { locale, title, description, authors, cover, coverAlt, translationKey } = entry.data;
+const copy = infoMessages[locale];
+const { Content } = await render(entry);
+---
+<BaseLayout locale={locale} title={title} description={description} pagePath={`guides/${translationKey}`} availableLocales={availableLocales} fullBleedMain indexable={false}>
+  <div class="info-page info-article info-article--guide" id="top">
+    <a class="info-article__back" href={getLocalizedRelativeUrl(locale, "info", "other")}><InfoArrow direction="left" /> {copy.backInfo}</a>
+    <article>
+      <header class="info-article__header"><div class="info-article__category"><InfoMarker kind="other" /><span>{copy.sections.other}</span></div><h1>{title}</h1><div class="info-article__dates"><span>{copy.authors} {authors.join(locale === "en" ? ", " : "、")}</span></div><p class="info-article__description">{description}</p></header>
+      {cover && coverAlt && <ArticleImage src={cover} alt={coverAlt} priority />}
+      <div class="info-prose"><Content components={{ QqPortalGroup }} /></div>
+    </article>
+  </div>
+  <InfoFooter locale={locale} />
+</BaseLayout>

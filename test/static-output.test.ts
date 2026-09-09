@@ -8,6 +8,84 @@ import { defaultLocale, localeMetadata, type Locale } from "../src/i18n/config.t
 import { getMessages } from "../src/i18n/messages.ts";
 
 const publicHomeLocales = ["zh-Hans", "zh-Hant", "en"] as const satisfies readonly Locale[];
+
+test("Info and Markdown announcements preserve localized navigation in the static output", () => {
+  for (const locale of publicHomeLocales) {
+    const info = readFileSync(
+      new URL(`../dist/${locale}/info/index.html`, import.meta.url),
+      "utf8",
+    );
+    const article = readFileSync(
+      new URL(`../dist/${locale}/news/site-foundation/index.html`, import.meta.url),
+      "utf8",
+    );
+    assert.equal([...info.matchAll(/<h1\b/g)].length, 1);
+    assert.equal([...article.matchAll(/<h1\b/g)].length, 1);
+    const primaryInfoLinks = [
+      ...info.matchAll(
+        new RegExp(
+          `<a\\b(?=[^>]*class="[^"]*\\bhome-nav\\b[^"]*")(?=[^>]*href="/${locale}/info/")[^>]*>`,
+          "g",
+        ),
+      ),
+    ].map((match) => match[0]);
+    const menuInfoLinks = [
+      ...info.matchAll(
+        new RegExp(
+          `<a\\b(?=[^>]*data-header-menu-link)(?=[^>]*href="/${locale}/info/")[^>]*>`,
+          "g",
+        ),
+      ),
+    ].map((match) => match[0]);
+    assert.equal(primaryInfoLinks.length, 1, `${locale} Info 页应有桌面主导航入口`);
+    assert.equal(menuInfoLinks.length, 1, `${locale} Info 页应保留一个菜单入口`);
+    assert.ok(
+      primaryInfoLinks[0].includes('aria-current="page"'),
+      `${locale} Info 页的 Header 链接应标记当前页面`,
+    );
+    for (const [labelKey, direction] of Object.entries({
+      home: "up",
+      community: "up-right",
+      info: "right",
+    })) {
+      const directionLinks = [
+        ...info.matchAll(
+          new RegExp(
+            `<a\\b(?=[^>]*data-header-nav="${labelKey}")(?=[^>]*data-header-nav-direction="${direction}")[^>]*>`,
+            "g",
+          ),
+        ),
+      ];
+      assert.equal(
+        directionLinks.length,
+        2,
+        `${locale} Header 的 ${labelKey} 入口应在主导航和菜单中使用 ${direction} 箭头`,
+      );
+      assert.equal(
+        directionLinks.filter((match) => match[0].includes("data-header-menu-link")).length,
+        1,
+        `${locale} Header 的 ${labelKey} 菜单入口应使用 ${direction} 箭头`,
+      );
+    }
+    assert.ok(info.includes(`href="/${locale}/news/site-foundation/"`));
+    assert.ok(article.includes(`href="/${locale}/info/#news"`));
+    for (const alternate of publicHomeLocales) {
+      assert.ok(info.includes(`href="/${alternate}/info/"`));
+      assert.ok(article.includes(`href="/${alternate}/news/site-foundation/"`));
+    }
+    for (const section of ["status", "news", "game", "other"]) {
+      assert.ok(info.includes(`href="#${section}"`));
+      assert.ok(info.includes(`id="${section}"`));
+    }
+    for (const html of [info, article]) {
+      const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]);
+      assert.equal(new Set(ids).size, ids.length, "IDs must be unique");
+      assert.doesNotMatch(html, /play\.fetarute\.example/);
+    }
+    assert.match(article, /class="info-prose"[^>]*>\s*<p>/);
+  }
+});
+
 const homeCommunityControllerSource = readFileSync(
   new URL("../src/lib/home/community-controller.ts", import.meta.url),
   "utf8",

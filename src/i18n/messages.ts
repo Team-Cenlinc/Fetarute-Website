@@ -283,6 +283,7 @@ export interface SiteMessages {
     home: string;
     features: string;
     community: string;
+    info: string;
   };
   /** 顶栏语言切换链接组的无障碍标签。 */
   languageNavigationLabel: string;
@@ -359,6 +360,7 @@ const messages: Record<Locale, SiteMessages> = {
       home: "首页",
       features: "旅程",
       community: "社区",
+      info: "资讯",
     },
     languageNavigationLabel: "选择语言",
     serviceDeskLabel: "服务台",
@@ -653,6 +655,7 @@ const messages: Record<Locale, SiteMessages> = {
       home: "首頁",
       features: "旅程",
       community: "社區",
+      info: "資訊",
     },
     languageNavigationLabel: "選擇語言",
     serviceDeskLabel: "服務台",
@@ -948,6 +951,7 @@ const messages: Record<Locale, SiteMessages> = {
       home: "Home",
       features: "Journey",
       community: "Community",
+      info: "Info",
     },
     languageNavigationLabel: "Choose language",
     serviceDeskLabel: "Service desk",
