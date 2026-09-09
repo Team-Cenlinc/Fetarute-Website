@@ -145,7 +145,6 @@ export const siteInfo: SiteInfo = {
  */
 export const primaryNavItems: readonly PrimaryNavItem[] = [
   { labelKey: "home", fragment: "home" },
-  { labelKey: "features", fragment: "tri-server-joint" },
   {
     labelKey: "community",
     pagePath: "community/",

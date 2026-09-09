@@ -746,6 +746,8 @@ const mainStoryTitleId = "home-community-main-story-title";
 
   .home-community__main-narrative {
     display: grid;
+    /* 段落列宽受阅读区约束，避免连续玩家署名的最小内容宽度撑破手机舞台。 */
+    grid-template-columns: minmax(0, 1fr);
     max-width: 960px;
     gap: 0.8em;
     margin-top: clamp(42px, 6vh, 72px);
@@ -926,7 +928,12 @@ const mainStoryTitleId = "home-community-main-story-title";
   }
 
   .home-community__inline-player--main {
+    /* 每个署名独立参与换行；极窄屏或放大文字时，长玩家名也能在阅读区内折行。 */
+    display: inline-block;
+    max-width: 100%;
     margin-right: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .home-community__inline-player :global(img) {

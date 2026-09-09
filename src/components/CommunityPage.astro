@@ -23,6 +23,7 @@ import sadTsui from "@/assets/pages/home/community/presence/players/sad-tsui.png
 import scienRyz from "@/assets/pages/home/community/presence/players/scienryz.png";
 import urasaka from "@/assets/pages/community/partners/urasaka.webp";
 import hydcraft from "@/assets/pages/community/partners/hydcraft.webp";
+import chinyuhsing from "@/assets/pages/home/community/presence/players/chinyuhsing.png";
 import nebulaecraft from "@/assets/pages/community/partners/nebulaecraft.webp";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import CommunityMap from "@/components/CommunityMap.astro";
@@ -50,6 +51,7 @@ const { locale } = Astro.props;
 const copy = communityMessages[locale];
 /** 复用已经缓存且公开署名的本地头像，不引入访客侧第三方图片请求。 */
 const avatars: Readonly<Record<string, ImageMetadata>> = {
+  "b6d8a5ceb06b466e855f0f20abfde3fc": chinyuhsing,
   "044741a8b61048f4aed1553b7e2ca8da": acatine,
   "5b8c1dec528a4a6286fc49fdc94a7b23": hot945,
   "6c921ad9ee8e42ddae447558e76239e5": lanyuvu,
