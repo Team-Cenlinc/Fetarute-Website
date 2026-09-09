@@ -579,25 +579,26 @@
   flex: 1;
   min-height: 0;
   position: relative;
-  overflow: hidden;
 }
+/* 渐变越过正文裁切边界 1px，并保留实色收尾，覆盖分数像素处残留的字形。
+   右侧给独立滚动条留空；正文自身负责滚动裁切，外框不再截断渐变。 */
 .community-profile__description-wrap::before,
 .community-profile__description-wrap::after {
   content: "";
   position: absolute;
   z-index: 1;
-  right: 0;
   left: 0;
-  height: 32px;
+  right: 14px;
+  height: 34px;
   pointer-events: none;
 }
 .community-profile__description-wrap[data-scroll-hint~="top"]::before {
-  top: 0;
-  background: linear-gradient(to bottom, var(--community-surface), transparent);
+  top: -1px;
+  background: linear-gradient(to bottom, var(--community-surface) 5px, transparent);
 }
 .community-profile__description-wrap[data-scroll-hint~="bottom"]::after {
-  bottom: 0;
-  background: linear-gradient(to top, var(--community-surface), transparent);
+  bottom: -1px;
+  background: linear-gradient(to top, var(--community-surface) 5px, transparent);
 }
 .community-profile__description {
   height: 100%;
@@ -606,6 +607,41 @@
   font-size: 16px;
   line-height: 1.65;
   overscroll-behavior: contain;
+}
+/* 增强后隐藏原生圆角滑块；无脚本时仍保留原生滚动条作为操作入口。 */
+[data-community-enhanced="true"] .community-profile__description {
+  scrollbar-width: none;
+  padding-right: 14px;
+}
+[data-community-enhanced="true"] .community-profile__description::-webkit-scrollbar {
+  display: none;
+}
+.community-profile__scrollbar {
+  /* 两个运行时变量分别记录可见比例和滚动进度，不随文字渐隐。 */
+  --community-scroll-thumb-height: 20px;
+  --community-scroll-thumb-top: 0px;
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 12px;
+  touch-action: none;
+  cursor: pointer;
+}
+.community-profile__scrollbar::before,
+.community-profile__scrollbar > span {
+  position: absolute;
+  right: 0;
+  width: 3px;
+  border-radius: 0;
+}
+.community-profile__scrollbar::before {
+  content: "";
+  inset-block: 0;
+  background: var(--community-plot);
+}
+.community-profile__scrollbar > span {
+  height: var(--community-scroll-thumb-height);
+  transform: translateY(var(--community-scroll-thumb-top));
+  background: var(--community-muted);
 }
 .community-profile__note {
   font-size: 12px;

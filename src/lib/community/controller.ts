@@ -7,10 +7,12 @@ interface CommunityDisclosure {
   details: HTMLDetailsElement;
   trigger: HTMLElement;
   panel: HTMLElement;
-  /** 承载白色渐变的简介外框，数据属性不会随正文滚动离开可见区域。 */
+  /** 简介外框记录渐隐方向，滚动条独立于文字渐隐以保持清晰。 */
   description?: HTMLElement;
   /** 实际接收滚动的简介正文；与外框分离以保持提示固定在边缘。 */
   descriptionScroller?: HTMLElement;
+  /** 自绘滚动条只提供鼠标拖动与位置反馈，键盘仍操作原生正文滚动区。 */
+  scrollbar?: HTMLElement;
 }
 
 /** 渐进增强原生 details：无脚本仍能读取资料，增强后支持 hover、键盘和触屏固定展开。 */
@@ -53,6 +55,7 @@ export function setupCommunityPage(root: HTMLElement): () => void {
       description: panel.querySelector<HTMLElement>("[data-community-description]") ?? undefined,
       descriptionScroller:
         panel.querySelector<HTMLElement>(".community-profile__description") ?? undefined,
+      scrollbar: panel.querySelector<HTMLElement>("[data-community-scrollbar]") ?? undefined,
     });
     panel.dataset.floating = "true";
     if (supportsPopover) panel.setAttribute("popover", "manual");
@@ -81,6 +84,20 @@ export function setupCommunityPage(root: HTMLElement): () => void {
       .join(" ");
     if (hint) description.dataset.scrollHint = hint;
     else delete description.dataset.scrollHint;
+    const scrollbar = entry.scrollbar;
+    if (scrollbar) {
+      scrollbar.hidden = !overflow;
+      const height = scroller.clientHeight;
+      const thumbHeight = Math.min(height, Math.max(20, (height * height) / scroller.scrollHeight));
+      const progress = overflow
+        ? Math.max(0, Math.min(1, scroller.scrollTop / (scroller.scrollHeight - height)))
+        : 0;
+      scrollbar.style.setProperty("--community-scroll-thumb-height", `${thumbHeight}px`);
+      scrollbar.style.setProperty(
+        "--community-scroll-thumb-top",
+        `${progress * (height - thumbHeight)}px`,
+      );
+    }
   }
 
   /** 关闭后可恢复触发点焦点；同步抑制恢复焦点导致的再次预览。 */
@@ -238,6 +255,53 @@ export function setupCommunityPage(root: HTMLElement): () => void {
       () => updateDescriptionScrollHint(entry),
       { passive: true, signal },
     );
+    const scrollbar = entry.scrollbar;
+    const scroller = entry.descriptionScroller;
+    const thumbElement = scrollbar?.firstElementChild;
+    if (scrollbar && scroller && thumbElement) {
+      let grabOffset = 0;
+      /** 把轨道上的指针位置换算为正文滚动距离；拖动滑块时保留抓取点，避免跳动。 */
+      const dragDescription = (event: PointerEvent) => {
+        const track = scrollbar.getBoundingClientRect();
+        const thumbHeight = thumbElement.getBoundingClientRect().height;
+        const travel = track.height - thumbHeight;
+        const progress = travel > 0 ? (event.clientY - track.top - grabOffset) / travel : 0;
+        scroller.scrollTop =
+          Math.max(0, Math.min(1, progress)) * (scroller.scrollHeight - scroller.clientHeight);
+        updateDescriptionScrollHint(entry);
+      };
+      scrollbar.addEventListener(
+        "pointerdown",
+        (event) => {
+          if (event.button !== 0) return;
+          event.preventDefault();
+          const thumb = thumbElement.getBoundingClientRect();
+          grabOffset =
+            event.clientY >= thumb.top && event.clientY <= thumb.bottom
+              ? event.clientY - thumb.top
+              : thumb.height / 2;
+          scrollbar.setPointerCapture(event.pointerId);
+          scroller.focus({ preventScroll: true });
+          dragDescription(event);
+        },
+        { signal },
+      );
+      scrollbar.addEventListener(
+        "pointermove",
+        (event) => {
+          if (scrollbar.hasPointerCapture(event.pointerId)) dragDescription(event);
+        },
+        { signal },
+      );
+      scrollbar.addEventListener(
+        "pointerup",
+        (event) => {
+          if (scrollbar.hasPointerCapture(event.pointerId))
+            scrollbar.releasePointerCapture(event.pointerId);
+        },
+        { signal },
+      );
+    }
   }
 
   document.addEventListener(

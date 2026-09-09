@@ -31,21 +31,19 @@ const { locale, pagePath = "" } = Astro.props;
 const messages = getMessages(locale);
 
 /** 页面导视在构建期解析固定线路 token；首页继续使用会话信号，缺失线路则阻止输出错误导航。 */
-const headerNavItems = primaryNavItems
-  .filter((item) => item.fragment !== "tri-server-joint")
-  .map((item) => {
-    const line = item.navigationLineKey ? railwayLineByKey.get(item.navigationLineKey) : undefined;
-    if (item.navigationLineKey && !line) {
-      throw new Error(`页面导视引用了未录入的线路：${item.navigationLineKey}。`);
-    }
-    return {
-      ...item,
-      // 固定页面在入口自身覆盖线路色，避免继承根节点的首页随机色。
-      lineStyle: line
-        ? `--home-nav-line-color: var(${getRailwayLineCssVariableName(line)});`
-        : undefined,
-    };
-  });
+const headerNavItems = primaryNavItems.map((item) => {
+  const line = item.navigationLineKey ? railwayLineByKey.get(item.navigationLineKey) : undefined;
+  if (item.navigationLineKey && !line) {
+    throw new Error(`页面导视引用了未录入的线路：${item.navigationLineKey}。`);
+  }
+  return {
+    ...item,
+    // 固定页面在入口自身覆盖线路色，避免继承根节点的首页随机色。
+    lineStyle: line
+      ? `--home-nav-line-color: var(${getRailwayLineCssVariableName(line)});`
+      : undefined,
+  };
+});
 
 /**
  * 供首页装饰信号选择的 CSS 线路 token。

@@ -129,6 +129,7 @@ const pointsAttribute = (points: readonly CommunityMapPoint[]) => points.map((po
               </header>
               <div class="community-profile__description-wrap" data-community-description>
                 <p class="community-profile__description" tabindex="0">{entity.profile?.description ?? (entity.kind === "player" ? copy.playerIntro : copy.partnerIntro)}</p>
+                <span class="community-profile__scrollbar" data-community-scrollbar aria-hidden="true" hidden><span></span></span>
               </div>
               <p class="community-profile__note">{entity.signature ?? entity.profile?.note ?? (entity.kind === "player" ? copy.playerNote : copy.partnerNote)}</p>
               <footer class="community-profile__footer">

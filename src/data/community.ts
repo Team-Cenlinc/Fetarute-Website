@@ -34,6 +34,12 @@ export interface CommunityEntity {
  */
 const confirmedCommunityPlayers: readonly CommunityEntity[] = [
   {
+    id: "player-b6d8a5ceb06b466e855f0f20abfde3fc",
+    kind: "player",
+    name: "Chinyuhsing",
+    playerUuid: "b6d8a5ceb06b466e855f0f20abfde3fc",
+  },
+  {
     id: "player-8502d0b70e0d4433a674d111734efa25",
     kind: "player",
     name: "EricH_SPT",
