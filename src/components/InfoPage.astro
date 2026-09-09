@@ -52,14 +52,20 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
       </nav>
       <div class="info-hero__title">
         <InfoMarker kind="info" />
-        <h1>{copy.title}</h1>
+        <div class="info-sign-title">
+          <h1>{copy.title}</h1>
+          {locale !== "en" && <p class="info-sign-caption" lang="en">{infoMessages.en.title}</p>}
+        </div>
       </div>
     </header>
 
     <section class="info-section" id="status" aria-labelledby="status-title">
       <div class="info-section__heading">
         <InfoMarker kind="status" />
-        <h2 id="status-title">{copy.sections.status}</h2>
+        <div class="info-sign-title">
+          <h2 id="status-title">{copy.sections.status}</h2>
+          {locale !== "en" && <p class="info-sign-caption" lang="en">{infoMessages.en.sections.status}</p>}
+        </div>
         <nav class="info-server-shortcuts" aria-label={copy.serverNavigation}>
           {servers.map((server) => (
             <a href={`#server-${server.id}`} aria-label={server.name} style={getInfoMarkerStyle("status")}>{server.name}</a>
@@ -106,7 +112,10 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
     <section class="info-section" id="news" aria-labelledby="news-title">
       <div class="info-section__heading">
         <InfoMarker kind="news" />
-        <h2 id="news-title">{copy.sections.news}</h2>
+        <div class="info-sign-title">
+          <h2 id="news-title">{copy.sections.news}</h2>
+          {locale !== "en" && <p class="info-sign-caption" lang="en">{infoMessages.en.sections.news}</p>}
+        </div>
       </div>
       <div class="info-section__body">
         <p class="info-section__intro">{copy.newsNote}</p>
@@ -120,7 +129,7 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
                 <time datetime={entry.data.publishedAt.toISOString()}>
                   {dateFormat.format(entry.data.publishedAt)}
                 </time>
-                {entry.data.pinned && <span class="info-news__pin">{copy.pinned}</span>}
+                {entry.data.pinned && <span class="info-news__pin" style={getInfoMarkerStyle("news")}>{copy.pinned}</span>}
               </div>
               <div class="info-news__copy">
                 <h3>{entry.data.title}</h3>
@@ -136,7 +145,10 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
     <section class="info-section" id="game" aria-labelledby="game-title">
       <div class="info-section__heading">
         <InfoMarker kind="game" />
-        <h2 id="game-title">{copy.sections.game}</h2>
+        <div class="info-sign-title">
+          <h2 id="game-title">{copy.sections.game}</h2>
+          {locale !== "en" && <p class="info-sign-caption" lang="en">{infoMessages.en.sections.game}</p>}
+        </div>
       </div>
       <div class="info-section__body info-resources">
         <div class="info-resource-group">
@@ -165,7 +177,10 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
     <section class="info-section info-section--last" id="other" aria-labelledby="other-title">
       <div class="info-section__heading">
         <InfoMarker kind="other" />
-        <h2 id="other-title">{copy.sections.other}</h2>
+        <div class="info-sign-title">
+          <h2 id="other-title">{copy.sections.other}</h2>
+          {locale !== "en" && <p class="info-sign-caption" lang="en">{infoMessages.en.sections.other}</p>}
+        </div>
       </div>
       <div class="info-section__body">
         <p class="info-section__intro">{copy.otherNote}</p>
