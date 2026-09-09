@@ -657,3 +657,55 @@
     font-size: 22px;
   }
 }
+
+/* The entry owns player data; instance rows only show independent health. */
+.info-server-shortcuts a {
+  width: auto;
+  min-width: 64px;
+  min-height: 48px;
+  padding: 10px 12px;
+  aspect-ratio: auto;
+  font-size: clamp(16px, 1.4vw, 24px);
+  white-space: nowrap;
+}
+.info-server-shortcuts {
+  flex-wrap: wrap;
+}
+.info-server-list .info-server {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.info-status-feedback {
+  font-size: 16px;
+  line-height: 1.7;
+  padding-bottom: 24px;
+}
+.info-status-feedback {
+  min-height: 3.4em;
+}
+.info-server__players p {
+  overflow-wrap: anywhere;
+}
+.info-availability::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #767676;
+  flex: 0 0 auto;
+}
+.info-availability[data-state="online"]::before,
+.info-availability[data-state="healthy"]::before {
+  background: #287440;
+}
+.info-availability[data-state="offline"]::before,
+.info-availability[data-state="unhealthy"]::before {
+  background: #b13a2d;
+}
+
+.info-server {
+  scroll-margin-top: 130px;
+}
+.info-directory__link[aria-current="location"] {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}

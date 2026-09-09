@@ -4,7 +4,22 @@ import { isIndexablePublicUrl } from "./src/data/discovery";
 import { siteInfo } from "./src/data/site";
 import { defaultLocale, localeMetadata, locales } from "./src/i18n/config";
 
+// Local-only, fixed-target forwarding lets preview read the production API without
+// expanding the Worker's CORS policy. No request data chooses the upstream URL.
+const minecraftPreviewProxy = {
+  "^/__minecraft-status$": {
+    target: "https://site-api.fetarute.info",
+    changeOrigin: true,
+    rewrite: () => "/v1/minecraft",
+    proxyTimeout: 8000,
+  },
+};
+
 export default defineConfig({
+  vite: {
+    server: { proxy: minecraftPreviewProxy },
+    preview: { proxy: minecraftPreviewProxy },
+  },
   // Fetarute 官网默认按静态站点发布；需要账号、订单或后台能力时再评估 SSR。
   output: "static",
   // 压缩静态 HTML，同时由输出测试守护内联文字、导视代码与 SVG 的空白语义。
