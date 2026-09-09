@@ -51,31 +51,34 @@
   fill: currentColor;
 }
 .info-hero {
+  /* Keep the complete directory readable in the initial viewport, even on short desktop screens. */
   min-height: 100svh;
-  padding-block: clamp(160px, 9.2vw, 177px) clamp(64px, 5vw, 96px);
+  padding-block: min(clamp(112px, 7vw, 144px), 14svh) min(clamp(24px, 2vw, 40px), 4svh);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: clamp(20px, 1.55vw, 30px);
+  gap: min(clamp(16px, 1vw, 20px), 2svh);
 }
 .info-directory {
+  /* Directory type and markers scale to viewport height as well as width. */
+  --info-marker-size: min(clamp(48px, 6.40625vw, 123px), 11svh);
   width: fit-content;
   max-width: 100%;
   display: grid;
-  gap: clamp(14px, 1.41vw, 27px);
+  gap: min(clamp(12px, 0.95vw, 18px), 1.8svh);
 }
 .info-directory__link {
   display: grid;
-  grid-template-columns: var(--info-marker-size) minmax(0, 1fr) 0.65em;
+  grid-template-columns: var(--info-marker-size) minmax(0, 1fr) 0.8em;
   padding-right: 12px;
   gap: clamp(16px, 1.15vw, 22px);
   align-items: center;
   width: 100%;
   max-width: 100%;
   font-weight: 700;
-  font-size: clamp(26px, 5vw, 96px);
+  font-size: min(clamp(26px, 5vw, 96px), 9.2svh);
   letter-spacing: 0;
-  line-height: 1.35;
+  line-height: 1.2;
 }
 /* Reuse the Header exit arrow, with consistent weight and direction variants. */
 .info-arrow {
@@ -103,9 +106,15 @@
   transform: rotate(225deg);
 }
 .info-directory__arrow {
-  width: 0.65em;
-  height: 0.65em;
+  width: 0.8em;
+  height: 0.8em;
   margin-left: auto;
+}
+.info-directory__arrow svg {
+  /* Keep the existing directional silhouette; the same-color outline adds visual weight. */
+  stroke: currentColor;
+  stroke-linejoin: round;
+  stroke-width: 12;
 }
 .info-directory__link > span:nth-child(2) {
   min-width: 0;
@@ -116,12 +125,12 @@
   gap: clamp(20px, 2.0833vw, 40px);
 }
 .info-hero__title .info-marker {
-  --info-marker-size: clamp(72px, 11.0417vw, 212px);
+  --info-marker-size: min(clamp(72px, 11.0417vw, 212px), 19svh);
 }
 .info-hero h1 {
-  font-size: clamp(46px, 10.4167vw, 200px);
+  font-size: min(clamp(46px, 10.4167vw, 200px), 17svh);
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.1;
   letter-spacing: 0;
 }
 .info-page--en .info-hero h1 {
@@ -419,7 +428,7 @@
 }
 @media (max-width: 600px) {
   .info-hero {
-    min-height: 85svh;
+    min-height: 100svh;
     padding-top: 144px;
   }
   .info-directory__link {
@@ -427,8 +436,8 @@
     gap: 16px;
   }
   .info-directory__arrow {
-    width: 24px;
-    height: 24px;
+    width: 30px;
+    height: 30px;
   }
   .info-hero__title {
     align-items: center;
@@ -642,7 +651,7 @@
 
 @media (max-width: 360px) {
   .info-directory__link {
-    grid-template-columns: var(--info-marker-size) minmax(0, 1fr) 24px;
+    grid-template-columns: var(--info-marker-size) minmax(0, 1fr) 28px;
     column-gap: 12px;
     padding-right: 8px;
     font-size: 22px;
