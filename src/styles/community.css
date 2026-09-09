@@ -19,8 +19,8 @@
   --community-interchange-gap: clamp(4px, calc(var(--community-rail-width) * 0.125), 8px);
   --community-copy-x: 16.1979vw;
   --community-right-inset: 8vw;
-  /* 地块大小可以不同，头像与展开面板共用统一尺度，不暗示贡献等级。 */
-  --community-avatar-size: clamp(32px, 3.3333vw, 64px);
+  /* 地块头像随画布继续放大；所有成员共用同一尺度，不以地块面积暗示贡献等级。 */
+  --community-avatar-size: clamp(32px, 3.3333vw, 160px);
   --community-panel-width: 360px;
   --community-panel-height: 320px;
   /* 首屏完整玩家墙的视觉尺度独立于旧的六乘六马赛克，新增成员后仍保持可辨识头像。 */
@@ -70,6 +70,11 @@
 }
 .community-page summary::-webkit-details-marker {
   display: none;
+}
+
+/* 章节仅用于锚点导航和朗读定位，不是控件；移除原生整屏焦点框，链接/列车/地块仍保留可见焦点。 */
+[data-community-stop][tabindex="-1"]:focus {
+  outline: none;
 }
 
 .community-landing {
@@ -142,7 +147,7 @@
   bottom: calc(18.06% + 1.2vw);
 }
 .community-mosaic {
-  /* 八乘八棋盘墙体从右上锚点向左下生长；头像保持马赛克留白，坐标不能随刷新洗牌。 */
+  /* 八乘八棋盘以不规则拼贴向四周铺开；头像保持马赛克留白，槽位不随刷新洗牌。 */
   --community-mosaic-columns: 8;
   --community-mosaic-rows: 8;
   position: absolute;
@@ -387,7 +392,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: clamp(8px, 0.4167vw, 20px);
 }
 .community-plot__portrait {
   display: block;
@@ -421,7 +426,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: clamp(12px, 1vw, 16px);
+  /* 与地图画布同步放大，超宽屏不再停在 16px；窄地块仍保留省略和完整资料入口。 */
+  font-size: clamp(12px, 1.25vw, 60px);
   font-weight: 650;
 }
 .community-profile__description:focus-visible {
@@ -656,6 +662,8 @@
   font-size: 22px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
+  /* WebKit 仍需前缀才能一次选中完整群号，保留复制失败时的手动选择入口。 */
+  -webkit-user-select: all;
   user-select: all;
 }
 .community-contact__copy {

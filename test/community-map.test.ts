@@ -14,52 +14,38 @@ import {
 } from "../src/data/community.ts";
 import { createCommunityLayout, placeCommunityPanel } from "../src/lib/community/layout.ts";
 
-/** 验证头像墙以右上角为锚点沿对角格连续生长，保留棋盘马赛克的留白规则。 */
-function assertUpperRightMosaic(cells: readonly CommunityMosaicCell[]) {
+/** 不规则拼贴仍需保留棋盘留白、唯一槽位和八乘八画布边界。 */
+function assertMosaic(cells: readonly CommunityMosaicCell[]) {
   assert.equal(new Set(cells.map(([column, row]) => `${column},${row}`)).size, cells.length);
-  assert.deepEqual(cells[0], [7, 0], "第一位玩家必须从右上锚点长出");
-  const occupied = new Set<string>();
-  for (const [index, [column, row]] of cells.entries()) {
-    assert.ok(
-      column >= 0 && column < 8 && row >= 0 && row < 8,
-      `头像墙格 ${column},${row} 超出边界`,
-    );
-    assert.equal((column + row) % 2, 1, `头像墙格 ${column},${row} 必须保留棋盘马赛克色序`);
-    if (index > 0)
-      assert.ok(
-        [-1, 1].some((columnStep) =>
-          [-1, 1].some((rowStep) => occupied.has(`${column + columnStep},${row + rowStep}`)),
-        ),
-        `头像墙格 ${column},${row} 必须从已有头像的对角格生长`,
-      );
-    occupied.add(`${column},${row}`);
+  for (const [column, row] of cells) {
+    assert.ok(column >= 0 && column < 8 && row >= 0 && row < 8);
+    assert.equal((column + row) % 2, 1, "头像与邀请格之间保留棋盘留白");
   }
 }
 
-test("头像墙从右上锚点向左下长成棋盘马赛克", () => {
-  assert.ok(
-    communityPlayerMapEntityLimit < communityDesktopMap.lots.length,
-    "玩家地图必须为公共设施保留地块",
-  );
-  assertUpperRightMosaic(communityMosaicCells);
+test("头像墙从中部向四周铺开，不再从角落形成三角轮廓", () => {
+  assert.ok(communityPlayerMapEntityLimit < communityDesktopMap.lots.length);
+  assertMosaic(communityMosaicCells);
+  const [column, row] = communityMosaicCells[0];
+  assert.ok(column >= 2 && column <= 5 && row >= 2 && row <= 5, "拼贴核心应位于画布中部");
+  for (const left of [true, false]) {
+    for (const top of [true, false]) {
+      assert.ok(createCommunityMosaicLayout(17).some(([x, y]) => x < 4 === left && y < 4 === top));
+    }
+  }
 });
 
-test("头像墙不因访问种子换位，扩容时仍延续右上棋盘生长方向", () => {
+test("头像墙构图稳定，新增成员延续拼贴槽位且不重复", () => {
   const first = createCommunityMosaicLayout(17);
   assert.deepEqual(first, createCommunityMosaicLayout(17));
-  assertUpperRightMosaic(first);
-  assertUpperRightMosaic(createCommunityMosaicLayout(25));
-  assertUpperRightMosaic(createCommunityMosaicLayout(32));
+  assert.deepEqual(createCommunityMosaicLayout(23).slice(0, 17), first);
+  for (const count of [1, 17, 23, 25, 32]) {
+    const cells = createCommunityMosaicLayout(count);
+    assert.equal(cells.length, count);
+    assertMosaic(cells);
+  }
   assert.throws(() => createCommunityMosaicLayout(0), /1 到 32/);
   assert.throws(() => createCommunityMosaicLayout(33), /1 到 32/);
-  assert.throws(
-    () =>
-      assertUpperRightMosaic([
-        [7, 0],
-        [5, 0],
-      ]),
-    /对角格/,
-  );
 });
 
 test("街区布局覆盖每个成员，固定种子稳定且不会修改输入", () => {

@@ -19,6 +19,8 @@ export interface CommunityMessages {
   goToSection: string;
   connectionsTitle: string;
   mapLabel: string;
+  /** 灰色空格作为邀请而非加载状态，通过墙体链接向辅助技术说明含义。 */
+  mosaicInvitation: string;
   mapHint: string;
   player: string;
   /** 玩家职务由资料数据提供键，显示文案在此按页面语言统一维护。 */
@@ -57,6 +59,7 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
     goToSection: "前往",
     connectionsTitle: "世界与社群",
     mapLabel: "社区街区地图",
+    mosaicInvitation: "灰色空格，为未来的你留一个位置。",
     mapHint: "每一格，都是一个可以认识的邻居。悬停、聚焦或点按，看看这里的人与社群。",
     player: "玩家",
     playerRoles: {
@@ -77,14 +80,14 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
     partnerProfiles: {
       urasaka: {
         description:
-          "浦坂（Urasaka）是 Fetarute 在 2025 年结识的同行。它以精细的 TrainCarts 追加技术，让列车与城市的运转多出一层耐人寻味的秩序。",
+          "浦坂（Urasaka）是 Fetarute 在 2025 年结识的同行。他们以精细的 TrainCarts 追加技术，让列车与城市的运转多出一层耐人寻味的秩序。",
         note: "TrainCarts 追加技术",
         status: "2025 年结成友好服务器",
         imageAlt: "浦坂的城市建筑场景",
       },
       hydcraft: {
         description:
-          "从修楼、铺轨到造城，HydCraft 把铁路、街区与玩家的日常编进同一张地图。在创造与模组交织的世界里，它为共同建设留出辽阔的空间；Fetarute 自 2018 年起与它并肩。",
+          "从修楼、铺轨到造城，HydCraft 把铁路、街区与玩家的日常编进同一张地图。在创造与模组交织的世界里，他们为共同建设留出辽阔的空间；Fetarute 自 2018 年起与他们并肩。",
         note: "2018 年结成友好服务器",
         imageAlt: "HydCraft 标志",
       },
@@ -115,6 +118,7 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
     goToSection: "前往",
     connectionsTitle: "世界與社群",
     mapLabel: "社區街區地圖",
+    mosaicInvitation: "灰色空格，為未來的你留一個位置。",
     mapHint: "每一格，都是一個可以認識的鄰居。懸停、聚焦或點按，看看這裡的人與社群。",
     player: "玩家",
     playerRoles: {
@@ -135,14 +139,14 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
     partnerProfiles: {
       urasaka: {
         description:
-          "浦坂（Urasaka）是 Fetarute 在 2025 年結識的同行。它以細緻的 TrainCarts 追加技術，讓列車與城市的運轉多出一層耐人尋味的秩序。",
+          "浦坂（Urasaka）是 Fetarute 在 2025 年結識的同行。他們以細緻的 TrainCarts 追加技術，讓列車與城市的運轉多出一層耐人尋味的秩序。",
         note: "TrainCarts 追加技術",
         status: "2025 年結成友好伺服器",
         imageAlt: "浦坂的城市建築場景",
       },
       hydcraft: {
         description:
-          "從修樓、鋪軌到造城，HydCraft 把鐵路、街區與玩家的日常編進同一張地圖。在創造與模組交織的世界裡，它為共同建設留出遼闊的空間；Fetarute 自 2018 年起與它並肩。",
+          "從修樓、鋪軌到造城，HydCraft 把鐵路、街區與玩家的日常編進同一張地圖。在創造與模組交織的世界裡，他們為共同建設留出遼闊的空間；Fetarute 自 2018 年起與他們並肩。",
         note: "2018 年結成友好伺服器",
         imageAlt: "HydCraft 標誌",
       },
@@ -173,52 +177,53 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
     goToSection: "Go to",
     connectionsTitle: "Worlds & communities",
     mapLabel: "Community neighborhood map",
+    mosaicInvitation: "The gray squares leave room for you to join us.",
     mapHint:
-      "A neighbor in every plot. Hover, focus or tap to meet the people and communities here.",
+      "Every plot is a neighbor to get to know. Hover over a plot, focus it with your keyboard, or tap to meet the people and communities here.",
     player: "Player",
     playerRoles: {
-      owner: "Owner",
+      owner: "Server owner",
       administrator: "Administrator",
       mayor: "Mayor",
     },
     server: "Server / Community",
     group: "External group",
-    serverPlaceholder: "A world yet to meet",
-    communityPlaceholder: "A community yet to meet",
-    groupPlaceholder: "People yet to meet",
-    playerIntro: "This player's story is still on its way.",
-    partnerIntro: "A story of meeting another world is still on its way.",
-    playerNote: "Awaiting a player contribution",
-    partnerNote: "Awaiting a meeting · Not a confirmed partnership",
-    pending: "Community record to come",
+    serverPlaceholder: "A world we've yet to meet",
+    communityPlaceholder: "A community we've yet to meet",
+    groupPlaceholder: "Fellow travelers we've yet to meet",
+    playerIntro: "This player's story is still to come.",
+    partnerIntro: "Our story of meeting another world is still to come.",
+    playerNote: "Awaiting a submission from the player",
+    partnerNote: "Yet to meet · No partnership implied",
+    pending: "Community profile yet to be added",
     partnerProfiles: {
       urasaka: {
         description:
-          "Urasaka became Fetarute's friendly server in 2025. Its thoughtful TrainCarts add-on work gives the movement of trains and cities another layer of quiet order.",
-        note: "TrainCarts add-on work",
-        status: "Friendly server since 2025",
-        imageAlt: "An urban build from Urasaka",
+          "Urasaka is a fellow community we got to know in 2025. Through their finely crafted TrainCarts extensions, they bring an intriguing sense of order to the way trains and cities run.",
+        note: "TrainCarts extensions",
+        status: "Friends since 2025",
+        imageAlt: "A city scene from Urasaka",
       },
       hydcraft: {
         description:
-          "From raising buildings and laying track to shaping cities, HydCraft puts railways, neighborhoods and everyday player life on the same map. Its creative and modded world leaves room for communities to keep building together; Fetarute has stood alongside it since 2018.",
-        note: "Friendly server since 2018",
+          "From putting up buildings and laying track to creating entire cities, the people of HydCraft weave railways, neighborhoods and everyday player life into a shared map. In a world where creative building meets modded play, they make plenty of room to build together. Fetarute has stood alongside them since 2018.",
+        note: "Friends since 2018",
         imageAlt: "HydCraft logo",
       },
       nebulaecraft: {
         description:
-          "NebulaeCraft gives its world a backbone of cities and rail transit: lines cross neighborhoods, stations link the city, and the map holds memories from season after season.",
+          "At NebulaeCraft, cities and rail transit form the backbone of the world. Lines run through neighborhoods, stations tie the city together, and the map preserves memories of journeys across successive worlds.",
         note: "City building & rail transit · Historical Wiki",
         imageAlt: "NebulaeCraft logo",
       },
     },
     close: "Close introduction",
-    visit: "Visit",
+    visit: "Learn more",
     guide: "Train guide: choose a section",
     current: "This stop",
-    chapters: "Section route",
-    home: "Back to home",
-    contact: "Say hello to the neighborhood",
+    chapters: "Section map",
+    home: "Back to homepage",
+    contact: "Come say hello in the neighborhood",
     copy: "Copy QQ group number",
     copied: "Group number copied",
     copyFailed: "Copy failed. Please select the group number manually.",

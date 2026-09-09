@@ -138,7 +138,8 @@ html[data-launching] .site-header {
   );
   -webkit-background-clip: text;
   background-clip: text;
-  -webkit-text-fill-color: transparent;
+  /* 默认 color 仍透明以显示渐变；选区改写 color 时，WebKit 也能重新填充可读文字。 */
+  -webkit-text-fill-color: currentColor;
   -webkit-text-stroke: 0.7px color-mix(in srgb, var(--color-on-hero) 97%, transparent);
   paint-order: stroke fill;
 }
@@ -221,7 +222,8 @@ h3 {
   font-weight: 580;
   letter-spacing: -0.015em;
   line-height: 1.4;
-  -webkit-text-fill-color: transparent;
+  /* 默认 color 仍透明以显示渐变；选区改写 color 时，WebKit 也能重新填充可读文字。 */
+  -webkit-text-fill-color: currentColor;
   -webkit-text-stroke: 0.35px color-mix(in srgb, var(--color-on-hero) 94%, transparent);
   paint-order: stroke fill;
 }

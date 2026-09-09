@@ -499,13 +499,16 @@ test(`${engine}: 随机异形地块完整容纳头像和姓名，不只容纳中
       [4, 320, 568],
       [4, 390, 844],
       [15, 1440, 900],
+      [15, 2560, 1440],
+      [15, 3840, 2160],
+      [15, 5120, 2880],
     ]) {
       await page.setViewportSize({ width, height });
       await page.goto(`${baseUrl}/zh-Hans/community/?mapSeed=${seed}`, {
         waitUntil: "networkidle",
       });
       const clipped = await page
-        .locator("[data-community-entity] > summary")
+        .locator("[data-community-entity]:not([hidden]) > summary")
         .evaluateAll((summaries) => {
           /** 浏览器实际裁切轮廓是可见边界；用完整内容盒检查，不依赖生成器内部标注算法。 */
           function inside(x, y, points) {
@@ -560,7 +563,7 @@ test(`${engine}: 1920×1080 原画板比例下保留线路和头像，展开仍�
       await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
       true,
     );
-    assert.equal(await page.locator(".community-mosaic > span").count(), 17);
+    assert.equal(await page.locator("[data-community-mosaic-player]").count(), 17);
     assert.equal(
       await page.locator('[data-community-zone="players"] [data-community-map-block]').count(),
       1,
@@ -657,7 +660,8 @@ for (const scenario of [
         await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
         true,
       );
-      const plots = page.locator("[data-community-entity]");
+      /* 单街区只抽取四位玩家；隐藏的候选资料不参与可见几何或触屏交互断言。 */
+      const plots = page.locator("[data-community-entity]:not([hidden])");
       let size;
       for (let index = 0; index < (await plots.count()); index++) {
         const plot = plots.nth(index);
@@ -746,7 +750,7 @@ test(`${engine}: L 形空缺不是点击热区，Header 注册社区且导览抵
       assert.equal(hit, null, "L 形地块空缺中的公园不可触发玩家介绍");
       assert.match(
         await page
-          .locator("[data-community-entity] > summary")
+          .locator("[data-community-entity]:not([hidden]) > summary")
           .first()
           .evaluate((element) => getComputedStyle(element).clipPath),
         /^polygon\(/,
@@ -796,11 +800,18 @@ test(`${engine}: 整图按种子生成、两区不混排、缩放保持本次地
     );
     assert.equal(
       await page.locator('[data-community-zone="players"] [data-community-entity]').count(),
-      5,
+      17,
     );
     assert.equal(
       await page.locator('[data-community-zone="connections"] [data-community-entity]').count(),
-      3,
+      4,
+    );
+    assert.equal(
+      await page
+        .locator('[data-community-zone="players"] [data-community-entity]:not([hidden])')
+        .count(),
+      4,
+      "完整资料保留在 DOM，玩家街区只显示四位并为空间设施留地",
     );
     await page.setViewportSize({ width: 390, height: 844 });
     assert.deepEqual(await geometry(), first);
@@ -950,9 +961,10 @@ test(`${engine}: 窄屏英文 Footer 保留复制结果与手动选择群号的�
     assert.ok(message.y + message.height <= signature.y, "两行失败提示不能盖住品牌签名");
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     assert.equal(
-      await page
-        .locator(".community-contact__number span")
-        .evaluate((element) => getComputedStyle(element).userSelect),
+      await page.locator(".community-contact__number span").evaluate((element) => {
+        const style = getComputedStyle(element);
+        return style.userSelect ?? style.webkitUserSelect;
+      }),
       "all",
     );
     assert.deepEqual(errors, []);
@@ -1444,6 +1456,175 @@ test(`${engine}: 社区列车滚动帧只在统一读取后写入状态`, async 
     assert.deepEqual(errors, []);
     assert.ok(probe.reads > 0 && probe.writes > 0, `列车帧必须实际读写: ${JSON.stringify(probe)}`);
     assert.deepEqual(probe.readsAfterWrite, {}, JSON.stringify(probe));
+  } finally {
+    await page.close();
+  }
+});
+
+test(`${engine}: 首屏头像每次加载洗牌，灰色邀请格保留在棋盘边缘`, async () => {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  try {
+    const orders = [];
+    await page.addInitScript(() => {
+      const value = Number(new URL(location.href).searchParams.get("mosaicTestRandom"));
+      Math.random = () => value;
+    });
+    for (const random of [0.1, 0.8]) {
+      await page.goto(`${baseUrl}/zh-Hans/community/?mosaicTestRandom=${random}`, {
+        waitUntil: "networkidle",
+      });
+      const wall = page.locator(".community-mosaic");
+      const order = await wall
+        .locator("[data-community-mosaic-cell] img")
+        .evaluateAll((images) => images.map((image) => image.getAttribute("src")));
+      assert.equal(order.length, 17);
+      assert.equal(new Set(order).size, 17);
+      orders.push(order);
+      assert.equal(await wall.locator("[data-community-mosaic-invitation]").count(), 6);
+      const cells = await wall
+        .locator("[data-community-mosaic-cell]")
+        .evaluateAll((elements) =>
+          elements.map((element) => [element.style.gridColumn, element.style.gridRow]),
+        );
+      assert.equal(new Set(cells.map((cell) => cell.join(","))).size, 23);
+      await page.setViewportSize({ width: 390, height: 844 });
+      assert.deepEqual(
+        await wall
+          .locator("[data-community-mosaic-cell] img")
+          .evaluateAll((images) => images.map((image) => image.getAttribute("src"))),
+        order,
+        "调整窗口不能重新排列头像",
+      );
+    }
+    assert.notDeepEqual(orders[0], orders[1], "新的页面访问必须消费随机源重新排列头像");
+    assert.deepEqual([...orders[0]].sort(), [...orders[1]].sort());
+  } finally {
+    await page.close();
+  }
+});
+
+test(`${engine}: 章节焦点不框住整屏，键盘仍能辨认玩家墙链接`, async () => {
+  const { page, errors } = await openPage();
+  try {
+    const landing = page.locator("#community-center");
+    await landing.focus();
+    assert.equal(
+      await landing.evaluate((element) => getComputedStyle(element).outlineStyle),
+      "none",
+    );
+    await page.keyboard.press("Tab");
+    const wall = page.locator(".community-mosaic");
+    await wall.focus();
+    assert.notEqual(
+      await wall.evaluate((element) => getComputedStyle(element).outlineStyle),
+      "none",
+    );
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => location.hash === "#community-district");
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test(`${engine}: 社区玩家与服务器标注随大屏继续放大`, async () => {
+  const { page, errors } = await openPage({ reducedMotion: "reduce" }, "zh-Hans", 15);
+  try {
+    const sizes = [];
+    for (const width of [1440, 2560, 3840]) {
+      await page.setViewportSize({ width, height: Math.round((width * 9) / 16) });
+      sizes.push(
+        await page
+          .locator(".community-plot__name")
+          .first()
+          .evaluate((element) => ({
+            font: parseFloat(getComputedStyle(element).fontSize),
+            portrait: element.parentElement
+              .querySelector(".community-plot__portrait")
+              .getBoundingClientRect().width,
+          })),
+      );
+    }
+    assert.ok(sizes[1].font >= 24 && sizes[2].font > sizes[1].font, JSON.stringify(sizes));
+    assert.ok(
+      sizes[1].portrait > sizes[0].portrait && sizes[2].portrait > sizes[1].portrait,
+      JSON.stringify(sizes),
+    );
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test(`${engine}: SVG 地标选中文字使用选区前景，深浅线路背景都可读`, async () => {
+  const { page, errors } = await openPage({ reducedMotion: "reduce" }, "zh-Hans", 15);
+  try {
+    const text = page
+      .locator(".community-map-base--desktop [data-community-landmark] text")
+      .filter({ hasText: "公园" })
+      .first();
+    await text.scrollIntoViewIfNeeded();
+    await text.evaluate((element) => {
+      const selection = getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+    await page.waitForTimeout(50);
+    for (const [background, foreground] of [
+      ["#160f91", "#ffffff"],
+      ["#ffe033", "#202626"],
+    ]) {
+      const styles = await text.evaluate(
+        (element, { background, foreground }) => {
+          document.documentElement.style.setProperty("--color-selection", background);
+          document.documentElement.style.setProperty("--color-selection-text", foreground);
+          const selected = getComputedStyle(element, "::selection");
+          return { fill: selected.fill, color: selected.color, text: getSelection().toString() };
+        },
+        { background, foreground },
+      );
+      assert.ok(styles.text.length > 0);
+      assert.equal(styles.fill, styles.color, JSON.stringify(styles));
+    }
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test(`${engine}: 首页渐变文字在选区内重新填充前景色`, async () => {
+  const page = await browser.newPage({
+    viewport: { width: 1440, height: 900 },
+    reducedMotion: "reduce",
+  });
+  try {
+    await page.goto(`${baseUrl}/zh-Hans/#beginning-bay`, { waitUntil: "networkidle" });
+    for (const selector of [".hero-title__base", ".hero-description"]) {
+      const text = page.locator(selector);
+      await text.evaluate((element) => {
+        const selection = getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      });
+      await page.waitForTimeout(50);
+      for (const foreground of ["#ffffff", "#202626"]) {
+        const selected = await text.evaluate((element, color) => {
+          document.documentElement.style.setProperty("--color-selection-text", color);
+          const style = getComputedStyle(element, "::selection");
+          return {
+            color: style.color,
+            fill: style.webkitTextFillColor,
+            text: getSelection().toString(),
+          };
+        }, foreground);
+        assert.ok(selected.text.length > 0);
+        assert.equal(selected.fill, selected.color, JSON.stringify(selected));
+      }
+    }
   } finally {
     await page.close();
   }

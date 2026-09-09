@@ -116,6 +116,9 @@
 /* 每次新文字选择都读取 Layout 写入的线路色与配套前景；同一次拖选不会在途中闪换颜色。 */
 ::selection {
   color: var(--color-selection-text);
+  /* SVG 地标使用 fill，渐变标题使用 text-fill；两者必须与普通文字共用选区前景。 */
+  fill: var(--color-selection-text);
+  -webkit-text-fill-color: var(--color-selection-text);
   background-color: var(--color-selection);
 }
 

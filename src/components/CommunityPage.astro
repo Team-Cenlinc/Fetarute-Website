@@ -30,6 +30,7 @@ import TrainJourneyTooltip from "@/components/TrainJourneyTooltip.astro";
 import {
   communityEntities,
   createCommunityMosaicLayout,
+  communityMosaicInvitationCount,
   type CommunityPartnerId,
 } from "@/data/community";
 import { communityMapPalette } from "@/data/palette";
@@ -83,8 +84,8 @@ const entities = communityEntities.map((entity) => ({
   image: entity.partnerId ? partnerImages[entity.partnerId] : undefined,
 }));
 const members = entities.filter((entity) => entity.kind === "player");
-/** 头像墙始终从右上角按成员顺序扩展，刷新和脚本增强都不改变构图。 */
-const mosaicCells = createCommunityMosaicLayout(members.length);
+/** 棋盘构图固定；末端灰格为未来玩家留位，真实头像在浏览器首帧前重新排列。 */
+const mosaicCells = createCommunityMosaicLayout(Math.min(32, members.length + communityMosaicInvitationCount));
 const trainColor = shiftRailwayLineColor(createHexColor(communityMapPalette.route), wayfindingPrototype.homeTrainColorShift);
 const arrivalTrainColor = shiftRailwayLineColor(
   createHexColor(communityMapPalette.arrival),
@@ -137,13 +138,32 @@ const chapters = getCommunityJourneyStops(locale);
       </div>
       <span class="community-landing__arrival-end" aria-hidden="true"></span>
       <span class="community-station community-landing__station" aria-hidden="true"></span>
-      <a class="community-mosaic" href="#community-district" aria-label={copy.mapLabel}>
+      <a class="community-mosaic" href="#community-district" aria-label={copy.mapLabel + " · " + copy.mosaicInvitation}>
         {members.map((member, index) => (
-          <span data-community-mosaic-cell style={"grid-column: " + (mosaicCells[index][0] + 1) + "; grid-row: " + (mosaicCells[index][1] + 1) + ";"}>
+          <span data-community-mosaic-cell data-community-mosaic-player style={"grid-column: " + (mosaicCells[index][0] + 1) + "; grid-row: " + (mosaicCells[index][1] + 1) + ";"}>
             {member.avatar ? <img src={member.avatar.src} width="77" height="77" alt="" decoding="async" /> : <span class="community-mosaic__placeholder" set:html={playerIcon} aria-hidden="true" />}
           </span>
         ))}
+        {mosaicCells.slice(members.length).map(([column, row]) => (
+          <span data-community-mosaic-cell data-community-mosaic-invitation aria-hidden="true" style={"grid-column: " + (column + 1) + "; grid-row: " + (row + 1) + ";"} />
+        ))}
       </a>
+      <script is:inline>
+        // 在墙体解析后立即洗牌真实头像，避免等待地图模块下载后才发生可见换位；灰色邀请格保留在生长边缘。
+        (() => {
+          const wall = document.querySelector(".community-mosaic");
+          if (!wall || wall.dataset.mosaicReady) return;
+          const players = [...wall.querySelectorAll("[data-community-mosaic-player]")];
+          const positions = players.map((player) => player.getAttribute("style"));
+          for (let index = players.length - 1; index > 0; index--) {
+            const other = Math.floor(Math.random() * (index + 1));
+            [players[index], players[other]] = [players[other], players[index]];
+          }
+          players.forEach((player, index) => player.setAttribute("style", positions[index]));
+          wall.prepend(...players);
+          wall.dataset.mosaicReady = "true";
+        })();
+      </script>
       <h1 id="community-title">
         <span>{copy.title}</span>
         {locale !== "en" && <span class="community-landing__english" lang="en">Community Center</span>}
