@@ -21,6 +21,52 @@ test("Info and Markdown announcements preserve localized navigation in the stati
     );
     assert.equal([...info.matchAll(/<h1\b/g)].length, 1);
     assert.equal([...article.matchAll(/<h1\b/g)].length, 1);
+    const primaryInfoLinks = [
+      ...info.matchAll(
+        new RegExp(
+          `<a\\b(?=[^>]*class="[^"]*\\bhome-nav\\b[^"]*")(?=[^>]*href="/${locale}/info/")[^>]*>`,
+          "g",
+        ),
+      ),
+    ].map((match) => match[0]);
+    const menuInfoLinks = [
+      ...info.matchAll(
+        new RegExp(
+          `<a\\b(?=[^>]*data-header-menu-link)(?=[^>]*href="/${locale}/info/")[^>]*>`,
+          "g",
+        ),
+      ),
+    ].map((match) => match[0]);
+    assert.equal(primaryInfoLinks.length, 1, `${locale} Info 页应有桌面主导航入口`);
+    assert.equal(menuInfoLinks.length, 1, `${locale} Info 页应保留一个菜单入口`);
+    assert.ok(
+      primaryInfoLinks[0].includes('aria-current="page"'),
+      `${locale} Info 页的 Header 链接应标记当前页面`,
+    );
+    for (const [labelKey, direction] of Object.entries({
+      home: "up",
+      community: "up-right",
+      info: "right",
+    })) {
+      const directionLinks = [
+        ...info.matchAll(
+          new RegExp(
+            `<a\\b(?=[^>]*data-header-nav="${labelKey}")(?=[^>]*data-header-nav-direction="${direction}")[^>]*>`,
+            "g",
+          ),
+        ),
+      ];
+      assert.equal(
+        directionLinks.length,
+        2,
+        `${locale} Header 的 ${labelKey} 入口应在主导航和菜单中使用 ${direction} 箭头`,
+      );
+      assert.equal(
+        directionLinks.filter((match) => match[0].includes("data-header-menu-link")).length,
+        1,
+        `${locale} Header 的 ${labelKey} 菜单入口应使用 ${direction} 箭头`,
+      );
+    }
     assert.ok(info.includes(`href="/${locale}/news/site-foundation/"`));
     assert.ok(article.includes(`href="/${locale}/info/#news"`));
     for (const alternate of publicHomeLocales) {

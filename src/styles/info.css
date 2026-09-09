@@ -5,7 +5,7 @@
   --info-muted: var(--color-muted);
   --info-rule: var(--color-border);
   --info-gutter: clamp(24px, 7.5vw, 144px);
-  --info-marker-size: clamp(48px, 6.40625vw, 123px);
+  --info-marker-size: clamp(48px, 5vw, 80px);
   --info-heading-gap: clamp(16px, 2.03vw, 39px);
   color: var(--info-ink);
   background: var(--info-canvas);
@@ -51,31 +51,34 @@
   fill: currentColor;
 }
 .info-hero {
+  /* Keep the complete directory readable in the initial viewport, even on short desktop screens. */
   min-height: 100svh;
-  padding-block: clamp(160px, 9.2vw, 177px) clamp(64px, 5vw, 96px);
+  padding-block: min(clamp(112px, 7vw, 144px), 14svh) min(clamp(24px, 2vw, 40px), 4svh);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: clamp(20px, 1.55vw, 30px);
+  gap: min(clamp(24px, 2.5vw, 48px), 4svh);
 }
 .info-directory {
+  /* Directory type and markers scale to viewport height as well as width. */
+  --info-marker-size: min(clamp(48px, 6.40625vw, 123px), 11svh);
   width: fit-content;
   max-width: 100%;
   display: grid;
-  gap: clamp(14px, 1.41vw, 27px);
+  gap: min(clamp(12px, 0.95vw, 18px), 1.8svh);
 }
 .info-directory__link {
   display: grid;
-  grid-template-columns: var(--info-marker-size) minmax(0, 1fr) 0.65em;
+  grid-template-columns: var(--info-marker-size) minmax(0, 1fr) 0.8em;
   padding-right: 12px;
   gap: clamp(16px, 1.15vw, 22px);
   align-items: center;
   width: 100%;
   max-width: 100%;
   font-weight: 700;
-  font-size: clamp(26px, 5vw, 96px);
+  font-size: min(clamp(26px, 4.6vw, 80px), 8.4svh);
   letter-spacing: 0;
-  line-height: 1.35;
+  line-height: 1.2;
 }
 /* Reuse the Header exit arrow, with consistent weight and direction variants. */
 .info-arrow {
@@ -103,9 +106,15 @@
   transform: rotate(225deg);
 }
 .info-directory__arrow {
-  width: 0.65em;
-  height: 0.65em;
+  width: 0.8em;
+  height: 0.8em;
   margin-left: auto;
+}
+.info-directory__arrow svg {
+  /* Keep the existing directional silhouette; the same-color outline adds visual weight. */
+  stroke: currentColor;
+  stroke-linejoin: round;
+  stroke-width: 12;
 }
 .info-directory__link > span:nth-child(2) {
   min-width: 0;
@@ -116,12 +125,12 @@
   gap: clamp(20px, 2.0833vw, 40px);
 }
 .info-hero__title .info-marker {
-  --info-marker-size: clamp(72px, 11.0417vw, 212px);
+  --info-marker-size: min(clamp(72px, 11.0417vw, 212px), 19svh);
 }
 .info-hero h1 {
-  font-size: clamp(46px, 10.4167vw, 200px);
+  font-size: min(clamp(46px, 10.4167vw, 200px), 17svh);
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.1;
   letter-spacing: 0;
 }
 .info-page--en .info-hero h1 {
@@ -130,12 +139,12 @@
   max-width: 12ch;
 }
 .info-page--en .info-directory__link {
-  font-size: clamp(25px, 4.3vw, 82px);
+  font-size: min(clamp(25px, 4.3vw, 72px), 8.4svh);
 }
 
 .info-section {
-  padding-block: clamp(64px, 4.17vw, 80px) clamp(96px, 10vw, 192px);
-  min-height: 75svh;
+  padding-block: clamp(56px, 5vw, 88px) clamp(72px, 7vw, 120px);
+  border-top: 1px solid var(--info-rule);
 }
 .info-section__heading {
   display: flex;
@@ -144,24 +153,24 @@
   flex-wrap: wrap;
 }
 .info-section__heading h2 {
-  font-size: clamp(32px, 6.6667vw, 128px);
-  line-height: 1.3;
+  font-size: clamp(32px, 4.6vw, 80px);
+  line-height: 1.2;
   font-weight: 700;
   letter-spacing: 0;
 }
 .info-page--en .info-section__heading h2 {
-  font-size: clamp(32px, 5.3vw, 102px);
+  font-size: clamp(32px, 4.4vw, 76px);
 }
 .info-section__body {
-  margin-top: clamp(40px, 4.2vw, 80px);
+  margin-top: clamp(32px, 3vw, 48px);
   margin-left: calc(var(--info-marker-size) + var(--info-heading-gap));
 }
 .info-section__intro {
   color: var(--info-muted);
-  font-size: clamp(16px, 1.25vw, 24px);
-  max-width: 52em;
-  line-height: 1.8;
-  padding-bottom: 36px;
+  font-size: clamp(16px, 1.25vw, 20px);
+  max-width: 34em;
+  line-height: 1.75;
+  padding-bottom: 28px;
 }
 .info-server-shortcuts {
   display: flex;
@@ -197,8 +206,8 @@
   align-items: baseline;
 }
 .info-server h3 {
-  font-size: clamp(24px, 2.1vw, 40px);
-  font-weight: 720;
+  font-size: clamp(22px, 1.9vw, 32px);
+  font-weight: 650;
 }
 .info-availability {
   display: flex;
@@ -256,12 +265,13 @@
 }
 .info-news__pin {
   padding: 4px 10px;
-  border: 1px solid var(--info-rule);
+  border: 0;
   font-size: 14px;
+  font-weight: 650;
 }
 .info-news h3,
 .info-other-link h3 {
-  font-size: clamp(24px, 2.1vw, 40px);
+  font-size: clamp(22px, 1.9vw, 32px);
   line-height: 1.4;
   font-weight: 700;
 }
@@ -290,8 +300,8 @@
   gap: clamp(40px, 6vw, 116px);
 }
 .info-resource-group > h3 {
-  font-size: clamp(28px, 2.5vw, 48px);
-  font-weight: 730;
+  font-size: clamp(26px, 2.1vw, 36px);
+  font-weight: 700;
 }
 .info-resource-links,
 .info-resource-group > .info-resource-link {
@@ -419,16 +429,16 @@
 }
 @media (max-width: 600px) {
   .info-hero {
-    min-height: 85svh;
-    padding-top: 144px;
+    min-height: min(100svh, 720px);
+    padding-block: 112px 56px;
   }
   .info-directory__link {
     font-size: clamp(24px, 5.7vw, 34px);
     gap: 16px;
   }
   .info-directory__arrow {
-    width: 24px;
-    height: 24px;
+    width: 30px;
+    height: 30px;
   }
   .info-hero__title {
     align-items: center;
@@ -439,13 +449,10 @@
   .info-hero__title .info-marker {
     --info-marker-size: 64px;
   }
-  .info-page--en .info-hero__title {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+
   .info-page--en .info-hero h1 {
     max-width: 100%;
-    font-size: clamp(32px, 9vw, 48px);
+    font-size: clamp(32px, 8vw, 48px);
     line-height: 1.15;
     overflow-wrap: normal;
   }
@@ -457,14 +464,18 @@
     gap: 14px;
     align-items: flex-start;
   }
-  .info-section__heading h2 {
+  .info-section__heading .info-sign-title {
     flex: 1;
     min-width: 0;
+  }
+  .info-section__heading h2 {
     font-size: clamp(28px, 7vw, 40px);
     line-height: 1.35;
   }
   .info-page--en .info-section__heading h2 {
-    font-size: 32px;
+    font-size: clamp(26px, 6.5vw, 32px);
+    font-stretch: 85%;
+    overflow-wrap: normal;
   }
   .info-server-shortcuts {
     margin-left: 62px;
@@ -642,9 +653,147 @@
 
 @media (max-width: 360px) {
   .info-directory__link {
-    grid-template-columns: var(--info-marker-size) minmax(0, 1fr) 24px;
+    grid-template-columns: var(--info-marker-size) minmax(0, 1fr) 28px;
     column-gap: 12px;
     padding-right: 8px;
     font-size: 22px;
+  }
+}
+
+/* The entry owns player data; instance rows only show independent health. */
+.info-server-shortcuts a {
+  width: auto;
+  min-width: 64px;
+  min-height: 48px;
+  padding: 10px 12px;
+  aspect-ratio: auto;
+  font-size: clamp(16px, 1.4vw, 24px);
+  white-space: nowrap;
+}
+.info-server-shortcuts {
+  flex-wrap: wrap;
+}
+.info-server-list .info-server {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.info-status-feedback {
+  font-size: 16px;
+  line-height: 1.7;
+  padding-bottom: 24px;
+}
+.info-status-feedback {
+  min-height: 3.4em;
+}
+.info-server__players p {
+  overflow-wrap: anywhere;
+}
+.info-availability::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #767676;
+  flex: 0 0 auto;
+}
+.info-availability[data-state="online"]::before,
+.info-availability[data-state="healthy"]::before {
+  background: #287440;
+}
+.info-availability[data-state="offline"]::before,
+.info-availability[data-state="unhealthy"]::before {
+  background: #b13a2d;
+}
+
+.info-server {
+  scroll-margin-top: 130px;
+}
+.info-directory__link[aria-current="location"] {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* Upright destination names carry navigation; true Latin italic is a secondary voice. */
+.info-sign-title {
+  min-width: 0;
+}
+.info-sign-caption {
+  margin-top: 8px !important;
+  font-family: var(--font-fetarute-italic);
+  font-style: italic;
+  font-synthesis: none;
+  font-weight: 650;
+  font-size: clamp(16px, 1.5vw, 24px);
+  line-height: 1.25;
+}
+.info-hero .info-sign-caption {
+  font-size: clamp(18px, 2vw, 32px);
+}
+.info-page--en .info-hero h1 {
+  font-family: var(--font-fetarute-italic);
+  font-style: italic;
+  font-synthesis: none;
+  padding-right: 0.12em;
+}
+.info-page--en .info-section__intro {
+  max-width: 62ch;
+}
+.info-section__heading > .info-sign-title {
+  flex: 1;
+}
+.info-server__count strong {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+.info-entry {
+  border-top: 3px solid var(--info-ink);
+  padding-inline: clamp(12px, 1.25vw, 24px);
+}
+.info-server-list .info-server {
+  padding: 24px clamp(12px, 1.25vw, 24px);
+}
+.info-server-list .info-server h3 {
+  font-size: clamp(20px, 1.5vw, 26px);
+  font-weight: 600;
+}
+.info-status-feedback {
+  max-width: 62ch;
+  font-variant-numeric: tabular-nums;
+  color: var(--info-muted);
+}
+.info-news p,
+.info-other-link p,
+.info-resource-group > p {
+  max-width: 42em;
+}
+.info-status-link {
+  margin-top: 24px;
+  margin-bottom: 0;
+}
+@media (max-width: 600px) {
+  .info-sign-caption {
+    margin-top: 6px !important;
+    font-size: 15px;
+  }
+  .info-server-shortcuts {
+    margin-top: 8px;
+  }
+  .info-server__count {
+    flex-direction: row;
+  }
+  .info-entry .info-availability {
+    justify-self: start;
+  }
+  .info-entry .info-server__identity {
+    grid-column: 1 / -1;
+  }
+  .info-entry .info-server__count {
+    grid-column: auto;
+    justify-self: end;
+    gap: 8px;
+  }
+  .info-page--en .info-directory__link {
+    font-size: clamp(20px, 5.2vw, 28px);
+    font-stretch: 75%;
+    overflow-wrap: normal;
   }
 }

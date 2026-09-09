@@ -116,6 +116,9 @@
 /* 每次新文字选择都读取 Layout 写入的线路色与配套前景；同一次拖选不会在途中闪换颜色。 */
 ::selection {
   color: var(--color-selection-text);
+  /* SVG 地标使用 fill，渐变标题使用 text-fill；两者必须与普通文字共用选区前景。 */
+  fill: var(--color-selection-text);
+  -webkit-text-fill-color: var(--color-selection-text);
   background-color: var(--color-selection);
 }
 
@@ -207,6 +210,8 @@ main.main--full-bleed {
     minmax(48px, 1.6fr)
     max-content
     max-content
+    max-content
+    max-content
     max-content;
   align-items: stretch;
   overflow: visible;
@@ -289,6 +294,7 @@ html[data-header-layout-initializing] .site-header {
 }
 
 .home-nav__primary {
+  white-space: nowrap;
   display: flex;
   align-items: flex-start;
   gap: clamp(3px, 0.4vw, 6px);
@@ -364,11 +370,15 @@ html[data-header-layout-initializing] .site-header {
 }
 
 /* 双线向原站点圆并列追加同尺寸的第二色圆点；右侧圆的右缘与“首页”文字右缘对齐。 */
-html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-dot {
+html[data-home-nav-indicator-pattern="double"]
+  .home-nav[data-home-nav-signal="session"]
+  .home-nav__indicator-dot {
   right: calc(var(--home-nav-indicator-dot-diameter) + var(--home-nav-indicator-dot-gap));
 }
 
-html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-dot::after {
+html[data-home-nav-indicator-pattern="double"]
+  .home-nav[data-home-nav-signal="session"]
+  .home-nav__indicator-dot::after {
   position: absolute;
   top: 0;
   left: calc(100% + var(--home-nav-indicator-dot-gap));
@@ -379,7 +389,9 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-dot::after {
   content: "";
 }
 
-html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
+html[data-home-nav-indicator-pattern="double"]
+  .home-nav[data-home-nav-signal="session"]
+  .home-nav__indicator-band {
   background: linear-gradient(
     to right,
     var(--home-nav-line-color) 0 50%,
@@ -1158,6 +1170,8 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
       minmax(152px, 1fr)
       max-content
       max-content
+      max-content
+      max-content
       max-content;
   }
 
@@ -1176,7 +1190,7 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   .home-nav,
   .service-desk__summary,
   .exit-menu__summary {
-    padding-inline: 16px;
+    padding-inline: 10px;
   }
 
   .service-desk__summary,
@@ -1206,7 +1220,9 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   html[data-header-compact]:not([data-header-hover-expanded]) .site-header {
     width: min(520px, calc(100% - 40px));
     min-height: 56px;
-    grid-template-columns: minmax(148px, 1fr) 56px 56px 56px;
+    /* 线路点保持为一个连续 cluster，同时保留原实现与服务台之间的右侧留白。 */
+    --home-nav-compact-cluster-offset: 26px;
+    grid-template-columns: minmax(148px, 1fr) 44px 44px 44px 56px 56px;
     /* 收束只改变 live DOM 的尺寸；展开回到基础规则的 240ms，避免整块导视牌被快照缩放。 */
     transition:
       opacity 440ms var(--motion-header-standard-spatial),
@@ -1229,19 +1245,21 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   }
 
   html[data-header-compact]:not([data-header-hover-expanded]) .home-nav {
-    width: 56px;
-    min-width: 56px;
+    /* 相邻页面保留独立的 44px 点击宽度，圆点向共同边界靠拢形成连续线路组。 */
+    width: 44px;
+    min-width: 44px;
     min-height: 56px;
     padding: 0;
     place-items: center;
   }
 
   html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__primary {
+    width: 100%;
     align-items: center;
   }
 
   html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__text-stack {
-    width: 36px;
+    width: 100%;
     gap: 0;
   }
 
@@ -1252,23 +1270,40 @@ html[data-home-nav-indicator-pattern="double"] .home-nav__indicator-band {
   }
 
   html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__indicator {
-    width: 36px;
+    width: 100%;
     height: 16px;
-    /* 紧凑态使用固定圆点尺寸，双线仍能在 56px 的导视格内保持可辨识的轨道间隙。 */
+    /* 紧凑态使用固定圆点尺寸，双线仍能在 44px 的导视格内保持可辨识的轨道间隙。 */
     --home-nav-indicator-dot-diameter: 16px;
     --home-nav-indicator-dot-gap: 2px;
   }
 
   html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__indicator-dot {
     top: 0;
-    right: calc((100% - var(--home-nav-indicator-dot-diameter)) / 2);
+    right: calc(
+      var(--home-nav-indicator-dot-gap) / 2 - var(--home-nav-compact-cluster-offset, 0px)
+    );
   }
 
   html[data-header-compact]:not(
       [data-header-hover-expanded]
     )[data-home-nav-indicator-pattern="double"]
+    .home-nav[data-home-nav-signal="session"]
     .home-nav__indicator-dot {
-    right: calc((100% + var(--home-nav-indicator-dot-gap)) / 2);
+    right: calc(
+      var(--home-nav-indicator-dot-gap) / 2 + var(--home-nav-indicator-dot-diameter) +
+        var(--home-nav-indicator-dot-gap) - var(--home-nav-compact-cluster-offset, 0px)
+    );
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded])
+    .home-nav[data-home-nav-signal="fixed"]
+    .home-nav__indicator-dot {
+    /* 所有固定线路点使用同一顺序偏移，回收各自点击格里的空白后首尾相接。 */
+    right: auto;
+    left: calc(
+      var(--home-nav-indicator-dot-gap) / 2 - var(--home-nav-compact-dot-shift, 0px) +
+        var(--home-nav-compact-cluster-offset, 0px)
+    );
   }
 
   html[data-header-compact]:not([data-header-hover-expanded])

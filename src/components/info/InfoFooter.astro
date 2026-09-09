@@ -1,6 +1,5 @@
 ---
-import InfoArrow from "./InfoArrow.astro";
-import logo from "@/assets/fetarute-branding/fetarute-logo.svg?raw";
+import JourneyFooter from "@/components/JourneyFooter.astro";
 import { getLocalizedRelativeUrl } from "@/i18n/links";
 import { infoMessages } from "@/i18n/info";
 import type { Locale } from "@/i18n/config";
@@ -10,103 +9,23 @@ const { locale } = Astro.props;
 const copy = infoMessages[locale];
 ---
 
-<footer class="info-footer" id="footer">
-  <div class="info-footer__content">
-    <div class="info-footer__introduction">
-      <div class="info-footer__closing-copy">
-        <h2>{copy.footerTitle}</h2>
-        <p class="info-footer__description">{copy.footerDescription}</p>
-      </div>
-      <a class="info-footer__restart" href="#top">
-        <span>{copy.top}</span>
-        <span class="info-footer__direction"><InfoArrow direction="up" /></span>
-      </a>
-    </div>
-    <div class="info-footer__signature">
-      <a class="info-footer__wordmark" href={getLocalizedRelativeUrl(locale)} aria-label={`Fetarute · ${copy.backHome}`}>
-        <span aria-hidden="true" set:html={logo}></span>
-      </a>
-      <p class="info-footer__legal">© {new Date().getFullYear()} Fetarute</p>
-    </div>
-  </div>
-</footer>
+<JourneyFooter
+  id="footer"
+  className="info-footer"
+  title={copy.footerTitle}
+  description={copy.footerDescription}
+  lineColor="var(--line-surn-frn)"
+  returnHref={getLocalizedRelativeUrl(locale)}
+  returnLabel={copy.backHome}
+  returnDirection="left"
+/>
 
 <style>
-  .info-footer {
-    min-width: 0;
-    min-height: 300px;
-    background: var(--palette-text);
-    color: var(--palette-surface);
+  /* Use the shared footer typography and return link, aligned to Info's content. */
+  :global(.info-footer) {
+    --journey-footer-copy-x: clamp(24px, 7.5vw, 144px);
+    --journey-footer-right-inset: clamp(24px, 7.5vw, 144px);
+    --journey-footer-margin-right: 0px;
   }
-  .info-footer__content {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    width: min(calc(100% - 2 * clamp(24px, 7.5vw, 144px)), 1632px);
-    min-height: inherit;
-    margin-inline: auto;
-    padding-block: 40px 24px;
-  }
-  .info-footer__introduction {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: start;
-    gap: 24px clamp(32px, 4vw, 72px);
-  }
-  .info-footer__closing-copy { display: grid; gap: 12px; }
-  .info-footer h2, .info-footer p { margin: 0; }
-  .info-footer h2 { font-size: clamp(28px, 2.6vw, 42px); font-weight: 700; line-height: 1.18; text-wrap: balance; }
-  .info-footer__description { max-width: 48ch; font-size: clamp(14px, .94vw, 17px); line-height: 1.65; opacity: .76; }
-  .info-footer__restart {
-    position: relative;
-    isolation: isolate;
-    display: inline-flex;
-    align-items: center;
-    justify-self: end;
-    border: 2px solid var(--palette-surface);
-    background: var(--palette-surface);
-    color: var(--palette-text);
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 1.3;
-    text-decoration: none;
-  }
-  .info-footer__restart > span:first-child { padding-inline: 20px; }
-  .info-footer__direction {
-    display: grid;
-    place-items: center;
-    width: 56px;
-    height: 56px;
-    flex: 0 0 56px;
-    background: var(--line-surn-frn);
-    color: var(--color-scene-fallback);
-  }
-  .info-footer__direction :global(.info-arrow) { width: 28px; height: 28px; }
-  .info-footer__restart::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: color-mix(in srgb, var(--line-surn-frn) 24%, transparent);
-    clip-path: inset(0 100% 0 0);
-    transition: clip-path 240ms var(--motion-header-standard-spatial);
-  }
-  .info-footer__restart:is(:hover, :focus-visible)::before { clip-path: inset(0); }
-  .info-footer a:focus-visible { outline: 2px solid currentColor; outline-offset: 6px; }
-  .info-footer__signature { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; margin-top: 40px; padding-top: 24px; border-top: 2px solid color-mix(in srgb, currentColor 24%, transparent); }
-  .info-footer__wordmark { display: block; width: clamp(144px, 12.22vw, 176px); max-width: 100%; color: inherit; line-height: 0; }
-  .info-footer__wordmark :global(svg) { width: 100%; height: auto; }
-  .info-footer__legal { font-size: 12px; font-weight: 700; letter-spacing: .08em; opacity: .72; }
-  @media (max-width: 1023px) {
-    .info-footer { min-height: 320px; }
-    .info-footer__content { padding-block: 34px 24px; }
-    .info-footer__introduction { grid-template-columns: minmax(0, 1fr); gap: 20px; }
-    .info-footer h2 { font-size: clamp(28px, 8vw, 38px); }
-    .info-footer__description { max-width: 32ch; font-size: clamp(14px, 3.8vw, 17px); }
-    .info-footer__restart { justify-self: start; font-size: 16px; max-width: 100%; }
-    .info-footer__restart > span:first-child { padding-inline: 16px; }
-    .info-footer__direction { width: 48px; height: 48px; flex-basis: 48px; }
-    .info-footer__signature { gap: 12px 16px; margin-top: 28px; padding-top: 20px; }
-  }
-  @media (prefers-reduced-motion: reduce) { .info-footer__restart::before { transition: none; } }
+  :global(.info-footer .home-footer__track) { display: none; }
 </style>

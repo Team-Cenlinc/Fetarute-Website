@@ -18,14 +18,28 @@ const homeJourneyQuickPickSource = readFileSync(
   "utf8",
 );
 const homeFooterSource = readFileSync(
-  new URL("../src/components/HomeFooter.astro", import.meta.url),
+  new URL("../src/components/JourneyFooter.astro", import.meta.url),
   "utf8",
 );
 const homePageSource = readFileSync(
   new URL("../src/components/HomePage.astro", import.meta.url),
   "utf8",
 );
-const homeStylesSource = readFileSync(new URL("../src/styles/home.css", import.meta.url), "utf8");
+const trainTooltipViewSource = readFileSync(
+  new URL("../src/components/TrainJourneyTooltip.astro", import.meta.url),
+  "utf8",
+);
+const trainTooltipLayoutSource = readFileSync(
+  new URL("../src/lib/train-tooltip-layout.ts", import.meta.url),
+  "utf8",
+);
+const trainTooltipInteractionSource = readFileSync(
+  new URL("../src/lib/train-tooltip-interactions.ts", import.meta.url),
+  "utf8",
+);
+const homeStylesSource =
+  readFileSync(new URL("../src/styles/home.css", import.meta.url), "utf8") +
+  readFileSync(new URL("../src/styles/journey-tooltip.css", import.meta.url), "utf8");
 
 test("同岸站本身把服联快线 SL07 明确换乘到湾岸支线 BS05", () => {
   const triServerJoint = homeJourneySections.find((section) => section.id === "tri-server-joint");
@@ -329,9 +343,9 @@ test("续行小屏列车与 Tooltip 都使用线路中心和完整车身长度",
   );
 });
 
-test("列车快选让四个章节一次完整显示，不再嵌套滚动或伪造终点", () => {
+test("列车快选保留完整章节与原生溢出退路，不拦截滚轮或伪造终点", () => {
   assert.doesNotMatch(homeJourneyQuickPickSource, /home-journey-quick-pick__terminus/);
-  assert.doesNotMatch(homeJourneyQuickPickSource, /overflow-y:\s*auto/);
+  assert.match(homeJourneyQuickPickSource, /\.home-journey-quick-pick \{[\s\S]*?overflow:\s*auto/);
   assert.doesNotMatch(homePageSource, /containTrainTooltipWheel/);
   assert.match(homeJourneyQuickPickSource, /--home-journey-stop-gap:\s*10px/);
   assert.match(
@@ -345,14 +359,14 @@ test("列车快选让四个章节一次完整显示，不再嵌套滚动或伪�
 });
 
 test("列车快选按语言与视口收紧面板宽度和列车间距", () => {
-  assert.match(homePageSource, /data-home-arrival-tooltip-locale=\{locale\}/);
+  assert.match(trainTooltipViewSource, /data-home-arrival-tooltip-locale=\{quickPick.locale\}/);
   assert.match(homeJourneyQuickPickSource, /data-home-journey-locale=\{locale\}/);
-  assert.match(homePageSource, /--home-arrival-tooltip-preferred-inline-size/);
+  assert.match(trainTooltipLayoutSource, /--home-arrival-tooltip-preferred-inline-size/);
   assert.match(
-    homePageSource,
-    /Number\.parseFloat\([\s\S]*?tooltipStyle\.getPropertyValue\("--home-arrival-tooltip-preferred-inline-size"\)[\s\S]*?\)/,
+    trainTooltipLayoutSource,
+    /number\(style\.getPropertyValue\("--home-arrival-tooltip-preferred-inline-size"\)\)/,
   );
-  assert.match(homePageSource, /--home-arrival-tooltip-anchor-gap/);
+  assert.match(trainTooltipLayoutSource, /--home-arrival-tooltip-anchor-gap/);
   assert.match(homeStylesSource, /--home-arrival-tooltip-preferred-inline-size:\s*232px/);
   assert.match(
     homeStylesSource,
@@ -378,13 +392,10 @@ test("列车焦点恢复不保存抑制状态，首次键盘 focus 始终可以�
     homePageSource,
     /const setTrainTooltipOpen = \(isOpen: boolean, allowDuringNavigation = false\)/,
   );
+  assert.match(trainTooltipInteractionSource, /"focus",[\s\S]*?options\.setOpen\(true, true\);/);
   assert.match(
-    homePageSource,
-    /trigger\.addEventListener\("focus", \(\) => \{[\s\S]*?setTrainTooltipOpen\(true, true\);[\s\S]*?\}\);/,
-  );
-  assert.match(
-    homePageSource,
-    /const closeTrainTooltipAndRestoreFocus = \(\) => \{[\s\S]*?activeTrainTooltipTrigger\.focus\(\{ preventScroll: true \}\);\s*setTrainTooltipOpen\(false\);/,
+    trainTooltipInteractionSource,
+    /function closeAndRestoreFocus\(\) \{[\s\S]*?options\.getActiveTrigger\(\)\.focus\(\{ preventScroll: true \}\);\s*options\.setOpen\(false\);/,
   );
 });
 

@@ -8,7 +8,6 @@ import { externalDestinations, statusDashboardUrl } from "@/data/site";
 import type { Locale } from "@/i18n/config";
 import { getLocalizedNews } from "@/i18n/content";
 import { infoMessages } from "@/i18n/info";
-import { getMessages } from "@/i18n/messages";
 import { getLocalizedRelativeUrl } from "@/i18n/links";
 import "@/styles/info.css";
 
@@ -17,13 +16,12 @@ interface Props {
 }
 const { locale } = Astro.props;
 const copy = infoMessages[locale];
-const messages = getMessages(locale);
 const news = await getLocalizedNews(locale);
-const sectionOrder = ["other", "game", "news", "status"] as const;
+const sectionOrder = ["status", "news", "game", "other"] as const;
 const servers = (["creative", "lobby", "survival"] as const).map((id) => ({
   id,
-  letter: id.slice(0, 1).toUpperCase(),
-  name: messages.home.triServer.serverById[id].name,
+  name: copy.statusCopy.serverNames[id],
+  mapHref: externalDestinations.maps.find((map) => map.key === `${id}Map`)!.href,
 }));
 const dateFormat = new Intl.DateTimeFormat(locale, {
   year: "numeric",
@@ -37,7 +35,7 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
   locale={locale}
   title={copy.title}
   description={copy.description}
-  pagePath="info"
+  pagePath="info/"
   fullBleedMain
   indexable={false}
 >
@@ -54,29 +52,39 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
       </nav>
       <div class="info-hero__title">
         <InfoMarker kind="info" />
-        <h1>{copy.title}</h1>
+        <div class="info-sign-title">
+          <h1>{copy.title}</h1>
+          {locale !== "en" && <p class="info-sign-caption" lang="en">{infoMessages.en.title}</p>}
+        </div>
       </div>
     </header>
 
     <section class="info-section" id="status" aria-labelledby="status-title">
       <div class="info-section__heading">
         <InfoMarker kind="status" />
-        <h2 id="status-title">{copy.sections.status}</h2>
+        <div class="info-sign-title">
+          <h2 id="status-title">{copy.sections.status}</h2>
+          {locale !== "en" && <p class="info-sign-caption" lang="en">{infoMessages.en.sections.status}</p>}
+        </div>
         <nav class="info-server-shortcuts" aria-label={copy.serverNavigation}>
           {servers.map((server) => (
-            <a href={`#server-${server.id}`} aria-label={server.name} style={getInfoMarkerStyle("status")}>{server.letter}</a>
+            <a href={`#server-${server.id}`} aria-label={server.name} style={getInfoMarkerStyle("status")}>{server.name}</a>
           ))}
         </nav>
       </div>
-      <div class="info-section__body">
+      <div class="info-section__body" data-minecraft-status data-locale={locale} data-copy={JSON.stringify({ ...copy.statusCopy, unavailable: copy.unavailable, playersUnavailable: copy.playersUnavailable })}>
         <p class="info-section__intro">{copy.statusNote}</p>
-        <a class="info-resource-link info-status-link" href={statusDashboardUrl}>
-          <span class="info-status-link__copy">
-            <strong>{copy.statusDashboard}</strong>
-            <span>status.fetarute.info</span>
-          </span>
-          <InfoArrow class="info-link-arrow" direction="up-right" />
-        </a>
+        <p class="info-status-feedback" data-status-feedback role="status">{copy.unavailable}</p>
+        <article class="info-server info-entry">
+          <div class="info-server__identity"><h3>{copy.statusCopy.entry}</h3></div>
+          <span class="info-availability" data-entry-state>{copy.unavailable}</span>
+          <div class="info-server__count"><strong data-player-count>—</strong><span>{copy.online}</span></div>
+          <details class="info-server__players">
+            <summary>{copy.players}</summary>
+            <p>{copy.statusCopy.sampleNote}</p>
+            <p data-player-names>{copy.playersUnavailable}</p>
+          </details>
+        </article>
         <div class="info-server-list">
           {servers.map((server) => (
             <article
@@ -87,27 +95,27 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
               <div class="info-server__identity">
                 <h3 id={`server-${server.id}-title`}>{server.name}</h3>
               </div>
-              <span class="info-availability">
-                <span aria-hidden="true">—</span>{copy.unavailable}
-              </span>
-              <div class="info-server__count">
-                <strong aria-hidden="true">—</strong>
-                <span>{copy.online}<span class="sr-only">: {copy.unavailable}</span></span>
-              </div>
-              <details class="info-server__players">
-                <summary>{copy.players}</summary>
-                <p>{copy.playersUnavailable}</p>
-              </details>
+              <span class="info-availability" data-instance-state={server.id}>{copy.unavailable}</span>
             </article>
           ))}
         </div>
+        <a class="info-resource-link info-status-link" href={statusDashboardUrl}>
+          <span class="info-status-link__copy">
+            <strong>{copy.statusDashboard}</strong>
+            <span>status.fetarute.info</span>
+          </span>
+          <InfoArrow class="info-link-arrow" direction="up-right" />
+        </a>
       </div>
     </section>
 
     <section class="info-section" id="news" aria-labelledby="news-title">
       <div class="info-section__heading">
         <InfoMarker kind="news" />
-        <h2 id="news-title">{copy.sections.news}</h2>
+        <div class="info-sign-title">
+          <h2 id="news-title">{copy.sections.news}</h2>
+          {locale !== "en" && <p class="info-sign-caption" lang="en">{infoMessages.en.sections.news}</p>}
+        </div>
       </div>
       <div class="info-section__body">
         <p class="info-section__intro">{copy.newsNote}</p>
@@ -121,7 +129,7 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
                 <time datetime={entry.data.publishedAt.toISOString()}>
                   {dateFormat.format(entry.data.publishedAt)}
                 </time>
-                {entry.data.pinned && <span class="info-news__pin">{copy.pinned}</span>}
+                {entry.data.pinned && <span class="info-news__pin" style={getInfoMarkerStyle("news")}>{copy.pinned}</span>}
               </div>
               <div class="info-news__copy">
                 <h3>{entry.data.title}</h3>
@@ -137,16 +145,19 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
     <section class="info-section" id="game" aria-labelledby="game-title">
       <div class="info-section__heading">
         <InfoMarker kind="game" />
-        <h2 id="game-title">{copy.sections.game}</h2>
+        <div class="info-sign-title">
+          <h2 id="game-title">{copy.sections.game}</h2>
+          {locale !== "en" && <p class="info-sign-caption" lang="en">{infoMessages.en.sections.game}</p>}
+        </div>
       </div>
       <div class="info-section__body info-resources">
         <div class="info-resource-group">
           <h3>{copy.maps}</h3>
           <p>{copy.mapNote}</p>
           <div class="info-resource-links">
-            {externalDestinations.maps.map((map) => (
-              <a class="info-resource-link" href={map.href}>
-                <span>{messages.externalDestinationLabels[map.key]}</span>
+            {servers.map((server) => (
+              <a class="info-resource-link" href={server.mapHref}>
+                <span>{server.name}</span>
                 <InfoArrow class="info-link-arrow" direction="up-right" />
               </a>
             ))}
@@ -166,7 +177,10 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
     <section class="info-section info-section--last" id="other" aria-labelledby="other-title">
       <div class="info-section__heading">
         <InfoMarker kind="other" />
-        <h2 id="other-title">{copy.sections.other}</h2>
+        <div class="info-sign-title">
+          <h2 id="other-title">{copy.sections.other}</h2>
+          {locale !== "en" && <p class="info-sign-caption" lang="en">{infoMessages.en.sections.other}</p>}
+        </div>
       </div>
       <div class="info-section__body">
         <p class="info-section__intro">{copy.otherNote}</p>
@@ -189,3 +203,11 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
   </div>
   <InfoFooter locale={locale} />
 </BaseLayout>
+
+<script>
+  import { initInfoNavigation } from "@/lib/info-navigation";
+  const infoRoot = document.querySelector<HTMLElement>(".info-page");
+  if (infoRoot) initInfoNavigation(infoRoot);
+  import { initMinecraftStatus } from "@/lib/minecraft-status-client";
+  document.querySelectorAll<HTMLElement>("[data-minecraft-status]").forEach(initMinecraftStatus);
+</script>

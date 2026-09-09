@@ -37,7 +37,9 @@ export interface Props {
   pagePath?: string;
   /** 已发布当前逻辑页面的语言，用于精确生成 hreflang 而不声明尚未翻译的页面。 */
   availableLocales?: readonly Locale[];
-  /** Keep unfinished structural previews out of search results. */
+  /** 未完成资料核实的原型可直接访问，但不应进入公开搜索索引。 */
+  noindex?: boolean;
+  /** 兼容内容页对可索引性的显式控制；关闭时同样输出 noindex。 */
   indexable?: boolean;
 }
 
@@ -50,11 +52,13 @@ const {
   fullBleedMain = false,
   pagePath = "",
   availableLocales = locales,
+  noindex = false,
   indexable = true,
 } = Astro.props;
 const messages = getMessages(locale);
 const pageDescription = description ?? messages.description;
 const pageTitle = title === siteInfo.name ? title : `${title} | ${siteInfo.name}`;
+const shouldIndex = indexable && !noindex;
 const canonicalUrl = getLocalizedAbsoluteUrl(locale, pagePath);
 const socialImageUrl = new URL(image, siteInfo.url);
 const brandImageUrl = new URL(siteInfo.brandImage, siteInfo.url);
@@ -98,7 +102,7 @@ const wayfindingLineCssVariable = getRailwayLineCssVariableName(wayfindingLine);
 
 /**
  * 在静态 HTML 的根节点写入界面中性色、线路色与当前首页线路语义别名。
- * 浅深色媒体条件只替换无彩基础材料，线路 token 始终来自铁路领域模型以保证导视色跨主题一致。
+ * 浅深色媒体条件替换界面材料，线路 token 始终来自铁路领域模型以保证导视色跨主题一致。
  */
 const paletteCss = `
 :root {
@@ -184,7 +188,7 @@ const pageStructuredData = {
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="generator" content={Astro.generator} />
     <meta name="application-name" content={siteInfo.name} />
-    <meta name="robots" content={indexable ? "index, follow, max-image-preview:large" : "noindex, follow"} />
+    <meta name="robots" content={shouldIndex ? "index, follow, max-image-preview:large" : "noindex, follow"} />
     <meta name="theme-color" content={interfacePalette.light.canvas} media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content={interfacePalette.dark.canvas} media="(prefers-color-scheme: dark)" />
 
