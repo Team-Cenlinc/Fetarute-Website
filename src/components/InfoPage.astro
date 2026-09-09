@@ -68,7 +68,12 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
         </div>
         <nav class="info-server-shortcuts" aria-label={copy.serverNavigation}>
           {servers.map((server) => (
-            <a href={`#server-${server.id}`} aria-label={server.name} style={getInfoMarkerStyle("status")}>{server.name}</a>
+            <a
+              href={`#server-${server.id}`}
+              aria-label={server.name}
+              data-instance-shortcut={server.id}
+              data-instance-shortcut-name={server.name}
+            >{server.name}</a>
           ))}
         </nav>
       </div>
@@ -119,26 +124,52 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
       </div>
       <div class="info-section__body">
         <p class="info-section__intro">{copy.newsNote}</p>
-        <div class="info-news-list">
-          {news.length === 0 ? <p>{copy.noNews}</p> : news.map((entry) => (
-            <a
-              class="info-news"
-              href={getLocalizedRelativeUrl(locale, `news/${entry.data.translationKey}`)}
+        {news.length === 0 ? <p>{copy.noNews}</p> : (
+          <div class="info-news-slider" data-news-slider data-news-count={news.length}>
+            <div
+              class="info-news-slider__viewport"
+              data-news-slider-viewport
+              tabindex="0"
+              role="region"
+              aria-roledescription="carousel"
+              aria-label={copy.newsSlider}
             >
-              <div class="info-news__meta">
-                <time datetime={entry.data.publishedAt.toISOString()}>
-                  {dateFormat.format(entry.data.publishedAt)}
-                </time>
-                {entry.data.pinned && <span class="info-news__pin" style={getInfoMarkerStyle("news")}>{copy.pinned}</span>}
+              <ol class="info-news-slider__track">
+                {news.map((entry) => (
+                  <li class="info-news-slider__item">
+                    <a
+                      class="info-news"
+                      href={getLocalizedRelativeUrl(locale, `news/${entry.data.translationKey}`)}
+                    >
+                      <div class="info-news__meta">
+                        <time datetime={entry.data.publishedAt.toISOString()}>
+                          {dateFormat.format(entry.data.publishedAt)}
+                        </time>
+                        {entry.data.pinned && <span class="info-news__pin" style={getInfoMarkerStyle("news")}>{copy.pinned}</span>}
+                      </div>
+                      <div class="info-news__copy">
+                        <h3>{entry.data.title}</h3>
+                        <p>{entry.data.description}</p>
+                      </div>
+                      <InfoArrow class="info-link-arrow" />
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <div class="info-news-slider__controls" data-news-slider-controls>
+              <button type="button" data-news-slider-previous aria-label={copy.previousNews}>
+                <InfoArrow direction="left" />
+              </button>
+              <div class="info-news-slider__scrollbar" data-news-slider-scrollbar aria-hidden="true" hidden>
+                <span></span>
               </div>
-              <div class="info-news__copy">
-                <h3>{entry.data.title}</h3>
-                <p>{entry.data.description}</p>
-              </div>
-              <InfoArrow class="info-link-arrow" />
-            </a>
-          ))}
-        </div>
+              <button type="button" data-news-slider-next aria-label={copy.nextNews}>
+                <InfoArrow />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </section>
 
@@ -186,10 +217,10 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
         <p class="info-section__intro">{copy.otherNote}</p>
         <div class="info-other-links">
           {[
-            { title: copy.join, description: copy.joinNote, fragment: "onward" },
+            { title: copy.join, description: copy.joinNote, path: "guides/join" },
             { title: copy.community, description: copy.communityNote, fragment: "tri-server-joint" },
           ].map((item) => (
-            <a class="info-other-link" href={getLocalizedRelativeUrl(locale, "", item.fragment)}>
+            <a class="info-other-link" href={getLocalizedRelativeUrl(locale, item.path ?? "", item.fragment)}>
               <div>
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
@@ -206,8 +237,10 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
 
 <script>
   import { initInfoNavigation } from "@/lib/info-navigation";
+  import { initInfoNewsSlider } from "@/lib/info-news-slider";
   const infoRoot = document.querySelector<HTMLElement>(".info-page");
   if (infoRoot) initInfoNavigation(infoRoot);
+  document.querySelectorAll<HTMLElement>("[data-news-slider]").forEach(initInfoNewsSlider);
   import { initMinecraftStatus } from "@/lib/minecraft-status-client";
   document.querySelectorAll<HTMLElement>("[data-minecraft-status]").forEach(initMinecraftStatus);
 </script>

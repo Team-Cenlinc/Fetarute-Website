@@ -209,11 +209,14 @@ test/                   Node 原生测试与独立浏览器回归，覆盖静态
 
 ## 内容维护
 
-- 公告：`src/content/news/`
-- 指南：`src/content/guides/`
+- 公告：`src/content/news/<year>/<YYYY-MM-DD-translationKey>/<locale>.md`；同目录的 `assets/`
+  存放该公告图片。
+- 指南：`src/content/guides/<task>/<locale>.md`；同目录的 `assets/` 存放该指南图片。
 - 站点名称、服务器地址、品牌图片与语言无关的主导航结构：`src/data/site.ts`
 - 公开语言、普通界面文案、各语言 SEO 描述与本地化链接：`src/i18n/`
-- 公告和指南需在 frontmatter 标明 `locale` 与 `translationKey`，同一内容的翻译共用关联键。
+- 公告和指南需在 frontmatter 标明 `locale`、`translationKey` 与至少一位
+  `authors`；同一内容的翻译共用关联键。
+- 新建或更新公告、加入和探索等文章前，复制并遵守[内容文章模板](content-article-template.md)；它定义了 frontmatter、正文层级与发布前检查。
 
 当前三语首页已实现启动导视、出发验票、随机实景 Arrival、服连快线章节、响应式铁路图片 Gallery、同岸社群故事与续行出发厅。Gallery 在桌面将纵向阅读进度映射为横向浏览，在小屏改为带当前焦点变化的原生纵向图片列；续行只公开已确认的 QQ 门户群加入入口。公告与指南内容仍保留在 Content
 Collections 中，但首页暂不展示公告列表。

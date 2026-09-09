@@ -30,6 +30,38 @@ for (const [width, height, locale, reducedMotion] of [
     page.on("pageerror", (error) => errors.push(error.message));
     try {
       await page.goto(`${baseUrl}/${locale}/#shared-shore`, { waitUntil: "networkidle" });
+      await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
+      await page.waitForTimeout(250);
+      if (width >= 1024) {
+        const footerAlignment = await page.evaluate(() => {
+          const getEdges = (selector) => {
+            const { left, right } = document.querySelector(selector).getBoundingClientRect();
+            return { left, right };
+          };
+
+          return {
+            header: getEdges(".site-header"),
+            introduction: getEdges(".home-footer__introduction"),
+            signature: getEdges(".home-footer__signature"),
+            restart: getEdges(".home-footer__restart"),
+            legal: getEdges(".home-footer__legal"),
+            track: getEdges(".home-footer__track"),
+          };
+        });
+        for (const section of [footerAlignment.introduction, footerAlignment.signature]) {
+          assert.ok(
+            Math.abs(section.left - footerAlignment.header.left) <= 1 &&
+              Math.abs(section.right - footerAlignment.header.right) <= 1,
+            `Footer 两端应与完整 Header 连续：${JSON.stringify(footerAlignment)}`,
+          );
+        }
+        for (const content of [footerAlignment.restart, footerAlignment.legal]) {
+          assert.ok(
+            content.right <= footerAlignment.track.left - 8,
+            `Footer 文案不能穿过右侧连续轨道：${JSON.stringify(footerAlignment)}`,
+          );
+        }
+      }
       const story = page.locator(".home-community__short-story--presence:not([hidden])");
       await story.evaluate((element) =>
         element.scrollIntoView({ block: "start", behavior: "instant" }),

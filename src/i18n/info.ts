@@ -29,6 +29,9 @@ interface InfoMessages {
   serverNavigation: string;
   newsNote: string;
   noNews: string;
+  newsSlider: string;
+  previousNews: string;
+  nextNews: string;
   pinned: string;
   read: string;
   maps: string;
@@ -47,6 +50,7 @@ interface InfoMessages {
   top: string;
   footerTitle: string;
   footerDescription: string;
+  authors: string;
   published: string;
   updated: string;
 }
@@ -80,6 +84,9 @@ export const infoMessages: Record<Locale, InfoMessages> = {
     serverNavigation: "查看各服状态",
     newsNote: "这里记录最近的更新与公告。",
     noNews: "还没有发布公告。",
+    newsSlider: "浏览最新公告",
+    previousNews: "查看上一条公告",
+    nextNews: "查看下一条公告",
     pinned: "置顶",
     read: "阅读公告",
     maps: "世界地图",
@@ -98,6 +105,7 @@ export const infoMessages: Record<Locale, InfoMessages> = {
     top: "回到页首",
     footerTitle: "下一站，去哪里？",
     footerDescription: "回到首页，继续探索 Fetarute 的世界。",
+    authors: "作者：",
     published: "发布于",
     updated: "更新于",
   },
@@ -129,6 +137,9 @@ export const infoMessages: Record<Locale, InfoMessages> = {
     serverNavigation: "查看各服狀態",
     newsNote: "這裡記錄最近的更新與公告。",
     noNews: "還沒有發佈公告。",
+    newsSlider: "瀏覽最新公告",
+    previousNews: "查看上一則公告",
+    nextNews: "查看下一則公告",
     pinned: "置頂",
     read: "閱讀公告",
     maps: "世界地圖",
@@ -147,6 +158,7 @@ export const infoMessages: Record<Locale, InfoMessages> = {
     top: "回到頁首",
     footerTitle: "下一站，去哪裡？",
     footerDescription: "回到首頁，繼續探索 Fetarute 的世界。",
+    authors: "作者：",
     published: "發佈於",
     updated: "更新於",
   },
@@ -185,6 +197,9 @@ export const infoMessages: Record<Locale, InfoMessages> = {
     serverNavigation: "Check each server",
     newsNote: "The latest updates and announcements from Fetarute.",
     noNews: "No announcements yet.",
+    newsSlider: "Browse latest announcements",
+    previousNews: "View previous announcement",
+    nextNews: "View next announcement",
     pinned: "Pinned",
     read: "Read announcement",
     maps: "World maps",
@@ -203,6 +218,7 @@ export const infoMessages: Record<Locale, InfoMessages> = {
     top: "Back to top",
     footerTitle: "Where to next?",
     footerDescription: "Return home and keep exploring the worlds of Fetarute.",
+    authors: "By",
     published: "Published",
     updated: "Updated",
   },

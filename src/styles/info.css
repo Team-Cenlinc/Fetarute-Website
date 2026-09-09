@@ -182,8 +182,22 @@
   place-items: center;
   width: clamp(44px, 4.22vw, 81px);
   aspect-ratio: 1;
+  background: var(--palette-surface-raised);
+  color: var(--info-muted);
   font-size: clamp(18px, 1.67vw, 32px);
   font-weight: 700;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+/* 快捷入口的颜色只由实时实例 health 决定；未知状态保持中性，避免把未验证数据画成可用。 */
+.info-server-shortcuts a[data-state="healthy"] {
+  background: var(--palette-status-ok);
+  color: var(--palette-status-ok-text);
+}
+.info-server-shortcuts a[data-state="unhealthy"] {
+  background: var(--palette-status-error);
+  color: var(--palette-status-error-text);
 }
 .info-server-shortcuts a:hover {
   outline: 2px solid currentColor;
@@ -244,16 +258,97 @@
   padding: 12px 0 0 16px;
 }
 
+/* 群号始终可见可选；复制功能只是缩短申请步骤，失效时不阻断读者。 */
+.guide-qq-portal {
+  margin-block: 32px;
+  padding: clamp(20px, 3vw, 32px);
+  border: 1px solid var(--info-rule);
+  background: var(--palette-surface-raised);
+}
+.guide-qq-portal strong {
+  font-size: 20px;
+}
+.guide-qq-portal p {
+  margin: 8px 0 0;
+  color: var(--info-muted);
+}
+.guide-qq-portal__actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+.guide-qq-portal__number {
+  font-size: clamp(24px, 3vw, 34px);
+  font-variant-numeric: tabular-nums;
+  -webkit-user-select: all;
+  user-select: all;
+}
+.guide-qq-portal button {
+  border: 1px solid var(--info-ink);
+  padding: 10px 14px;
+  background: transparent;
+  color: var(--info-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.guide-qq-portal button:hover,
+.guide-qq-portal button:focus-visible {
+  background: var(--info-ink);
+  color: var(--palette-surface-raised);
+}
+.guide-qq-portal__feedback {
+  min-height: 1.5em;
+}
+
+.info-news-slider {
+  margin-top: 28px;
+}
+.info-news-slider__viewport {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-behavior: smooth;
+  scroll-snap-type: inline mandatory;
+}
+/* 增强模式才隐藏原生滚动条；无脚本时保留浏览器提供的完整横向阅读入口。 */
+[data-news-slider-enhanced="true"] .info-news-slider__viewport {
+  scrollbar-width: none;
+}
+[data-news-slider-enhanced="true"] .info-news-slider__viewport::-webkit-scrollbar {
+  display: none;
+}
+.info-news-slider__viewport:focus-visible {
+  outline: 3px solid var(--info-ink);
+  outline-offset: 6px;
+}
+.info-news-slider__track {
+  display: flex;
+  gap: clamp(12px, 1.6vw, 28px);
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.info-news-slider__item {
+  flex: 0 0 min(78%, 720px);
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.info-news-slider[data-news-count="1"] .info-news-slider__item {
+  flex-basis: 100%;
+}
 .info-news {
   display: grid;
   grid-template-columns: 150px minmax(0, 1fr) 48px;
+  min-height: 100%;
   align-items: center;
   gap: 32px;
-  padding-block: 36px;
-  border-top: 1px solid var(--info-rule);
-}
-.info-news:last-child {
-  border-bottom: 1px solid var(--info-rule);
+  padding-block: 30px;
+  border: 1px solid var(--info-rule);
 }
 .info-news__meta {
   display: flex;
@@ -268,6 +363,69 @@
   border: 0;
   font-size: 14px;
   font-weight: 650;
+}
+.info-news-slider__controls {
+  display: grid;
+  grid-template-columns: 44px minmax(100px, 1fr) 44px;
+  align-items: center;
+  gap: 16px;
+  margin-top: 18px;
+}
+.info-news-slider[data-news-count="1"] .info-news-slider__controls {
+  display: none;
+}
+.info-news-slider__controls button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid var(--info-rule);
+  background: transparent;
+  color: var(--info-ink);
+  cursor: pointer;
+}
+.info-news-slider__controls button:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+.info-news-slider__controls button:not(:disabled):hover {
+  background: var(--info-ink);
+  color: var(--info-canvas);
+}
+.info-news-slider__controls button:focus-visible {
+  outline: 3px solid var(--info-ink);
+  outline-offset: 3px;
+}
+.info-news-slider__controls .info-arrow {
+  width: 24px;
+  height: 24px;
+}
+.info-news-slider__scrollbar {
+  /* 滑块宽度与位置由原生 scrollLeft 派生，确保拖动、触控与按钮始终显示同一进度。 */
+  --info-news-slider-thumb-width: 100%;
+  --info-news-slider-thumb-offset: 0%;
+  position: relative;
+  height: 12px;
+  cursor: pointer;
+  touch-action: none;
+}
+.info-news-slider__scrollbar::before,
+.info-news-slider__scrollbar > span {
+  position: absolute;
+  top: 50%;
+  height: 3px;
+  transform: translateY(-50%);
+}
+.info-news-slider__scrollbar::before {
+  right: 0;
+  left: 0;
+  content: "";
+  background: var(--info-rule);
+}
+.info-news-slider__scrollbar > span {
+  left: var(--info-news-slider-thumb-offset);
+  width: var(--info-news-slider-thumb-width);
+  background: var(--info-ink);
 }
 .info-news h3,
 .info-other-link h3 {
@@ -336,6 +494,9 @@
 }
 /* Markdown uses natural document flow, independent of the home page's scroll effects. */
 .info-article {
+  /* 公告正文先完整占用首屏；短文不会让下一站页尾提前进入初始视窗。 */
+  min-height: 100svh;
+  box-sizing: border-box;
   padding-top: 170px;
 }
 .info-article__back {
@@ -344,6 +505,10 @@
   gap: 12px;
   margin-bottom: 64px;
   font-size: 16px;
+}
+/* 加入与探索沿用黄线导视，返回资讯的 hover 不应回退到新闻默认的青色。 */
+.info-article--guide .info-article__back {
+  --info-hover-line: var(--line-surn-frn);
 }
 .info-article__header {
   max-width: 1080px;
@@ -398,6 +563,21 @@
 .info-prose img {
   max-width: 100%;
   height: auto;
+}
+.article-image {
+  max-width: min(100%, 760px);
+  margin: 40px 0;
+}
+.article-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.article-image figcaption {
+  margin-top: 10px;
+  color: var(--info-muted);
+  font-size: 14px;
+  line-height: 1.55;
 }
 .info-prose pre {
   overflow-x: auto;
@@ -504,6 +684,9 @@
     grid-template-columns: minmax(0, 1fr) 28px;
     gap: 18px;
     padding-block: 28px;
+  }
+  .info-news-slider__item {
+    flex-basis: 100%;
   }
   .info-news__meta {
     flex-direction: row;
@@ -692,16 +875,16 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #767676;
+  background: var(--palette-muted);
   flex: 0 0 auto;
 }
 .info-availability[data-state="online"]::before,
 .info-availability[data-state="healthy"]::before {
-  background: #287440;
+  background: var(--palette-status-ok);
 }
 .info-availability[data-state="offline"]::before,
 .info-availability[data-state="unhealthy"]::before {
-  background: #b13a2d;
+  background: var(--palette-status-error);
 }
 
 .info-server {

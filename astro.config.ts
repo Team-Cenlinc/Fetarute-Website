@@ -1,4 +1,5 @@
 import { defineConfig, fontProviders } from "astro/config";
+import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import { isIndexablePublicUrl } from "./src/data/discovery";
 import { siteInfo } from "./src/data/site";
@@ -44,6 +45,8 @@ export default defineConfig({
    * 这个过滤器复用 discovery 白名单，避免 noindex 跳转页和将来的占位路由被静态构建器自动暴露。
    */
   integrations: [
+    // MDX 仅为文章中的受控富媒体组件保留；普通公告和指南继续优先使用标准 Markdown。
+    mdx(),
     sitemap({
       filter: isIndexablePublicUrl,
       i18n: {

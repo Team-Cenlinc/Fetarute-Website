@@ -1,4 +1,8 @@
 :root {
+  /* 完整态 Header 的两端基线供首屏、页尾等全宽章节复用，避免各自用近似 vw 值导致视觉断开。 */
+  --site-header-inline-start: 7.5vw;
+  /* 右侧单独保留变量，以便安全区或未来非对称版式仍能保持实际外缘一致。 */
+  --site-header-inline-end: 7.5vw;
   /* 桌面正文与锚点避开顶部悬浮导视牌，预留展开牌高和一行舒适阅读间隔。 */
   --home-desktop-reading-inset: 128px;
   /* 同岸短故事使用中等圆角，区别于全屏 Gallery 的大幅场景圆角。 */
@@ -1499,6 +1503,12 @@ html[data-home-nav-indicator-pattern="double"]
 }
 
 @media (max-width: 760px) {
+  :root {
+    /* 紧凑 Header 改用触控安全边距时，同步改写共享基线，让 Footer 等全宽章节仍贴齐可见外缘。 */
+    --site-header-inline-start: calc(12px + env(safe-area-inset-left));
+    --site-header-inline-end: calc(12px + env(safe-area-inset-right));
+  }
+
   main {
     gap: 64px;
     padding-top: calc(94px + env(safe-area-inset-top));
