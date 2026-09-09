@@ -71,11 +71,13 @@ export function setupCommunityTrain(
   const pickerElement = panelElement?.querySelector<HTMLElement>("[data-home-journey-picker]");
   const header = document.querySelector<HTMLElement>(".site-header");
   const stops = [...root.querySelectorAll<HTMLElement>("[data-community-stop]")];
+  const landing = root.querySelector<HTMLElement>(".community-landing");
+  /* Landing 是页面本体而不是可分享的深链章节；回到首站时应还原干净的社区 URL。 */
+  const landingSectionId = landing?.id;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const routeTrain = root.querySelector<HTMLElement>(".community-train--route");
   const arrivalTrain = root.querySelector<HTMLElement>(".community-train--arrival");
   const connectionTrain = root.querySelector<HTMLElement>(".community-train--connection");
-  const landing = root.querySelector<HTMLElement>(".community-landing");
   const arrivalPath = root.querySelector<SVGPathElement>("[data-community-arrival-path]");
   const crossing = root.querySelector<HTMLElement>(".community-district__crossing");
 
@@ -228,10 +230,13 @@ export function setupCommunityTrain(
     signal,
   });
 
-  /** 被动滚动只改写当前历史条目；快选点击仍由共享导航器创建一条可返回的记录。 */
-  function replaceActiveJourneyHash(sectionId: string): void {
+  /**
+   * 被动滚动只改写当前历史条目；Landing 使用无 fragment 的规范 URL，其他章节保留可分享深链。
+   * 快选点击仍由共享导航器创建一条可返回的记录。
+   */
+  function replaceActiveJourneyLocation(sectionId: string): void {
     if (navigationSuppressed) return;
-    const nextHash = `#${sectionId}`;
+    const nextHash = sectionId === landingSectionId ? "" : `#${sectionId}`;
     if (window.location.hash !== nextHash) {
       const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
       window.history.replaceState(window.history.state, "", nextUrl);
@@ -244,7 +249,7 @@ export function setupCommunityTrain(
       currentId = id;
       schedule();
     }
-    if (shouldSyncHash && currentId === id) replaceActiveJourneyHash(id);
+    if (shouldSyncHash && currentId === id) replaceActiveJourneyLocation(id);
   }
 
   /** 以阅读中线选站，短页尾到达页面底部时选中最后一站。 */
@@ -331,6 +336,10 @@ export function setupCommunityTrain(
       );
     },
     close: () => setOpen(false),
+    getHash: (sectionId) =>
+      sectionId === landingSectionId
+        ? `${window.location.pathname}${window.location.search}`
+        : `#${sectionId}`,
     signal,
   });
 

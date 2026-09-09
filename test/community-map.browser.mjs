@@ -185,6 +185,38 @@ test(`${engine}: 社区列车随阅读进度换站、移动并把章节写回 ha
   }
 });
 
+test(`${engine}: Landing 保持规范社区 URL，离开后仍写入可分享章节 hash`, async () => {
+  const { page, errors } = await openPage();
+  try {
+    await page.waitForTimeout(250);
+    assert.equal(new URL(page.url()).hash, "", "Landing 不能自动附带自身 hash");
+    await page
+      .locator("#community-district")
+      .evaluate((element) => element.scrollIntoView({ behavior: "instant", block: "start" }));
+    await page.waitForFunction(() => location.hash === "#community-district");
+    await page
+      .locator("#community-center")
+      .evaluate((element) => element.scrollIntoView({ behavior: "instant", block: "start" }));
+    await page.waitForFunction(() => location.hash === "");
+    const historyBeforeQuickPick = await page.evaluate(() => history.length);
+    await page.locator('[data-community-train-line="route"]').click();
+    await page.locator('[data-home-journey-section-id="community-contact"]').click();
+    await page.waitForFunction(() => location.hash === "#community-contact");
+    await page.locator('[data-community-train-line="connection"]').click();
+    await page.waitForFunction(() => location.hash === "#community-connections");
+    await page.locator('[data-home-journey-section-id="community-center"]').click();
+    await page.waitForFunction(() => location.hash === "");
+    assert.equal(
+      await page.evaluate(() => history.length),
+      historyBeforeQuickPick + 2,
+      "快选进入与离开 Landing 都应保留可返回的历史记录",
+    );
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
 test(`${engine}: 社区正文与地图跟随系统和手动 palette，刷新后保持所选外观`, async () => {
   const { page, errors } = await openPage({ colorScheme: "dark" });
   try {
