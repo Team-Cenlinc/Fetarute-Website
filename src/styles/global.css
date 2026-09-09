@@ -297,6 +297,11 @@ html[data-header-layout-initializing] .site-header {
   padding: 0 20px;
 }
 
+/* 紧凑态另用这个纯展示层承载连续色点；完整 Header 不占用网格空间。 */
+.home-nav-compact-signal {
+  display: none;
+}
+
 .home-nav__primary {
   white-space: nowrap;
   display: flex;
@@ -1219,14 +1224,13 @@ html[data-home-nav-indicator-pattern="double"]
   }
 }
 
-@media (min-width: 761px) {
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
   /* 阅读进入长区间后，把完整导视牌压缩为可随时返回或展开菜单的窄条；完整态的尺寸和网格不受此状态影响。 */
   html[data-header-compact]:not([data-header-hover-expanded]) .site-header {
     width: min(520px, calc(100% - 40px));
     min-height: 56px;
-    /* 线路点保持为一个连续 cluster，同时保留原实现与服务台之间的右侧留白。 */
-    --home-nav-compact-cluster-offset: 26px;
-    grid-template-columns: minmax(148px, 1fr) 44px 44px 44px 56px 56px;
+    /* 预览信号与功能格独立排布，色点不再借用隐藏导航链接的点击格。 */
+    grid-template-columns: minmax(148px, 1fr) minmax(0, 1fr) max-content 56px 56px;
     /* 收束只改变 live DOM 的尺寸；展开回到基础规则的 240ms，避免整块导视牌被快照缩放。 */
     transition:
       opacity 440ms var(--motion-header-standard-spatial),
@@ -1243,81 +1247,46 @@ html[data-home-nav-indicator-pattern="double"]
     width: min(132px, 24vw);
   }
 
-  html[data-header-compact]:not([data-header-hover-expanded]) .site-header__spacer,
-  html[data-header-compact]:not([data-header-hover-expanded]) .exit-menu {
-    display: none;
-  }
-
+  html[data-header-compact]:not([data-header-hover-expanded]) .exit-menu,
   html[data-header-compact]:not([data-header-hover-expanded]) .home-nav {
-    /* 相邻页面保留独立的 44px 点击宽度，圆点向共同边界靠拢形成连续线路组。 */
-    width: 44px;
-    min-width: 44px;
-    min-height: 56px;
-    padding: 0;
-    place-items: center;
-  }
-
-  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__primary {
-    width: 100%;
-    align-items: center;
-  }
-
-  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__text-stack {
-    width: 100%;
-    gap: 0;
-  }
-
-  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__label,
-  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__arrow,
-  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__indicator-band {
     display: none;
   }
 
-  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__indicator {
-    width: 100%;
+  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav-compact-signal {
+    display: flex;
+    /* 固定色点高度不参与 grid 拉伸，需显式居中在 56px 紧凑导视牌内。 */
+    align-self: center;
+    align-items: center;
+    gap: 2px;
     height: 16px;
-    /* 紧凑态使用固定圆点尺寸，双线仍能在 44px 的导视格内保持可辨识的轨道间隙。 */
-    --home-nav-indicator-dot-diameter: 16px;
-    --home-nav-indicator-dot-gap: 2px;
+    margin-inline: 18px 24px;
+    pointer-events: none;
   }
 
-  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__indicator-dot {
-    top: 0;
-    right: calc(
-      var(--home-nav-indicator-dot-gap) / 2 - var(--home-nav-compact-cluster-offset, 0px)
-    );
+  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav-compact-signal__route {
+    display: flex;
+    gap: 2px;
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded]) .home-nav-compact-signal__dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--home-nav-line-color);
+  }
+
+  html[data-header-compact]:not([data-header-hover-expanded])
+    .home-nav-compact-signal__dot--secondary {
+    display: none;
   }
 
   html[data-header-compact]:not(
       [data-header-hover-expanded]
     )[data-home-nav-indicator-pattern="double"]
-    .home-nav[data-home-nav-signal="session"]
-    .home-nav__indicator-dot {
-    right: calc(
-      var(--home-nav-indicator-dot-gap) / 2 + var(--home-nav-indicator-dot-diameter) +
-        var(--home-nav-indicator-dot-gap) - var(--home-nav-compact-cluster-offset, 0px)
-    );
-  }
-
-  html[data-header-compact]:not([data-header-hover-expanded])
-    .home-nav[data-home-nav-signal="fixed"]
-    .home-nav__indicator-dot {
-    /* 所有固定线路点使用同一顺序偏移，回收各自点击格里的空白后首尾相接。 */
-    right: auto;
-    left: calc(
-      var(--home-nav-indicator-dot-gap) / 2 - var(--home-nav-compact-dot-shift, 0px) +
-        var(--home-nav-compact-cluster-offset, 0px)
-    );
-  }
-
-  html[data-header-compact]:not([data-header-hover-expanded])
-    .home-nav:hover
-    .home-nav__indicator-dot,
-  html[data-header-compact]:not([data-header-hover-expanded])
-    .home-nav:focus-visible
-    .home-nav__indicator-dot {
-    opacity: 1;
-    transform: none;
+    .home-nav-compact-signal__route[data-home-nav-signal="session"]
+    .home-nav-compact-signal__dot--secondary {
+    display: block;
+    background: var(--home-nav-line-color-secondary);
   }
 
   html[data-header-compact]:not([data-header-hover-expanded]) .service-desk {
@@ -1416,6 +1385,7 @@ html[data-home-nav-indicator-pattern="double"]
   .service-desk__direction,
   .exit-menu,
   .home-nav__indicator,
+  .home-nav-compact-signal,
   .service-desk__information,
   .compact-exit-menu {
     transition: opacity var(--duration-header-content-handoff) linear;
@@ -1443,8 +1413,10 @@ html[data-home-nav-indicator-pattern="double"]
   html[data-header-content-phase="contracting"] .home-nav__primary,
   html[data-header-content-phase="contracting"] .service-desk__direction,
   html[data-header-content-phase="contracting"] .exit-menu,
+  html[data-header-content-phase="contracting"] .home-nav-compact-signal,
   html[data-header-content-phase="contracting"] .compact-exit-menu,
   html[data-header-content-phase="expanding"] .home-nav__indicator,
+  html[data-header-content-phase="expanding"] .home-nav-compact-signal,
   html[data-header-content-phase="expanding"] .service-desk__information,
   html[data-header-content-phase="expanding"] .compact-exit-menu {
     opacity: 0;
@@ -1453,6 +1425,8 @@ html[data-home-nav-indicator-pattern="double"]
 
   html[data-header-content-phase="compact-entering"]:not([data-header-content-ready])
     .home-nav__indicator,
+  html[data-header-content-phase="compact-entering"]:not([data-header-content-ready])
+    .home-nav-compact-signal,
   html[data-header-content-phase="compact-entering"]:not([data-header-content-ready])
     .service-desk__information,
   html[data-header-content-phase="compact-entering"]:not([data-header-content-ready])

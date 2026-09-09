@@ -22,10 +22,10 @@ test("Header 关闭动画不抢回已经转入正文或社区列车的焦点", (
   );
 });
 
-test("手机 Header 保持统一尺寸，滚动时不再排队 compact 动画帧", () => {
+test("手机与宽屏触控 Header 保持完整导航，滚动时不再排队 compact 动画帧", () => {
   assert.match(
     siteHeaderSource,
-    /const compactHeaderLayoutQuery = window\.matchMedia\("\(min-width: 761px\)"\)/,
+    /const compactHeaderLayoutQuery = window\.matchMedia\(\s*"\(min-width: 761px\) and \(hover: hover\) and \(pointer: fine\)",/,
   );
   assert.match(
     siteHeaderSource,
@@ -44,7 +44,7 @@ test("手机 Header 保持统一尺寸，滚动时不再排队 compact 动画帧
   assert.match(mobileStyles, /width:\s*auto;[\s\S]*?transform:\s*none/);
 });
 
-test("紧凑 Header 用统一顺序规则将所有固定线路点拼成连续色组", () => {
+test("紧凑 Header 用独立且不可交互的预览带展示连续色点", () => {
   const compactHeaderStyles = globalStylesSource.slice(
     globalStylesSource.indexOf(
       "html[data-header-compact]:not([data-header-hover-expanded]) .site-header",
@@ -52,19 +52,27 @@ test("紧凑 Header 用统一顺序规则将所有固定线路点拼成连续色
   );
 
   assert.match(
-    compactHeaderStyles,
-    /html\[data-header-compact\][\s\S]*?\.site-header\s*\{[\s\S]*?--home-nav-compact-cluster-offset:\s*26px;/,
+    siteHeaderSource,
+    /<span class="home-nav-compact-signal" aria-hidden="true">[\s\S]*?home-nav-compact-signal__route/,
   );
   assert.match(
     compactHeaderStyles,
-    /html\[data-header-compact\][\s\S]*?\.home-nav__indicator-dot\s*\{[\s\S]*?right:\s*calc\([\s\S]*?var\(--home-nav-compact-cluster-offset,\s*0px\)/,
+    /\.home-nav-compact-signal\s*\{[\s\S]*?pointer-events:\s*none;/,
   );
-  assert.match(
-    compactHeaderStyles,
-    /html\[data-header-compact\][\s\S]*?\.home-nav\[data-home-nav-signal="fixed"\]\s+\.home-nav__indicator-dot\s*\{[\s\S]*?right:\s*auto;[\s\S]*?left:\s*calc\([\s\S]*?var\(--home-nav-compact-dot-shift,\s*0px\)[\s\S]*?var\(--home-nav-compact-cluster-offset,\s*0px\)/,
-  );
+  assert.match(compactHeaderStyles, /\.home-nav\s*\{\s*display:\s*none;/);
   assert.doesNotMatch(
     compactHeaderStyles,
-    /html\[data-header-compact\][\s\S]*?\.info-nav\s+\.home-nav__indicator-dot\s*\{/,
+    /home-nav-compact-dot-shift|home-nav-compact-cluster-offset/,
+  );
+});
+
+test("键盘进入紧凑 Header 时先立即展开完整导航", () => {
+  assert.match(
+    siteHeaderSource,
+    /function expandCompactHeaderOnFocus\(\) \{[\s\S]*?setHeaderLayoutState\(true, true, false\);/,
+  );
+  assert.match(
+    siteHeaderSource,
+    /siteHeader\?\.addEventListener\("focusin", expandCompactHeaderOnFocus\);/,
   );
 });

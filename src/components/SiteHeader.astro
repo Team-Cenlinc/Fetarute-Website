@@ -45,34 +45,17 @@ const primaryNavArrowIcons = {
   "up-right": arrowUpRightIcon,
 } satisfies Record<PrimaryNavArrowDirection, string>;
 
-/** 紧凑导视牌的线路圆点共享同一组几何；固定页面只按出现顺序回收各自点击格里的空白。 */
-const compactHeaderNavCellWidth = 44;
-const compactHeaderIndicatorDotDiameter = 16;
-const compactHeaderIndicatorDotGap = 2;
-const compactHeaderFixedDotStep =
-  compactHeaderNavCellWidth - compactHeaderIndicatorDotDiameter - compactHeaderIndicatorDotGap;
-
 /** 页面导视在构建期解析固定线路 token；首页继续使用会话信号，缺失线路则阻止输出错误导航。 */
-let fixedNavigationIndex = 0;
 const headerNavItems = primaryNavItems.map((item) => {
   const line = item.navigationLineKey ? railwayLineByKey.get(item.navigationLineKey) : undefined;
   if (item.navigationLineKey && !line) {
     throw new Error(`页面导视引用了未录入的线路：${item.navigationLineKey}。`);
   }
-  const compactDotShift = item.navigationLineKey
-    ? `${fixedNavigationIndex++ * compactHeaderFixedDotStep}px`
-    : undefined;
   return {
     ...item,
     arrowIcon: primaryNavArrowIcons[item.navigationArrow],
     // 固定页面在入口自身覆盖线路色，避免继承根节点的首页随机色。
-    lineStyle:
-      [
-        line ? `--home-nav-line-color: var(${getRailwayLineCssVariableName(line)});` : undefined,
-        compactDotShift ? `--home-nav-compact-dot-shift: ${compactDotShift};` : undefined,
-      ]
-        .filter(Boolean)
-        .join(" ") || undefined,
+    lineStyle: line ? `--home-nav-line-color: var(${getRailwayLineCssVariableName(line)});` : undefined,
   };
 });
 
@@ -333,6 +316,22 @@ const appearanceOptions = [
 
   <span class="site-header__spacer" aria-hidden="true"></span>
 
+  <!-- 紧凑态只展示连续线路信号；它不是导航入口，进入 Header 后才还原完整可操作导航。 -->
+  <span class="home-nav-compact-signal" aria-hidden="true">
+    {
+      headerNavItems.map((item) => (
+        <span
+          class="home-nav-compact-signal__route"
+          data-home-nav-signal={item.navigationLineKey ? "fixed" : "session"}
+          style={item.lineStyle}
+        >
+          <span class="home-nav-compact-signal__dot" />
+          <span class="home-nav-compact-signal__dot home-nav-compact-signal__dot--secondary" />
+        </span>
+      ))
+    }
+  </span>
+
   {
     headerNavItems.map((item) => (
       <a
@@ -477,8 +476,10 @@ const appearanceOptions = [
   );
   const headerMenus = Array.from(document.querySelectorAll<HTMLDetailsElement>("[data-header-menu]"));
   const siteHeader = document.querySelector<HTMLElement>(".site-header");
-  /** 只有能容纳完整文字导视的中大屏参与 Header 收束；手机始终使用同一组触控尺寸。 */
-  const compactHeaderLayoutQuery = window.matchMedia("(min-width: 761px)");
+  /** 只有精细指针的中大屏参与 Header 收束；宽屏触控设备始终保留完整、可直接点按的导航。 */
+  const compactHeaderLayoutQuery = window.matchMedia(
+    "(min-width: 761px) and (hover: hover) and (pointer: fine)",
+  );
   /** 向下阅读超过此距离才收束导视牌，避免首屏与短距离定位滚动反复改变 Header 密度。 */
   const compactHeaderScrollThreshold = 160;
   /** 小于此差值的滚动抖动不改变模式，触控板慢速停靠时仍保持稳定。 */
@@ -850,7 +851,7 @@ const appearanceOptions = [
     if (nextVisuallyCompact) {
       if (currentPhase === "expanded-entering" && !isCurrentContentReady) {
         applyHeaderLayoutState(nextCompact, normalizedHoverExpanded);
-        revealHeaderContent("compact-entering", ".compact-exit-menu", run);
+        revealHeaderContent("compact-entering", ".home-nav-compact-signal", run);
         return;
       }
 
@@ -861,7 +862,7 @@ const appearanceOptions = [
         }
 
         applyHeaderLayoutState(nextCompact, normalizedHoverExpanded);
-        revealHeaderContent("compact-entering", ".compact-exit-menu", run);
+        revealHeaderContent("compact-entering", ".home-nav-compact-signal", run);
       });
       return;
     }
@@ -898,6 +899,19 @@ const appearanceOptions = [
 
     cancelCompactHeaderHoverContract();
     setHeaderLayoutState(true, true);
+  }
+
+  /** 键盘焦点进入 Header 时立即恢复完整牌面，避免下一个 Tab 落到视觉上被收起的导航入口。 */
+  function expandCompactHeaderOnFocus() {
+    if (
+      !compactHeaderLayoutQuery.matches ||
+      !document.documentElement.hasAttribute("data-header-compact")
+    ) {
+      return;
+    }
+
+    cancelCompactHeaderHoverContract();
+    setHeaderLayoutState(true, true, false);
   }
 
   /** 延迟收回 hover 展开的牌面，保证移动到溢出菜单时空间关系保持连续。 */
@@ -1261,6 +1275,7 @@ const appearanceOptions = [
 
   siteHeader?.addEventListener("pointerenter", expandCompactHeaderOnHover);
   siteHeader?.addEventListener("pointerleave", scheduleCompactHeaderHoverContract);
+  siteHeader?.addEventListener("focusin", expandCompactHeaderOnFocus);
 
   initializeCompactHeaderState();
   compactHeaderLayoutQuery.addEventListener("change", () => {
