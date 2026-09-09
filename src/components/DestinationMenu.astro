@@ -1,11 +1,14 @@
 ---
+import arrowRightIcon from "@phosphor-icons/core/assets/bold/arrow-right-bold.svg?raw";
 import arrowSquareOutIcon from "@phosphor-icons/core/assets/bold/arrow-square-out-bold.svg?raw";
+import arrowUpIcon from "@phosphor-icons/core/assets/bold/arrow-up-bold.svg?raw";
 import arrowUpRightIcon from "@phosphor-icons/core/assets/bold/arrow-up-right-bold.svg?raw";
 import bookOpenTextIcon from "@phosphor-icons/core/assets/bold/book-open-text-bold.svg?raw";
 import mapTrifoldIcon from "@phosphor-icons/core/assets/bold/map-trifold-bold.svg?raw";
 import {
   externalDestinations,
   primaryNavItems,
+  type PrimaryNavArrowDirection,
   type ExternalDestinationIcon,
 } from "@/data/site";
 import { type Locale } from "@/i18n/config";
@@ -31,6 +34,13 @@ const { locale, headingId, includePrimaryNavigation = false, pagePath = "" } = A
 const messages = getMessages(locale);
 const externalHeadingId = `${headingId}-external`;
 const mapHeadingId = `${headingId}-maps`;
+
+/** 小屏与紧凑菜单复用 Header 主导航的方向语义，仍保持同一套 Phosphor Bold 图标。 */
+const primaryNavArrowIcons = {
+  up: arrowUpIcon,
+  right: arrowRightIcon,
+  "up-right": arrowUpRightIcon,
+} satisfies Record<PrimaryNavArrowDirection, string>;
 
 /**
  * 外部服务图标按语义集中映射，书本代表资料库、折页地图代表可浏览世界，而不把第三方品牌图形带进导航。
@@ -59,13 +69,19 @@ const externalDestinationIcons = {
         <a
           class="destination-menu__link"
           data-header-menu-link
+          data-header-nav={item.labelKey}
+          data-header-nav-direction={item.navigationArrow}
           href={
             getLocalizedRelativeUrl(locale, item.pagePath ?? "", item.fragment === "home" ? undefined : item.fragment)
           }
           aria-current={(item.pagePath ?? "") === pagePath && item.fragment !== "tri-server-joint" ? "page" : undefined}
         >
           <span>{messages.navigation[item.labelKey]}</span>
-          <span class="destination-menu__link-arrow" aria-hidden="true" set:html={arrowUpRightIcon}></span>
+          <span
+            class="destination-menu__link-arrow"
+            aria-hidden="true"
+            set:html={primaryNavArrowIcons[item.navigationArrow]}
+          ></span>
         </a>
       ))}
     </nav>

@@ -211,6 +211,7 @@ main.main--full-bleed {
     max-content
     max-content
     max-content
+    max-content
     max-content;
   align-items: stretch;
   overflow: visible;
@@ -1170,6 +1171,7 @@ html[data-home-nav-indicator-pattern="double"]
       max-content
       max-content
       max-content
+      max-content
       max-content;
   }
 
@@ -1218,7 +1220,9 @@ html[data-home-nav-indicator-pattern="double"]
   html[data-header-compact]:not([data-header-hover-expanded]) .site-header {
     width: min(520px, calc(100% - 40px));
     min-height: 56px;
-    grid-template-columns: minmax(148px, 1fr) 44px 44px 56px 56px;
+    /* 线路点保持为一个连续 cluster，同时保留原实现与服务台之间的右侧留白。 */
+    --home-nav-compact-cluster-offset: 26px;
+    grid-template-columns: minmax(148px, 1fr) 44px 44px 44px 56px 56px;
     /* 收束只改变 live DOM 的尺寸；展开回到基础规则的 240ms，避免整块导视牌被快照缩放。 */
     transition:
       opacity 440ms var(--motion-header-standard-spatial),
@@ -1275,7 +1279,9 @@ html[data-home-nav-indicator-pattern="double"]
 
   html[data-header-compact]:not([data-header-hover-expanded]) .home-nav__indicator-dot {
     top: 0;
-    right: calc(var(--home-nav-indicator-dot-gap) / 2);
+    right: calc(
+      var(--home-nav-indicator-dot-gap) / 2 - var(--home-nav-compact-cluster-offset, 0px)
+    );
   }
 
   html[data-header-compact]:not(
@@ -1285,16 +1291,19 @@ html[data-home-nav-indicator-pattern="double"]
     .home-nav__indicator-dot {
     right: calc(
       var(--home-nav-indicator-dot-gap) / 2 + var(--home-nav-indicator-dot-diameter) +
-        var(--home-nav-indicator-dot-gap)
+        var(--home-nav-indicator-dot-gap) - var(--home-nav-compact-cluster-offset, 0px)
     );
   }
 
   html[data-header-compact]:not([data-header-hover-expanded])
-    .community-nav
+    .home-nav[data-home-nav-signal="fixed"]
     .home-nav__indicator-dot {
-    /* 两个入口各留半个圆点间距，跨页面与首页双线内部都保持同样的 2px 节奏。 */
+    /* 所有固定线路点使用同一顺序偏移，回收各自点击格里的空白后首尾相接。 */
     right: auto;
-    left: calc(var(--home-nav-indicator-dot-gap) / 2);
+    left: calc(
+      var(--home-nav-indicator-dot-gap) / 2 - var(--home-nav-compact-dot-shift, 0px) +
+        var(--home-nav-compact-cluster-offset, 0px)
+    );
   }
 
   html[data-header-compact]:not([data-header-hover-expanded])

@@ -23,17 +23,22 @@ export interface SiteInfo {
   serverAddress: string;
 }
 
+/** 主导航箭头的受控方向；方向用于表达目的地语义，不作为随机装饰。 */
+export type PrimaryNavArrowDirection = "up" | "right" | "up-right";
+
 /**
  * 主导航的稳定结构。
  * 文案键交给当前 locale 的消息表翻译，锚点仍集中在站点数据层，避免页面组件各自约定首页章节地址。
  */
 export interface PrimaryNavItem {
   /** 对应 i18n navigation 消息中的键名。 */
-  labelKey: "home" | "features" | "community";
+  labelKey: "home" | "features" | "community" | "info";
+  /** Header 导视箭头的方向；保持同一套粗体图标，只变化方向语义。 */
+  navigationArrow: PrimaryNavArrowDirection;
   /** 首页中可长期引用的章节锚点。 */
   fragment?: "home" | "tri-server-joint";
   /** 独立页面的语言相对路径；省略时仍指向首页章节。 */
-  pagePath?: "community/";
+  pagePath?: "community/" | "info/";
   /** 独立页面固定使用的导视线路；首页随机信号排除这些身份，避免相邻入口同色。 */
   navigationLineKey?: RailwayLineKey;
 }
@@ -144,11 +149,18 @@ export const siteInfo: SiteInfo = {
  * 每种语言复用同一信息架构，只有 labelKey 所指向的读者文案随 locale 改变。
  */
 export const primaryNavItems: readonly PrimaryNavItem[] = [
-  { labelKey: "home", fragment: "home" },
+  { labelKey: "home", fragment: "home", navigationArrow: "up" },
   {
     labelKey: "community",
+    navigationArrow: "up-right",
     pagePath: "community/",
     navigationLineKey: getRailwayLineKey("SURC", "WS"),
+  },
+  {
+    labelKey: "info",
+    navigationArrow: "right",
+    pagePath: "info/",
+    navigationLineKey: getRailwayLineKey("FTA", "SL"),
   },
 ];
 
