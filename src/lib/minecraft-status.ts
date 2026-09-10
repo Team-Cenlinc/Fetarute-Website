@@ -1,5 +1,7 @@
 export const minecraftStatusUrl = "https://site-api.fetarute.info/v1/minecraft";
 export const minecraftRefreshInterval = 5 * 60_000;
+/** 单次状态请求的放弃时限；页面组件与 WebMCP 工具共用，避免两条读取路径给出不同的等待体验。 */
+export const minecraftStatusTimeout = 8000;
 export const localMinecraftStatusPath = "/__minecraft-status";
 
 export function getMinecraftStatusUrl(hostname: string): string {

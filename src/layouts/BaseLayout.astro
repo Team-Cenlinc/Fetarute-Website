@@ -13,8 +13,10 @@ import {
 import { railwayLineByKey } from "@/data/railway";
 import { siteInfo, wayfindingPrototype } from "@/data/site";
 import { defaultLocale, localeMetadata, locales, type Locale } from "@/i18n/config";
+import { getWebMcpArticleCatalogue } from "@/i18n/content";
 import { getLocalizedAbsoluteUrl } from "@/i18n/links";
 import { getMessages } from "@/i18n/messages";
+import { webMcpArticleCatalogueElementId } from "@/lib/webmcp";
 
 /**
  * 基础页面布局属性。
@@ -130,6 +132,15 @@ html[data-appearance="dark"] {
 ${getInterfacePaletteCssVariables(interfacePalette.dark)}
 }
 `;
+
+/**
+ * WebMCP 文章目录在构建期从内容集合派生，并随每个页面内嵌。
+ * 静态站点因此不需要为代理检索新增接口或运行时请求；转义 `<` 可避免文章标题里的 `</script>` 提前结束内嵌 JSON，`JSON.parse` 仍得到原文。
+ */
+const webMcpArticleCatalogueJson = JSON.stringify(await getWebMcpArticleCatalogue()).replaceAll(
+  "<",
+  "\\u003c",
+);
 
 /**
  * 搜索引擎和 AI 工具使用的站点与页面结构化数据。
@@ -347,12 +358,22 @@ const pageStructuredData = {
     <main class:list={{ "main--full-bleed": fullBleedMain }}>
       <slot />
     </main>
+    <!-- 构建期派生的公告与指南目录随页面内嵌，使 WebMCP 检索无需为静态站点新增接口或运行时请求。 -->
+    <script
+      type="application/json"
+      id={webMcpArticleCatalogueElementId}
+      is:inline
+      set:html={webMcpArticleCatalogueJson}
+    ></script>
     <script>
       import { setupImageDragGuard } from "@/lib/image-drag-guard";
       import { setupSelectionLineController } from "@/lib/selection-line-controller";
+      import { setupFetaruteWebMcp } from "@/lib/webmcp";
 
       setupImageDragGuard();
       setupSelectionLineController();
+      // WebMCP 是可选的浏览器能力；缺少实现或权限时函数会静默回退，静态站点无需额外后端。
+      void setupFetaruteWebMcp(document);
     </script>
   </body>
 </html>

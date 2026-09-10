@@ -1,11 +1,17 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { Buffer } from "node:buffer";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
 import { siteInfo } from "../src/data/site.ts";
 import { defaultLocale, localeMetadata, type Locale } from "../src/i18n/config.ts";
 import { getMessages } from "../src/i18n/messages.ts";
+import { webMcpPages, type WebMcpArticle } from "../src/data/webmcp.ts";
+import {
+  createFetaruteWebMcpTools,
+  parseWebMcpArticleCatalogue,
+  webMcpArticleCatalogueElementId,
+} from "../src/lib/webmcp.ts";
 
 const publicHomeLocales = ["zh-Hans", "zh-Hant", "en"] as const satisfies readonly Locale[];
 
@@ -144,6 +150,121 @@ test("三语言静态首页各自只输出一个不重复的主标题", () => {
 
     assert.equal(headings.length, 1, `${locale} 首页应只有一个 h1`);
     assert.equal(extractText(headings[0][1]), getMessages(locale).home.title);
+  }
+});
+
+test("WebMCP 返回的所有语言页面实际存在并加载工具注册脚本", async () => {
+  const tools = createFetaruteWebMcpTools();
+  const pageTool = tools.find((tool) => tool.name === "find-fetarute-page");
+  assert.ok(pageTool);
+
+  for (const locale of publicHomeLocales) {
+    for (const page of webMcpPages) {
+      const result = await pageTool.execute(
+        { page: page.key, locale },
+        { signal: new AbortController().signal },
+      );
+      assert.ok(result && typeof result === "object" && "url" in result);
+      assert.equal(typeof result.url, "string");
+      const url = new URL(String(result.url));
+      assert.equal(url.origin, new URL(siteInfo.url).origin);
+      const html = readFileSync(
+        new URL(`../dist${url.pathname}index.html`, import.meta.url),
+        "utf8",
+      );
+      const scripts = [...html.matchAll(/<script\b[^>]*\bsrc="(\/_astro\/[^\"]+\.js)"[^>]*>/g)]
+        .map((match) => readFileSync(new URL(`../dist${match[1]}`, import.meta.url), "utf8"))
+        .join("\n");
+      for (const tool of tools) {
+        assert.ok(scripts.includes(tool.name), `${url.pathname} 必须加载 ${tool.name} 的注册定义`);
+      }
+      assert.match(scripts, /modelContext/);
+      if (page.key === "info") {
+        assert.ok(html.includes(`href="/${locale}/guides/join/"`));
+        const guide = readFileSync(
+          new URL(`../dist/${locale}/guides/join/index.html`, import.meta.url),
+          "utf8",
+        );
+        assert.match(guide, /<h1\b/);
+      }
+    }
+  }
+});
+
+/** 读取构建产物中内嵌的 WebMCP 文章目录，验证运行时真正会拿到的那份数据而不是重新查询内容集合。 */
+function readStaticArticleCatalogue(pathname: string): readonly WebMcpArticle[] {
+  const html = readFileSync(new URL(`../dist${pathname}index.html`, import.meta.url), "utf8");
+  const embedded = html.match(
+    new RegExp(`<script[^>]*\\bid="${webMcpArticleCatalogueElementId}"[^>]*>([\\s\\S]*?)</script>`),
+  );
+
+  assert.ok(embedded, `${pathname} 应内嵌 WebMCP 文章目录`);
+  return parseWebMcpArticleCatalogue(JSON.parse(embedded[1]));
+}
+
+test("WebMCP 文章检索返回的每篇文章都对应真实构建产物", async () => {
+  for (const locale of publicHomeLocales) {
+    const catalogue = readStaticArticleCatalogue(`/${locale}/`);
+    assert.ok(catalogue.length > 0, `${locale} 页面内嵌的目录不应为空`);
+
+    const articleTool = createFetaruteWebMcpTools(catalogue).find(
+      (tool) => tool.name === "find-fetarute-articles",
+    );
+    assert.ok(articleTool);
+
+    const result = (await articleTool.execute(
+      { locale, limit: 20 },
+      { signal: new AbortController().signal },
+    )) as { ok: boolean; total: number; articles: WebMcpArticle[] };
+
+    assert.equal(result.ok, true);
+    assert.ok(result.total > 0, `${locale} 至少应能检索到加入指南`);
+
+    for (const article of result.articles) {
+      assert.equal(article.locale, locale, "检索结果不得混入其他语言的条目");
+      const url = new URL(article.url);
+      assert.equal(url.origin, new URL(siteInfo.url).origin);
+      const html = readFileSync(
+        new URL(`../dist${url.pathname}index.html`, import.meta.url),
+        "utf8",
+      );
+      // 标题必须与实际页面一致，否则代理会把读者引到一个说法不同的页面。
+      assert.ok(html.includes(`>${article.title}</h1>`), `${url.pathname} 的 h1 应与目录标题一致`);
+      for (const available of article.availableLocales) {
+        assert.ok(
+          existsSync(
+            new URL(
+              `../dist/${available}/${article.collection}/${article.translationKey}/index.html`,
+              import.meta.url,
+            ),
+          ),
+          `${article.translationKey} 声明的 ${available} 翻译必须已生成静态页面`,
+        );
+      }
+    }
+  }
+});
+
+test("WebMCP 文章检索能用加入相关的关键词找到三语加入指南", async () => {
+  for (const [locale, query] of [
+    ["zh-Hans", "加入"],
+    ["zh-Hant", "加入"],
+    ["en", "join"],
+  ] as const) {
+    const articleTool = createFetaruteWebMcpTools(readStaticArticleCatalogue(`/${locale}/`)).find(
+      (tool) => tool.name === "find-fetarute-articles",
+    );
+    assert.ok(articleTool);
+
+    const result = (await articleTool.execute(
+      { locale, collection: "guides", query },
+      { signal: new AbortController().signal },
+    )) as { articles: WebMcpArticle[] };
+
+    assert.deepEqual(
+      result.articles.map((article) => article.url),
+      [`${siteInfo.url}/${locale}/guides/join/`],
+    );
   }
 });
 
