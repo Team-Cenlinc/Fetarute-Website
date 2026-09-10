@@ -375,15 +375,15 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
   }
 
   .home-transfer-breaker__copy h2 {
-    font-size: clamp(76px, 10.42vw, 200px);
+    font-size: min(clamp(76px, 10.42vw, 200px), var(--home-transfer-title-cap, 200px));
     font-weight: 700;
     letter-spacing: 0;
     line-height: 0.98;
   }
 
   .home-transfer-breaker__copy p {
-    font-family: var(--font-fetarute-display), var(--font-fetarute-sans-sc);
-    font-size: clamp(42px, 5.21vw, 100px);
+    font-family: var(--font-fetarute-ui);
+    font-size: min(clamp(42px, 5.21vw, 100px), var(--home-transfer-subtitle-cap, 100px));
     font-weight: 500;
     letter-spacing: 0;
     line-height: 1;
@@ -395,13 +395,13 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
 
   .home-transfer-breaker[data-home-transfer-breaker-locale="en"]
     .home-transfer-breaker__copy h2 {
-    font-size: clamp(62px, 7.4vw, 142px);
+    font-size: min(clamp(62px, 7.4vw, 142px), var(--home-transfer-title-cap, 142px));
     line-height: 1;
   }
 
   .home-transfer-breaker[data-home-transfer-breaker-locale="en"]
     .home-transfer-breaker__copy p {
-    font-size: clamp(50px, 6.25vw, 120px);
+    font-size: min(clamp(50px, 6.25vw, 120px), var(--home-transfer-subtitle-cap, 120px));
   }
 
   .home-transfer-breaker__routes {
@@ -423,6 +423,39 @@ const [outgoingPrimaryName, outgoingSecondaryName] = getLocalizedLineNames(outgo
   }
 
   @media (min-width: 1024px) {
+    .home-transfer-breaker[data-home-transfer-composition="compact"] {
+      /* 站名只能占用 Header 阅读线与列车之间的空间，同时扣除两行间距。 */
+      --home-transfer-copy-space: calc(
+        var(--home-transfer-incoming-track-top) -
+          (var(--home-transfer-train-height) - var(--home-transfer-track-width)) / 2 -
+          24px - var(--home-desktop-reading-inset) - var(--home-transfer-name-gap)
+      );
+      /* 中文主副标题字号为 2:1，行高分别为 .98 和 1，总高度为 2.96 个副标题字号。 */
+      --home-transfer-title-cap: calc(var(--home-transfer-copy-space) * 2 / 2.96);
+      --home-transfer-subtitle-cap: calc(var(--home-transfer-copy-space) / 2.96);
+    }
+
+    .home-transfer-breaker[data-home-transfer-composition="compact"][data-home-transfer-breaker-locale="en"] {
+      /* 英文主副标题均为单倍行高，按原有 142:120 字号比例分配空间。 */
+      --home-transfer-title-cap: calc(var(--home-transfer-copy-space) * 142 / 262);
+      --home-transfer-subtitle-cap: calc(var(--home-transfer-copy-space) * 120 / 262);
+    }
+
+    /* 短屏只上移会被列车覆盖的站名；百分比读取文案自身高度，三语与字体加载后都保留净空。 */
+    .home-transfer-breaker[data-home-transfer-composition="compact"]
+      .home-transfer-breaker__copy {
+      transform: translateY(
+        min(
+          0px,
+          calc(
+            var(--home-transfer-incoming-track-top) - var(--home-transfer-copy-top) -
+              (var(--home-transfer-train-height) - var(--home-transfer-track-width)) / 2 -
+              24px - 100%
+          )
+        )
+      );
+    }
+
     /*
      * “续行”保留 Figma 136:110 的开放构图：来线从左侧上行后横过下半部，
      * 去线横过顶部后从右侧下行；它不能复用“同岸”70:2 的贴近式双轨布局。

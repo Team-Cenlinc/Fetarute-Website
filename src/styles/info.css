@@ -1,5 +1,6 @@
 /* Share the home page neutral palette and existing railway accents. */
 .info-page {
+  min-width: 0;
   --info-canvas: var(--color-background);
   --info-ink: var(--color-text);
   --info-muted: var(--color-muted);
@@ -53,7 +54,7 @@
 .info-hero {
   /* Keep the complete directory readable in the initial viewport, even on short desktop screens. */
   min-height: 100svh;
-  padding-block: min(clamp(112px, 7vw, 144px), 14svh) min(clamp(24px, 2vw, 40px), 4svh);
+  padding-block: 128px min(clamp(24px, 2vw, 40px), 4svh);
   display: flex;
   flex-direction: column;
   justify-content: center;

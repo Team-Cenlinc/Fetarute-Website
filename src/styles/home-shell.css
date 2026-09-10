@@ -1262,7 +1262,7 @@ html[data-launching] .launch-sequence {
 .launch-stop__primary,
 .launch-stop__secondary,
 .launch-stop__route-code {
-  font-family: var(--font-fetarute-display), var(--font-fetarute-sans-sc);
+  font-family: var(--font-fetarute-ui);
   font-optical-sizing: auto;
 }
 
@@ -1339,7 +1339,7 @@ html[data-launching] .launch-sequence {
   column-gap: 0.03em;
   background: var(--launch-route-color);
   color: var(--launch-route-ink, var(--color-scene-fallback));
-  font-family: var(--font-fetarute-display), var(--font-fetarute-sans-sc);
+  font-family: var(--font-fetarute-ui);
   font-size: clamp(2.3rem, 3.34vw, 4rem);
   font-variant-numeric: tabular-nums;
   font-weight: 700;

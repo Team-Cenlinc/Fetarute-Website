@@ -510,7 +510,7 @@
   box-sizing: border-box;
   position: absolute;
   z-index: 30;
-  font-family: var(--font-fetarute-ui), sans-serif;
+  font-family: var(--font-fetarute-ui);
 }
 .community-panel[data-floating] {
   /* 以固定原点加 transform 定位，不在滚动热路径反复修改 top/left。 */
@@ -730,6 +730,7 @@
   color: var(--community-muted);
 }
 .community-profile__motto:not(.community-profile__motto--pending) {
+  font-family: var(--font-fetarute-italic);
   color: var(--community-text);
   font-weight: 650;
   font-style: italic;

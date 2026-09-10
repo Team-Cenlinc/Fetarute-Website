@@ -676,9 +676,12 @@ const appearanceOptions = [
     return window.scrollY < compactHeaderScrollThreshold;
   }
 
-  /** 判断指针是否直接进入紧凑出口格；该格需要保留 sandwich 菜单的即时可操作性。 */
-  function isCompactExitPointerTarget(event: PointerEvent) {
-    return document.elementFromPoint(event.clientX, event.clientY)?.closest(".compact-exit-menu") !== null;
+  /** 服务台、紧凑出口及其浮层独立预览，保持牌面与触发器的位置稳定。 */
+  function isCompactMenuPointerTarget(event: PointerEvent) {
+    return (
+      event.target instanceof Element &&
+      event.target.closest(".service-desk, .compact-exit-menu") !== null
+    );
   }
 
   /** 只写入阅读态相关 attribute，集中保证所有入口都会得到同一份最终 DOM 状态。 */
@@ -886,23 +889,39 @@ const appearanceOptions = [
 
   /**
    * 指针进入阅读态 Header 时临时展开完整导视牌。
-   * 最右侧 sandwich 格例外，避免用户为了打开菜单却先丢失该触发器；触屏不启用 hover 捷径，减少动态效果则直接切换状态。
+   * 服务台、紧凑出口及其浮层例外；指针转入其余区域后展开，触屏不启用 hover 捷径。
    */
   function expandCompactHeaderOnHover(event: PointerEvent) {
     if (
       !supportsHeaderHoverPreview() ||
-      !document.documentElement.hasAttribute("data-header-compact") ||
-      isCompactExitPointerTarget(event)
+      !document.documentElement.hasAttribute("data-header-compact")
     ) {
       return;
     }
 
     cancelCompactHeaderHoverContract();
+    if (isCompactMenuPointerTarget(event)) {
+      return;
+    }
     setHeaderLayoutState(true, true);
   }
 
   /** 键盘焦点进入 Header 时立即恢复完整牌面，避免下一个 Tab 落到视觉上被收起的导航入口。 */
   function expandCompactHeaderOnFocus() {
+    // 紧凑出口内的键盘操作必须保留当前菜单，否则展开 Header 会隐藏正在读取的链接。
+    const focusedElement = document.activeElement;
+    if (focusedElement?.closest(".compact-exit-menu")) {
+      return;
+    }
+
+    // 鼠标点按服务台也会产生 focusin；此时不能移动面板，否则随后的 click 会丢失目标。
+    if (
+      focusedElement?.closest(".service-desk") &&
+      !focusedElement.matches(":focus-visible")
+    ) {
+      return;
+    }
+
     if (
       !compactHeaderLayoutQuery.matches ||
       !document.documentElement.hasAttribute("data-header-compact")
@@ -1273,7 +1292,7 @@ const appearanceOptions = [
     });
   });
 
-  siteHeader?.addEventListener("pointerenter", expandCompactHeaderOnHover);
+  siteHeader?.addEventListener("pointerover", expandCompactHeaderOnHover);
   siteHeader?.addEventListener("pointerleave", scheduleCompactHeaderHoverContract);
   siteHeader?.addEventListener("focusin", expandCompactHeaderOnFocus);
 

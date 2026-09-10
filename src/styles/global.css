@@ -138,6 +138,12 @@ img:not([data-image-drag-allowed]) {
   }
 }
 
+/* 简中片段显式恢复 SC，避免繁中页面内的语言选项继续继承 TC。 */
+:lang(zh-Hans) {
+  --font-fetarute-ui: var(--font-fetarute-display), var(--font-fetarute-sans-sc);
+  --font-fetarute-italic: var(--font-fetarute-display-italic), var(--font-fetarute-sans-sc);
+}
+
 /* 繁中内容沿用当地字形，避免简繁字形与当地阅读习惯不一致。 */
 :lang(zh-Hant) {
   --font-fetarute-ui: var(--font-fetarute-display), var(--font-fetarute-sans-tc);
@@ -856,7 +862,7 @@ html[data-home-nav-indicator-pattern="double"]
 .destination-menu__group-heading {
   margin: 0;
   color: color-mix(in srgb, var(--color-exit-text) 78%, transparent);
-  font-family: "SFMono-Regular", "Cascadia Mono", "Noto Sans Mono CJK SC", monospace;
+  font-family: var(--font-fetarute-ui);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -1027,7 +1033,7 @@ html[data-home-nav-indicator-pattern="double"]
 .service-menu__heading {
   margin: 0;
   color: color-mix(in srgb, var(--color-service-text) 78%, transparent);
-  font-family: "SFMono-Regular", "Cascadia Mono", "Noto Sans Mono CJK SC", monospace;
+  font-family: var(--font-fetarute-ui);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -1046,7 +1052,7 @@ html[data-home-nav-indicator-pattern="double"]
   place-items: center;
   padding: 0 8px;
   color: color-mix(in srgb, var(--color-service-text) 78%, transparent);
-  font-family: "SFMono-Regular", "Cascadia Mono", "Noto Sans Mono CJK SC", monospace;
+  font-family: var(--font-fetarute-ui);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -1221,6 +1227,48 @@ html[data-home-nav-indicator-pattern="double"]
 
   .exit-menu__hint {
     font-size: 11px;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1200px) {
+  html:lang(en) .site-header {
+    grid-template-columns: minmax(128px, 1fr) repeat(5, max-content);
+  }
+
+  html:lang(en) .site-header__spacer {
+    display: none;
+  }
+
+  html:lang(en) .brand {
+    padding-inline: 12px;
+  }
+
+  html:lang(en) .brand-wordmark {
+    width: clamp(100px, 11vw, 132px);
+  }
+
+  html:lang(en) :is(.home-nav, .service-desk__summary, .exit-menu__summary) {
+    padding-inline: 10px;
+  }
+
+  html:lang(en) :is(.home-nav__label, .service-desk__label, .exit-menu__label) {
+    font-size: clamp(18px, 2.3vw, 26px);
+  }
+
+  html:lang(en) .home-nav__arrow {
+    width: clamp(22px, 2vw, 26px);
+    height: clamp(22px, 2vw, 26px);
+  }
+}
+
+@media (min-width: 761px) and (max-width: 900px) {
+  html:lang(en) {
+    --site-header-inline-start: 20px;
+    --site-header-inline-end: 20px;
+  }
+
+  html:lang(en) .site-header {
+    width: calc(100% - 40px);
   }
 }
 
