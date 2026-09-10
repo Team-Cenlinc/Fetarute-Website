@@ -211,6 +211,11 @@ export const railwayOperators: readonly RailwayOperator[] = [
     primaryName: "Fetarute交通局生存中部铁路",
     secondaryName: "FTA SURcentral",
   },
+  {
+    code: "KRTK",
+    primaryName: "北陆快速交通发展",
+    secondaryName: "Kitariku Rapid Transit Development",
+  },
 ];
 
 /**
@@ -281,6 +286,13 @@ export const railwayLines: readonly RailwayLine[] = [
     color: createHexColor("#D920D9"),
     operatorCode: "SURC",
   },
+  {
+    code: "KL",
+    primaryName: "北陆轻轨",
+    secondaryName: "Kitariku Light Rail",
+    color: createHexColor("#C40D0B"),
+    operatorCode: "KRTK",
+  },
 ];
 
 /**
@@ -316,6 +328,13 @@ assertUniqueRailwayLineField("color", "官方导视颜色");
  * 每座车站只录入一次，ListOf[Lines] 是线路站序的唯一事实来源；换乘站在同一车站记录内列出多条服务。
  */
 export const railwayStations: readonly RailwayStation[] = [
+  {
+    id: "shinmean",
+    primaryName: "新免",
+    secondaryName: "ShinMean",
+    stationCode: "KL-15",
+    lines: [{ lineKey: getRailwayLineKey("KRTK", "KL"), stationIndex: 15 }],
+  },
   {
     id: "levitheed",
     primaryName: "列维希德",
