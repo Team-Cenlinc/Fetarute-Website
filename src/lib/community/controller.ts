@@ -15,6 +15,28 @@ interface CommunityDisclosure {
   scrollbar?: HTMLElement;
 }
 
+/** 一张资料图片的站内预览；原资料卡保持打开，关闭预览后继续从原位置阅读。 */
+interface CommunityMediaDialog {
+  dialog: HTMLDialogElement;
+  image: HTMLImageElement;
+  close: HTMLButtonElement;
+  /** 当前展开来源用于反向收回和关闭后的焦点恢复。 */
+  source?: HTMLButtonElement;
+  /** 顶层 dialog 内的临时图片代理，承担缩略图与最终尺寸之间的空间过渡。 */
+  proxy?: HTMLImageElement;
+  /** 只保留当前一次过渡的控制权，新的打开或关闭会使前次异步解码失效。 */
+  motionId: number;
+  animation?: Animation;
+}
+
+/** 社区投稿采用无回弹的重量感动效，表达“资料内图片被展开”而非跳转到另一个页面。 */
+const communityMediaMotion = {
+  enterDuration: 320,
+  exitDuration: 220,
+  enterEasing: "cubic-bezier(0.2, 0, 0, 1)",
+  exitEasing: "cubic-bezier(0.3, 0, 1, 1)",
+} as const;
+
 /** 渐进增强原生 details：无脚本仍能读取资料，增强后支持 hover、键盘和触屏固定展开。 */
 export function setupCommunityPage(root: HTMLElement): () => void {
   if (root.dataset.communityEnhanced === "true") return () => {};
@@ -36,6 +58,16 @@ export function setupCommunityPage(root: HTMLElement): () => void {
   const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
   const supportsPopover = "showPopover" in HTMLElement.prototype;
   const header = document.querySelector<HTMLElement>(".site-header");
+  const mediaDialogs: CommunityMediaDialog[] = Array.from(
+    root.querySelectorAll<HTMLDialogElement>("[data-community-media-dialog]"),
+  ).flatMap((dialog) => {
+    const image = dialog.querySelector<HTMLImageElement>("[data-community-media-image]");
+    const close = dialog.querySelector<HTMLButtonElement>("[data-community-media-close]");
+    return image && close ? [{ dialog, image, close, motionId: 0 }] : [];
+  });
+  /** 原生 modal 打开后仍保留资料卡状态，避免放大图片意外关闭正在阅读的个人资料。 */
+  const isInsideMediaDialog = (target: EventTarget | null) =>
+    target instanceof Node && mediaDialogs.some(({ dialog }) => dialog.contains(target));
   const train = setupCommunityTrain(root, (dismissPreview) => close(false, dismissPreview), signal);
   /* 字体加载或章节正文换行会移动河口；仅更新连接几何，保留本次地图种子和成员位置。 */
   const mapObserver = new ResizeObserver(() => {
@@ -304,6 +336,212 @@ export function setupCommunityPage(root: HTMLElement): () => void {
     }
   }
 
+  /** 系统明确要求减少动态时保留同一张 modal 图片，但不制造会让辅助技术难以跟随的中间状态。 */
+  function shouldReduceMediaMotion() {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  /** 零尺寸的隐藏缩略图不能作为动画起点或终点，直接打开能避免从视口原点跳入。 */
+  function getVisibleRect(element: Element | undefined) {
+    if (!element) return undefined;
+    const rect = element.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 ? rect : undefined;
+  }
+
+  /** 清理上一轮代理和 Web Animations，确保快速重复开关时只有最后一次过渡能写入 dialog。 */
+  function clearMediaMotion(media: CommunityMediaDialog) {
+    media.animation?.cancel();
+    media.animation = undefined;
+    media.proxy?.remove();
+    media.proxy = undefined;
+    delete media.dialog.dataset.communityMediaMotion;
+  }
+
+  /** 临时代理置于顶层 dialog 内，才能在原生 backdrop 之上连贯地穿过两种尺寸。 */
+  function createMediaProxy(media: CommunityMediaDialog, source: HTMLImageElement, rect: DOMRect) {
+    const proxy = source.cloneNode(false) as HTMLImageElement;
+    proxy.className = "community-media-motion-proxy";
+    proxy.removeAttribute("srcset");
+    proxy.removeAttribute("sizes");
+    proxy.removeAttribute("width");
+    proxy.removeAttribute("height");
+    proxy.alt = "";
+    proxy.setAttribute("aria-hidden", "true");
+    proxy.src = source.currentSrc || source.src;
+    proxy.style.left = `${rect.left}px`;
+    proxy.style.top = `${rect.top}px`;
+    proxy.style.width = `${rect.width}px`;
+    proxy.style.height = `${rect.height}px`;
+    proxy.style.borderRadius = getComputedStyle(source).borderRadius;
+    media.dialog.append(proxy);
+    media.proxy = proxy;
+    return proxy;
+  }
+
+  /** 立即收起用于减少动态、无可见缩略图和中途打断；焦点仍准确回到打开图片的按钮。 */
+  function closeMediaImmediately(media: CommunityMediaDialog, restoreFocus: boolean) {
+    media.motionId += 1;
+    clearMediaMotion(media);
+    if (media.dialog.open) media.dialog.close();
+    if (restoreFocus) media.source?.focus({ preventScroll: true });
+  }
+
+  /** 将缩略图复制到顶层并展开至 dialog 内的同一图片，避免把阅读者带到一套新的弹窗设计。 */
+  async function animateMediaOpen(
+    media: CommunityMediaDialog,
+    thumbnail: HTMLImageElement,
+    motionId: number,
+  ) {
+    await media.image.decode().catch(() => undefined);
+    if (disposed || media.motionId !== motionId || !media.dialog.open) return;
+    const start = getVisibleRect(thumbnail);
+    const end = getVisibleRect(media.image);
+    if (!start || !end) {
+      delete media.dialog.dataset.communityMediaMotion;
+      return;
+    }
+    const proxy = createMediaProxy(media, thumbnail, start);
+    const scaleX = end.width / start.width;
+    const scaleY = end.height / start.height;
+    const translateX = end.left - start.left;
+    const translateY = end.top - start.top;
+    const startRadius = getComputedStyle(thumbnail).borderRadius;
+    window.requestAnimationFrame(() => {
+      if (disposed || media.motionId !== motionId || media.proxy !== proxy || !media.dialog.open)
+        return;
+      media.dialog.dataset.communityMediaMotion = "active";
+      const animation = proxy.animate(
+        [
+          { transform: "translate3d(0, 0, 0) scale(1)", borderRadius: startRadius },
+          {
+            transform: `translate3d(${translateX}px, ${translateY}px, 0) scale(${scaleX}, ${scaleY})`,
+            borderRadius: "0px",
+          },
+        ],
+        {
+          duration: communityMediaMotion.enterDuration,
+          easing: communityMediaMotion.enterEasing,
+          fill: "forwards",
+        },
+      );
+      media.animation = animation;
+      void animation.finished
+        .catch(() => undefined)
+        .then(() => {
+          if (media.motionId !== motionId || media.proxy !== proxy) return;
+          proxy.remove();
+          media.proxy = undefined;
+          media.animation = undefined;
+          delete media.dialog.dataset.communityMediaMotion;
+        });
+    });
+  }
+
+  /** 反向收回使用当前大图为代理，保持图片、背景和焦点在同一条阅读路径上返回资料卡。 */
+  function dismissMedia(media: CommunityMediaDialog) {
+    if (!media.dialog.open) return;
+    const thumbnail = media.source?.querySelector<HTMLImageElement>("img") ?? undefined;
+    if (!thumbnail) {
+      closeMediaImmediately(media, true);
+      return;
+    }
+    const start = getVisibleRect(media.image);
+    const end = getVisibleRect(thumbnail);
+    if (
+      shouldReduceMediaMotion() ||
+      !start ||
+      !end ||
+      media.proxy ||
+      media.animation ||
+      media.dialog.dataset.communityMediaMotion
+    ) {
+      closeMediaImmediately(media, true);
+      return;
+    }
+    media.motionId += 1;
+    const motionId = media.motionId;
+    media.dialog.dataset.communityMediaMotion = "closing";
+    const proxy = createMediaProxy(media, media.image, start);
+    const scaleX = end.width / start.width;
+    const scaleY = end.height / start.height;
+    const translateX = end.left - start.left;
+    const translateY = end.top - start.top;
+    window.requestAnimationFrame(() => {
+      if (disposed || media.motionId !== motionId || media.proxy !== proxy || !media.dialog.open)
+        return;
+      media.dialog.dataset.communityMediaMotion = "exit";
+      const animation = proxy.animate(
+        [
+          { transform: "translate3d(0, 0, 0) scale(1)", borderRadius: "0px" },
+          {
+            transform: `translate3d(${translateX}px, ${translateY}px, 0) scale(${scaleX}, ${scaleY})`,
+            borderRadius: getComputedStyle(thumbnail).borderRadius,
+          },
+        ],
+        {
+          duration: communityMediaMotion.exitDuration,
+          easing: communityMediaMotion.exitEasing,
+          fill: "forwards",
+        },
+      );
+      media.animation = animation;
+      void animation.finished
+        .catch(() => undefined)
+        .then(() => {
+          if (media.motionId !== motionId || media.proxy !== proxy) return;
+          proxy.remove();
+          media.proxy = undefined;
+          media.animation = undefined;
+          delete media.dialog.dataset.communityMediaMotion;
+          if (media.dialog.open) media.dialog.close();
+          media.source?.focus({ preventScroll: true });
+        });
+    });
+  }
+
+  /** 打开时先取得缩略图的实际几何，再由 native dialog 承担焦点管理和 Esc 语义。 */
+  function openMedia(trigger: HTMLButtonElement, media: CommunityMediaDialog) {
+    const source = trigger.dataset.communityMediaSrc;
+    if (!source) return;
+    media.motionId += 1;
+    clearMediaMotion(media);
+    media.source = trigger;
+    media.image.src = source;
+    media.image.alt = trigger.dataset.communityMediaAlt ?? "";
+    if (!media.dialog.open) media.dialog.showModal();
+    media.close.focus({ preventScroll: true });
+    const thumbnail = trigger.querySelector<HTMLImageElement>("img") ?? undefined;
+    if (!thumbnail || shouldReduceMediaMotion() || !getVisibleRect(thumbnail)) return;
+    media.dialog.dataset.communityMediaMotion = "enter";
+    void animateMediaOpen(media, thumbnail, media.motionId);
+  }
+
+  for (const trigger of root.querySelectorAll<HTMLButtonElement>("[data-community-story-open]")) {
+    const neighborhood = trigger.closest<HTMLElement>(".community-neighborhood");
+    const dialog = neighborhood?.querySelector<HTMLDialogElement>("[data-community-media-dialog]");
+    const media = mediaDialogs.find((entry) => entry.dialog === dialog);
+    if (!media) continue;
+    trigger.addEventListener("click", () => openMedia(trigger, media), { signal });
+  }
+  for (const media of mediaDialogs) {
+    media.close.addEventListener("click", () => dismissMedia(media), { signal });
+    media.dialog.addEventListener(
+      "cancel",
+      (event) => {
+        event.preventDefault();
+        dismissMedia(media);
+      },
+      { signal },
+    );
+    media.dialog.addEventListener(
+      "click",
+      (event) => {
+        if (event.target === media.dialog) dismissMedia(media);
+      },
+      { signal },
+    );
+  }
+
   document.addEventListener(
     "pointermove",
     (event) => {
@@ -322,7 +560,8 @@ export function setupCommunityPage(root: HTMLElement): () => void {
         active &&
         event.target instanceof Node &&
         !active.details.contains(event.target) &&
-        !active.panel.contains(event.target)
+        !active.panel.contains(event.target) &&
+        !isInsideMediaDialog(event.target)
       )
         close(false, true);
     },
@@ -332,7 +571,7 @@ export function setupCommunityPage(root: HTMLElement): () => void {
     "keydown",
     (event) => {
       pointerKind = "";
-      if (event.key === "Escape" && active) {
+      if (event.key === "Escape" && active && !isInsideMediaDialog(document.activeElement)) {
         event.preventDefault();
         event.stopPropagation();
         close(true, true);
@@ -343,7 +582,13 @@ export function setupCommunityPage(root: HTMLElement): () => void {
   document.addEventListener(
     "focusin",
     (event) => {
-      if (active && event.target instanceof Node && !active.details.contains(event.target)) close();
+      if (
+        active &&
+        event.target instanceof Node &&
+        !active.details.contains(event.target) &&
+        !isInsideMediaDialog(event.target)
+      )
+        close();
     },
     { signal },
   );
@@ -388,6 +633,7 @@ export function setupCommunityPage(root: HTMLElement): () => void {
 
   /** BFCache 只收起瞬时浮层；真正卸载时取消监听器、计时器和未提交的帧。 */
   function dispose() {
+    for (const media of mediaDialogs) closeMediaImmediately(media, false);
     close();
     disposed = true;
     lifecycle.abort();
@@ -399,6 +645,7 @@ export function setupCommunityPage(root: HTMLElement): () => void {
   window.addEventListener(
     "pagehide",
     (event) => {
+      for (const media of mediaDialogs) closeMediaImmediately(media, false);
       close();
       window.cancelAnimationFrame(frame);
       frame = 0;

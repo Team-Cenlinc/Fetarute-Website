@@ -1,4 +1,5 @@
 ---
+import { Picture } from "astro:assets";
 import type { ImageMetadata } from "astro";
 import xIcon from "@phosphor-icons/core/assets/bold/x-bold.svg?raw";
 import arrowIcon from "@phosphor-icons/core/assets/bold/arrow-up-right-bold.svg?raw";
@@ -26,13 +27,21 @@ interface DisplayEntity extends CommunityEntity {
   displayName: string;
   avatar?: ImageMetadata;
   image?: ImageMetadata;
-  /** 玩家主动提交的签名优先于未投稿玩家的通用提示。 */
-  signature?: string;
-  profile?: {
+  /** 已解析为当前语言的伙伴资料；原始身份 profile 仍由 CommunityEntity 持有。 */
+  partnerProfile?: {
     description: string;
     note: string;
     status?: string;
     imageAlt: string;
+  };
+  /** 个人故事媒体与正文；没有投稿的玩家继续显示通用资料。 */
+  story?: {
+    /** Astro 处理后的个人故事图片。 */
+    image: ImageMetadata;
+    /** 以投稿原文提供图片替代文本，避免翻译改变内容语境。 */
+    imageAlt: string;
+    /** 展示在图片上方的个人故事正文；英文页也保留投稿原文。 */
+    body: string;
   };
 }
 /** 同一地图复用成员资料与交互；玩家区可限制为一片随机街区，伙伴区则完整展示。 */
@@ -51,6 +60,8 @@ const plots = createCommunityLayout(entities.map((entity) => entity.id), communi
 const blockCount = singleBlock ? 1 : Math.ceil(plots.length / communityDesktopMap.lots.length);
 /** 两种视口使用相同资料和绘制顺序，只有地图坐标发生变化。 */
 const templates = [{ key: "desktop", map: communityDesktopMap }, { key: "mobile", map: communityMobileMap }];
+/** 每张地图各有一个站内媒体模态框，避免图片链接离开当前 Community 阅读上下文。 */
+const mediaDialogId = "community-media-dialog-" + (singleBlock ? "players" : "connections");
 
 /** 单片玩家街区在无脚本首帧也只占用四块土地，其余土地直接呈现公共设施。 */
 const initialPlotsForBlock = (block: number) =>
@@ -103,6 +114,8 @@ const pointsAttribute = (points: readonly CommunityMapPoint[]) => points.map((po
         const portraitClass = entity.avatar
           ? "community-plot__avatar"
           : "community-plot__partner-image";
+        /** 个人引语与故事独立；没有投稿故事的玩家也保留可读的资料状态。 */
+        const motto = entity.profile?.kind === "player" ? entity.profile.motto : undefined;
         return (
           <details class="community-plot" id={entity.id} style={geometryStyle(plot.desktop, communityDesktopMap) + geometryStyle(plot.mobile, communityMobileMap, "-mobile")} data-community-disclosure data-community-entity={entity.kind} hidden={singleBlock && !initialPlotsForBlock(block).includes(plot)}>
             <summary aria-label={entity.displayName + " · " + roleLabel} aria-controls={entity.id + "-panel"} aria-haspopup="dialog">
@@ -114,7 +127,7 @@ const pointsAttribute = (points: readonly CommunityMapPoint[]) => points.map((po
               })}
               <span class="community-plot__label">
                 <span class="community-plot__portrait">
-                  {portrait ? <img class={portraitClass} src={portrait.src} width="64" height="64" alt={entity.avatar ? "" : entity.profile?.imageAlt ?? ""} loading="lazy" decoding="async" /> : <span set:html={icon} aria-hidden="true" />}
+                  {portrait ? <img class={portraitClass} src={portrait.src} width="64" height="64" alt={entity.avatar ? "" : entity.partnerProfile?.imageAlt ?? ""} loading="lazy" decoding="async" /> : <span set:html={icon} aria-hidden="true" />}
                 </span>
                 <span class="community-plot__name">{entity.displayName}</span>
               </span>
@@ -123,17 +136,43 @@ const pointsAttribute = (points: readonly CommunityMapPoint[]) => points.map((po
               <button type="button" class="community-panel__close" data-community-close aria-label={copy.close}><span set:html={xIcon} aria-hidden="true" /></button>
               <header class="community-profile__identity">
                 <span class="community-profile__portrait">
-                  {portrait ? <img class={entity.avatar ? "community-profile__avatar" : "community-profile__partner-image"} src={portrait.src} width="48" height="48" alt={entity.avatar ? "" : entity.profile?.imageAlt ?? ""} loading="lazy" /> : <span set:html={icon} aria-hidden="true" />}
+                  {portrait ? <img class={entity.avatar ? "community-profile__avatar" : "community-profile__partner-image"} src={portrait.src} width="48" height="48" alt={entity.avatar ? "" : entity.partnerProfile?.imageAlt ?? ""} loading="lazy" /> : <span set:html={icon} aria-hidden="true" />}
                 </span>
                 <div><span class="community-profile__kind">{roleLabel}</span><h3 id={entity.id + "-name"}>{entity.displayName}</h3></div>
               </header>
               <div class="community-profile__description-wrap" data-community-description>
-                <p class="community-profile__description" tabindex="0">{entity.profile?.description ?? (entity.kind === "player" ? copy.playerIntro : copy.partnerIntro)}</p>
+                <div class="community-profile__description" tabindex="0">
+                  <p>{entity.story?.body ?? entity.partnerProfile?.description ?? (entity.kind === "player" ? copy.playerIntro : copy.partnerIntro)}</p>
+                  {entity.story && (
+                    <div class="community-profile__story">
+                      <button
+                        type="button"
+                        class="community-profile__story-link"
+                        aria-label={copy.openMedia + "：" + entity.story.imageAlt}
+                        aria-haspopup="dialog"
+                        aria-controls={mediaDialogId}
+                        data-community-story-open
+                        data-community-media-src={entity.story.image.src}
+                        data-community-media-alt={entity.story.imageAlt}
+                      >
+                        <Picture
+                          src={entity.story.image}
+                          alt={entity.story.imageAlt}
+                          widths={[320, 640, 960]}
+                          sizes="(max-width: 400px) calc(100vw - 72px), 316px"
+                          formats={["avif", "webp"]}
+                          quality={80}
+                          loading="lazy"
+                        />
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <span class="community-profile__scrollbar" data-community-scrollbar aria-hidden="true" hidden><span></span></span>
               </div>
-              <p class="community-profile__note">{entity.signature ?? entity.profile?.note ?? (entity.kind === "player" ? copy.playerNote : copy.partnerNote)}</p>
+              {!entity.story && <p class="community-profile__note">{entity.partnerProfile?.status ?? (entity.kind === "player" ? copy.playerNote : copy.partnerNote)}</p>}
               <footer class="community-profile__footer">
-                {entity.href ? <a href={entity.href} target="_blank" rel="noopener noreferrer">{copy.visit}<span set:html={arrowIcon} aria-hidden="true" /></a> : <span>{entity.profile?.status ?? copy.pending}</span>}
+                {entity.href ? <a href={entity.href} target="_blank" rel="noopener noreferrer">{copy.visit}<span set:html={arrowIcon} aria-hidden="true" /></a> : entity.kind === "player" ? <span class:list={{ "community-profile__motto": true, "community-profile__motto--pending": !motto }}>{motto ?? copy.mottoPending}</span> : entity.partnerProfile?.note ? <span class="community-profile__motto">{entity.partnerProfile.note}</span> : <span>{copy.pending}</span>}
               </footer>
             </div>
           </details>
@@ -141,4 +180,10 @@ const pointsAttribute = (points: readonly CommunityMapPoint[]) => points.map((po
       })}
     </div>
   ))}
+  <dialog class="community-media-dialog" id={mediaDialogId} aria-label={copy.mediaPreview} data-community-media-dialog>
+    <div class="community-media-dialog__surface">
+      <button type="button" class="community-media-dialog__close" data-community-media-close aria-label={copy.closeMedia}><span set:html={xIcon} aria-hidden="true" /></button>
+      <img data-community-media-image alt="" decoding="async" />
+    </div>
+  </dialog>
 </div>

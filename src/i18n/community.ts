@@ -34,6 +34,12 @@ export interface CommunityMessages {
   partnerIntro: string;
   playerNote: string;
   partnerNote: string;
+  /** 没有个人引语时使用自然说明，仍让资料卡保留完整的阅读节奏。 */
+  mottoPending: string;
+  /** 个人故事图片在同页模态框打开，文案与资料卡的关闭操作分开。 */
+  openMedia: string;
+  closeMedia: string;
+  mediaPreview: string;
   pending: string;
   partnerProfiles: Readonly<Record<CommunityPartnerId, CommunityPartnerMessages>>;
   close: string;
@@ -76,6 +82,10 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
     partnerIntro: "一段与另一座世界相遇的故事，仍在路上。",
     playerNote: "等待玩家投稿",
     partnerNote: "等待相遇 · 尚不代表合作关系",
+    mottoPending: "这位邻居还没有留下想说的话。",
+    openMedia: "放大图片",
+    closeMedia: "关闭图片预览",
+    mediaPreview: "图片预览",
     pending: "社区记录待收录",
     partnerProfiles: {
       urasaka: {
@@ -135,6 +145,10 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
     partnerIntro: "一段與另一座世界相遇的故事，仍在路上。",
     playerNote: "等待玩家投稿",
     partnerNote: "等待相遇 · 尚不代表合作關係",
+    mottoPending: "這位鄰居還沒有留下想說的話。",
+    openMedia: "放大圖片",
+    closeMedia: "關閉圖片預覽",
+    mediaPreview: "圖片預覽",
     pending: "社區記錄待收錄",
     partnerProfiles: {
       urasaka: {
@@ -195,6 +209,10 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
     partnerIntro: "Our story of meeting another world is still to come.",
     playerNote: "Awaiting a submission from the player",
     partnerNote: "Yet to meet · No partnership implied",
+    mottoPending: "This neighbor has not shared a personal note yet.",
+    openMedia: "Enlarge image",
+    closeMedia: "Close image preview",
+    mediaPreview: "Image preview",
     pending: "Community profile yet to be added",
     partnerProfiles: {
       urasaka: {

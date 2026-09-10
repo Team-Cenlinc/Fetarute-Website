@@ -9,6 +9,28 @@ export type CommunityPlayerRole = "owner" | "administrator" | "mayor";
 /** 已核实服务器资料的稳定键，供三语文案和本地图片在构建期安全对应。 */
 export type CommunityPartnerId = "urasaka" | "hydcraft" | "nebulaecraft";
 
+/** 玩家投稿故事的稳定键；资料与素材按此键关联，不让改名影响既有投稿。 */
+export type CommunityPlayerStoryId = "katsuta-minamoto";
+
+/** 玩家资料只收录本人公开确认的 Motto 或投稿，不从首页故事反推出个人介绍。 */
+export interface CommunityPlayerProfile {
+  kind: "player";
+  /** 玩家主动提供的原文 Motto；没有填写时仍保留资料卡中的字段位置。 */
+  motto?: string;
+  /** 已许可公开的个人故事；正文和本地素材由该稳定键统一解析。 */
+  storyId?: CommunityPlayerStoryId;
+}
+
+/** 其他服务器或外部社群通过独立键取得三语关系说明与本地图片。 */
+export interface CommunityPartnerProfile {
+  kind: "partner";
+  /** 只有核实关系与资料后才引用；占位对象不应伪装成合作方。 */
+  partnerId: CommunityPartnerId;
+}
+
+/** 一处实体最多拥有一种资料来源，避免故事、Motto 和伙伴资料散落在页面层拼接。 */
+export type CommunityEntityProfile = CommunityPlayerProfile | CommunityPartnerProfile;
+
 /** 可公开展示的一处社区地点；作品和外链均非必填，未知关系不能伪装成真实合作。 */
 export interface CommunityEntity {
   /** 稳定身份用于地块、深链与焦点回归，不使用随机位置作为身份。 */
@@ -22,10 +44,8 @@ export interface CommunityEntity {
   playerRole?: CommunityPlayerRole;
   /** 只有核实关系与目的地后才填写；占位对象没有可点击外链。 */
   href?: string;
-  /** 玩家主动提供的原文签名；不擅自翻译或补写未投稿的个人资料。 */
-  signature?: string;
-  /** 已核实服务器资料的构建期键；没有该键的地点继续使用通用占位文案。 */
-  partnerId?: CommunityPartnerId;
+  /** 个人投稿或伙伴资料的唯一入口；展示层只解析它，不维护额外的身份映射。 */
+  profile?: CommunityEntityProfile;
 }
 
 /**
@@ -83,7 +103,7 @@ const confirmedCommunityPlayers: readonly CommunityEntity[] = [
     name: "Thomasxyx",
     playerUuid: "ba4fa89850a04a4bb3ee2d5ece82d7a7",
     playerRole: "owner",
-    signature: "希望Fetarute和其玩家们的明天会更好~",
+    profile: { kind: "player", motto: "希望Fetarute和其玩家们的明天会更好~" },
   },
   {
     id: "player-7a740f60cf96481aa74a8a618569eb3b",
@@ -140,27 +160,31 @@ export const communityEntities: readonly CommunityEntity[] = [
     name: player.name,
     playerUuid: player.uuid,
     playerRole: communityPlayerRolesByUuid[player.uuid],
+    profile:
+      player.uuid === "302c6dad42bd46f996e3a4b239ab88ca"
+        ? { kind: "player", storyId: "katsuta-minamoto" }
+        : undefined,
   })),
   ...confirmedCommunityPlayers,
   {
     id: "urasaka",
     kind: "server",
     name: "浦坂 Urasaka",
-    partnerId: "urasaka",
+    profile: { kind: "partner", partnerId: "urasaka" },
   },
   {
     id: "hydcraft",
     kind: "server",
     name: "HydCraft",
     href: "https://hydcraft.cn",
-    partnerId: "hydcraft",
+    profile: { kind: "partner", partnerId: "hydcraft" },
   },
   {
     id: "nebulaecraft",
     kind: "server",
     name: "NebulaeCraft",
     href: "https://wiki.knebulae.com/wiki/%E9%A6%96%E9%A1%B5",
-    partnerId: "nebulaecraft",
+    profile: { kind: "partner", partnerId: "nebulaecraft" },
   },
   { id: "group-placeholder", kind: "group" },
 ];

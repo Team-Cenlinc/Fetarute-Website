@@ -21,6 +21,21 @@ test("三语社区原型静态输出完整成员、概念地图和原生降级�
       html.includes("希望Fetarute和其玩家们的明天会更好~"),
       "Thomasxyx 的公开签名必须进入静态页面",
     );
+    const storyBody = locale === "zh-Hant" ? "美麗新北陸建設中" : "美丽新北陆建设中";
+    assert.match(html, /katsuta-minamoto-story\.[^" ]+\.webp/);
+    assert.ok(html.includes(storyBody), "Katsuta_Minamoto 的个人故事正文必须按语言进入静态页面");
+    assert.ok(html.includes(storyBody), "Katsuta_Minamoto 的个人故事正文必须替换通用占位文案");
+    assert.match(
+      html,
+      /class="community-profile__story-link"[^>]+aria-haspopup="dialog"[^>]+data-community-story-open/,
+    );
+    assert.match(html, /class="community-media-dialog"[^>]+data-community-media-dialog/);
+    assert.doesNotMatch(html, /class="community-profile__story-link"[^>]+target="_blank"/);
+    assert.ok(
+      html.includes(communityMessages[locale].mottoPending),
+      "没有投稿 Motto 的玩家也必须保留资料字段",
+    );
+    assert.doesNotMatch(html, new RegExp(`class="community-profile__motto">${storyBody}`));
     for (const role of ["owner", "administrator", "mayor"] as const)
       assert.ok(html.includes(communityMessages[locale].playerRoles[role]));
     assert.match(html, /data-home-journey-picker/);
@@ -49,9 +64,19 @@ test("三语社区原型静态输出完整成员、概念地图和原生降级�
 
 test("已确认服务器使用核实名称和入口，未知外部团体仍不伪造身份或链接", () => {
   assert.deepEqual(
-    communityEntities
-      .filter((entity) => entity.partnerId)
-      .map(({ id, kind, name, href, partnerId }) => ({ id, kind, name, href, partnerId })),
+    communityEntities.flatMap((entity) =>
+      entity.profile?.kind === "partner"
+        ? [
+            {
+              id: entity.id,
+              kind: entity.kind,
+              name: entity.name,
+              href: entity.href,
+              partnerId: entity.profile.partnerId,
+            },
+          ]
+        : [],
+    ),
     [
       {
         id: "urasaka",
@@ -103,7 +128,15 @@ test("用户确认的 FR 玩家逐一保留，未核实 Java 档案者不伪造 
     assert.ok(playerByName.has(name));
 
   assert.match(playerByName.get("EricH_SPT")?.playerUuid ?? "", /^[0-9a-f]{32}$/);
-  assert.equal(playerByName.get("Thomasxyx")?.signature, "希望Fetarute和其玩家们的明天会更好~");
+  const thomasProfile = playerByName.get("Thomasxyx")?.profile;
+  assert.equal(thomasProfile?.kind, "player");
+  if (thomasProfile?.kind !== "player") throw new Error("Thomasxyx 应保留玩家资料。");
+  assert.equal(thomasProfile.motto, "希望Fetarute和其玩家们的明天会更好~");
+  const katsutaProfile = playerByName.get("Katsuta_Minamoto")?.profile;
+  assert.equal(katsutaProfile?.kind, "player");
+  if (katsutaProfile?.kind !== "player") throw new Error("Katsuta_Minamoto 应保留玩家资料。");
+  assert.equal(katsutaProfile.storyId, "katsuta-minamoto");
+  assert.equal(katsutaProfile.motto, undefined, "未填写 Motto 仍是明确的资料状态");
   assert.deepEqual(
     Object.fromEntries(
       [

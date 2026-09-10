@@ -34,6 +34,7 @@ import {
   communityMosaicInvitationCount,
   type CommunityPartnerId,
 } from "@/data/community";
+import { getCommunityPlayerStory } from "@/data/community-profile-stories";
 import { communityMapPalette } from "@/data/palette";
 import { createHexColor, shiftRailwayLineColor } from "@/data/railway";
 import { onwardEntryPoints, wayfindingPrototype } from "@/data/site";
@@ -76,15 +77,21 @@ const partnerImages: Readonly<Record<CommunityPartnerId, ImageMetadata>> = {
   hydcraft,
   nebulaecraft,
 };
-const entities = communityEntities.map((entity) => ({
-  ...entity,
-  profile: entity.partnerId ? copy.partnerProfiles[entity.partnerId] : undefined,
-  displayName: entity.name ?? (
-    entity.kind === "server" ? copy.serverPlaceholder : copy.groupPlaceholder
-  ),
-  avatar: entity.playerUuid ? avatars[entity.playerUuid] : undefined,
-  image: entity.partnerId ? partnerImages[entity.partnerId] : undefined,
-}));
+/** 组件只解析资料层给出的稳定 profile，不再维护第二套 UUID、伙伴键或故事配置。 */
+const entities = communityEntities.map((entity) => {
+  const partnerId = entity.profile?.kind === "partner" ? entity.profile.partnerId : undefined;
+  const storyId = entity.profile?.kind === "player" ? entity.profile.storyId : undefined;
+  return {
+    ...entity,
+    partnerProfile: partnerId ? copy.partnerProfiles[partnerId] : undefined,
+    displayName:
+      entity.name ??
+      (entity.kind === "server" ? copy.serverPlaceholder : copy.groupPlaceholder),
+    avatar: entity.playerUuid ? avatars[entity.playerUuid] : undefined,
+    image: partnerId ? partnerImages[partnerId] : undefined,
+    story: storyId ? getCommunityPlayerStory(storyId, locale) : undefined,
+  };
+});
 const members = entities.filter((entity) => entity.kind === "player");
 /** 棋盘构图固定；末端灰格为未来玩家留位，真实头像在浏览器首帧前重新排列。 */
 const mosaicCells = createCommunityMosaicLayout(Math.min(32, members.length + communityMosaicInvitationCount));
