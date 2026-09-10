@@ -25,6 +25,14 @@ test("三语社区原型静态输出完整成员、概念地图和原生降级�
     assert.match(html, /katsuta-minamoto-story\.[^" ]+\.webp/);
     assert.ok(html.includes(storyBody), "Katsuta_Minamoto 的个人故事正文必须按语言进入静态页面");
     assert.ok(html.includes(storyBody), "Katsuta_Minamoto 的个人故事正文必须替换通用占位文案");
+    const acatineStoryBody =
+      locale === "en"
+        ? "Greenport Bridge on SURnorth is being widened to make room for more trains—and more first-time visitors."
+        : locale === "zh-Hant"
+          ? "SURnorth 的格林波特大橋正在擴容，為更多列車，也為更多初次到來的人留出位置。"
+          : "SURnorth 的格林波特大桥正在扩容，为更多列车，也为更多初次到来的人留出位置。";
+    assert.match(html, /acatine-greenport-br-memorial\.[^" ]+\.webp/);
+    assert.ok(html.includes(acatineStoryBody), "Acatine 的格林波特大桥故事必须按语言进入静态页面");
     assert.match(
       html,
       /class="community-profile__story-link"[^>]+aria-haspopup="dialog"[^>]+data-community-story-open/,
@@ -107,6 +115,19 @@ test("已确认服务器使用核实名称和入口，未知外部团体仍不�
   assert.equal(groupPlaceholder?.href, undefined);
 });
 
+test("已确认友好服务器显示关系年份，等待相遇只留给未确认对象", () => {
+  for (const locale of locales) {
+    const html = readFileSync(
+      new URL(`../dist/${locale}/community/index.html`, import.meta.url),
+      "utf8",
+    );
+    const profiles = communityMessages[locale].partnerProfiles;
+    assert.ok(html.includes(profiles.hydcraft.status!));
+    assert.ok(html.includes(profiles.nebulaecraft.status!));
+    assert.ok(html.includes(communityMessages[locale].partnerNote));
+  }
+});
+
 test("用户确认的 FR 玩家逐一保留，未核实 Java 档案者不伪造 UUID", () => {
   const players = communityEntities.filter((entity) => entity.kind === "player");
   const playerByName = new Map(players.map((player) => [player.name, player]));
@@ -128,6 +149,11 @@ test("用户确认的 FR 玩家逐一保留，未核实 Java 档案者不伪造 
     assert.ok(playerByName.has(name));
 
   assert.match(playerByName.get("EricH_SPT")?.playerUuid ?? "", /^[0-9a-f]{32}$/);
+  const acatineProfile = playerByName.get("Acatine")?.profile;
+  assert.equal(acatineProfile?.kind, "player");
+  if (acatineProfile?.kind !== "player") throw new Error("Acatine 应保留玩家资料。");
+  assert.equal(acatineProfile.motto, "蒲塘桥民");
+  assert.equal(acatineProfile.storyId, "acatine-greenport-br-memorial");
   const thomasProfile = playerByName.get("Thomasxyx")?.profile;
   assert.equal(thomasProfile?.kind, "player");
   if (thomasProfile?.kind !== "player") throw new Error("Thomasxyx 应保留玩家资料。");

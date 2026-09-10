@@ -99,12 +99,14 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
         description:
           "从修楼、铺轨到造城，HydCraft 把铁路、街区与玩家的日常编进同一张地图。在创造与模组交织的世界里，他们为共同建设留出辽阔的空间；Fetarute 自 2018 年起与他们并肩。",
         note: "2018 年结成友好服务器",
+        status: "2018 年结成友好服务器",
         imageAlt: "HydCraft 标志",
       },
       nebulaecraft: {
         description:
           "星云工艺以城市与轨道交通为世界的骨架：线路穿过街区，站点串起城市，也把多周目的行驶记忆留在地图里。",
         note: "城市与轨道交通 · 历史 Wiki",
+        status: "2022 年结成友好服务器",
         imageAlt: "NebulaeCraft 标志",
       },
     },
@@ -162,12 +164,14 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
         description:
           "從修樓、鋪軌到造城，HydCraft 把鐵路、街區與玩家的日常編進同一張地圖。在創造與模組交織的世界裡，他們為共同建設留出遼闊的空間；Fetarute 自 2018 年起與他們並肩。",
         note: "2018 年結成友好伺服器",
+        status: "2018 年結成友好伺服器",
         imageAlt: "HydCraft 標誌",
       },
       nebulaecraft: {
         description:
           "星雲工藝以城市與軌道交通為世界的骨架：線路穿過街區，站點串起城市，也把多周目的行駛記憶留在地圖裡。",
         note: "城市與軌道交通 · 歷史 Wiki",
+        status: "2022 年結成友好伺服器",
         imageAlt: "NebulaeCraft 標誌",
       },
     },
@@ -226,12 +230,14 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
         description:
           "From putting up buildings and laying track to creating entire cities, the people of HydCraft weave railways, neighborhoods and everyday player life into a shared map. In a world where creative building meets modded play, they make plenty of room to build together. Fetarute has stood alongside them since 2018.",
         note: "Friends since 2018",
+        status: "Friends since 2018",
         imageAlt: "HydCraft logo",
       },
       nebulaecraft: {
         description:
           "At NebulaeCraft, cities and rail transit form the backbone of the world. Lines run through neighborhoods, stations tie the city together, and the map preserves memories of journeys across successive worlds.",
         note: "City building & rail transit · Historical Wiki",
+        status: "Friends since 2022",
         imageAlt: "NebulaeCraft logo",
       },
     },

@@ -693,6 +693,32 @@
   gap: 10px;
   color: var(--community-text);
   min-height: 44px;
+  text-decoration: none;
+}
+.community-profile__external-label {
+  position: relative;
+}
+.community-profile__external-label::after {
+  position: absolute;
+  right: 0;
+  bottom: -3px;
+  left: 0;
+  height: 1px;
+  content: "";
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 150ms ease;
+}
+.community-profile__external-arrow {
+  display: flex;
+  transition: transform 150ms ease;
+}
+.community-profile__footer a:is(:hover, :focus-visible) .community-profile__external-label::after {
+  transform: scaleX(1);
+}
+.community-profile__footer a:is(:hover, :focus-visible) .community-profile__external-arrow {
+  transform: translate(3px, -3px);
 }
 .community-profile__footer svg {
   width: 20px;

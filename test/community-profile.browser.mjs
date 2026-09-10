@@ -33,6 +33,18 @@ for (const colorScheme of ["light", "dark"]) {
         radius: getComputedStyle(element).borderRadius,
       }));
       assert.deepEqual(shape, { width: "3px", radius: "0px" });
+      const externalLink = panel.locator(".community-profile__footer a");
+      const externalArrow = externalLink.locator(".community-profile__external-arrow");
+      await externalLink.hover();
+      await page.waitForFunction(() => {
+        const arrow = document.querySelector("#hydcraft-panel .community-profile__external-arrow");
+        return arrow instanceof HTMLElement && getComputedStyle(arrow).transform !== "none";
+      });
+      assert.notEqual(
+        await externalArrow.evaluate((element) => getComputedStyle(element).transform),
+        "matrix(1, 0, 0, 1, 0, 0)",
+        "外部群体跳转链接悬停时应带动外箭头，明确表示可离开本站",
+      );
       for (const [progress, hint] of [
         [0, "bottom"],
         [0.5, "top bottom"],
@@ -142,6 +154,42 @@ test(`${engine}: 个人故事图片从资料卡缩略图展开为原页 modal，
   }
 });
 
+test(`${engine}: Acatine 的格林波特大桥故事保留 Motto 与站内图片预览`, async () => {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  try {
+    await page.goto(`${baseUrl}/zh-Hans/community/`, { waitUntil: "networkidle" });
+    await page.evaluate(() => document.fonts.ready);
+    const plot = page.locator("#player-044741a8b61048f4aed1553b7e2ca8da");
+    await plot.evaluate((element) => {
+      element.hidden = false;
+    });
+    await plot.locator("summary").click();
+    const panel = page.locator("#player-044741a8b61048f4aed1553b7e2ca8da-panel");
+    await panel.waitFor({ state: "visible" });
+    await expectText(panel.locator(".community-profile__motto"), "蒲塘桥民");
+    assert.match(
+      (await panel.locator(".community-profile__description").textContent()).replaceAll(/\s+/g, ""),
+      /SURnorth的格林波特大桥正在扩容，为更多列车，也为更多初次到来的人留出位置。/,
+    );
+    await panel.locator("[data-community-story-open]").click();
+    const dialog = page.locator("#community-media-dialog-players");
+    await dialog.waitFor({ state: "visible" });
+    assert.equal(
+      await dialog.locator("[data-community-media-image]").getAttribute("alt"),
+      "夜间的 E261 型列车车窗前，Acatine 坐在暖光车厢里，窗外是深色高架桥与沿岸灯光。",
+    );
+    await page.keyboard.press("Escape");
+    await page.waitForFunction(
+      () => !document.querySelector("#community-media-dialog-players").open,
+    );
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
 test(`${engine}: 手机预览按照横向投稿图片收拢，不留下整屏空画台`, async () => {
   const page = await browser.newPage({
     viewport: { width: 390, height: 844 },
@@ -157,7 +205,7 @@ test(`${engine}: 手机预览按照横向投稿图片收拢，不留下整屏空
     });
     /* 目标地块因测试而临时揭示，可能位于既有浮层下方；尺寸断言不依赖其命中几何。 */
     await plot.locator("summary").click({ force: true });
-    await page.locator("[data-community-story-open]").click({ force: true });
+    await plot.locator("[data-community-story-open]").click({ force: true });
     const dialog = page.locator("#community-media-dialog-players");
     const image = dialog.locator("[data-community-media-image]");
     assert.equal(await page.locator(".community-media-motion-proxy").count(), 0);

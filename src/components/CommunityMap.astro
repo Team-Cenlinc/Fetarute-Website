@@ -172,7 +172,7 @@ const pointsAttribute = (points: readonly CommunityMapPoint[]) => points.map((po
               </div>
               {!entity.story && <p class="community-profile__note">{entity.partnerProfile?.status ?? (entity.kind === "player" ? copy.playerNote : copy.partnerNote)}</p>}
               <footer class="community-profile__footer">
-                {entity.href ? <a href={entity.href} target="_blank" rel="noopener noreferrer">{copy.visit}<span set:html={arrowIcon} aria-hidden="true" /></a> : entity.kind === "player" ? <span class:list={{ "community-profile__motto": true, "community-profile__motto--pending": !motto }}>{motto ?? copy.mottoPending}</span> : entity.partnerProfile?.note ? <span class="community-profile__motto">{entity.partnerProfile.note}</span> : <span>{copy.pending}</span>}
+                {entity.href ? <a href={entity.href} target="_blank" rel="noopener noreferrer"><span class="community-profile__external-label">{copy.visit}</span><span class="community-profile__external-arrow" set:html={arrowIcon} aria-hidden="true" /></a> : entity.kind === "player" ? <span class:list={{ "community-profile__motto": true, "community-profile__motto--pending": !motto }}>{motto ?? copy.mottoPending}</span> : entity.partnerProfile?.note ? <span class="community-profile__motto">{entity.partnerProfile.note}</span> : <span>{copy.pending}</span>}
               </footer>
             </div>
           </details>

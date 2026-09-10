@@ -10,7 +10,7 @@ export type CommunityPlayerRole = "owner" | "administrator" | "mayor";
 export type CommunityPartnerId = "urasaka" | "hydcraft" | "nebulaecraft";
 
 /** 玩家投稿故事的稳定键；资料与素材按此键关联，不让改名影响既有投稿。 */
-export type CommunityPlayerStoryId = "katsuta-minamoto";
+export type CommunityPlayerStoryId = "acatine-greenport-br-memorial" | "katsuta-minamoto";
 
 /** 玩家资料只收录本人公开确认的 Motto 或投稿，不从首页故事反推出个人介绍。 */
 export interface CommunityPlayerProfile {
@@ -146,6 +146,16 @@ const communityPlayerRolesByUuid: Readonly<Record<string, CommunityPlayerRole>> 
   "49a9cb104b224aceb91f7605df0b34a6": "mayor",
 };
 
+/** 已确认公开的玩家资料按 UUID 关联，避免页面列表同时承担身份、Motto 与故事资料的映射。 */
+const communityPlayerProfilesByUuid: Readonly<Partial<Record<string, CommunityPlayerProfile>>> = {
+  "044741a8b61048f4aed1553b7e2ca8da": {
+    kind: "player",
+    motto: "蒲塘桥民",
+    storyId: "acatine-greenport-br-memorial",
+  },
+  "302c6dad42bd46f996e3a4b239ab88ca": { kind: "player", storyId: "katsuta-minamoto" },
+};
+
 /**
  * 首版从首页已获公开署名许可的成员读取样本，不以首页作品池作为未来收录门槛。
  * 新成员可以直接补充 player 记录，不需要添加作品、贡献分数或首页故事。
@@ -160,10 +170,7 @@ export const communityEntities: readonly CommunityEntity[] = [
     name: player.name,
     playerUuid: player.uuid,
     playerRole: communityPlayerRolesByUuid[player.uuid],
-    profile:
-      player.uuid === "302c6dad42bd46f996e3a4b239ab88ca"
-        ? { kind: "player", storyId: "katsuta-minamoto" }
-        : undefined,
+    profile: communityPlayerProfilesByUuid[player.uuid],
   })),
   ...confirmedCommunityPlayers,
   {
