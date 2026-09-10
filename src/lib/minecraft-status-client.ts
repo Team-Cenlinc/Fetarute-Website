@@ -2,6 +2,7 @@ import {
   instanceIds,
   getMinecraftStatusUrl,
   minecraftRefreshInterval,
+  minecraftStatusTimeout,
   parseMinecraftSnapshot,
 } from "./minecraft-status";
 
@@ -39,7 +40,7 @@ export function initMinecraftStatus(root: HTMLElement) {
     pending = true;
     try {
       const response = await fetch(getMinecraftStatusUrl(window.location.hostname), {
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(minecraftStatusTimeout),
         credentials: "omit",
       });
       if (!response.ok) throw new Error("Status request failed");

@@ -1,3 +1,4 @@
+import type { Locale } from "../i18n/config.ts";
 import { externalDestinations, siteInfo, statusDashboardUrl } from "./site.ts";
 
 /** WebMCP 对外查询的稳定资源站点身份；不使用 URL 作为键，避免链接迁移破坏代理调用。 */
@@ -16,7 +17,7 @@ export interface WebMcpResource {
   description: string;
 }
 
-/** WebMCP 可定位的站内主页面身份；公告和指南通过 Info 导览，本轮不单独建立内容集合查询工具。 */
+/** WebMCP 可定位的站内主页面身份；公告与指南的单篇 URL 由文章目录提供，这里只保留三个长期存在的导览页。 */
 export type WebMcpPageKey = "home" | "community" | "info";
 
 /** 一项可由代理解析为本地化绝对 URL 的公开页面。 */
@@ -106,3 +107,33 @@ export const webMcpPublicOverview = {
   serverAccess:
     "Fetarute is a private server with an application and review process. Submit the application form in the QQ portal group and wait for review; the group provides the next steps. Use find-fetarute-page with page=info and your preferred locale to reach the joining guide. This tool does not return a group number or game-server address, or guarantee availability or version compatibility.",
 } as const;
+
+/** WebMCP 文章目录覆盖的内容集合；与 `src/content.config.ts` 的集合名保持一致，便于代理按内容类型收窄检索。 */
+export type WebMcpArticleCollection = "guides" | "news";
+
+/**
+ * 一篇已发布文章在 WebMCP 目录中的公开描述。
+ * 只包含 frontmatter 已校验的标题、摘要与实际静态路由，不携带正文；正文由读者在页面上阅读，避免代理复述未经审阅的长文。
+ */
+export interface WebMcpArticle {
+  /** 文章所属集合，使代理可以区分长期指南与时效公告。 */
+  collection: WebMcpArticleCollection;
+  /** 跨语言共享的稳定文章标识，同时也是静态路由的 slug。 */
+  translationKey: string;
+  /** 本条目实际使用的语言；每种语言是独立条目，不做跨语言回退。 */
+  locale: Locale;
+  /** frontmatter 中的文章标题。 */
+  title: string;
+  /** frontmatter 中的文章摘要，供代理判断是否符合读者意图。 */
+  description: string;
+  /** 该语言版本的正式绝对 URL，与 Astro 生成的静态页面一致。 */
+  url: string;
+  /** 同一 translationKey 实际存在的全部语言，使代理能如实说明翻译覆盖情况。 */
+  availableLocales: readonly Locale[];
+  /** 公告的发布时间（ISO 字符串）；指南没有该字段。 */
+  publishedAt?: string;
+  /** 公告的最近更新时间（ISO 字符串）；未标注更新时缺省。 */
+  updatedAt?: string;
+  /** 公告是否被置顶；指南没有该字段。 */
+  pinned?: boolean;
+}

@@ -34,7 +34,7 @@ git diff --check
 ## WebMCP 渐进增强
 
 `src/lib/webmcp.ts` 通过 `document.modelContext`
-能力检查注册三个只读工具：查询 Fetarute 公开概览、取得某一项正式资源 URL、取得特定语言的站内页面 URL。资源和页面白名单集中在
+能力检查注册五个只读工具：查询 Fetarute 公开概览、取得某一项正式资源 URL、取得特定语言的站内页面 URL、检索公告与指南，以及读取一次公开服务状态。资源和页面白名单集中在
 `src/data/webmcp.ts`，并复用 `src/data/site.ts`
 的正式链接；不提供占位服务器地址、QQ 群号、玩家数据、剪贴板写入、跨域授权或可改变页面状态的工具。
 
@@ -43,21 +43,141 @@ git diff --check
 
 当前覆盖范围与后续边界：
 
-- 已覆盖：公开概览、三语 Home / Community / Info 页面、Wiki、三张地图与服务状态面板 URL。
-- 公告与指南：当前通过 Info 导览，不直接检索或返回正文。后续若增加内容查询，必须在构建期消费 Astro
-  Content Collections，并处理翻译缺失及收录范围，不能从文件存在或搜索引擎 `noindex`
-  标记直接推断发布策略。
-- 实时状态：当前只返回状态面板链接，不查询在线人数或玩家名单。后续状态工具需复用现有状态查询逻辑，明确采样时间、过期与不可用语义，不能把未知状态当作离线或零人。
+- 已覆盖：公开概览、三语 Home / Community /
+  Info 页面、Wiki、三张地图与服务状态面板 URL，以及公告与指南的目录检索。
+- 未覆盖：玩家人数与名单、可加入的服务器地址、QQ 群号、版本兼容性承诺。
 - `llms.txt` / sitemap 是独立的爬虫收录边界，目前仅收录首页；WebMCP 页面白名单不改变这些设置。
+
+### 公告与指南检索
+
+`find-fetarute-articles`
+按读者语言检索公告与指南的**标题和摘要**，返回目录条目与正式 URL，不返回正文——正文留给读者在页面上阅读，代理也就不会复述未经审阅的长文。可选参数为
+`collection`（`guides` / `news`）、`query` 与
+`limit`（1–20，默认 10）；越界或多余参数整体拒绝，而不是回退到默认值。
+
+目录由 `getWebMcpArticleCatalogue()`（`src/i18n/content.ts`）在构建期从 Astro Content
+Collections 派生，与 `getLocalizedNews()` 共用同一个内容查询模块，并复用 `getLocalizedAbsoluteUrl()`
+生成 URL，不另起一套路由或发布逻辑。发布边界取自 `src/pages/[locale]/{news,guides}/[slug].astro` 的
+`getStaticPaths`：集合中的每个条目都会生成一个静态页面，因此目录直接消费集合。两个方向都不能想当然——既不硬编码一份会随内容漂移的文章清单，也不把内容页的
+`indexable={false}`（爬虫收录边界）误读成未发布。若将来出现「已进集合但尚不应公开」的内容，必须先在 schema 里显式表达该状态，再让目录消费它。
+
+语言按 frontmatter 精确匹配，沿用站内不做跨语言回退的约定：请求语言没有的条目不会混入结果，而是以
+`missingTranslations` 单独列出（含
+`availableLocales`），使代理既不会误报语言，也不会声称内容不存在。该清单与 `articles` 一样受 `limit`
+截断，并由 `missingTranslationsTotal` 如实报告总数——否则站点内容变多后，代理指定 `limit=1`
+仍会收到整站的缺翻译清单，`limit` 就挡不住上下文膨胀。
+
+目录条目的 `url` 按 **origin** 校验，不用前缀匹配：`https://fetarute.org.<其他域>`
+这类同前缀的站外地址必须被丢弃，否则一份被篡改的目录就能借工具把读者引向站外。
+
+目录随 `BaseLayout.astro` 以 `application/json`
+脚本内嵌到每个页面，静态站点因此不需要为代理检索新增接口或运行时请求。节点缺失、JSON 损坏或条目不合法时按条丢弃；目录为空则**不注册**该工具，其余工具不受影响。
+
+代价是每个页面都带一份完整目录（当前 6 条约 1.5
+KB）。它随文章数乘语言数线性增长，且乘以页面数落进静态产物。内容规模明显变大时应改为构建期输出一份独立 JSON 再按需取，而不是继续加大内嵌体积；在那之前内嵌换来的是零额外请求与离线可用。
 
 `test:static`
 会逐一检查工具返回的三语页面 URL、页面实际加载的工具注册脚本，以及 Info 的加入指南链接和目标产物；该检查证明静态接线完整，不证明浏览器已经成功注册工具。
 
 WebMCP 仍是浏览器标准草案。普通浏览器没有该 API 时注册层会直接跳过，官网的 Astro 静态内容和已有交互不受影响；因此
-`npm run check` 中的 `test:webmcp`
-只验证工具契约与失败回退，不能替代在支持 WebMCP 的浏览器或正式 origin
+`npm run check` 中的 `test:webmcp` 只验证工具契约与失败回退，不能替代在真实浏览器或正式 origin
 trial 中完成的端到端发现与调用验收。任何将来新增的写入型工具都必须复用实际 UI 逻辑、严格验证输入，并依据副作用设置
 `consequentialHint` 或 `untrustedContentHint`。
+
+### 原生浏览器验收
+
+Chrome 152 把 `chrome://flags/#enable-webmcp-testing` 映射到 `WebMCPTesting`
+feature，因此本机 Chrome 加上 `--enable-features=WebMCPTesting` 启动即可得到与手动开旗标一致的原生
+`document.modelContext`。 `test/webmcp.browser.mjs`
+用这一方式复用仓库既有的浏览器回归运行方式（本机 Playwright +
+`channel: "chrome"`），覆盖工具发现、正确调用、非法参数、跨页面导航与重载，并用同版本但未开启 feature 的 Chrome 做失败回退对照组。
+
+```sh
+npm run build
+npm run preview -- --host 127.0.0.1 --port 4330
+```
+
+```sh
+node --test test/webmcp.browser.mjs
+```
+
+`FETARUTE_WEBMCP_TEST_URL` 可覆盖预览地址；`FETARUTE_PLAYWRIGHT_MODULE`
+与其他浏览器回归共用。这项检查独立于
+`npm run check`，不为项目安装新的浏览器依赖。没有可用的原生实现时必须明确记为「未验证」，不能改成向页面注入
+`modelContext` 替身后声称原生通过——替身只能证明注册代码路径，不能证明浏览器实现。
+
+需要人工在带界面的 Chrome 里复核时，开启 `chrome://flags/#enable-webmcp-testing`
+并重启后，在 DevTools 控制台运行：
+
+```js
+for (const [name, input] of [
+  ["get-fetarute-overview", {}],
+  ["find-fetarute-resource", { resource: "wiki" }],
+  ["find-fetarute-page", { page: "info", locale: "zh-Hans" }],
+]) {
+  const tool = (await document.modelContext.getTools()).find((t) => t.name === name);
+  console.log(name, await document.modelContext.executeTool(tool, JSON.stringify(input)));
+}
+```
+
+### Chrome 152 的调用侧兼容差异
+
+以下差异属于浏览器实现，不是站点契约；写调用侧脚本或读取发现结果时需要按此处理，**不要**据此改动
+`src/lib/webmcp.ts` 的回调签名：
+
+- `executeTool(tool, argumentsJson)` 的两个参数都是必需的，缺省第二个参数会抛
+  `TypeError`；无入参工具需显式传 `"{}"`。
+- 第二个参数必须是 JSON **字符串**。直接传对象会抛
+  `UnknownError: Failed to parse input arguments`，在进入站点回调之前就失败；站点 execute 回调收到的仍是解析后的对象。
+- 第一个参数必须是 `getTools()` 返回的 `RegisteredTool` 实例，传工具名字符串会抛 `TypeError`。
+- `getTools()` 返回的对象不保证注册顺序，并且持有 `window` 引用，不能整体 `JSON.stringify`。
+- 发现结果里的 `inputSchema` 是 JSON 字符串，而站点注册时提供的是对象。
+- Chrome 152 的发现结果只回传 `readOnlyHint` 与 `untrustedContentHint`，站点声明的
+  `consequentialHint` 不会出现；这是实现覆盖范围的差异，站点仍应按真实副作用完整声明标注。
+- `executeTool` 的返回值也是 JSON 字符串，需要调用侧自行 `JSON.parse`。
+- **Chrome 152 只向 `execute` 传入参**，草案里的执行上下文（含 `AbortSignal`）尚未实现。因此
+  `WebMcpTool["execute"]` 的第二个参数必须是可选的，工具内部只能用 `options?.signal`——直接读
+  `options.signal` 会抛错，并被兜底的 `catch`
+  悄悄退化成失败结果。实时状态工具就曾因此在原生浏览器里一律返回
+  `unknown`，单元测试和静态检查都发现不了；`test/webmcp.browser.mjs` 现在会实测这个参数个数。
+
+### 公开服务状态
+
+`get-fetarute-service-status` 无入参，读取一次状态服务并返回入口可用性、Lobby / Survival /
+Creative 三个世界的健康度、采样时间与状态面板链接。它复用 Info 页面状态组件的同一套
+`getMinecraftStatusUrl()` 与
+`parseMinecraftSnapshot()`（`src/lib/minecraft-status.ts`），因此代理的判定与读者在页面上看到的同源；请求时限也已集中为
+`minecraftStatusTimeout`，两条读取路径不会给出不同的等待体验。
+
+语义上必须守住三条，测试逐条覆盖：
+
+- **未知不等于离线。** 请求失败、超时或快照不合法都只能得出 `availability: "unknown"`，并把
+  `checkedAt`、`ageSeconds`、`freshness` 与三个世界一并置为未知；结果里固定附带一句 `note`
+  说明这一点，因为代理很容易把「读不到」讲成「已离线」。
+- **采样时间与新鲜度一起返回。** `ageSeconds` 超过一个刷新周期（`minecraftRefreshInterval`）即标为
+  `stale`：旧快照仍是事实，但代理必须能看出它可能已不代表此刻。
+- **入口可用性与子服务器健康度分开。** 入口在线不代表三个世界都健康，反之亦然。
+
+上游响应里含有玩家人数、名单、MOTD 与版本，工具**一律不透传**，只输出已校验的枚举与时间戳——这也是它在返回第三方来源数据的同时仍可保持
+`untrustedContentHint: false`
+的原因：没有任何上游自由文本经由该工具流向代理。现有「不返回玩家数据」的边界不因此扩大；要改变它需要单独决定，而不是顺手加字段。
+
+本地预览通过 `astro.config.ts`
+里的固定目标转发（`/__minecraft-status`）读取正式 API，因此原生浏览器回归能真正跑通在线分支；
+`test/webmcp.browser.mjs` 会先确认该转发可读，可读却仍返回 `unknown`
+就判定为取数路径故障，而不是服务不可用。
+
+### 证据边界
+
+不同层级的验证不能互相冒充，报告时必须分开陈述：
+
+- **单元测试**（`test:webmcp`）：只覆盖工具契约、输入收窄、目录解析、状态语义与注册失败回退；状态取数由注入的替身提供，不接触真实网络。
+- **静态构建**（`test:static`）：只覆盖工具返回的 URL 与构建产物、注册脚本的接线一致，包括文章目录中每条 URL 与
+  `availableLocales` 都对应真实产物、标题与页面 `h1` 一致。
+- **本地原生浏览器**（`test/webmcp.browser.mjs`）：覆盖本机 Chrome 152 + `WebMCPTesting`
+  下的注册、发现、调用、回调参数个数与回退，其中实时状态经预览转发读到的是正式 API 的真实响应。
+- **线上验收**：正式域名的 origin
+  trial、代理凭自然语言自主选择工具，均**尚未验证**；本地通过不能代替。
 
 真实浏览器回归覆盖列车对齐、续行正文与页尾、反向滚动、减少动态，以及 PIDS 双向切换、手动选择保持、整行地图命中、复制成功和失败反馈。先构建并在
 `4323` 端口启动预览，再使用本机已有的 Playwright 和 Chrome 运行：
