@@ -145,6 +145,7 @@ test("用户确认的 FR 玩家逐一保留，未核实 Java 档案者不伪造 
     "kuroh1ro",
     "Sad_Tsui",
     "ScienRyz",
+    "TochoShizuku",
   ])
     assert.ok(playerByName.has(name));
 

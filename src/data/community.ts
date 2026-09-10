@@ -135,6 +135,12 @@ const confirmedCommunityPlayers: readonly CommunityEntity[] = [
     name: "ScienRyz",
     playerUuid: "f0cbeb4c89ee40cbb411e84b153f0a8b",
   },
+  {
+    id: "player-daac08119afd4058b1094dd89cad52db",
+    kind: "player",
+    name: "TochoShizuku",
+    playerUuid: "daac08119afd4058b1094dd89cad52db",
+  },
 ];
 
 /** 首页已公开署名玩家的职务按 UUID 固定，改名不会让资料卡误配职务。 */
