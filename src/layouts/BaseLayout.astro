@@ -350,9 +350,12 @@ const pageStructuredData = {
     <script>
       import { setupImageDragGuard } from "@/lib/image-drag-guard";
       import { setupSelectionLineController } from "@/lib/selection-line-controller";
+      import { setupFetaruteWebMcp } from "@/lib/webmcp";
 
       setupImageDragGuard();
       setupSelectionLineController();
+      // WebMCP 是可选的浏览器能力；缺少实现或权限时函数会静默回退，静态站点无需额外后端。
+      void setupFetaruteWebMcp(document);
     </script>
   </body>
 </html>

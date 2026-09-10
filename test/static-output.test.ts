@@ -6,6 +6,8 @@ import { runInNewContext } from "node:vm";
 import { siteInfo } from "../src/data/site.ts";
 import { defaultLocale, localeMetadata, type Locale } from "../src/i18n/config.ts";
 import { getMessages } from "../src/i18n/messages.ts";
+import { webMcpPages } from "../src/data/webmcp.ts";
+import { createFetaruteWebMcpTools } from "../src/lib/webmcp.ts";
 
 const publicHomeLocales = ["zh-Hans", "zh-Hant", "en"] as const satisfies readonly Locale[];
 
@@ -144,6 +146,44 @@ test("三语言静态首页各自只输出一个不重复的主标题", () => {
 
     assert.equal(headings.length, 1, `${locale} 首页应只有一个 h1`);
     assert.equal(extractText(headings[0][1]), getMessages(locale).home.title);
+  }
+});
+
+test("WebMCP 返回的所有语言页面实际存在并加载工具注册脚本", async () => {
+  const tools = createFetaruteWebMcpTools();
+  const pageTool = tools.find((tool) => tool.name === "find-fetarute-page");
+  assert.ok(pageTool);
+
+  for (const locale of publicHomeLocales) {
+    for (const page of webMcpPages) {
+      const result = await pageTool.execute(
+        { page: page.key, locale },
+        { signal: new AbortController().signal },
+      );
+      assert.ok(result && typeof result === "object" && "url" in result);
+      assert.equal(typeof result.url, "string");
+      const url = new URL(String(result.url));
+      assert.equal(url.origin, new URL(siteInfo.url).origin);
+      const html = readFileSync(
+        new URL(`../dist${url.pathname}index.html`, import.meta.url),
+        "utf8",
+      );
+      const scripts = [...html.matchAll(/<script\b[^>]*\bsrc="(\/_astro\/[^\"]+\.js)"[^>]*>/g)]
+        .map((match) => readFileSync(new URL(`../dist${match[1]}`, import.meta.url), "utf8"))
+        .join("\n");
+      for (const tool of tools) {
+        assert.ok(scripts.includes(tool.name), `${url.pathname} 必须加载 ${tool.name} 的注册定义`);
+      }
+      assert.match(scripts, /modelContext/);
+      if (page.key === "info") {
+        assert.ok(html.includes(`href="/${locale}/guides/join/"`));
+        const guide = readFileSync(
+          new URL(`../dist/${locale}/guides/join/index.html`, import.meta.url),
+          "utf8",
+        );
+        assert.match(guide, /<h1\b/);
+      }
+    }
   }
 });
 

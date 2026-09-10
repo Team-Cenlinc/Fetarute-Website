@@ -10,6 +10,7 @@
 - Astro Content Collections：管理公告和指南内容。
 - `@astrojs/sitemap`：从已发布的三语页面生成 sitemap，并与 robots.txt 共用收录边界。
 - Sharp：生成稳定的社交预览 PNG，并把已确认玩家的公开 Minecraft 皮肤预缓存为本地头像。
+- WebMCP：在支持该草案 API 的浏览器中，把官网现有的公开资料和链接安全地注册为代理可调用的只读工具。
 - npm + Node 24：`.nvmrc` 和 `package.json#engines` 已固定到 Node 24 系列。
 
 ## 本地开发
@@ -29,6 +30,34 @@ git diff --check
 ```
 
 `npm run check` 包含 Prettier、Astro 类型检查、Node 原生测试与最终静态构建。
+
+## WebMCP 渐进增强
+
+`src/lib/webmcp.ts` 通过 `document.modelContext`
+能力检查注册三个只读工具：查询 Fetarute 公开概览、取得某一项正式资源 URL、取得特定语言的站内页面 URL。资源和页面白名单集中在
+`src/data/webmcp.ts`，并复用 `src/data/site.ts`
+的正式链接；不提供占位服务器地址、QQ 群号、玩家数据、剪贴板写入、跨域授权或可改变页面状态的工具。
+
+概览应准确说明私有服务器采用申请审核制，并提示代理用 `find-fetarute-page` 的 `page=info`
+和读者语言取得加入指南入口；不返回群号或服务器地址，不等于官网没有加入流程。
+
+当前覆盖范围与后续边界：
+
+- 已覆盖：公开概览、三语 Home / Community / Info 页面、Wiki、三张地图与服务状态面板 URL。
+- 公告与指南：当前通过 Info 导览，不直接检索或返回正文。后续若增加内容查询，必须在构建期消费 Astro
+  Content Collections，并处理翻译缺失及收录范围，不能从文件存在或搜索引擎 `noindex`
+  标记直接推断发布策略。
+- 实时状态：当前只返回状态面板链接，不查询在线人数或玩家名单。后续状态工具需复用现有状态查询逻辑，明确采样时间、过期与不可用语义，不能把未知状态当作离线或零人。
+- `llms.txt` / sitemap 是独立的爬虫收录边界，目前仅收录首页；WebMCP 页面白名单不改变这些设置。
+
+`test:static`
+会逐一检查工具返回的三语页面 URL、页面实际加载的工具注册脚本，以及 Info 的加入指南链接和目标产物；该检查证明静态接线完整，不证明浏览器已经成功注册工具。
+
+WebMCP 仍是浏览器标准草案。普通浏览器没有该 API 时注册层会直接跳过，官网的 Astro 静态内容和已有交互不受影响；因此
+`npm run check` 中的 `test:webmcp`
+只验证工具契约与失败回退，不能替代在支持 WebMCP 的浏览器或正式 origin
+trial 中完成的端到端发现与调用验收。任何将来新增的写入型工具都必须复用实际 UI 逻辑、严格验证输入，并依据副作用设置
+`consequentialHint` 或 `untrustedContentHint`。
 
 真实浏览器回归覆盖列车对齐、续行正文与页尾、反向滚动、减少动态，以及 PIDS 双向切换、手动选择保持、整行地图命中、复制成功和失败反馈。先构建并在
 `4323` 端口启动预览，再使用本机已有的 Playwright 和 Chrome 运行：
