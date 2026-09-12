@@ -212,7 +212,7 @@ export const infoMessages: Record<Locale, InfoMessages> = {
     join: "Join Fetarute",
     joinNote: "Find out how to join and where to get in touch.",
     community: "Get to know us",
-    communityNote: "Explore Creative, Lobby and Survival, and the worlds we build together.",
+    communityNote: "Explore Creative, Lobby, and Survival — the worlds we build together.",
     backHome: "Back to homepage",
     backInfo: "Back to player info",
     top: "Back to top",

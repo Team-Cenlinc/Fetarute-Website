@@ -987,7 +987,7 @@ const messages: Record<Locale, SiteMessages> = {
       sceneAltById: {
         "pyutocor-dusk": "Fetarute railway city at dusk",
         "survival-bayside": "A bayside settlement on Fetarute Survival",
-        "survival-fueya": "A train travelling through a city on Fetarute Survival",
+        "survival-fueya": "A train traveling through a city on Fetarute Survival",
         "survival-kitariku-haixing-road-bridge":
           "Sunset at Haixing Road Bridge on Fetarute Survival",
         "survival-kl-x-bridge": "A blue bridge across the city and waterfront on Fetarute Survival",
@@ -1009,7 +1009,7 @@ const messages: Record<Locale, SiteMessages> = {
         screenSystemLabel: "VALIDATOR",
         screenReadyLabel: "READY",
         screenValidatedLabel: "VALIDATED",
-        screenIdleAction: "Touch in to start your journey",
+        screenIdleAction: "Tap your card to start your journey",
         screenValidatedAction: "TICKET VALID",
         cardActionLabel: "Validate your pass to continue",
         readerActionLabel: "Use the reader to validate your pass",
@@ -1023,7 +1023,7 @@ const messages: Record<Locale, SiteMessages> = {
       introduction: {
         title: "It Started with a Railway",
         description:
-          "Fetarute began in 2017 as a Forge railway server, later moving to Vanilla and plugins. Today, Serverlink connects Creative, Lobby and Survival. Follow the line to meet these three worlds.",
+          "Fetarute began in 2017 as a Forge railway server, later moving to Vanilla and plugins. Today, Serverlink connects Creative, Lobby, and Survival. Follow the line to meet these three worlds.",
       },
       arrival: {
         trainTooltip: {
@@ -1073,7 +1073,7 @@ const messages: Record<Locale, SiteMessages> = {
           "Follow the tracks and find a place to visit. You can return to the photos at any time.",
         mapExternalCardTitle: "Find your next stop",
         mapExternalCardDescription:
-          "Explore the tracks and neighbourhoods on the live map. Opens in a new tab.",
+          "Explore the tracks and neighborhoods on the live map. Opens in a new tab.",
         mapLaunchLabel: "Open live map",
         mapCloseLabel: "Back to photos",
         mapLoadingTitle: "Connecting to the live map",
@@ -1086,21 +1086,21 @@ const messages: Record<Locale, SiteMessages> = {
             name: "Creative",
             tagline: "Turn imagination into cities you can reach",
             description:
-              "Creative carries on Fetarute’s railway and city-building tradition, begun in 2017. Plan streets, lay tracks and build with others, turning imagined stations and skylines into places to visit.",
+              "Creative carries on Fetarute’s railway and city-building tradition, begun in 2017. Plan streets, lay tracks, and build with others, turning imagined stations and skylines into places to visit.",
             imageAltPrefix: "A representative scene from Fetarute Creative",
           },
           lobby: {
             name: "Lobby",
             tagline: "Every arrival leads onward",
             description:
-              "Once known as Portal World, Lobby connects Creative and Survival. Towers and floating islands hold traces of the past around the cross-server railway hub. Pause, meet fellow travellers and choose your next train.",
+              "Once known as Portal World, Lobby connects Creative and Survival. Towers and floating islands hold traces of the past around the cross-server railway hub. Pause, meet fellow travelers, and choose your next train.",
             imageAltPrefix: "A representative scene from Fetarute Lobby",
           },
           survival: {
             name: "Survival",
             tagline: "Where the journey becomes a shared life",
             description:
-              "In Survival, railways link resources, settlements and distant places. Explore on your own or build a town with friends. As life spreads, new routes connect it to the other worlds.",
+              "In Survival, railways link resources, settlements, and distant places. Explore on your own or build a town with friends. As life spreads, new routes connect it to the other worlds.",
             imageAltPrefix: "A representative scene from Fetarute Survival",
           },
         },
@@ -1110,7 +1110,7 @@ const messages: Record<Locale, SiteMessages> = {
         introHeading: "From meeting to building a life here",
         statement: "Meet here. Build a world together.",
         introduction:
-          "Rebuilding stations, sharing trial runs and caring for neighbourhoods: players make this place a world. Follow the Bayside Branch through a few of their stories.",
+          "Rebuilding stations, sharing trial runs, and caring for neighborhoods: players make this place a world. Follow the Bayside Branch through a few of their stories.",
         creditLabel: "Credit",
         storyOpenLabel: "Select the image to read the story",
         storyCloseLabel: "Hide story text",
@@ -1122,7 +1122,7 @@ const messages: Record<Locale, SiteMessages> = {
             description:
               "In 2026, the original SURcentral system approached capacity. Acatine redesigned the SUR100 train series while builders reconsidered how the whole system could keep moving.",
             detail:
-              "The Islands Line and Metropolitan Line opened routes to new living areas. Builders brought trains, tracks and stations together through planning, construction and trial runs.",
+              "The Islands Line and Metropolitan Line opened routes to new living areas. Builders brought trains, tracks, and stations together through planning, construction, and trial runs.",
             imageAlt: "A city railway and train in the SURcentral rebuild plan",
             credit: "Acatine, Hot945, Katsuta_Minamoto, LanYuvu, Complex_Colors",
           },
@@ -1153,7 +1153,7 @@ const messages: Record<Locale, SiteMessages> = {
             description:
               "joined other builders aboard a Kitariku Lightrail train not yet in service, celebrating a new route preparing to open.",
             detail:
-              "A trial run turns plans, rails and stops into a journey people can take together. In the carriage, builders check how the line works and pass through what they have just completed. A project begins to feel like everyday life.",
+              "A trial run turns plans, rails, and stops into a journey people can take together. In the carriage, builders check how the line works and pass through what they have just completed. A project begins to feel like everyday life.",
             imageAlt: "The interior of a Kitariku Lightrail train during pre-service trials",
             credit: "[Trial participants and image credit to be confirmed]",
           },
@@ -1165,7 +1165,7 @@ const messages: Record<Locale, SiteMessages> = {
             description:
               "maintains the line and facilities at Neo Fueya - Hor Huu, then heads to Limbay Depot to prepare a train for departure.",
             detail:
-              "An ordinary arrival often begins with someone checking the platform, track and train. Acatine moves between Neo Fueya - Hor Huu and Limbay Depot to maintain and prepare them, so the next person who reaches the platform simply finds a train ready to continue.",
+              "An ordinary arrival often begins with someone checking the platform, track, and train. Acatine moves between Neo Fueya - Hor Huu and Limbay Depot to maintain and prepare them, so the next person who reaches the platform simply finds a train ready to continue.",
             imageAlt: "A train beside the platform at Neo Fueya - Hor Huu, waiting to be prepared",
             credit: "Acatine",
           },
@@ -1203,9 +1203,9 @@ const messages: Record<Locale, SiteMessages> = {
             label: "Always here",
             title: "A tram joins the district together",
             description:
-              "continues building New Kitariku’s tramways, giving its different neighbourhoods a clear and reachable connection.",
+              "continues building New Kitariku’s tramways, giving its different neighborhoods a clear and reachable connection.",
             detail:
-              "As the line extends through the city, stops and streets gain new relationships. Katsuta_Minamoto carries the tram to more of New Kitariku, helping people move between neighbourhoods and turning separate pieces of building into one connected district.",
+              "As the line extends through the city, stops and streets gain new relationships. Katsuta_Minamoto carries the tram to more of New Kitariku, helping people move between neighborhoods and turning separate pieces of building into one connected district.",
             imageAlt:
               "A New Kitariku tram passing an elevated walkway and traditional architecture",
             credit: "Katsuta_Minamoto",
@@ -1213,7 +1213,7 @@ const messages: Record<Locale, SiteMessages> = {
         },
         closingTitle: "More stories wait at the next stop.",
         closingDescription:
-          "These are a few stops along the way. More stories of building, caring and finding the way together will follow on the community page. For now, the train travels on.",
+          "These are a few stops along the way. More stories of building, caring, and finding the way together will follow on the community page. For now, the train travels on.",
       },
       onward: {
         label: "Onward departure hall",
