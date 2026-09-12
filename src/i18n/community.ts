@@ -187,7 +187,7 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
     copyFailed: "未能複製，請手動選擇群號",
   },
   en: {
-    title: "Community centre",
+    title: "Community Centre",
     description: "Meet Fetarute’s players, worlds and communities in one shared neighbourhood.",
     districtTitle: "Players & worlds",
     districtStop: "Players & worlds",
