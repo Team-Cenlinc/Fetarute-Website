@@ -86,7 +86,7 @@ async function buildSocialCard(): Promise<void> {
   const logoPng = await sharp(Buffer.from(logoSvg)).resize({ width: 458 }).png().toBuffer();
 
   await sharp(landingScenePath)
-    .resize(cardWidth, cardHeight, { fit: "cover", position: "centre" })
+    .resize(cardWidth, cardHeight, { fit: "cover", position: "center" })
     .composite([
       { input: createRibbonOverlaySvg(shareCardLines) },
       { input: logoPng, left: 371, top: 262 },

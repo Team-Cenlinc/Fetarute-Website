@@ -582,7 +582,7 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
        * 以实际边界计算可避免桌面、平板与移动端分别维护一组箭头坐标。
        */
       const getFacingEdgePoint = (bounds: DOMRect, direction: DepartureGuidePoint): DepartureGuidePoint => {
-        const centre = {
+        const center = {
           x: bounds.left + bounds.width / 2,
           y: bounds.top + bounds.height / 2,
         };
@@ -591,8 +591,8 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         const scale = 1 / Math.max(Math.abs(direction.x) / horizontalHalf, Math.abs(direction.y) / verticalHalf, 1);
 
         return {
-          x: centre.x + direction.x * scale,
-          y: centre.y + direction.y * scale,
+          x: center.x + direction.x * scale,
+          y: center.y + direction.y * scale,
         };
       };
 
@@ -913,16 +913,16 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         const cachedGeometry = dragGeometry;
         const passRect = cachedGeometry?.passBounds ?? pass.getBoundingClientRect();
         const readerRect = cachedGeometry?.readerBounds ?? reader.getBoundingClientRect();
-        const currentPassCentreX =
+        const currentPassCenterX =
           passRect.left +
           passRect.width / 2 +
           (cachedGeometry ? passOffsetX - dragStartOffsetX : 0);
-        const currentPassCentreY =
+        const currentPassCenterY =
           passRect.top +
           passRect.height / 2 +
           (cachedGeometry ? passOffsetY - dragStartOffsetY : 0);
-        const horizontalDistance = currentPassCentreX - (readerRect.left + readerRect.width / 2);
-        const verticalDistance = currentPassCentreY - (readerRect.top + readerRect.height / 2);
+        const horizontalDistance = currentPassCenterX - (readerRect.left + readerRect.width / 2);
+        const verticalDistance = currentPassCenterY - (readerRect.top + readerRect.height / 2);
         const snapRadius = Math.max(108, Math.min(Math.max(readerRect.width, readerRect.height) * 0.62, 220));
 
         return Math.hypot(horizontalDistance, verticalDistance) <= snapRadius;
