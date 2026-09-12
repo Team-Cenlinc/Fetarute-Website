@@ -459,8 +459,8 @@ const messages: Record<Locale, SiteMessages> = {
           },
           "huayuan-lobby-center": {
             kicker: "大厅服",
-            title: "旧服连快线华园站",
-            alt: "旧服连快线列车停靠在华园站站台旁",
+            title: "旧服联快线华园站",
+            alt: "旧服联快线列车停靠在华园站站台旁",
           },
         },
       },
@@ -490,7 +490,7 @@ const messages: Record<Locale, SiteMessages> = {
             name: "创造服",
             tagline: "让想象成为可以抵达的城市",
             description:
-              "创造服延续着 Fetarute 自 2017 年以来的轨交城建传统。规划街区、铺设线路，与伙伴把想象中的车站和建筑变成可以抵达的地方。城市的天际线，也在一次次合作中继续生长。",
+              "创造服延续着 Fetarute 自 2017 年以来的轨道交通与城市建设传统。规划街区、铺设线路，与伙伴把想象中的车站和建筑变成可以抵达的地方。城市的天际线，也在一次次合作中继续生长。",
             imageAltPrefix: "Fetarute 创造服代表场景",
           },
           lobby: {
@@ -524,7 +524,7 @@ const messages: Record<Locale, SiteMessages> = {
             label: "规划与建设",
             title: "为了让下一班车继续抵达",
             description:
-              "2026 年，旧 SURcentral 的设施渐近饱和。Acatine 重新设计 SUR100 系列列车，建设者们也开始重想整套系统如何继续运转。",
+              "2026 年，旧 SURcentral 的设施渐趋饱和。Acatine 重新设计 SUR100 系列列车，建设者们也开始重新设想整套系统如何继续运转。",
             detail:
               "Hot945、Katsuta_Minamoto、LanYuvu 与 Complex_Colors 参与规划和建设。海岛线与大都会线由此铺开，连接新的生活区域，也让换乘更清楚。从讨论到施工，再到试运行，列车、线路与车站在大家手中逐步连成一套系统。",
             imageAlt: "SURcentral 重建计划中的城市铁路与列车",
@@ -654,7 +654,7 @@ const messages: Record<Locale, SiteMessages> = {
     navigation: {
       home: "首頁",
       features: "旅程",
-      community: "社區",
+      community: "社群",
       info: "資訊",
     },
     languageNavigationLabel: "選擇語言",
@@ -785,7 +785,7 @@ const messages: Record<Locale, SiteMessages> = {
             name: "創造服",
             tagline: "讓想像成為可以抵達的城市",
             description:
-              "創造服延續著 Fetarute 自 2017 年以來的軌交城建傳統。規劃街區、鋪設路線，與夥伴把想像中的車站和建築變成可以抵達的地方。城市的天際線，也在一次次合作中繼續生長。",
+              "創造服延續著 Fetarute 自 2017 年以來的軌道交通與城市建設傳統。規劃街區、鋪設路線，與夥伴把想像中的車站和建築變成可以抵達的地方。城市的天際線，也在一次次合作中繼續生長。",
             imageAltPrefix: "Fetarute 創造服代表場景",
           },
           lobby: {
@@ -819,7 +819,7 @@ const messages: Record<Locale, SiteMessages> = {
             label: "規劃與建設",
             title: "為了讓下一班車繼續抵達",
             description:
-              "2026 年，舊 SURcentral 的設施漸近飽和。Acatine 重新設計 SUR100 系列列車，建設者們也開始重想整套系統如何繼續運轉。",
+              "2026 年，舊 SURcentral 的設施漸趨飽和。Acatine 重新設計 SUR100 系列列車，建設者們也開始重新設想整套系統如何繼續運轉。",
             detail:
               "Hot945、Katsuta_Minamoto、LanYuvu 與 Complex_Colors 參與規劃和建設。海島線與大都會線由此鋪開，連接新的生活區域，也讓轉乘更清楚。從討論到施工，再到試運行，列車、路線與車站在大家手中逐步連成一套系統。",
             imageAlt: "SURcentral 重建計畫中的城市鐵路與列車",
@@ -879,9 +879,9 @@ const messages: Record<Locale, SiteMessages> = {
             label: "一直在場",
             title: "在田野邊留下舊線的樣子",
             description:
-              "在灣岸鎮田間勞作時，拍下從麥田邊駛過的舊灣岸支線。如今路線已經重建，照片留下了它曾經的樣子。",
+              "在灣岸鎮田間務農時，拍下從麥田邊駛過的舊灣岸支線。如今路線已經重建，照片留下了它曾經的樣子。",
             detail:
-              "那天沒有特意安排記錄：勞作間隙，列車從田野旁經過，LanYuvu 按下快門。後來灣岸支線完成重建，這張照片便成了兩次日常之間的連接——讓後來抵達的人，也能看見路線改變以前，灣岸鎮曾有怎樣的風景。",
+              "那天沒有特意安排記錄：農忙間隙，列車從田野旁經過，LanYuvu 按下快門。後來灣岸支線完成重建，這張照片便成了兩次日常之間的連接——讓後來抵達的人，也能看見路線改變以前，灣岸鎮曾有怎樣的風景。",
             imageAlt: "舊灣岸支線列車從灣岸鎮成熟的麥田上方駛過",
             credit: "LanYuvu",
           },
@@ -992,33 +992,33 @@ const messages: Record<Locale, SiteMessages> = {
           "Sunset at Haixing Road Bridge on Fetarute Survival",
         "survival-kl-x-bridge": "A blue bridge across the city and waterfront on Fetarute Survival",
         "survival-port-pyutocor": "Pyutocor Port and its distant skyline on Fetarute Survival",
-        "survival-pyutocor-day": "Pyutocor's daytime skyline on Fetarute Survival",
+        "survival-pyutocor-day": "Pyutocor’s daytime skyline on Fetarute Survival",
         "survival-pyutocor-from-mountain": "Pyutocor seen from the foothills on Fetarute Survival",
         "survival-pyutocor-railway-avenue":
           "Railway Avenue in Pyutocor at dusk on Fetarute Survival",
-        "survival-syuchun": "Syuchun's waterfront skyline on Fetarute Survival",
+        "survival-syuchun": "Syuchun’s waterfront skyline on Fetarute Survival",
       },
       title: "Welcome to Fetarute.",
       description: "Follow the railway through three worlds and meet the people building them.",
       departure: {
         title: "The trip begins here.",
-        description: "Tap your pass, or click empty space to continue.",
+        description: "Tap your pass, or click anywhere to continue.",
         passName: ["Fetarute", "TransitUnion"],
-        readerNotice: "Please ensure you have a valid record before boarding.",
+        readerNotice: "Please ensure you have a valid ticket before boarding.",
         readerWelcome: "Welcome to Fetarute",
         screenSystemLabel: "VALIDATOR",
         screenReadyLabel: "READY",
         screenValidatedLabel: "VALIDATED",
-        screenIdleAction: "Tap your card to record your ride",
-        screenValidatedAction: "RECORD VALID",
-        cardActionLabel: "Validate the journey pass and begin the next stop",
-        readerActionLabel: "Use the departure reader and begin the next stop",
-        readyStatus: "The journey pass is ready. Validate it to continue.",
-        draggingStatus: "Bring the journey pass toward the departure reader.",
-        validatedStatus: "Validated. Next stop: a world connected together.",
-        skipHint: "Click the empty space to skip validation.",
-        skipLabel: "Enter the next stop",
-        skippedStatus: "Validation skipped. Next stop: a world connected together.",
+        screenIdleAction: "Touch in to start your journey",
+        screenValidatedAction: "TICKET VALID",
+        cardActionLabel: "Validate your pass to continue",
+        readerActionLabel: "Tap your pass on the reader to continue",
+        readyStatus: "Your pass is ready. Validate it to continue.",
+        draggingStatus: "Move your pass closer to the reader.",
+        validatedStatus: "Validated. Next stop: three worlds, one railway.",
+        skipHint: "Click anywhere else to skip.",
+        skipLabel: "Skip to the next stop",
+        skippedStatus: "Validation skipped. Next stop: three worlds, one railway.",
       },
       introduction: {
         title: "It Started with a Railway",
@@ -1027,14 +1027,14 @@ const messages: Record<Locale, SiteMessages> = {
       },
       arrival: {
         trainTooltip: {
-          triggerLabel: "Open the train section picker",
+          triggerLabel: "Open the train guide",
           hoverHint: "Hover to preview; click to pin journey navigation",
           tapHint: "Tap the train to open journey navigation",
-          title: "Train wayfinding",
+          title: "Train guide",
           currentSectionLabel: "This stop",
-          quickPickLabel: "Section route",
+          quickPickLabel: "Section map",
           goToSectionLabel: "Go to section",
-          closeLabel: "Close train wayfinding",
+          closeLabel: "Close train guide",
         },
       },
       gallery: {
@@ -1048,7 +1048,7 @@ const messages: Record<Locale, SiteMessages> = {
           "pyutocor-spawn-bay": {
             kicker: "SURVIVAL",
             title: "Pyutocor",
-            alt: "Pyutocor's elevated railway and city skyline",
+            alt: "Pyutocor’s elevated railway and city skyline",
           },
           "huayuan-lobby-center": {
             kicker: "LOBBY",
@@ -1058,7 +1058,7 @@ const messages: Record<Locale, SiteMessages> = {
         },
       },
       triServer: {
-        label: "Fetarute's three servers",
+        label: "Fetarute’s three servers",
         lead: "Three worlds, each with a life of its own. One railway connects them.",
         placeholderTitle: "More scenes to come",
         placeholderHint: "Explore this world on the map while we gather its stories.",
@@ -1078,7 +1078,7 @@ const messages: Record<Locale, SiteMessages> = {
         mapCloseLabel: "Back to photos",
         mapLoadingTitle: "Connecting to the live map",
         mapLoadingDescription:
-          "Loading this world's terrain and markers. You can close it at any time.",
+          "Loading this world’s terrain and markers. You can close it at any time.",
         mapExternalLabel: "Open in a new tab",
         mapFrameLabel: "interactive map",
         serverById: {
@@ -1091,14 +1091,14 @@ const messages: Record<Locale, SiteMessages> = {
           },
           lobby: {
             name: "Lobby",
-            tagline: "Give every arrival a next leg",
+            tagline: "Every arrival leads onward",
             description:
               "Once known as Portal World, Lobby connects Creative and Survival. Towers and floating islands hold traces of the past around the cross-server railway hub. Pause, meet fellow travellers and choose your next train.",
             imageAltPrefix: "A representative scene from Fetarute Lobby",
           },
           survival: {
             name: "Survival",
-            tagline: "Let the journey grow through a shared world",
+            tagline: "Where the journey becomes a shared life",
             description:
               "In Survival, railways link resources, settlements and distant places. Explore on your own or build a town with friends. As life spreads, new routes connect it to the other worlds.",
             imageAltPrefix: "A representative scene from Fetarute Survival",
@@ -1106,14 +1106,14 @@ const messages: Record<Locale, SiteMessages> = {
         },
       },
       community: {
-        label: "Shared Shore player stories",
-        introHeading: "From meeting to living together",
+        label: "Player stories at Shared Shore",
+        introHeading: "From meeting to building a life here",
         statement: "Meet here. Build a world together.",
         introduction:
           "Rebuilding stations, sharing trial runs and caring for neighbourhoods: players make this place a world. Follow the Bayside Branch through a few of their stories.",
         creditLabel: "Credit",
-        storyOpenLabel: "Select the image to read",
-        storyCloseLabel: "Hide the text on the image",
+        storyOpenLabel: "Tap the image to read the story",
+        storyCloseLabel: "Hide story text",
         playerLabel: "Player in this story",
         featureStoryById: {
           "surcentral-rebuild": {
@@ -1140,7 +1140,7 @@ const messages: Record<Locale, SiteMessages> = {
             label: "Shared moments",
             title: "Passing through together",
             description:
-              "joined other builders aboard the first trial of the Waterside Line's southern extension to The Port City, testing and celebrating the completed route.",
+              "joined other builders aboard the first trial of the Waterside Line’s southern extension to The Port City, testing and celebrating the completed route.",
             detail:
               "In Fetarute, a trial run checks the work and celebrates a shared route finally joining up. Some watch the platforms and track; others look out at a newly reached city. The first run turns separate tasks into one journey everyone shares.",
             imageAlt:
@@ -1193,17 +1193,17 @@ const messages: Record<Locale, SiteMessages> = {
             label: "Always here",
             title: "The old town keeps growing",
             description:
-              "continues building Fueya's old town as mayor, keeping its familiar districts growing rather than leaving them in the past.",
+              "continues building Fueya’s old town as mayor, keeping its familiar districts growing rather than leaving them in the past.",
             detail:
-              "A city that already feels established still needs someone to care for and build it. Complex_Colors keeps Fueya's earlier shape visible while carrying new changes through its districts, allowing the town to hold on to what it was and respond to life today. In Fetarute, completion is often the start of another update.",
-            imageAlt: "A sunlit panorama of Fueya's old town as its districts continue to change",
+              "A city that already feels established still needs someone to care for and build it. Complex_Colors keeps Fueya’s earlier shape visible while carrying new changes through its districts, allowing the town to hold on to what it was and respond to life today. In Fetarute, completion is often the start of another update.",
+            imageAlt: "A sunlit panorama of Fueya’s old town as its districts continue to change",
             credit: "Complex_Colors",
           },
           "presence-nktr-tram": {
             label: "Always here",
             title: "A tram joins the district together",
             description:
-              "continues building New Kitariku's tramways, giving its different neighbourhoods a clear and reachable connection.",
+              "continues building New Kitariku’s tramways, giving its different neighbourhoods a clear and reachable connection.",
             detail:
               "As the line extends through the city, stops and streets gain new relationships. Katsuta_Minamoto carries the tram to more of New Kitariku, helping people move between neighbourhoods and turning separate pieces of building into one connected district.",
             imageAlt:
@@ -1224,24 +1224,24 @@ const messages: Record<Locale, SiteMessages> = {
         destinationsLabel: "Destinations",
         firstVisitLabel: "First visit",
         destinationBoardLabel: "Recommended destinations",
-        platformColumn: "Bay",
+        platformColumn: "Platform",
         destinationColumn: "Destination",
         actionColumn: "Depart",
         openMapLabel: "View map",
         destinationTicker: "New here? See how to join.",
-        helpTitle: "Let’s go together",
+        helpTitle: "Next leg, together",
         helpDescription: "Join our QQ group and tell us where you’d like to go.",
         qqPortalGroupLabel: "QQ Portal Group",
         copyQqGroupLabel: "Copy number",
         copiedQqGroupLabel: "Copied",
-        copyQqGroupFailedLabel: "Copy failed. Copy manually.",
+        copyQqGroupFailedLabel: "Copy failed. Please copy the number manually.",
         qqQrCodeLabel: "Scan to join the QQ Portal Group",
         serviceGuideLabel: "Continue exploring Fetarute",
         wikiLabel: "Wiki",
-        moreComingLabel: "More coming soon",
+        moreComingLabel: "More still under construction",
       },
       footer: {
-        title: "The page ends. Discovery continues.",
+        title: "End of the line. The journey continues.",
         description: "Follow the railway, meet its worlds, and leave a story of your own.",
         restartLabel: "Return to the beginning",
       },
