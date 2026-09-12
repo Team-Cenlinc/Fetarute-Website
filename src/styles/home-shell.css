@@ -1153,13 +1153,13 @@ html[data-launching] .launch-sequence {
   min-height: 100dvh;
 }
 
-/* 常驻轨道与进度列车共享站牌网格，使路线色始终存在、列车始终有轨可走。 */
+/* 站牌、轨道与列车共享按视口高度分配的网格，短屏不再被底部固定留白挤压。 */
 .launch-sequence__track,
 .launch-sequence__train-track {
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) clamp(48px, 5.75vh, 62px) clamp(230px, 34dvh, 400px);
+  grid-template-rows: minmax(0, 3fr) min(5.75dvh, 62px) minmax(0, 2fr);
   overflow: clip;
   pointer-events: none;
 }
@@ -1239,7 +1239,7 @@ html[data-launching] .launch-sequence {
   z-index: 1;
   inset: 0;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) clamp(48px, 5.75vh, 62px) clamp(230px, 34dvh, 400px);
+  grid-template-rows: minmax(0, 3fr) min(5.75dvh, 62px) minmax(0, 2fr);
   margin: 0;
   overflow: clip;
   background: transparent;
@@ -1269,11 +1269,11 @@ html[data-launching] .launch-sequence {
 .launch-stop__primary {
   max-width: 100%;
   overflow: hidden;
-  font-size: clamp(5.4rem, 18.75vw, 22.5rem);
+  font-size: min(clamp(5.4rem, 18.75vw, 22.5rem), 28dvh);
   font-weight: 850;
   /* 站名以导视牌的阅读节奏呈现，略微拉开字形并在窄屏完整显示长站名。 */
   letter-spacing: 0.015em;
-  line-height: 0.94;
+  line-height: 1.15;
   text-align: center;
   text-overflow: clip;
   white-space: nowrap;
@@ -1282,22 +1282,22 @@ html[data-launching] .launch-sequence {
 .launch-stop[data-primary-name-length="5"] .launch-stop__primary,
 .launch-stop[data-primary-name-length="6"] .launch-stop__primary {
   /* 宽屏长站名在保留导视字距后缩小字号，避免分隔号两侧的字形被裁切。 */
-  font-size: clamp(4.6rem, 14.65vw, 17.6rem);
+  font-size: min(clamp(4.6rem, 14.65vw, 17.6rem), 28dvh);
 }
 
 .launch-stop[data-primary-name-length="3"] .launch-stop__primary,
 .launch-stop[data-primary-name-length="4"] .launch-stop__primary {
-  font-size: clamp(5rem, 16.75vw, 20rem);
+  font-size: min(clamp(5rem, 16.75vw, 20rem), 28dvh);
 }
 
 .launch-stop__secondary {
   max-width: 100%;
-  margin-top: clamp(10px, 1.65vw, 32px);
+  margin-top: min(clamp(10px, 1.65vw, 32px), 3dvh);
   color: var(--color-text);
-  font-size: clamp(1.8rem, 6.67vw, 8rem);
+  font-size: min(clamp(1.8rem, 6.67vw, 8rem), 9dvh);
   font-weight: 500;
   letter-spacing: 0.015em;
-  line-height: 0.95;
+  line-height: 1.15;
   text-align: center;
   white-space: nowrap;
 }
@@ -1313,7 +1313,7 @@ html[data-launching] .launch-sequence {
 .launch-stop[data-secondary-name-length="22"] .launch-stop__secondary,
 .launch-stop[data-secondary-name-length="23"] .launch-stop__secondary,
 .launch-stop[data-secondary-name-length="24"] .launch-stop__secondary {
-  font-size: clamp(1.55rem, 4.9vw, 5.9rem);
+  font-size: min(clamp(1.55rem, 4.9vw, 5.9rem), 9dvh);
   letter-spacing: -0.005em;
 }
 
@@ -1966,7 +1966,7 @@ html[data-launching] .launch-sequence {
   .launch-sequence__track,
   .launch-sequence__train-track {
     /* 窄屏将轨道色带收为 36px，避免单线路色块压过站名的视觉重量。 */
-    grid-template-rows: minmax(0, 1fr) 36px clamp(320px, 45dvh, 420px);
+    grid-template-rows: minmax(0, 3fr) min(5.75dvh, 36px) minmax(0, 2fr);
   }
 
   /* 列车仅比变薄后的色带高 8px，维持经过轨道的轮廓感而不显得臃肿。 */
@@ -1980,24 +1980,28 @@ html[data-launching] .launch-sequence {
   }
 
   .launch-stop__primary {
-    font-size: clamp(6.25rem, 40vw, 11rem);
+    font-size: min(clamp(6.25rem, 40vw, 11rem), 28dvh);
   }
 
   .launch-stop[data-primary-name-length="3"] .launch-stop__primary,
   .launch-stop[data-primary-name-length="4"] .launch-stop__primary {
     /* 为新增的站名呼吸间隔预留边界，窄屏仍完整显示 3、4 字站名。 */
-    font-size: clamp(4.75rem, 28.4vw, 9rem);
+    font-size: min(clamp(4.75rem, 28.4vw, 9rem), 28dvh);
   }
 
   .launch-stop[data-primary-name-length="5"] .launch-stop__primary,
   .launch-stop[data-primary-name-length="6"] .launch-stop__primary {
     /* 含中文间隔号的长站名也保留新字距；缩小字号而不裁切最后一个字。 */
-    font-size: clamp(2.8rem, 14.5vw, 7.25rem);
+    font-size: min(clamp(2.8rem, 14.5vw, 7.25rem), 28dvh);
+  }
+
+  .launch-stop[data-primary-name-length="4"] .launch-stop__primary {
+    font-size: min(calc((100vw - 40px) / 4.06), 9rem, 28dvh);
   }
 
   .launch-stop__secondary {
     margin-top: clamp(8px, 2.5vw, 14px);
-    font-size: clamp(1.65rem, 9vw, 3rem);
+    font-size: min(clamp(1.65rem, 9vw, 3rem), 9dvh);
   }
 
   .launch-stop[data-secondary-name-length="15"] .launch-stop__secondary,
@@ -2010,7 +2014,7 @@ html[data-launching] .launch-sequence {
   .launch-stop[data-secondary-name-length="22"] .launch-stop__secondary,
   .launch-stop[data-secondary-name-length="23"] .launch-stop__secondary,
   .launch-stop[data-secondary-name-length="24"] .launch-stop__secondary {
-    font-size: clamp(1.35rem, 7.5vw, 2.4rem);
+    font-size: min(clamp(1.35rem, 7.5vw, 2.4rem), 9dvh);
   }
 
   .launch-stop__route-codes {
