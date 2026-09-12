@@ -66,7 +66,7 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
     connectionsTitle: "世界与社群",
     mapLabel: "社区街区地图",
     mosaicInvitation: "灰色空格，为未来的你留一个位置。",
-    mapHint: "每一格，都是一个可以认识的邻居。悬停、聚焦或点按，看看这里的人与社群。",
+    mapHint: "每一格，都是一个可以认识的邻居。悬停、聚焦或点击，看看这里的人与社群。",
     player: "玩家",
     playerRoles: {
       owner: "服主",
@@ -122,7 +122,7 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
     copyFailed: "未能复制，请手动选择群号",
   },
   "zh-Hant": {
-    title: "社區中心",
+    title: "社群中心",
     description: "在同一片街區，認識 Fetarute 的玩家、世界與社群。",
     districtTitle: "玩家與世界",
     districtStop: "玩家與世界",
@@ -131,17 +131,17 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
     connectionsTitle: "世界與社群",
     mapLabel: "社區街區地圖",
     mosaicInvitation: "灰色空格，為未來的你留一個位置。",
-    mapHint: "每一格，都是一個可以認識的鄰居。懸停、聚焦或點按，看看這裡的人與社群。",
+    mapHint: "每一格，都是一個可以認識的鄰居。懸停、聚焦或點擊，看看這裡的人與社群。",
     player: "玩家",
     playerRoles: {
       owner: "服主",
       administrator: "管理員",
       mayor: "鎮長",
     },
-    server: "伺服器 / 社區",
+    server: "伺服器 / 社群",
     group: "外部團體",
     serverPlaceholder: "待相遇的世界",
-    communityPlaceholder: "待相遇的社區",
+    communityPlaceholder: "待相遇的社群",
     groupPlaceholder: "待相遇的同行者",
     playerIntro: "屬於這位玩家的故事，仍在路上。",
     partnerIntro: "一段與另一座世界相遇的故事，仍在路上。",
@@ -151,7 +151,7 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
     openMedia: "放大圖片",
     closeMedia: "關閉圖片預覽",
     mediaPreview: "圖片預覽",
-    pending: "社區記錄待收錄",
+    pending: "社群記錄待收錄",
     partnerProfiles: {
       urasaka: {
         description:
@@ -169,7 +169,7 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
       },
       nebulaecraft: {
         description:
-          "星雲工藝以城市與軌道交通為世界的骨架：線路穿過街區，站點串起城市，也把多周目的行駛記憶留在地圖裡。",
+          "星雲工藝以城市與軌道交通為世界的骨架：路線穿過街區，站點串起城市，也把多周目的行駛記憶留在地圖裡。",
         note: "城市與軌道交通 · 歷史 Wiki",
         status: "2022 年結成友好伺服器",
         imageAlt: "NebulaeCraft 標誌",
@@ -188,7 +188,7 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
   },
   en: {
     title: "Community Center",
-    description: "Meet Fetarute's players, worlds and communities in one shared neighborhood.",
+    description: "Meet Fetarute’s players, worlds, and communities in one shared neighborhood.",
     districtTitle: "Players & worlds",
     districtStop: "Players & worlds",
     contactStop: "Say hello",
@@ -206,10 +206,10 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
     },
     server: "Server / Community",
     group: "External group",
-    serverPlaceholder: "A world we've yet to meet",
-    communityPlaceholder: "A community we've yet to meet",
-    groupPlaceholder: "Fellow travelers we've yet to meet",
-    playerIntro: "This player's story is still to come.",
+    serverPlaceholder: "A world we’ve yet to meet",
+    communityPlaceholder: "A community we’ve yet to meet",
+    groupPlaceholder: "Fellow travelers we’ve yet to meet",
+    playerIntro: "This player’s story is still to come.",
     partnerIntro: "Our story of meeting another world is still to come.",
     playerNote: "Awaiting a submission from the player",
     partnerNote: "Yet to meet · No partnership implied",
@@ -228,7 +228,7 @@ export const communityMessages: Readonly<Record<Locale, CommunityMessages>> = {
       },
       hydcraft: {
         description:
-          "From putting up buildings and laying track to creating entire cities, the people of HydCraft weave railways, neighborhoods and everyday player life into a shared map. In a world where creative building meets modded play, they make plenty of room to build together. Fetarute has stood alongside them since 2018.",
+          "From putting up buildings and laying track to creating entire cities, the people of HydCraft weave railways, neighborhoods, and everyday player life into a shared map. In a world where creative building meets modded play, they make plenty of room to build together. Fetarute has stood alongside them since 2018.",
         note: "Friends since 2018",
         status: "Friends since 2018",
         imageAlt: "HydCraft logo",
