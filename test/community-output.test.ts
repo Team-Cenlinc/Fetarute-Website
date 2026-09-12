@@ -90,7 +90,7 @@ test("已确认服务器使用核实名称和入口，未知外部团体仍不�
         id: "urasaka",
         kind: "server",
         name: "浦坂 Urasaka",
-        href: undefined,
+        href: "https://urasaka.cn",
         partnerId: "urasaka",
       },
       {

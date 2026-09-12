@@ -183,6 +183,7 @@ export const communityEntities: readonly CommunityEntity[] = [
     id: "urasaka",
     kind: "server",
     name: "浦坂 Urasaka",
+    href: "https://urasaka.cn",
     profile: { kind: "partner", partnerId: "urasaka" },
   },
   {
