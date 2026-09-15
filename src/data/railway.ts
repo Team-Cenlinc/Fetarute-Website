@@ -287,7 +287,7 @@ export const railwayLines: readonly RailwayLine[] = [
     operatorCode: "SURC",
   },
   {
-    code: "KL",
+    code: "L",
     primaryName: "北陆轻轨",
     secondaryName: "Kitariku Light Rail",
     color: createHexColor("#C40D0B"),
@@ -332,8 +332,8 @@ export const railwayStations: readonly RailwayStation[] = [
     id: "shinmean",
     primaryName: "新免",
     secondaryName: "ShinMean",
-    stationCode: "KL-15",
-    lines: [{ lineKey: getRailwayLineKey("KRTK", "KL"), stationIndex: 15 }],
+    stationCode: "L-15",
+    lines: [{ lineKey: getRailwayLineKey("KRTK", "L"), stationIndex: 15 }],
   },
   {
     id: "levitheed",
