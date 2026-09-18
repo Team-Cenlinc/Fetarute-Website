@@ -32,7 +32,8 @@
   /* 状态码同时受宽高约束：矮视口下先让出高度，保证出口牌与断线仍留在同一屏。 */
   font-size: clamp(96px, min(20vw, 22svh), 360px);
   font-weight: 850;
-  letter-spacing: -0.11em;
+  /* 这套数字本身侧边距就窄，字距再收紧会让 4 的斜笔贴上 0 的字碗；沿用站内展示字的 -0.04em。 */
+  letter-spacing: -0.04em;
   line-height: 0.74;
   user-select: none;
 }
