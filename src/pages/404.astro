@@ -1,0 +1,30 @@
+---
+import NotFoundPage from "@/components/NotFoundPage.astro";
+import { defaultLocale, locales } from "@/i18n/config";
+
+/** GitHub Pages 只会把未知路径交给根 404.html；此白名单将其转到实际存在的本地化错误页。 */
+const localizedErrorPaths = Object.fromEntries(
+  locales.map((locale) => [locale, `/${locale}/404/`]),
+);
+---
+
+<NotFoundPage locale={defaultLocale}>
+  <script slot="head" is:inline define:vars={{ defaultLocale, localizedErrorPaths }}>
+    (() => {
+      // 静态托管看不到原始请求的语言协商，只能从失败路径的首段识别已发布 locale。
+      const [firstPathSegment] = window.location.pathname.split("/").filter(Boolean);
+      // 只认白名单自有键；`in` 会把 constructor、toString 这类原型键当成合法语言并生成非字符串目标。
+      const locale =
+        typeof firstPathSegment === "string" &&
+        Object.hasOwn(localizedErrorPaths, firstPathSegment)
+          ? firstPathSegment
+          : defaultLocale;
+      const targetPath = localizedErrorPaths[locale];
+
+      // 根 404.html 已经完成宿主的 404 响应；在正文与字体开始加载之前换到真实语言页，避免闪现默认语言首屏。
+      if (window.location.pathname !== targetPath) {
+        window.location.replace(`${targetPath}${window.location.search}${window.location.hash}`);
+      }
+    })();
+  </script>
+</NotFoundPage>

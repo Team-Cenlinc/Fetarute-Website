@@ -1,0 +1,99 @@
+---
+import arrowRightIcon from "@phosphor-icons/core/assets/bold/arrow-right-bold.svg?raw";
+import JourneyFooter from "@/components/JourneyFooter.astro";
+import { notFoundMessages, notFoundRouteSegmentCount } from "@/data/not-found";
+import { railwayLines } from "@/data/railway";
+import { locales, localeMetadata, type Locale } from "@/i18n/config";
+import { getLocalizedRelativeUrl } from "@/i18n/links";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import "@/styles/not-found.css";
+
+/** 404 画面复用同一套结构，只由当前公开语言注入文字和链接。 */
+export interface Props {
+  /** 当前错误路由所属的公开语言。 */
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = notFoundMessages[locale];
+const homeHref = getLocalizedRelativeUrl(locale);
+const infoHref = getLocalizedRelativeUrl(locale, "info/");
+const railwayLineColors = railwayLines.map((line) => line.color);
+const routeSegments = Array.from({ length: notFoundRouteSegmentCount }, (_, index) => index);
+/**
+ * 404 页尾沿用资讯页的收束方式：不画轨道，只保留共享页尾的排版与两端基线。
+ * 断线已经在首屏交代了线路身份，页尾再拉一条竖轨会让「这条线到此为止」的语义反复一次。
+ */
+const notFoundFooterStyle =
+  "--journey-footer-copy-x: var(--site-header-inline-start); --journey-footer-right-inset: var(--site-header-inline-end); --journey-footer-margin-right: 0px; --home-footer-track-content-clearance: 0px;";
+---
+
+<BaseLayout
+  locale={locale}
+  title={copy.title}
+  description={copy.description}
+  pagePath="404/"
+  availableLocales={locales}
+  fullBleedMain
+  noindex
+>
+  <slot name="head" slot="head" />
+
+  <script is:inline define:vars={{ railwayLineColors }}>
+    (() => {
+      // 在断线渲染之前就写入根节点，让首屏断线和页尾轨道在同一次访问里始终是同一条真实线路的颜色。
+      const color = railwayLineColors[Math.floor(Math.random() * railwayLineColors.length)];
+
+      if (color) {
+        document.documentElement.style.setProperty("--not-found-line-color", color);
+      }
+    })();
+  </script>
+
+  <section class="not-found" aria-labelledby="not-found-heading">
+    <div class="not-found__status">
+      <p class="not-found__code" aria-hidden="true">404</p>
+      <h1 id="not-found-heading">{copy.heading}</h1>
+    </div>
+
+    <div class="not-found__route" aria-hidden="true">
+      {
+        routeSegments.map((index) => (
+          <span
+            class="not-found__route-segment"
+            style={`--not-found-route-index: ${index}`}
+          ></span>
+        ))
+      }
+    </div>
+
+    <nav class="not-found__actions" aria-label={copy.title}>
+      <a class="not-found__home-sign" href={homeHref}>
+        <span class="not-found__sign-copy">
+          <span class="not-found__sign-label">{copy.homeLabel}</span>
+          <span
+            class="not-found__sign-subtitle"
+            lang={localeMetadata[copy.homeSubtitleLocale].languageTag}>{copy.homeSubtitle}</span
+          >
+        </span>
+        <span class="not-found__sign-arrow" aria-hidden="true" set:html={arrowRightIcon}></span>
+      </a>
+    </nav>
+  </section>
+
+  <JourneyFooter
+    id="not-found-footer"
+    className="not-found-footer"
+    title={copy.footerTitle}
+    lineColor="transparent"
+    returnHref={homeHref}
+    returnLabel={copy.homeLabel}
+    returnDirection="left"
+    topHref={infoHref}
+    topLabel={copy.infoLabel}
+    topDirection="right"
+    footerStyle={notFoundFooterStyle}
+  >
+    <p class="not-found-footer__description">{copy.footerDescription}</p>
+  </JourneyFooter>
+</BaseLayout>
