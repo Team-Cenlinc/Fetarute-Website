@@ -1,0 +1,19 @@
+---
+import NotFoundPage from "@/components/NotFoundPage.astro";
+import { locales, type Locale } from "@/i18n/config";
+
+/** 为每一种已发布语言静态生成错误页，使 Astro 开发环境和显式错误链接都保留对应语言。 */
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale }, props: { locale } }));
+}
+
+/** 构建期已由 getStaticPaths 收窄过的错误页语言。 */
+interface Props {
+  /** 当前本地化 404 文档要呈现的公开语言。 */
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+---
+
+<NotFoundPage locale={locale} />

@@ -6,6 +6,7 @@ import { runInNewContext } from "node:vm";
 import { siteInfo } from "../src/data/site.ts";
 import { defaultLocale, localeMetadata, type Locale } from "../src/i18n/config.ts";
 import { getMessages } from "../src/i18n/messages.ts";
+import { notFoundMessages, notFoundRouteSegmentCount } from "../src/data/not-found.ts";
 import { webMcpPages, type WebMcpArticle } from "../src/data/webmcp.ts";
 import {
   createFetaruteWebMcpTools,
@@ -14,6 +15,66 @@ import {
 } from "../src/lib/webmcp.ts";
 
 const publicHomeLocales = ["zh-Hans", "zh-Hant", "en"] as const satisfies readonly Locale[];
+
+test("根 404 回退会转入对应语言的静态错误页", () => {
+  const rootError = readFileSync(new URL("../dist/404.html", import.meta.url), "utf8");
+
+  assert.match(rootError, /name="robots" content="noindex, follow"/);
+  assert.match(rootError, /window\.location\.replace/);
+  assert.match(rootError, /zh-Hans[\s\S]{0,120}\/zh-Hans\/404\//);
+
+  for (const locale of publicHomeLocales) {
+    const page = readFileSync(new URL(`../dist/${locale}/404/index.html`, import.meta.url), "utf8");
+    const copy = notFoundMessages[locale];
+
+    assert.equal([...page.matchAll(/<h1\b/g)].length, 1, `${locale} 404 应只有一个 h1`);
+    assert.ok(page.includes(copy.heading), `${locale} 404 应输出本地化标题`);
+    assert.ok(page.includes(copy.homeLabel), `${locale} 404 应保留返回首页操作`);
+    assert.ok(page.includes(`href="/${locale}/"`), `${locale} 404 应链接至同语言首页`);
+    assert.equal(
+      [...page.matchAll(/<span class="not-found__route-segment"/g)].length,
+      notFoundRouteSegmentCount,
+      `${locale} 404 断线段数应与导视节奏常量一致`,
+    );
+    // 断线必须整条同色：段落上不允许再出现按段写入的线路色。
+    assert.doesNotMatch(page, /not-found-route-color/);
+    // 出口牌是双语牌面：副行永远是另一套文字里的同一个目的地，并带上自己的语言标签。
+    const subtitleTag = localeMetadata[copy.homeSubtitleLocale].languageTag;
+
+    assert.notEqual(
+      subtitleTag,
+      localeMetadata[locale].languageTag,
+      `${locale} 404 的出口牌副行不应与页面语言相同`,
+    );
+    const [subtitleMarkup] =
+      page.match(/<span[^>]*class="not-found__sign-subtitle"[^>]*>[^<]*/) ?? [];
+
+    assert.ok(subtitleMarkup, `${locale} 404 应输出出口牌副行`);
+    assert.ok(
+      subtitleMarkup.includes(`lang="${subtitleTag}"`),
+      `${locale} 404 的出口牌副行应带上自己的语言标签`,
+    );
+    assert.ok(
+      subtitleMarkup.endsWith(copy.homeSubtitle),
+      `${locale} 404 的出口牌副行应输出另一套文字的目的地`,
+    );
+
+    // 断口按段错开出现，因此每一段都必须带上自己的序号。
+    assert.equal(
+      [...page.matchAll(/--not-found-route-index: \d+/g)].length,
+      notFoundRouteSegmentCount,
+      `${locale} 404 每段断线都应写入自己的断开次序`,
+    );
+
+    // 沉浸首屏之后接共享页尾；页尾与资讯页一样不再画轨道。
+    assert.ok(page.includes(copy.footerTitle), `${locale} 404 应输出页尾收束标题`);
+    assert.ok(page.includes(copy.footerDescription), `${locale} 404 应输出页尾正文`);
+    assert.ok(page.includes(copy.infoLabel), `${locale} 404 页尾应保留资讯入口`);
+    assert.ok(page.includes(`href="/${locale}/info/"`), `${locale} 404 应链接至同语言资讯页`);
+    assert.match(page, /--home-footer-line-color: transparent/);
+    assert.match(page, /name="robots" content="noindex, follow"/);
+  }
+});
 
 test("Info and Markdown announcements preserve localized navigation in the static output", () => {
   for (const locale of publicHomeLocales) {

@@ -195,6 +195,8 @@ const pageStructuredData = {
 <html lang={localeMetadata[locale].languageTag}>
   <head>
     <meta charset="UTF-8" />
+    <!-- 紧随字符集的 head 插槽：只有需要在正文与子资源开始加载之前执行的页面（例如根 404 的语言跳转）才使用它。 -->
+    <slot name="head" />
     <meta name="description" content={pageDescription} />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="generator" content={Astro.generator} />

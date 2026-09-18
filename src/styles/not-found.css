@@ -1,0 +1,309 @@
+/* 404 页面以 Figma 的单轴导视排版为基准：状态、断线与离开入口在同一阅读线上依次出现，
+   页尾留到沉浸首屏之后，使错误页与首页保持同一套「读完一屏再收束」的阅读节奏。 */
+.not-found {
+  /* 为固定 Header 留出首屏净空，确保状态码在所有短视口都不会落入导航下方。 */
+  --not-found-top-inset: clamp(96px, min(12vw, 15svh), 184px);
+  /* 线路从完整态断开后的最小间隔，随视口增长但不让桌面线段显得稀疏。 */
+  --not-found-route-gap: clamp(8px, 1.25vw, 24px);
+  position: relative;
+  display: grid;
+  grid-template-rows: 1fr auto auto minmax(36px, 0.62fr);
+  min-height: 100svh;
+  overflow: clip;
+  padding: var(--not-found-top-inset) 0 24px;
+  background: var(--color-background);
+}
+
+.not-found__status {
+  display: grid;
+  align-content: end;
+  justify-items: center;
+  padding: 0 24px clamp(20px, min(4vw, 4.5svh), 64px);
+  text-align: center;
+}
+
+.not-found :is(h1, p) {
+  margin: 0;
+}
+
+.not-found__code {
+  color: var(--color-text);
+  font-family: var(--font-fetarute-ui);
+  /* 状态码同时受宽高约束：矮视口下先让出高度，保证出口牌与断线仍留在同一屏。 */
+  font-size: clamp(96px, min(20vw, 22svh), 360px);
+  font-weight: 850;
+  /* 这套数字本身侧边距就窄，字距再收紧会让 4 的斜笔贴上 0 的字碗；沿用站内展示字的 -0.04em。 */
+  letter-spacing: -0.04em;
+  line-height: 0.74;
+  user-select: none;
+}
+
+.not-found h1 {
+  max-width: 14ch;
+  margin-top: clamp(20px, 2.8vw, 44px);
+  color: var(--color-text);
+  /* 英文标题会折成两行；与状态码一样按视口高度收敛，避免长标题把出口牌顶出首屏。 */
+  font-size: clamp(32px, min(6.7vw, 8svh), 128px);
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+/* 断线整条通铺视口：先作为完整线路自左向右驶入，再自左向右逐段断开，读者因此先看到「有线路」才看到「断了」。
+   只显式定义首段的宽度，其余断线交给隐式列自动排布，段数因此只由 notFoundRouteSegmentCount 一处决定。 */
+.not-found__route {
+  display: grid;
+  grid-template-columns: minmax(0, 3.25fr);
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  width: 100%;
+  height: clamp(22px, 3.25vw, 62px);
+  column-gap: 0;
+  overflow: clip;
+  /* 整条线只用 transform 进场，与裁切同形却全程交给合成器；首屏还在换装大字号字体时也不会掉帧。 */
+  transform-origin: left center;
+  animation: not-found-route-enter 760ms var(--motion-header-standard-move) both;
+}
+
+.not-found__route-segment {
+  /* --not-found-route-index 由页面按段写入，驱动断口自左向右依次出现。 */
+  position: relative;
+  min-width: 0;
+  /* --not-found-line-color 由页面脚本随机选定一条真实线路色并写在根节点，整页断线共用同一个值。 */
+  background: var(--not-found-line-color, var(--color-home-line));
+}
+
+/* 断口是一块与画布同色的遮片，贴在每段右端并从接缝处向左展开。
+   用 scaleX 而不是裁切或改宽，断口因此和进场共用同一条合成路径，十段错峰展开也不会逐帧重绘整条线。 */
+.not-found__route-segment::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: var(--not-found-route-gap);
+  background: var(--color-background);
+  transform: scaleX(0);
+  transform-origin: right center;
+  animation: not-found-route-break 380ms var(--motion-header-standard-move) both;
+  animation-delay: calc(700ms + var(--not-found-route-index, 0) * 62ms);
+}
+
+.not-found__actions {
+  display: grid;
+  place-items: center;
+  padding: clamp(24px, min(5.7vw, 6.5svh), 96px) 20px 0;
+}
+
+.not-found__home-sign {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  /* 牌面宽度按最长的一条英文目的地取值，使无副行的英语出口牌也能单行排完。 */
+  width: min(100%, 380px);
+  /* 牌高与其余竖向节奏一样同时受宽高约束，矮视口下先让出高度而不是把出口牌顶出首屏。 */
+  min-height: clamp(76px, min(7.5vw, 12svh), 96px);
+  gap: clamp(14px, 2vw, 24px);
+  padding: 0 clamp(18px, 2.5vw, 28px);
+  border: 3px solid var(--color-text);
+  background: var(--fetarute-exit);
+  color: var(--fetarute-exit-text);
+  text-decoration: none;
+  transition: background-color 160ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.not-found__sign-copy {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  text-align: right;
+}
+
+.not-found__sign-label {
+  color: var(--fetarute-exit-text);
+  font-size: clamp(26px, 2.3vw, 34px);
+  font-weight: 790;
+  letter-spacing: -0.045em;
+  line-height: 1.04;
+}
+
+/* 出口牌的拉丁文副行沿用车站导视的主次关系：中文目的地在上，英文目的地在下且不做全大写。 */
+.not-found__sign-subtitle {
+  color: color-mix(in srgb, var(--fetarute-exit-text) 76%, transparent);
+  font-size: clamp(13px, 1.05vw, 16px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.not-found__sign-arrow {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: clamp(28px, 3vw, 36px);
+  color: var(--fetarute-exit-text);
+  transition: transform 160ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.not-found__sign-arrow svg {
+  width: 100%;
+  height: auto;
+}
+
+.not-found__home-sign:hover {
+  background: color-mix(in srgb, var(--fetarute-exit) 88%, var(--color-text));
+}
+
+.not-found__home-sign:hover .not-found__sign-arrow {
+  transform: translateX(4px);
+}
+
+.not-found__home-sign:active .not-found__sign-copy {
+  transform: translateY(1px);
+}
+
+.not-found__home-sign:focus-visible {
+  outline: 3px solid var(--color-text);
+  outline-offset: 6px;
+}
+
+/* 404 与资讯页一样只借用共享页尾的排版，不再画竖向轨道；线路身份已经由首屏断线交代完毕。 */
+.home-footer.not-found-footer .home-footer__track {
+  display: none;
+}
+
+/* 共享页尾的插槽内容不继承组件作用域样式，因此 404 的页尾正文在此自带排版。
+   这句话交代的是两个去向，断行会把它读成两件事，所以不设行长上限，让它在页尾正文列里走一行。 */
+.not-found-footer__description {
+  margin: 0;
+  font-size: clamp(14px, 0.94vw, 17px);
+  font-weight: 480;
+  line-height: 1.65;
+  opacity: 0.76;
+}
+
+/* 起点带一点左移，线路因此是从视口外驶入而不是原地展开；两个关键帧只写 transform，插值仍在合成器上完成。 */
+@keyframes not-found-route-enter {
+  from {
+    transform: translateX(-5%) scaleX(0);
+  }
+
+  to {
+    transform: translateX(0) scaleX(1);
+  }
+}
+
+@keyframes not-found-route-break {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (max-width: 719px) {
+  .not-found {
+    /* 小屏仍保留与参考稿相同的三段层级，但压缩上下留白避免 CTA 落出首屏。 */
+    --not-found-top-inset: min(108px, 14svh);
+    grid-template-rows: 1fr auto auto minmax(40px, 0.4fr);
+  }
+
+  .not-found__status {
+    padding-inline: 20px;
+    padding-bottom: 34px;
+  }
+
+  .not-found__code {
+    font-size: clamp(112px, min(39vw, 26svh), 188px);
+  }
+
+  .not-found h1 {
+    /* ch 以拉丁字形取值，中文标题需要更宽的行长才能在窄屏保持单行。 */
+    max-width: 15ch;
+    margin-top: 18px;
+    font-size: clamp(32px, min(10vw, 7svh), 52px);
+  }
+
+  .not-found__route {
+    height: 32px;
+    grid-template-columns: minmax(0, 2.1fr);
+  }
+
+  .not-found__actions {
+    padding-top: 40px;
+  }
+
+  .not-found__home-sign {
+    width: min(100%, 294px);
+    min-width: 0;
+  }
+
+  .not-found-footer__description {
+    font-size: clamp(14px, 3.8vw, 17px);
+  }
+}
+
+/* 横屏手机与被压扁的桌面窗口：宽度还在桌面档，高度却不足以容纳按宽度取值的导视尺寸。
+   默认档的 clamp 下限（顶部净空、状态码、出口牌）加起来就超过这类视口，实测 1920×600 会把出口牌推到折线下 50px，
+   因此这类视口改成完全由视口高度定尺，保证出口牌在任何宽度的矮视口都留在首屏内。
+   限定横向比例是为了把竖屏手机排除在外：它们同样可能矮于 720px，但已经有自己那套窄屏取值，
+   不加这个条件就会被这里按横屏的行长和字号覆盖掉。 */
+@media (max-height: 720px) and (min-aspect-ratio: 1/1) {
+  .not-found {
+    --not-found-top-inset: clamp(72px, 20svh, 104px);
+    grid-template-rows: 1fr auto auto minmax(12px, 0.3fr);
+    padding-bottom: 12px;
+  }
+
+  .not-found__status {
+    padding-bottom: clamp(12px, 3.5svh, 28px);
+  }
+
+  .not-found__code {
+    font-size: clamp(72px, 22svh, 132px);
+  }
+
+  .not-found h1 {
+    max-width: 22ch;
+    margin-top: clamp(8px, 2.5svh, 20px);
+    font-size: clamp(22px, 6.8svh, 40px);
+  }
+
+  .not-found__route {
+    height: clamp(16px, 5svh, 34px);
+  }
+
+  .not-found__actions {
+    padding-top: clamp(14px, 4svh, 32px);
+  }
+
+  .not-found__home-sign {
+    min-height: clamp(52px, 15svh, 76px);
+  }
+
+  .not-found__sign-label {
+    font-size: clamp(20px, 5.5svh, 30px);
+  }
+
+  .not-found__sign-subtitle {
+    font-size: clamp(11px, 2.6svh, 14px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .not-found__route {
+    animation: none;
+    transform: none;
+  }
+
+  .not-found__route-segment::after {
+    transform: scaleX(1);
+    animation: none;
+  }
+
+  .not-found__home-sign {
+    transition: none;
+  }
+}

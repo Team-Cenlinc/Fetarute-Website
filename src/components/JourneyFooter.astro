@@ -1,8 +1,19 @@
 ---
 import arrowUpIcon from "@phosphor-icons/core/assets/bold/arrow-up-bold.svg?raw";
 import arrowLeftIcon from "@phosphor-icons/core/assets/bold/arrow-left-bold.svg?raw";
+import arrowRightIcon from "@phosphor-icons/core/assets/bold/arrow-right-bold.svg?raw";
 import fetaruteLogo from "@/assets/fetarute-branding/fetarute-logo.svg?raw";
 import { siteInfo } from "@/data/site";
+
+/** 页尾操作的去向方向；箭头图标由方向决定，避免各页自行传入图标而漂移。 */
+type JourneyFooterDirection = "up" | "left" | "right";
+
+/** 方向到箭头图标的唯一映射，确保同一方向在所有页面的页尾都指向同一侧。 */
+const directionIcons: Record<JourneyFooterDirection, string> = {
+  up: arrowUpIcon,
+  left: arrowLeftIcon,
+  right: arrowRightIcon,
+};
 
 /** 铁路页面共用页尾骨架；章节提供文案和正文插槽，轨道位置通过 CSS 变量接续各页主线。 */
 export interface Props {
@@ -12,19 +23,21 @@ export interface Props {
   lineColor: string;
   returnHref: string;
   returnLabel: string;
-  returnDirection?: "up" | "left";
+  returnDirection?: JourneyFooterDirection;
   /** 页面可用的内联 CSS 变量；用于在共享 Footer 之后仍保持专属几何契约。 */
   footerStyle?: string;
-  /** 需要在页尾提供同页返回时的锚点；未传时不额外输出操作链接。 */
+  /** 与主返回操作叠放在同一组的次要去向；未传时不额外输出操作链接。 */
   topHref?: string;
-  /** 同页返回链接的本地化可见文案。 */
+  /** 次要去向链接的本地化可见文案。 */
   topLabel?: string;
+  /** 次要去向的箭头方向；默认回到本页顶部，跨页目的地应显式传入自己的方向。 */
+  topDirection?: JourneyFooterDirection;
   className?: string;
   /** 社区阅读进度使用的末站名称；未传时不附加社区状态。 */
   stopName?: string;
 }
 
-const { id, title, description, lineColor, returnHref, returnLabel, returnDirection = "up", footerStyle, topHref, topLabel, className, stopName } = Astro.props;
+const { id, title, description, lineColor, returnHref, returnLabel, returnDirection = "up", footerStyle, topHref, topLabel, topDirection = "up", className, stopName } = Astro.props;
 const currentYear = new Date().getFullYear();
 ---
 
@@ -46,14 +59,14 @@ const currentYear = new Date().getFullYear();
       </div>
       <div class="home-footer__actions">
         {topHref && topLabel && (
-          <a class="home-footer__restart" href={topHref} data-direction="up">
+          <a class="home-footer__restart" href={topHref} data-direction={topDirection}>
             <span>{topLabel}</span>
-            <span class="home-footer__restart-icon" aria-hidden="true" set:html={arrowUpIcon}></span>
+            <span class="home-footer__restart-icon" aria-hidden="true" set:html={directionIcons[topDirection]}></span>
           </a>
         )}
         <a class="home-footer__restart" href={returnHref} data-direction={returnDirection}>
           <span>{returnLabel}</span>
-          <span class="home-footer__restart-icon" aria-hidden="true" set:html={returnDirection === "up" ? arrowUpIcon : arrowLeftIcon}></span>
+          <span class="home-footer__restart-icon" aria-hidden="true" set:html={directionIcons[returnDirection]}></span>
         </a>
       </div>
     </div>
@@ -86,8 +99,8 @@ const currentYear = new Date().getFullYear();
     color: var(--journey-footer-text, var(--palette-surface));
   }
 
-  /* 首页 Footer 外框贴齐 Header 后，正文仍在右侧轨道前留出净空，避免返回入口和版权穿过线路。 */
-  .home-footer--homepage {
+  /* Footer 外框贴齐 Header 后，正文仍在右侧轨道前留出净空，避免返回入口和版权穿过线路；首页与 404 共用这套几何。 */
+  .home-footer--header-framed {
     --home-footer-track-content-clearance: max(
       0px,
       calc(
@@ -207,6 +220,10 @@ const currentYear = new Date().getFullYear();
 
   .home-footer__restart[data-direction="up"]:hover .home-footer__restart-icon {
     transform: translateY(-3px);
+  }
+
+  .home-footer__restart[data-direction="right"]:hover .home-footer__restart-icon {
+    transform: translateX(3px);
   }
 
   /* 品牌签名独立成行，Logo 与版权共享两端锚点；宽度不足时按内容自然换行。 */
