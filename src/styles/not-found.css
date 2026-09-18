@@ -60,16 +60,31 @@
   height: clamp(22px, 3.25vw, 62px);
   column-gap: 0;
   overflow: clip;
-  animation: not-found-route-enter 640ms cubic-bezier(0.2, 0, 0, 1) both;
+  /* 整条线只用 transform 进场，与裁切同形却全程交给合成器；首屏还在换装大字号字体时也不会掉帧。 */
+  transform-origin: left center;
+  animation: not-found-route-enter 760ms var(--motion-header-standard-move) both;
 }
 
 .not-found__route-segment {
   /* --not-found-route-index 由页面按段写入，驱动断口自左向右依次出现。 */
+  position: relative;
   min-width: 0;
   /* --not-found-line-color 由页面脚本随机选定一条真实线路色并写在根节点，整页断线共用同一个值。 */
   background: var(--not-found-line-color, var(--color-home-line));
-  animation: not-found-route-break 300ms cubic-bezier(0.2, 0, 0, 1) both;
-  animation-delay: calc(560ms + var(--not-found-route-index, 0) * 55ms);
+}
+
+/* 断口是一块与画布同色的遮片，贴在每段右端并从接缝处向左展开。
+   用 scaleX 而不是裁切或改宽，断口因此和进场共用同一条合成路径，十段错峰展开也不会逐帧重绘整条线。 */
+.not-found__route-segment::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: var(--not-found-route-gap);
+  background: var(--color-background);
+  transform: scaleX(0);
+  transform-origin: right center;
+  animation: not-found-route-break 380ms var(--motion-header-standard-move) both;
+  animation-delay: calc(700ms + var(--not-found-route-index, 0) * 62ms);
 }
 
 .not-found__actions {
@@ -166,26 +181,24 @@
   opacity: 0.76;
 }
 
+/* 起点带一点左移，线路因此是从视口外驶入而不是原地展开；两个关键帧只写 transform，插值仍在合成器上完成。 */
 @keyframes not-found-route-enter {
   from {
-    clip-path: inset(0 100% 0 0);
-    transform: translateX(-12%);
+    transform: translateX(-5%) scaleX(0);
   }
 
   to {
-    clip-path: inset(0 0 0 0);
-    transform: translateX(0);
+    transform: translateX(0) scaleX(1);
   }
 }
 
-/* 断口用 clip-path 从右端裁掉一个间隔宽度：视觉与真的把线段改窄一致，但不触发布局，十段同时过渡也不抖。 */
 @keyframes not-found-route-break {
   from {
-    clip-path: inset(0 0 0 0);
+    transform: scaleX(0);
   }
 
   to {
-    clip-path: inset(0 var(--not-found-route-gap) 0 0);
+    transform: scaleX(1);
   }
 }
 
@@ -279,12 +292,11 @@
 @media (prefers-reduced-motion: reduce) {
   .not-found__route {
     animation: none;
-    clip-path: none;
     transform: none;
   }
 
-  .not-found__route-segment {
-    clip-path: inset(0 var(--not-found-route-gap) 0 0);
+  .not-found__route-segment::after {
+    transform: scaleX(1);
     animation: none;
   }
 
