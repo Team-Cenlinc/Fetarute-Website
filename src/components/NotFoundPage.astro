@@ -1,10 +1,38 @@
 ---
 import arrowRightIcon from "@phosphor-icons/core/assets/bold/arrow-right-bold.svg?raw";
+import arrowSquareOutIcon from "@phosphor-icons/core/assets/bold/arrow-square-out-bold.svg?raw";
+import arrowUpIcon from "@phosphor-icons/core/assets/bold/arrow-up-bold.svg?raw";
+import arrowUpRightIcon from "@phosphor-icons/core/assets/bold/arrow-up-right-bold.svg?raw";
+import bookOpenTextIcon from "@phosphor-icons/core/assets/bold/book-open-text-bold.svg?raw";
+import gameControllerIcon from "@phosphor-icons/core/assets/bold/game-controller-bold.svg?raw";
+import hardHatIcon from "@phosphor-icons/core/assets/bold/hard-hat-bold.svg?raw";
+import houseIcon from "@phosphor-icons/core/assets/bold/house-bold.svg?raw";
+import infoIcon from "@phosphor-icons/core/assets/bold/info-bold.svg?raw";
+import megaphoneIcon from "@phosphor-icons/core/assets/bold/megaphone-bold.svg?raw";
+import usersThreeIcon from "@phosphor-icons/core/assets/bold/users-three-bold.svg?raw";
 import JourneyFooter from "@/components/JourneyFooter.astro";
-import { notFoundMessages, notFoundRouteSegmentCount } from "@/data/not-found";
-import { railwayLines } from "@/data/railway";
+import { getInfoMarkerStyle } from "@/data/info-palette";
+import {
+  notFoundMessages,
+  notFoundRequestStorageKey,
+  notFoundSuggestions,
+  notFoundTransferKeys,
+  type NotFoundSuggestion,
+  type NotFoundTransferKey,
+} from "@/data/not-found";
+import { getRailwayLineCssVariableName, getRailwayLineTextColor } from "@/data/palette";
+import { railwayLineByKey, railwayLines, type RailwayLine, type RailwayLineKey } from "@/data/railway";
+import {
+  externalDestinations,
+  primaryNavItems,
+  wayfindingPrototype,
+  type PrimaryNavArrowDirection,
+  type PrimaryNavItem,
+} from "@/data/site";
 import { locales, localeMetadata, type Locale } from "@/i18n/config";
+import { infoMessages } from "@/i18n/info";
 import { getLocalizedRelativeUrl } from "@/i18n/links";
+import { getMessages } from "@/i18n/messages";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import "@/styles/not-found.css";
 
@@ -14,12 +42,166 @@ export interface Props {
   locale: Locale;
 }
 
+/** 换乘牌一格的渲染数据；目的地事实全部来自站点数据与既有消息表，这里只做组装。 */
+interface TransferSign {
+  /** 去向身份，同时写入 data 属性供样式区分主操作。 */
+  key: NotFoundTransferKey;
+  /** 站内去向是同语言的相对链接，Wiki 是站点数据里登记的外部地址。 */
+  href: string;
+  /** 页面语言里的目的地名称。 */
+  label: string;
+  /** 牌面副行：站内去向给出另一套文字的同一目的地，外部服务改为说明「离开官网」。 */
+  subtitle: string;
+  /** 副行的语言标签；外部服务说明使用页面语言，因此不另设。 */
+  subtitleLang?: string;
+  /** 色块内的 Phosphor 图标源码。 */
+  icon: string;
+  /** 色块的底色与前景；主操作与 Wiki 使用出口黄体系，由样式表按 key 定义。 */
+  tileStyle?: string;
+  /** 箭头方向与页头主导航一致，外部服务统一使用新窗口图标。 */
+  arrow: PrimaryNavArrowDirection | "external";
+  /** 外部服务在新标签页打开，并在无障碍名称里说明这一副作用。 */
+  external: boolean;
+}
+
+/** 按地址推测出的资讯页章节链接；默认隐藏，由页面脚本在匹配失败路径后显示。 */
+interface SuggestionLink extends NotFoundSuggestion {
+  /** 同语言资讯页的章节锚点。 */
+  href: string;
+  /** 资讯页章节标题，与资讯页目录上的名称逐字一致。 */
+  label: string;
+  /** 与资讯页章节标记同一套线路色块。 */
+  tileStyle: string;
+  /** 与资讯页章节标记同一个图标。 */
+  icon: string;
+}
+
 const { locale } = Astro.props;
 const copy = notFoundMessages[locale];
+const messages = getMessages(locale);
+const subtitleCopy = notFoundMessages[copy.subtitleLocale];
+const subtitleMessages = getMessages(copy.subtitleLocale);
+const subtitleLanguageTag = localeMetadata[copy.subtitleLocale].languageTag;
 const homeHref = getLocalizedRelativeUrl(locale);
-const infoHref = getLocalizedRelativeUrl(locale, "info/");
-const railwayLineColors = railwayLines.map((line) => line.color);
-const routeSegments = Array.from({ length: notFoundRouteSegmentCount }, (_, index) => index);
+const ownErrorPath = getLocalizedRelativeUrl(locale, "404/");
+
+/** 箭头方向到图标的唯一映射，换乘牌与页头指向同一侧，读者不会在两处看到相反的方向。 */
+const arrowIcons: Record<TransferSign["arrow"], string> = {
+  up: arrowUpIcon,
+  "up-right": arrowUpRightIcon,
+  right: arrowRightIcon,
+  external: arrowSquareOutIcon,
+};
+
+/** 资讯章节与图标的对应关系，与资讯页的章节标记保持一致。 */
+const suggestionIcons: Record<NotFoundSuggestion["category"], string> = {
+  news: megaphoneIcon,
+  game: gameControllerIcon,
+};
+
+/** 取出已录入的线路；配置引用了不存在的线路时在构建期中止，而不是渲染一块无色的牌。 */
+function getRailwayLine(lineKey: RailwayLineKey): RailwayLine {
+  const line = railwayLineByKey.get(lineKey);
+
+  if (!line) {
+    throw new Error(`404 页面引用了未录入的线路 ${lineKey}。`);
+  }
+
+  return line;
+}
+
+/** 线路作为导视色块时的底色与前景：底色只引用铁路 token，前景按线路亮度配对。 */
+function getLineTileStyle(lineKey: RailwayLineKey): string {
+  const line = getRailwayLine(lineKey);
+
+  return `background: var(${getRailwayLineCssVariableName(line)}); color: ${getRailwayLineTextColor(line.color)};`;
+}
+
+/** 断线使用的线路色：写成线路 token 引用而不是色值，浅深外观切换时仍跟随铁路领域的唯一色值。 */
+function getRouteLineColor(line: RailwayLine): string {
+  return `var(${getRailwayLineCssVariableName(line)})`;
+}
+
+/** 按主导航身份取出独立页面的路径、线路和箭头，保证换乘牌与页头指向同一个目的地。 */
+function getPageNavItem(labelKey: "community" | "info") {
+  const item: PrimaryNavItem | undefined = primaryNavItems.find(
+    (navItem) => navItem.labelKey === labelKey,
+  );
+
+  if (!item?.pagePath || !item.navigationLineKey) {
+    throw new Error(`主导航缺少 ${labelKey} 的独立页面配置。`);
+  }
+
+  return { ...item, pagePath: item.pagePath, navigationLineKey: item.navigationLineKey };
+}
+
+const communityNavItem = getPageNavItem("community");
+const infoNavItem = getPageNavItem("info");
+/** 资讯页同时是换乘目录的一格和页尾的次要去向，两处共用同一个链接。 */
+const infoHref = getLocalizedRelativeUrl(locale, infoNavItem.pagePath);
+/**
+ * 换乘目录四格的完整配置，键与 notFoundTransferKeys 一一对应。
+ * 站内去向的路径、线路色和箭头都从主导航派生，与页头指向同一个目的地；Wiki 取自出口菜单登记的外部服务。
+ */
+const transferSignByKey: Record<NotFoundTransferKey, TransferSign> = {
+  home: {
+    key: "home",
+    href: homeHref,
+    label: copy.homeLabel,
+    subtitle: subtitleCopy.homeLabel,
+    subtitleLang: subtitleLanguageTag,
+    icon: houseIcon,
+    arrow: "up",
+    external: false,
+  },
+  community: {
+    key: "community",
+    href: getLocalizedRelativeUrl(locale, communityNavItem.pagePath),
+    label: messages.navigation.community,
+    subtitle: subtitleMessages.navigation.community,
+    subtitleLang: subtitleLanguageTag,
+    icon: usersThreeIcon,
+    tileStyle: getLineTileStyle(communityNavItem.navigationLineKey),
+    arrow: communityNavItem.navigationArrow,
+    external: false,
+  },
+  info: {
+    key: "info",
+    href: infoHref,
+    label: messages.navigation.info,
+    subtitle: subtitleMessages.navigation.info,
+    subtitleLang: subtitleLanguageTag,
+    icon: infoIcon,
+    tileStyle: getLineTileStyle(infoNavItem.navigationLineKey),
+    arrow: infoNavItem.navigationArrow,
+    external: false,
+  },
+  wiki: {
+    key: "wiki",
+    href: externalDestinations.wiki.href,
+    label: messages.externalDestinationLabels.wiki,
+    subtitle: messages.exitMenuHint,
+    icon: bookOpenTextIcon,
+    arrow: "external",
+    external: true,
+  },
+};
+/** 按数据层给定的牌面顺序输出，顺序只在 notFoundTransferKeys 维护一处。 */
+const transferSigns = notFoundTransferKeys.map((key) => transferSignByKey[key]);
+/** 所有可能的推测去向都预先渲染并隐藏，页面脚本只按失败地址显示匹配的那一条，不在客户端拼接链接。 */
+const suggestionLinks: SuggestionLink[] = notFoundSuggestions.map((suggestion) => ({
+  ...suggestion,
+  href: getLocalizedRelativeUrl(locale, infoNavItem.pagePath, suggestion.category),
+  label: infoMessages[locale].sections[suggestion.category],
+  tileStyle: getInfoMarkerStyle(suggestion.category),
+  icon: suggestionIcons[suggestion.category],
+}));
+
+/** 每次访问从全部已录入线路中随机取一条画断线；线路身份不再另外标注，颜色只负责让这条线属于真实路网。 */
+const routeLineColors = railwayLines.map(getRouteLineColor);
+/** 无脚本时的断线沿用首页主视觉线路，与全站 `--color-home-line` 回退保持同一身份。 */
+const fallbackRouteStyle = `--not-found-line-color: ${getRouteLineColor(getRailwayLine(wayfindingPrototype.homeLineKey))};`;
+
 /**
  * 404 页尾沿用资讯页的收束方式：不画轨道，只保留共享页尾的排版与两端基线。
  * 断线已经在首屏交代了线路身份，页尾再拉一条竖轨会让「这条线到此为止」的语义反复一次。
@@ -39,46 +221,195 @@ const notFoundFooterStyle =
 >
   <slot name="head" slot="head" />
 
-  <script is:inline define:vars={{ railwayLineColors }}>
-    (() => {
-      // 在断线渲染之前就写入根节点，让首屏断线和页尾轨道在同一次访问里始终是同一条真实线路的颜色。
-      const color = railwayLineColors[Math.floor(Math.random() * railwayLineColors.length)];
-
-      if (color) {
-        document.documentElement.style.setProperty("--not-found-line-color", color);
-      }
-    })();
-  </script>
-
-  <section class="not-found" aria-labelledby="not-found-heading">
+  <section
+    class="not-found"
+    aria-labelledby="not-found-heading"
+    data-not-found
+    style={fallbackRouteStyle}
+  >
     <div class="not-found__status">
       <p class="not-found__code" aria-hidden="true">404</p>
       <h1 id="not-found-heading">{copy.heading}</h1>
     </div>
 
-    <div class="not-found__route" aria-hidden="true">
-      {
-        routeSegments.map((index) => (
-          <span
-            class="not-found__route-segment"
-            style={`--not-found-route-index: ${index}`}
-          ></span>
-        ))
-      }
+    <div class="not-found__journey">
+      <script is:inline define:vars={{ routeLineColors }}>
+        (() => {
+          // 断线还没有解析时就选定本次访问的线路，首屏第一次绘制就是这条线的颜色，不会先闪过回退线路。
+          const root = document.currentScript?.closest("[data-not-found]");
+          const color = routeLineColors[Math.floor(Math.random() * routeLineColors.length)];
+
+          if (root && color) {
+            root.style.setProperty("--not-found-line-color", color);
+          }
+        })();
+      </script>
+
+      <div class="not-found__route" aria-hidden="true">
+        <span class="not-found__route-built"></span>
+        <span class="not-found__station" set:html={hardHatIcon}></span>
+        <span class="not-found__route-planned"></span>
+      </div>
+
+      <p class="not-found__requested" data-not-found-requested hidden>
+        <span class="not-found__requested-label">{copy.requestedLabel}</span>
+        <span class="not-found__requested-path" data-not-found-requested-path translate="no"></span>
+      </p>
     </div>
 
-    <nav class="not-found__actions" aria-label={copy.title}>
-      <a class="not-found__home-sign" href={homeHref}>
-        <span class="not-found__sign-copy">
-          <span class="not-found__sign-label">{copy.homeLabel}</span>
-          <span
-            class="not-found__sign-subtitle"
-            lang={localeMetadata[copy.homeSubtitleLocale].languageTag}>{copy.homeSubtitle}</span
-          >
-        </span>
-        <span class="not-found__sign-arrow" aria-hidden="true" set:html={arrowRightIcon}></span>
-      </a>
+    <nav
+      class="not-found__transfers"
+      id="not-found-transfers"
+      aria-labelledby="not-found-transfers-heading"
+    >
+      <div class="not-found__transfers-title">
+        <h2 id="not-found-transfers-heading">{copy.transfersLabel}</h2>
+        <span class="not-found__transfers-subtitle" lang={subtitleLanguageTag} aria-hidden="true"
+          >{subtitleCopy.transfersLabel}</span
+        >
+      </div>
+
+      <p class="not-found__suggestion" data-not-found-suggestion hidden>
+        <span class="not-found__suggestion-lead">{copy.suggestionLabel}</span>
+        {
+          suggestionLinks.map((suggestion) => (
+            <a
+              class="not-found__suggestion-link"
+              href={suggestion.href}
+              data-not-found-suggestion-segment={suggestion.segment}
+              hidden
+            >
+              <span
+                class="not-found__suggestion-tile"
+                style={suggestion.tileStyle}
+                aria-hidden="true"
+                set:html={suggestion.icon}
+              />
+              <span class="not-found__suggestion-label">{suggestion.label}</span>
+              <span
+                class="not-found__suggestion-arrow"
+                aria-hidden="true"
+                set:html={arrowRightIcon}
+              />
+            </a>
+          ))
+        }
+      </p>
+
+      <ul class="not-found__transfer-list" role="list">
+        {
+          transferSigns.map((sign) => (
+            <li>
+              <a
+                class="not-found__transfer"
+                href={sign.href}
+                data-transfer={sign.key}
+                data-direction={sign.arrow}
+                target={sign.external ? "_blank" : undefined}
+                rel={sign.external ? "noreferrer" : undefined}
+                aria-label={
+                  sign.external ? `${sign.label} (${messages.externalLinkNewTabHint})` : undefined
+                }
+              >
+                <span
+                  class="not-found__transfer-tile"
+                  style={sign.tileStyle}
+                  aria-hidden="true"
+                  set:html={sign.icon}
+                />
+                <span class="not-found__transfer-copy">
+                  <span class="not-found__transfer-label" translate={sign.external ? "no" : undefined}>
+                    {sign.label}
+                  </span>
+                  <span class="not-found__transfer-subtitle" lang={sign.subtitleLang}>
+                    {sign.subtitle}
+                  </span>
+                </span>
+                <span
+                  class="not-found__transfer-arrow"
+                  aria-hidden="true"
+                  set:html={arrowIcons[sign.arrow]}
+                />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
     </nav>
+
+    <script
+      is:inline
+      define:vars={{
+        localeSegments: [...locales],
+        ownErrorPath,
+        requestStorageKey: notFoundRequestStorageKey,
+      }}
+    >
+      (() => {
+        const root = document.currentScript?.closest("[data-not-found]");
+
+        // 根 404 在跳转前也会渲染这一页；只有真正落在本语言错误页时才读取暂存地址，避免在跳转途中把它提前取走。
+        if (!root || window.location.pathname.replace(/\/?$/, "/") !== ownErrorPath) {
+          return;
+        }
+
+        const state =
+          window.history.state && typeof window.history.state === "object"
+            ? window.history.state
+            : {};
+        let requestedPath =
+          typeof state.notFoundRequest === "string" ? state.notFoundRequest : null;
+
+        if (requestedPath === null) {
+          try {
+            requestedPath = window.sessionStorage.getItem(requestStorageKey);
+            window.sessionStorage.removeItem(requestStorageKey);
+          } catch {
+            requestedPath = null;
+          }
+
+          // 暂存地址只用一次；移入本页历史状态后，刷新仍能看到同一地址，而新开的错误页不会读到旧值。
+          if (requestedPath !== null) {
+            try {
+              window.history.replaceState({ ...state, notFoundRequest: requestedPath }, "");
+            } catch {
+              // 历史状态不可写时仍照常显示本次地址。
+            }
+          }
+        }
+
+        if (typeof requestedPath !== "string" || !requestedPath.startsWith("/")) {
+          return;
+        }
+
+        const requested = root.querySelector("[data-not-found-requested]");
+        const requestedPathText = root.querySelector("[data-not-found-requested-path]");
+        let displayPath = requestedPath;
+
+        try {
+          displayPath = decodeURI(requestedPath);
+        } catch {
+          // 非法的百分号编码按原样显示，textContent 保证它只会被当作文字。
+        }
+
+        if (requested && requestedPathText) {
+          requestedPathText.textContent = displayPath;
+          requested.hidden = false;
+        }
+
+        const [firstSegment, secondSegment] = requestedPath.split("/").filter(Boolean);
+        const segment = localeSegments.includes(firstSegment) ? secondSegment : firstSegment;
+        const suggestion = root.querySelector("[data-not-found-suggestion]");
+        const suggestionLink = [
+          ...root.querySelectorAll("[data-not-found-suggestion-segment]"),
+        ].find((link) => link.dataset.notFoundSuggestionSegment === segment);
+
+        if (suggestion && suggestionLink) {
+          suggestionLink.hidden = false;
+          suggestion.hidden = false;
+        }
+      })();
+    </script>
   </section>
 
   <JourneyFooter

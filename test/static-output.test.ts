@@ -3,10 +3,15 @@ import { existsSync, readFileSync } from "node:fs";
 import { Buffer } from "node:buffer";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
-import { siteInfo } from "../src/data/site.ts";
+import { externalDestinations, siteInfo } from "../src/data/site.ts";
 import { defaultLocale, localeMetadata, type Locale } from "../src/i18n/config.ts";
 import { getMessages } from "../src/i18n/messages.ts";
-import { notFoundMessages, notFoundRouteSegmentCount } from "../src/data/not-found.ts";
+import {
+  notFoundMessages,
+  notFoundRequestStorageKey,
+  notFoundSuggestions,
+  notFoundTransferKeys,
+} from "../src/data/not-found.ts";
 import { webMcpPages, type WebMcpArticle } from "../src/data/webmcp.ts";
 import {
   createFetaruteWebMcpTools,
@@ -22,55 +27,119 @@ test("根 404 回退会转入对应语言的静态错误页", () => {
   assert.match(rootError, /name="robots" content="noindex, follow"/);
   assert.match(rootError, /window\.location\.replace/);
   assert.match(rootError, /zh-Hans[\s\S]{0,120}\/zh-Hans\/404\//);
+  // 跳转前把失败路径交给会话存储，语言错误页才能显示读者原本要去的地址。
+  assert.ok(rootError.includes(`"${notFoundRequestStorageKey}"`));
+  assert.match(
+    rootError,
+    /sessionStorage\.setItem\(requestStorageKey, window\.location\.pathname\)[\s\S]*window\.location\.replace/,
+  );
 
   for (const locale of publicHomeLocales) {
     const page = readFileSync(new URL(`../dist/${locale}/404/index.html`, import.meta.url), "utf8");
     const copy = notFoundMessages[locale];
 
+    const messages = getMessages(locale);
+    const subtitleMessages = getMessages(copy.subtitleLocale);
+    const subtitleTag = localeMetadata[copy.subtitleLocale].languageTag;
+
     assert.equal([...page.matchAll(/<h1\b/g)].length, 1, `${locale} 404 应只有一个 h1`);
     assert.ok(page.includes(copy.heading), `${locale} 404 应输出本地化标题`);
-    assert.ok(page.includes(copy.homeLabel), `${locale} 404 应保留返回首页操作`);
-    assert.ok(page.includes(`href="/${locale}/"`), `${locale} 404 应链接至同语言首页`);
-    assert.equal(
-      [...page.matchAll(/<span class="not-found__route-segment"/g)].length,
-      notFoundRouteSegmentCount,
-      `${locale} 404 断线段数应与导视节奏常量一致`,
-    );
-    // 断线必须整条同色：段落上不允许再出现按段写入的线路色。
-    assert.doesNotMatch(page, /not-found-route-color/);
-    // 出口牌是双语牌面：副行永远是另一套文字里的同一个目的地，并带上自己的语言标签。
-    const subtitleTag = localeMetadata[copy.homeSubtitleLocale].languageTag;
 
+    // 断线是「已建区间 → 未建车站 → 规划区间」三段，线路色只在 section 上写一次，整条线同色。
+    const routeMarkup = page.match(/<div class="not-found__route"[\s\S]*?<\/div>/)?.[0] ?? "";
+
+    assert.deepEqual(
+      [...routeMarkup.matchAll(/class="(not-found__route-[a-z]+|not-found__station)"/g)].map(
+        ([, className]) => className,
+      ),
+      ["not-found__route-built", "not-found__station", "not-found__route-planned"],
+      `${locale} 404 断线应依次输出已建区间、未建车站与规划区间`,
+    );
+    assert.match(
+      page,
+      /data-not-found style="--not-found-line-color: var\(--line-fta-sl\);"/,
+      `${locale} 404 无脚本时应回退到首页主视觉线路`,
+    );
+    // 断线不再附带线路名与「规划区间」标注，线路色只由整条断线本身呈现。
+    assert.doesNotMatch(page, /not-found__line-meta|not-found__line-code|--not-found-line-text/);
+
+    // 失败地址与推测去向都要等脚本确认后才出现，静态产物里默认隐藏。
+    assert.match(page, /<p class="not-found__requested" data-not-found-requested hidden>/);
+    assert.ok(page.includes(copy.requestedLabel), `${locale} 404 应输出失败地址引导语`);
+    assert.match(page, /<p class="not-found__suggestion" data-not-found-suggestion hidden>/);
+    for (const suggestion of notFoundSuggestions) {
+      assert.match(
+        page,
+        new RegExp(
+          `href="/${locale}/info/#${suggestion.category}" data-not-found-suggestion-segment="${suggestion.segment}" hidden`,
+        ),
+        `${locale} 404 的 /${suggestion.segment}/ 推测应指向资讯页 #${suggestion.category} 章节`,
+      );
+    }
+    assert.ok(
+      page.includes(`window.location.pathname.replace(/\\/?$/, "/") !== ownErrorPath`),
+      `${locale} 404 只应在本语言错误页读取暂存地址`,
+    );
+    assert.ok(page.includes(`"/${locale}/404/"`), `${locale} 404 应写入本语言错误页路径`);
+
+    // 换乘目录按固定顺序列出四个去向，首页是唯一的主操作，Wiki 在新标签页打开。
+    assert.ok(page.includes(copy.transfersLabel), `${locale} 404 应输出换乘指引标题`);
+    const transferKeys = [...page.matchAll(/data-transfer="([a-z]+)"/g)].map(([, key]) => key);
+
+    assert.deepEqual(transferKeys, [...notFoundTransferKeys], `${locale} 404 换乘目录顺序应固定`);
+    const transferHrefs = [...page.matchAll(/<a class="not-found__transfer" href="([^"]+)"/g)].map(
+      ([, href]) => href,
+    );
+
+    assert.deepEqual(
+      transferHrefs,
+      [`/${locale}/`, `/${locale}/community/`, `/${locale}/info/`, externalDestinations.wiki.href],
+      `${locale} 404 换乘目录应链接到同语言的站内页面与 Wiki`,
+    );
+    assert.match(
+      page,
+      new RegExp(
+        `href="${externalDestinations.wiki.href}" data-transfer="wiki" data-direction="external" target="_blank" rel="noreferrer" aria-label="${messages.externalDestinationLabels.wiki} \\(${messages.externalLinkNewTabHint}\\)"`,
+      ),
+      `${locale} 404 的 Wiki 应在新标签页打开并说明这一点`,
+    );
+
+    // 站内去向是双语牌面：副行永远是另一套文字里的同一个目的地，并带上自己的语言标签。
     assert.notEqual(
       subtitleTag,
       localeMetadata[locale].languageTag,
-      `${locale} 404 的出口牌副行不应与页面语言相同`,
+      `${locale} 404 的牌面副行不应与页面语言相同`,
     );
-    const [subtitleMarkup] =
-      page.match(/<span[^>]*class="not-found__sign-subtitle"[^>]*>[^<]*/) ?? [];
+    const subtitles = [
+      ...page.matchAll(/<span class="not-found__transfer-subtitle" lang="([^"]+)">([^<]*)</g),
+    ].map(([, lang, text]) => ({ lang, text: text.trim() }));
 
-    assert.ok(subtitleMarkup, `${locale} 404 应输出出口牌副行`);
-    assert.ok(
-      subtitleMarkup.includes(`lang="${subtitleTag}"`),
-      `${locale} 404 的出口牌副行应带上自己的语言标签`,
-    );
-    assert.ok(
-      subtitleMarkup.endsWith(copy.homeSubtitle),
-      `${locale} 404 的出口牌副行应输出另一套文字的目的地`,
-    );
-
-    // 断口按段错开出现，因此每一段都必须带上自己的序号。
-    assert.equal(
-      [...page.matchAll(/--not-found-route-index: \d+/g)].length,
-      notFoundRouteSegmentCount,
-      `${locale} 404 每段断线都应写入自己的断开次序`,
+    assert.deepEqual(
+      subtitles,
+      [
+        notFoundMessages[copy.subtitleLocale].homeLabel,
+        subtitleMessages.navigation.community,
+        subtitleMessages.navigation.info,
+      ].map((text) => ({ lang: subtitleTag, text })),
+      `${locale} 404 站内去向的副行应输出另一套文字的同一目的地`,
     );
 
-    // 沉浸首屏之后接共享页尾；页尾与资讯页一样不再画轨道。
+    // 沉浸首屏之后接共享页尾；页尾与资讯页一样不再画轨道，操作沿用返回首页与看看资讯两个去向。
     assert.ok(page.includes(copy.footerTitle), `${locale} 404 应输出页尾收束标题`);
     assert.ok(page.includes(copy.footerDescription), `${locale} 404 应输出页尾正文`);
-    assert.ok(page.includes(copy.infoLabel), `${locale} 404 页尾应保留资讯入口`);
-    assert.ok(page.includes(`href="/${locale}/info/"`), `${locale} 404 应链接至同语言资讯页`);
+    assert.deepEqual(
+      [
+        ...page.matchAll(
+          /<a class="home-footer__restart" href="([^"]+)" data-direction="([a-z]+)"/g,
+        ),
+      ].map(([, href, direction]) => ({ href, direction })),
+      [
+        { href: `/${locale}/info/`, direction: "right" },
+        { href: `/${locale}/`, direction: "left" },
+      ],
+      `${locale} 404 页尾应保留看看资讯与返回首页`,
+    );
+    assert.ok(page.includes(copy.infoLabel), `${locale} 404 页尾应输出资讯入口文案`);
     assert.match(page, /--home-footer-line-color: transparent/);
     assert.match(page, /name="robots" content="noindex, follow"/);
   }
