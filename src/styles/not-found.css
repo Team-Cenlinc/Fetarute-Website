@@ -1,36 +1,53 @@
-/* 404 页面以 Figma 的单轴导视排版为基准：状态、断线与离开入口在同一阅读线上依次出现，
-   页尾留到沉浸首屏之后，使错误页与首页保持同一套「读完一屏再收束」的阅读节奏。 */
+/* 404 页面以车站导视为基准：状态、断线与换乘目录在同一阅读线上依次出现，
+   页尾留到沉浸首屏之后，使错误页与首页保持同一套「读完一屏再收束」的阅读节奏。
+   --not-found-line-color 是运行时变量：页面先在 section 上写入首页主视觉线路作为无脚本回退，
+   再由内联脚本换成本次访问随机选中的线路色；整页只有断线消费它。 */
 .not-found {
   /* 为固定 Header 留出首屏净空，确保状态码在所有短视口都不会落入导航下方。 */
-  --not-found-top-inset: clamp(96px, min(12vw, 15svh), 184px);
-  /* 线路从完整态断开后的最小间隔，随视口增长但不让桌面线段显得稀疏。 */
-  --not-found-route-gap: clamp(8px, 1.25vw, 24px);
+  --not-found-top-inset: clamp(96px, min(9vw, 13svh), 150px);
+  /* 线路本体的粗细（不含描边）；同时受宽高约束，矮视口先让出高度给换乘目录。 */
+  --not-found-route-thickness: clamp(18px, min(1.95vw, 3.1svh), 32px);
+  /* 线路上下两道描边：任何线路色都靠它与画布分开，浅色画布上的浅色线路与深色画布上的深色线路都不再隐形。 */
+  --not-found-route-casing: 3px;
+  /* 未建车站的直径，同时是断线整行的高度，线路从它的圆心高度穿过。 */
+  --not-found-station-size: clamp(56px, min(5.3vw, 8.5svh), 84px);
+  /* 规划区间虚线每一段的长度；段长明显长于线路粗细，远看仍是一节节待铺的轨道而不是点线，并随视口宽度等比伸缩。 */
+  --not-found-dash-length: clamp(36px, 3.9vw, 64px);
+  /* 规划区间虚线的间隙，与段长保持约三比一，读起来是断续的区间而不是点线。 */
+  --not-found-dash-gap: clamp(14px, 1.4vw, 22px);
+  /* 换乘牌一格的最小高度；只需容下色块与双语目的地，过高的格子会在首屏底部堆出一块空而重的牌面。 */
+  --not-found-transfer-height: clamp(112px, min(10vw, 15.5svh), 148px);
+  /* 换乘牌色块边长，与资讯页章节标记同为实心方块。 */
+  --not-found-tile-size: clamp(32px, min(2.8vw, 4.5svh), 44px);
   position: relative;
   display: grid;
-  grid-template-rows: 1fr auto auto minmax(36px, 0.62fr);
+  /* 首末两行是不放内容的留白轨道：只分配首屏剩余高度，而且下多上少。
+     固定 Header 已经压住了顶部，内容组再往上提一点，视觉重心才落在 Header 以下区域的中线附近，而不是沉到底部。 */
+  grid-template-rows: minmax(0, 0.6fr) auto auto auto minmax(24px, 1fr);
   min-height: 100svh;
   overflow: clip;
   padding: var(--not-found-top-inset) 0 24px;
   background: var(--color-background);
 }
 
-.not-found__status {
-  display: grid;
-  align-content: end;
-  justify-items: center;
-  padding: 0 24px clamp(20px, min(4vw, 4.5svh), 64px);
-  text-align: center;
+.not-found :is(h1, h2, p) {
+  margin: 0;
 }
 
-.not-found :is(h1, p) {
-  margin: 0;
+.not-found__status {
+  display: grid;
+  grid-row: 2;
+  justify-items: center;
+  /* 断线是状态与换乘目录之间的分隔：标题到车站的距离与地址到目录的距离相当，线才居中而不是贴着标题。 */
+  padding: 0 24px clamp(20px, min(3vw, 4.4svh), 52px);
+  text-align: center;
 }
 
 .not-found__code {
   color: var(--color-text);
   font-family: var(--font-fetarute-ui);
-  /* 状态码同时受宽高约束：矮视口下先让出高度，保证出口牌与断线仍留在同一屏。 */
-  font-size: clamp(96px, min(20vw, 22svh), 360px);
+  /* 状态码同时受宽高约束：换乘目录占去一部分首屏后，状态码先在矮视口让出高度。 */
+  font-size: clamp(96px, min(10.5vw, 16.5svh), 220px);
   font-weight: 850;
   /* 这套数字本身侧边距就窄，字距再收紧会让 4 的斜笔贴上 0 的字碗；沿用站内展示字的 -0.04em。 */
   letter-spacing: -0.04em;
@@ -39,137 +56,369 @@
 }
 
 .not-found h1 {
-  max-width: 14ch;
-  margin-top: clamp(20px, 2.8vw, 44px);
+  /* 英文标题在桌面保持单行，避免多出的一行把换乘目录推出首屏；中文七个字远在此宽度之内。 */
+  max-width: 22ch;
+  margin-top: clamp(14px, min(1.5vw, 2.4svh), 28px);
   color: var(--color-text);
-  /* 英文标题会折成两行；与状态码一样按视口高度收敛，避免长标题把出口牌顶出首屏。 */
-  font-size: clamp(32px, min(6.7vw, 8svh), 128px);
+  font-size: clamp(32px, min(3.9vw, 6.2svh), 80px);
   font-weight: 700;
   letter-spacing: -0.06em;
   line-height: 1.05;
   text-wrap: balance;
 }
 
-/* 断线整条通铺视口：先作为完整线路自左向右驶入，再自左向右逐段断开，读者因此先看到「有线路」才看到「断了」。
-   只显式定义首段的宽度，其余断线交给隐式列自动排布，段数因此只由 notFoundRouteSegmentCount 一处决定。 */
+.not-found__journey {
+  display: grid;
+  grid-row: 3;
+  min-width: 0;
+}
+
+/* 断线整条通铺视口：已建区间开进未建车站，车站之后是规划中的虚线区间。
+   三段共用一行网格，车站列宽即车站直径，所以两侧区间永远以车站圆心为界。 */
 .not-found__route {
   display: grid;
-  grid-template-columns: minmax(0, 3.25fr);
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
-  width: 100%;
-  height: clamp(22px, 3.25vw, 62px);
-  column-gap: 0;
-  overflow: clip;
-  /* 整条线只用 transform 进场，与裁切同形却全程交给合成器；首屏还在换装大字号字体时也不会掉帧。 */
+  grid-template-columns: minmax(0, 1fr) var(--not-found-station-size) minmax(0, 1fr);
+  align-items: center;
+  height: var(--not-found-station-size);
+}
+
+.not-found__route-built,
+.not-found__route-planned {
+  /* 全站默认 border-box；这里改回 content-box，线路粗细只算线身，上下描边另外加在外侧，矮视口里线路色也不会被描边吃掉。 */
+  box-sizing: content-box;
+  height: var(--not-found-route-thickness);
+  border-block: var(--not-found-route-casing) solid var(--color-text);
+  background: var(--not-found-line-color);
+}
+
+/* 已建区间伸到车站圆心下方，线路读起来是开进车站，而不是停在车站外。
+   进场只用 transform，与首屏大字号字体换装同时发生也全程交给合成器。 */
+.not-found__route-built {
+  margin-right: calc(var(--not-found-station-size) / -2);
   transform-origin: left center;
-  animation: not-found-route-enter 760ms var(--motion-header-standard-move) both;
+  animation: not-found-route-enter 620ms var(--motion-header-standard-move) both;
 }
 
-.not-found__route-segment {
-  /* --not-found-route-index 由页面按段写入，驱动断口自左向右依次出现。 */
+/* 未建车站用虚线圆环，安全帽图标说明它还在施工；实体表面盖住伸进来的线路末端。 */
+.not-found__station {
   position: relative;
-  min-width: 0;
-  /* --not-found-line-color 由页面脚本随机选定一条真实线路色并写在根节点，整页断线共用同一个值。 */
-  background: var(--not-found-line-color, var(--color-home-line));
-}
-
-/* 断口是一块与画布同色的遮片，贴在每段右端并从接缝处向左展开。
-   用 scaleX 而不是裁切或改宽，断口因此和进场共用同一条合成路径，十段错峰展开也不会逐帧重绘整条线。 */
-.not-found__route-segment::after {
-  content: "";
-  position: absolute;
-  inset: 0 0 0 auto;
-  width: var(--not-found-route-gap);
-  background: var(--color-background);
-  transform: scaleX(0);
-  transform-origin: right center;
-  animation: not-found-route-break 380ms var(--motion-header-standard-move) both;
-  animation-delay: calc(700ms + var(--not-found-route-index, 0) * 62ms);
-}
-
-.not-found__actions {
+  z-index: 1;
   display: grid;
   place-items: center;
-  padding: clamp(24px, min(5.7vw, 6.5svh), 96px) 20px 0;
+  width: var(--not-found-station-size);
+  height: var(--not-found-station-size);
+  box-sizing: border-box;
+  border: max(4px, calc(var(--not-found-station-size) * 0.075)) dashed var(--color-text);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text);
+  animation: not-found-station-arrive 360ms var(--motion-header-standard-spatial) 480ms both;
 }
 
-.not-found__home-sign {
-  display: flex;
+.not-found__station svg {
+  width: 45%;
+  height: auto;
+}
+
+/* 规划区间用遮罩切出虚线：描边与线身一起断开，读起来是尚未铺设的区段，而不是一条镂空的管子。 */
+.not-found__route-planned {
+  /* 遮罩只取不透明度，黑色段保留线路、透明段切出间隙，不参与任何配色。 */
+  --not-found-dash-mask: repeating-linear-gradient(
+    to right,
+    black 0 var(--not-found-dash-length),
+    transparent var(--not-found-dash-length)
+      calc(var(--not-found-dash-length) + var(--not-found-dash-gap))
+  );
+  margin-left: calc(var(--not-found-dash-gap) * 0.75);
+  -webkit-mask-image: var(--not-found-dash-mask);
+  mask-image: var(--not-found-dash-mask);
+  animation: not-found-route-plan 520ms var(--motion-header-standard-move) 620ms both;
+}
+
+/* 失败地址只在根 404 暂存了原始路径时出现；直接打开错误页或脚本不可用时整块保持隐藏。 */
+.not-found__requested {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: clamp(8px, 1.4svh, 16px) 20px 0;
+  text-align: center;
+}
+
+.not-found__requested[hidden] {
+  display: none;
+}
+
+.not-found__requested-label {
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.not-found__requested-path {
+  max-width: min(100%, 60ch);
+  color: var(--color-text);
+  font-size: clamp(16px, min(1.4vw, 2.3svh), 20px);
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+/* 换乘目录沿用页头导视牌的语言：同一道 3px 外框、格间实线分隔，主操作用出口黄。 */
+.not-found__transfers {
+  display: grid;
+  grid-row: 4;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "title suggestion"
+    "board board";
   align-items: center;
-  justify-content: flex-end;
-  /* 牌面宽度按最长的一条英文目的地取值，使无副行的英语出口牌也能单行排完。 */
-  width: min(100%, 380px);
-  /* 牌高与其余竖向节奏一样同时受宽高约束，矮视口下先让出高度而不是把出口牌顶出首屏。 */
-  min-height: clamp(76px, min(7.5vw, 12svh), 96px);
-  gap: clamp(14px, 2vw, 24px);
-  padding: 0 clamp(18px, 2.5vw, 28px);
+  gap: clamp(10px, 1.4svh, 14px) 24px;
+  margin: clamp(24px, min(2.6vw, 3.8svh), 48px) var(--site-header-inline-end) 0
+    var(--site-header-inline-start);
+  /* 换乘指引保留锚点 id，站外链接或以后的站内入口可以直接定位到目录；定位时避开固定 Header，标题行不会被导视牌盖住。 */
+  scroll-margin-top: var(--home-desktop-reading-inset);
+}
+
+.not-found__transfers-title {
+  display: flex;
+  grid-area: title;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.not-found__transfers h2 {
+  color: var(--color-text);
+  font-size: clamp(15px, 1.2vw, 17px);
+  font-weight: 790;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.not-found__transfers-subtitle {
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.not-found__suggestion {
+  display: flex;
+  grid-area: suggestion;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.not-found__suggestion[hidden],
+.not-found__suggestion-link[hidden] {
+  display: none;
+}
+
+.not-found__suggestion-lead {
+  color: var(--color-muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.not-found__suggestion-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 4px 12px 4px 4px;
   border: 3px solid var(--color-text);
-  background: var(--fetarute-exit);
-  color: var(--fetarute-exit-text);
+  background: var(--color-surface);
+  color: var(--color-text);
   text-decoration: none;
   transition: background-color 160ms cubic-bezier(0.2, 0, 0, 1);
 }
 
-.not-found__sign-copy {
+.not-found__suggestion-tile {
   display: grid;
-  justify-items: end;
-  gap: 4px;
-  text-align: right;
+  place-items: center;
+  width: 30px;
+  height: 30px;
 }
 
-.not-found__sign-label {
-  color: var(--fetarute-exit-text);
-  font-size: clamp(26px, 2.3vw, 34px);
-  font-weight: 790;
-  letter-spacing: -0.045em;
-  line-height: 1.04;
+.not-found__suggestion-tile svg {
+  width: 62%;
+  height: 62%;
 }
 
-/* 出口牌的拉丁文副行沿用车站导视的主次关系：中文目的地在上，英文目的地在下且不做全大写。 */
-.not-found__sign-subtitle {
-  color: color-mix(in srgb, var(--fetarute-exit-text) 76%, transparent);
-  font-size: clamp(13px, 1.05vw, 16px);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
+.not-found__suggestion-label {
+  font-size: clamp(15px, 1.2vw, 18px);
+  font-weight: 760;
+  letter-spacing: -0.02em;
 }
 
-.not-found__sign-arrow {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: clamp(28px, 3vw, 36px);
-  color: var(--fetarute-exit-text);
+.not-found__suggestion-arrow {
+  display: block;
+  width: 18px;
   transition: transform 160ms cubic-bezier(0.2, 0, 0, 1);
 }
 
-.not-found__sign-arrow svg {
+.not-found__suggestion-arrow svg {
+  display: block;
   width: 100%;
   height: auto;
 }
 
-.not-found__home-sign:hover {
+.not-found__suggestion-link:hover {
+  background: color-mix(in srgb, var(--color-surface) 90%, var(--color-text));
+}
+
+.not-found__suggestion-link:hover .not-found__suggestion-arrow {
+  transform: translateX(3px);
+}
+
+.not-found__suggestion-link:focus-visible {
+  outline: 3px solid var(--color-text);
+  outline-offset: 4px;
+}
+
+.not-found__transfer-list {
+  display: grid;
+  grid-area: board;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  border: 3px solid var(--color-text);
+  background: var(--color-surface);
+  list-style: none;
+}
+
+.not-found__transfer-list > li {
+  display: flex;
+  min-width: 0;
+}
+
+.not-found__transfer-list > li + li {
+  border-left: 3px solid var(--color-text);
+}
+
+/* 每格上排是色块与方向箭头，下排是双语目的地；网格区域让矮视口可以直接改排成单行而不必改动结构。 */
+.not-found__transfer {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "tile . arrow"
+    "copy copy copy";
+  align-content: space-between;
+  align-items: start;
+  gap: 12px;
+  min-width: 0;
+  min-height: var(--not-found-transfer-height);
+  box-sizing: border-box;
+  padding: clamp(14px, min(1.3vw, 2svh), 20px) clamp(16px, 1.6vw, 22px);
+  color: var(--color-text);
+  text-decoration: none;
+  transition: background-color 160ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* 返回首页是整页唯一的主操作，沿用原出口牌的出口黄。 */
+.not-found__transfer[data-transfer="home"] {
+  background: var(--fetarute-exit);
+  color: var(--fetarute-exit-text);
+}
+
+.not-found__transfer-tile {
+  display: grid;
+  grid-area: tile;
+  place-items: center;
+  width: var(--not-found-tile-size);
+  height: var(--not-found-tile-size);
+}
+
+.not-found__transfer-tile svg {
+  width: 58%;
+  height: 58%;
+}
+
+/* 主操作的色块反相成深底黄图标，在出口黄牌面上仍读作一块实心方块。 */
+.not-found__transfer[data-transfer="home"] .not-found__transfer-tile {
+  background: var(--color-text);
+  color: var(--fetarute-exit);
+}
+
+/* Wiki 会离开官网，色块沿用页头出口牌的出口黄。 */
+.not-found__transfer[data-transfer="wiki"] .not-found__transfer-tile {
+  background: var(--fetarute-exit);
+  color: var(--fetarute-exit-text);
+}
+
+.not-found__transfer-arrow {
+  display: block;
+  grid-area: arrow;
+  width: clamp(20px, 1.8vw, 26px);
+  transition: transform 160ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.not-found__transfer-arrow svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.not-found__transfer-copy {
+  display: grid;
+  grid-area: copy;
+  gap: 4px;
+  min-width: 0;
+}
+
+.not-found__transfer-label {
+  /* 目的地名称比页面标题低两级，四格同时出现时不与「暂未建设的车站」争夺第一眼。 */
+  font-size: clamp(20px, min(1.95vw, 3.1svh), 30px);
+  font-weight: 760;
+  letter-spacing: -0.04em;
+  line-height: 1.06;
+}
+
+.not-found__transfer-subtitle {
+  color: var(--color-muted);
+  font-size: clamp(12px, 0.95vw, 14px);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.not-found__transfer[data-transfer="home"] .not-found__transfer-subtitle {
+  color: color-mix(in srgb, var(--fetarute-exit-text) 76%, transparent);
+}
+
+.not-found__transfer:hover {
+  background: color-mix(in srgb, var(--color-surface) 90%, var(--color-text));
+}
+
+.not-found__transfer[data-transfer="home"]:hover {
   background: color-mix(in srgb, var(--fetarute-exit) 88%, var(--color-text));
 }
 
-.not-found__home-sign:hover .not-found__sign-arrow {
-  transform: translateX(4px);
+/* 悬停时箭头沿自己的方向前移一小步，与页尾返回链接的反馈一致。 */
+.not-found__transfer[data-direction="up"]:hover .not-found__transfer-arrow {
+  transform: translateY(-3px);
 }
 
-.not-found__home-sign:active .not-found__sign-copy {
+.not-found__transfer[data-direction="up-right"]:hover .not-found__transfer-arrow,
+.not-found__transfer[data-direction="external"]:hover .not-found__transfer-arrow {
+  transform: translate(3px, -3px);
+}
+
+.not-found__transfer[data-direction="right"]:hover .not-found__transfer-arrow {
+  transform: translateX(3px);
+}
+
+.not-found__transfer:active .not-found__transfer-copy {
   transform: translateY(1px);
 }
 
-.not-found__home-sign:focus-visible {
-  outline: 3px solid var(--color-text);
-  outline-offset: 6px;
-}
-
-/* 404 与资讯页一样只借用共享页尾的排版，不再画竖向轨道；线路身份已经由首屏断线交代完毕。 */
-.home-footer.not-found-footer .home-footer__track {
-  display: none;
+/* 格与格紧贴，焦点环收进格内，避免被相邻格或外框遮住。 */
+.not-found__transfer:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: -9px;
 }
 
 /* 共享页尾的插槽内容不继承组件作用域样式，因此 404 的页尾正文在此自带排版。
@@ -180,6 +429,11 @@
   font-weight: 480;
   line-height: 1.65;
   opacity: 0.76;
+}
+
+/* 404 与资讯页一样只借用共享页尾的排版，不再画竖向轨道；线路身份已经由首屏断线交代完毕。 */
+.home-footer.not-found-footer .home-footer__track {
+  display: none;
 }
 
 /* 起点带一点左移，线路因此是从视口外驶入而不是原地展开；两个关键帧只写 transform，插值仍在合成器上完成。 */
@@ -193,51 +447,104 @@
   }
 }
 
-@keyframes not-found-route-break {
+@keyframes not-found-station-arrive {
   from {
-    transform: scaleX(0);
+    opacity: 0;
+    transform: scale(0.6);
   }
 
   to {
-    transform: scaleX(1);
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes not-found-route-plan {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 平板与窄屏：四格排不下「Fetarute Wiki」这样的长目的地，改为两行两列。 */
+@media (max-width: 899px) {
+  .not-found__transfer-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .not-found__transfer-list > li + li {
+    border-left: 0;
+  }
+
+  .not-found__transfer-list > li:nth-child(even) {
+    border-left: 3px solid var(--color-text);
+  }
+
+  .not-found__transfer-list > li:nth-child(n + 3) {
+    border-top: 3px solid var(--color-text);
   }
 }
 
 @media (max-width: 719px) {
   .not-found {
-    /* 小屏仍保留与参考稿相同的三段层级，但压缩上下留白避免 CTA 落出首屏。 */
-    --not-found-top-inset: min(108px, 14svh);
-    grid-template-rows: 1fr auto auto minmax(40px, 0.4fr);
+    /* 小屏保留同样的三段层级，但压缩上下留白，让整块换乘目录落在常见手机的首屏内。 */
+    --not-found-top-inset: clamp(88px, 12svh, 108px);
+    --not-found-route-thickness: 18px;
+    --not-found-station-size: clamp(52px, 16vw, 64px);
+    --not-found-dash-length: 34px;
+    --not-found-dash-gap: 14px;
+    --not-found-transfer-height: clamp(92px, 12svh, 112px);
+    --not-found-tile-size: 34px;
   }
 
   .not-found__status {
     padding-inline: 20px;
-    padding-bottom: 34px;
+    padding-bottom: clamp(20px, 3.2svh, 32px);
   }
 
   .not-found__code {
-    font-size: clamp(112px, min(39vw, 26svh), 188px);
+    font-size: clamp(88px, min(28vw, 13svh), 132px);
   }
 
   .not-found h1 {
-    /* ch 以拉丁字形取值，中文标题需要更宽的行长才能在窄屏保持单行。 */
-    max-width: 15ch;
-    margin-top: 18px;
-    font-size: clamp(32px, min(10vw, 7svh), 52px);
+    margin-top: 14px;
+    font-size: clamp(28px, min(9.8vw, 4.6svh), 44px);
   }
 
-  .not-found__route {
-    height: 32px;
-    grid-template-columns: minmax(0, 2.1fr);
+  /* 窄屏的标题行只放标题；推测去向另起一行但仍在目录之前，与阅读顺序一致，也不会被目录挤出首屏。 */
+  .not-found__transfers {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "title"
+      "suggestion"
+      "board";
+    margin: clamp(20px, 3svh, 28px) 20px 0;
   }
 
-  .not-found__actions {
-    padding-top: 40px;
+  .not-found__suggestion {
+    justify-self: start;
   }
 
-  .not-found__home-sign {
-    width: min(100%, 294px);
-    min-width: 0;
+  .not-found__transfer {
+    gap: 8px;
+    padding: 14px 16px;
+  }
+
+  .not-found__transfer-label {
+    font-size: clamp(19px, 5.6vw, 24px);
+  }
+
+  .not-found__transfer-subtitle {
+    font-size: 12px;
+  }
+
+  .not-found__transfer-arrow {
+    width: 22px;
   }
 
   .not-found-footer__description {
@@ -245,65 +552,190 @@
   }
 }
 
-/* 横屏手机与被压扁的桌面窗口：宽度还在桌面档，高度却不足以容纳按宽度取值的导视尺寸。
-   默认档的 clamp 下限（顶部净空、状态码、出口牌）加起来就超过这类视口，实测 1920×600 会把出口牌推到折线下 50px，
-   因此这类视口改成完全由视口高度定尺，保证出口牌在任何宽度的矮视口都留在首屏内。
-   限定横向比例是为了把竖屏手机排除在外：它们同样可能矮于 720px，但已经有自己那套窄屏取值，
-   不加这个条件就会被这里按横屏的行长和字号覆盖掉。 */
+/* 矮的竖屏手机（例如 320×568、375×667）：窄屏那套取值的下限加起来已经超过视口，
+   这里整体收紧状态码、车站与换乘牌，保证返回首页这一格在首屏内；其余去向允许向下滚动。 */
+@media (max-width: 719px) and (max-height: 700px) and (max-aspect-ratio: 1/1) {
+  .not-found {
+    --not-found-top-inset: 84px;
+    --not-found-station-size: 48px;
+    --not-found-route-thickness: 16px;
+    --not-found-transfer-height: 88px;
+    --not-found-tile-size: 32px;
+  }
+
+  .not-found__status {
+    padding-bottom: 12px;
+  }
+
+  .not-found__code {
+    font-size: clamp(72px, 13svh, 96px);
+  }
+
+  .not-found h1 {
+    margin-top: 10px;
+    font-size: clamp(26px, 4.6svh, 32px);
+  }
+
+  .not-found__requested {
+    padding-top: 8px;
+  }
+
+  .not-found__requested-path {
+    font-size: 15px;
+  }
+
+  .not-found__transfers {
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .not-found__transfer {
+    padding: 12px 14px;
+  }
+}
+
+/* 横屏手机与被压扁的桌面窗口：宽度还在桌面档，高度却放不下按宽度取值的导视尺寸。
+   这类视口改为完全由视口高度定尺，换乘牌改排成单行四格，保证返回首页在任何宽度的矮视口都留在首屏内。
+   限定横向比例是为了把竖屏手机排除在外：它们同样可能矮于 720px，但已经有自己那套窄屏取值。 */
 @media (max-height: 720px) and (min-aspect-ratio: 1/1) {
   .not-found {
-    --not-found-top-inset: clamp(72px, 20svh, 104px);
-    grid-template-rows: 1fr auto auto minmax(12px, 0.3fr);
+    /* 761px 以上是完整态 Header，底边在 96px（1024px 以上）到 108px（761–1023px）之间，净空至少越过它再留一点呼吸；
+       更窄的紧凑 Header 在下方单独收回。 */
+    --not-found-top-inset: clamp(116px, 14svh, 124px);
+    --not-found-route-thickness: clamp(14px, 2.6svh, 20px);
+    --not-found-station-size: clamp(44px, 7svh, 64px);
+    --not-found-tile-size: clamp(28px, 5svh, 36px);
+    grid-template-rows: minmax(0, 0.6fr) auto auto auto minmax(12px, 1fr);
     padding-bottom: 12px;
   }
 
   .not-found__status {
-    padding-bottom: clamp(12px, 3.5svh, 28px);
+    padding-bottom: clamp(10px, 2.6svh, 24px);
   }
 
   .not-found__code {
-    font-size: clamp(72px, 22svh, 132px);
+    font-size: clamp(48px, 14svh, 120px);
   }
 
   .not-found h1 {
-    max-width: 22ch;
-    margin-top: clamp(8px, 2.5svh, 20px);
-    font-size: clamp(22px, 6.8svh, 40px);
+    margin-top: clamp(6px, 1.6svh, 14px);
+    font-size: clamp(22px, 5svh, 40px);
   }
 
-  .not-found__route {
-    height: clamp(16px, 5svh, 34px);
+  /* 引导语与地址并成一行，横屏的宽度足够，省下的一行高度留给换乘目录。 */
+  .not-found__requested {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: center;
+    column-gap: 8px;
+    padding-top: clamp(6px, 1.2svh, 12px);
   }
 
-  .not-found__actions {
-    padding-top: clamp(14px, 4svh, 32px);
+  .not-found__requested-path {
+    font-size: clamp(14px, 2.4svh, 18px);
   }
 
-  .not-found__home-sign {
-    min-height: clamp(52px, 15svh, 76px);
+  /* 横屏手机虽然落在窄屏宽度档，宽度仍够把推测去向放回标题行右侧，与桌面同一排法。 */
+  .not-found__transfers {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title suggestion"
+      "board board";
+    gap: 8px 24px;
+    margin-top: clamp(12px, 2.4svh, 28px);
   }
 
-  .not-found__sign-label {
-    font-size: clamp(20px, 5.5svh, 30px);
+  .not-found__transfer-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .not-found__sign-subtitle {
-    font-size: clamp(11px, 2.6svh, 14px);
+  .not-found__transfer-list > li:nth-child(n) {
+    border-top: 0;
+    border-left: 3px solid var(--color-text);
+  }
+
+  .not-found__transfer-list > li:first-child {
+    border-left: 0;
+  }
+
+  .not-found__transfer {
+    grid-template-areas: "tile copy arrow";
+    align-content: center;
+    align-items: center;
+    gap: 10px;
+    min-height: clamp(52px, 9svh, 72px);
+    padding: 8px clamp(10px, 1.2vw, 18px);
+  }
+
+  .not-found__transfer-label {
+    font-size: clamp(18px, 3.8svh, 24px);
+  }
+
+  .not-found__transfer-subtitle {
+    font-size: clamp(11px, 2.2svh, 13px);
+  }
+
+  .not-found__transfer-arrow {
+    width: clamp(18px, 3.4svh, 24px);
+  }
+}
+
+/* 横屏手机宽度落在 760px 以下时，页头换成紧凑态（底边约在 68px），首屏净空随之收回；
+   换乘牌四格并排时每格只剩一百多像素，去掉色块把宽度留给目的地名称；「Back to Home」「Fetarute Wiki」这类英文长名称仍可能折成两行，
+   但整行换乘牌依然留在首屏内。 */
+@media (max-width: 760px) and (max-height: 720px) and (min-aspect-ratio: 1/1) {
+  .not-found {
+    --not-found-top-inset: 76px;
+  }
+
+  .not-found__transfer {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "copy arrow";
+  }
+
+  .not-found__transfer-tile {
+    display: none;
+  }
+}
+
+/* 横屏的大手机（例如 844×390、932×430）宽度已是完整态 Header，高度却不到 420px：
+   状态码、车站与各段间距再收一档，保证整行换乘牌仍在首屏内。 */
+@media (max-height: 420px) and (min-aspect-ratio: 1/1) {
+  .not-found {
+    --not-found-route-thickness: 12px;
+    --not-found-station-size: 36px;
+  }
+
+  .not-found__status {
+    padding-bottom: 6px;
+  }
+
+  .not-found__code {
+    font-size: clamp(40px, 12svh, 56px);
+  }
+
+  .not-found__transfers {
+    margin-top: 4px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .not-found__route {
-    animation: none;
-    transform: none;
-  }
-
-  .not-found__route-segment::after {
-    transform: scaleX(1);
+  .not-found__route-built,
+  .not-found__station,
+  .not-found__route-planned {
     animation: none;
   }
 
-  .not-found__home-sign {
+  .not-found__transfer,
+  .not-found__transfer-arrow,
+  .not-found__suggestion-link,
+  .not-found__suggestion-arrow {
     transition: none;
+  }
+
+  .not-found__transfer[data-direction]:hover .not-found__transfer-arrow,
+  .not-found__suggestion-link:hover .not-found__suggestion-arrow {
+    transform: none;
   }
 }

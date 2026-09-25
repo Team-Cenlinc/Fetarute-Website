@@ -1,5 +1,6 @@
 ---
 import NotFoundPage from "@/components/NotFoundPage.astro";
+import { notFoundRequestStorageKey } from "@/data/not-found";
 import { defaultLocale, locales } from "@/i18n/config";
 
 /** GitHub Pages 只会把未知路径交给根 404.html；此白名单将其转到实际存在的本地化错误页。 */
@@ -9,7 +10,11 @@ const localizedErrorPaths = Object.fromEntries(
 ---
 
 <NotFoundPage locale={defaultLocale}>
-  <script slot="head" is:inline define:vars={{ defaultLocale, localizedErrorPaths }}>
+  <script
+    slot="head"
+    is:inline
+    define:vars={{ defaultLocale, localizedErrorPaths, requestStorageKey: notFoundRequestStorageKey }}
+  >
     (() => {
       // 静态托管看不到原始请求的语言协商，只能从失败路径的首段识别已发布 locale。
       const [firstPathSegment] = window.location.pathname.split("/").filter(Boolean);
@@ -23,6 +28,13 @@ const localizedErrorPaths = Object.fromEntries(
 
       // 根 404.html 已经完成宿主的 404 响应；在正文与字体开始加载之前换到真实语言页，避免闪现默认语言首屏。
       if (window.location.pathname !== targetPath) {
+        // 跳转会把地址栏换成语言错误页；先把失败路径交给本标签页的会话存储，错误页才能显示读者原本要去的地址。
+        try {
+          window.sessionStorage.setItem(requestStorageKey, window.location.pathname);
+        } catch {
+          // 存储被禁用时照常跳转，错误页只是不显示失败地址。
+        }
+
         window.location.replace(`${targetPath}${window.location.search}${window.location.hash}`);
       }
     })();
