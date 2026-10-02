@@ -23,6 +23,18 @@ export default defineConfig({
   },
   // Fetarute 官网默认按静态站点发布；需要账号、订单或后台能力时再评估 SSR。
   output: "static",
+  // Collab 短链接保留 speical 拼写，并兼容下划线语言码；Pages 发布静态跳转 HTML。
+  redirects: Object.fromEntries(
+    locales.flatMap((locale) => {
+      const destination =
+        locale === "zh-Hans"
+          ? "https://www.bilibili.com/video/BV1F1aD64EHp/"
+          : "https://youtu.be/bAcjGtMHaT0";
+      const languageCodes = new Set([locale, locale.toLowerCase().replaceAll("-", "_")]);
+
+      return [...languageCodes].map((code) => [`/${code}/speical/give_up_collab`, destination]);
+    }),
+  ),
   // 压缩静态 HTML，同时由输出测试守护内联文字、导视代码与 SVG 的空白语义。
   compressHTML: true,
   // 正式站点地址用于在静态构建阶段生成稳定的 canonical 和分享链接。
