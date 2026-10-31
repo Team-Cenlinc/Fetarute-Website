@@ -364,7 +364,6 @@
 }
 
 /* Hover、键盘焦点与展开状态只把弯曲车体向当前路段线路色略偏移，换乘后不会被拉回 SL。 */
-.home-arrival:has(.home-arrival__train:hover) .home-arrival__train-color-layer--incoming,
 .home-arrival:has(.home-arrival__train:focus-visible) .home-arrival__train-color-layer--incoming,
 .home-arrival:has(.home-arrival__train[data-tooltip-open="true"][data-tooltip-visual-active="true"])
   .home-arrival__train-color-layer--incoming {
@@ -372,11 +371,18 @@
   color: var(--train-feedback-active-color);
 }
 
-.home-arrival:has(.home-arrival__train:hover) .home-arrival__train-color-layer--outgoing,
 .home-arrival:has(.home-arrival__train:focus-visible) .home-arrival__train-color-layer--outgoing,
 .home-arrival:has(.home-arrival__train[data-tooltip-open="true"][data-tooltip-visual-active="true"])
   .home-arrival__train-color-layer--outgoing {
   color: var(--train-feedback-active-color);
+}
+
+/* 触屏点按后 :hover 会持续命中，关闭导览后路径车需回到原色，悬停偏色只给精确指针。 */
+@media (hover: hover) and (pointer: fine) {
+  .home-arrival:has(.home-arrival__train:hover) .home-arrival__train-color-layer--incoming,
+  .home-arrival:has(.home-arrival__train:hover) .home-arrival__train-color-layer--outgoing {
+    color: var(--train-feedback-active-color);
+  }
 }
 
 .home-introduction {

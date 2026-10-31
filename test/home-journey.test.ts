@@ -224,7 +224,12 @@ test("续行 Wiki 导视从左侧色块扫出背景，并使用足够醒目的�
   );
   assert.match(
     homeOnwardComponentSource,
-    /a\.home-onward__service-link--wiki:is\(:hover, :focus-visible\)::before \{[\s\S]*?transform:\s*scaleX\(1\);/,
+    /a\.home-onward__service-link--wiki:focus-visible::before \{[\s\S]*?transform:\s*scaleX\(1\);/,
+  );
+  // 悬停扫出只给精确指针；触屏点按后浏览器会保留 :hover，色块不能停在已展开状态。
+  assert.match(
+    homeOnwardComponentSource,
+    /@media \(hover: hover\) and \(pointer: fine\) \{\s*a\.home-onward__service-link--wiki:hover \{[\s\S]*?a\.home-onward__service-link--wiki:hover::before \{[\s\S]*?transform:\s*scaleX\(1\);/,
   );
   assert.match(
     homeOnwardComponentSource,

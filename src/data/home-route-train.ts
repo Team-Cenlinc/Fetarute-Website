@@ -1104,6 +1104,42 @@ export const getHomeTrainTooltipPlacement = ({
   return didPlace ? { left, top, placement } : { left: safeLeft, top: safeTop, placement };
 };
 
+/** 判断 Tooltip 纵向位置是否仍由车身直接推出所需的几何。 */
+export interface HomeTrainTooltipVerticalAnchorOptions {
+  /** 与 getHomeTrainTooltipPlacement 相同的车身锚点。 */
+  anchorBounds: HomeTrainTooltipBounds;
+  /** Tooltip 在本轮排版后的实际高度。 */
+  tooltipHeight: number;
+  /** 车身与 Tooltip 的光学间距。 */
+  gap: number;
+  /** 定位函数返回的结果。 */
+  result: HomeTrainTooltipPlacementResult;
+}
+
+/**
+ * 页面纵向滚动只会让 Tooltip 在纵向上与车身错开，因此只需判断纵坐标。
+ * 结果为 true 时纵坐标完全由车身推出，可以交给原生滚动与车身一起搬运；
+ * 被 Header 安全区或视口底边截住（含 corner 回退）时为 false，此时浮层应保持 fixed，
+ * 否则合成线程滚动会先把它带离安全区，再被下一帧脚本拉回，反而形成抖动。
+ */
+export const isHomeTrainTooltipVerticallyAnchored = ({
+  anchorBounds,
+  tooltipHeight,
+  gap,
+  result,
+}: HomeTrainTooltipVerticalAnchorOptions): boolean => {
+  const naturalTop =
+    result.placement === "above"
+      ? anchorBounds.top - gap - tooltipHeight
+      : result.placement === "below"
+        ? anchorBounds.bottom + gap
+        : result.placement === "left" || result.placement === "right"
+          ? anchorBounds.top + anchorBounds.height / 2 - tooltipHeight / 2
+          : Number.NaN;
+
+  return Math.abs(result.top - naturalTop) < 0.5;
+};
+
 /** 让竖轨车身在底部安全留白之前完整停下，而不是只保留较短的车身厚度。 */
 export const getHomeVerticalTrainBottomCenterY = ({
   viewportBottom,

@@ -28,6 +28,7 @@ import {
   getHomeTransferTrainVisibility,
   getHomeVerticalTrainBottomCenterY,
   getHomeVerticalTrainRenderGeometry,
+  isHomeTrainTooltipVerticallyAnchored,
 } from "../src/data/home-route-train.ts";
 
 const homePageSource = readFileSync(
@@ -733,4 +734,60 @@ test("窄屏竖轨列车在侧边空间不足时选择完整可见的上下停�
     }),
     { left: 20, top: 91, placement: "above" },
   );
+});
+
+test("只有纵向由车身推出的 Tooltip 才随文档滚动，被安全区截住时保持 fixed", () => {
+  const viewportBounds = {
+    left: 0,
+    top: 0,
+    right: 390,
+    bottom: 844,
+    width: 390,
+    height: 844,
+  };
+  const gap = 16;
+  const placeAt = (anchorTop: number, tooltipSize: { width: number; height: number }) => {
+    const anchorBounds = {
+      left: 5,
+      top: anchorTop,
+      right: 49,
+      bottom: anchorTop + 88,
+      width: 44,
+      height: 88,
+    };
+    const result = getHomeTrainTooltipPlacement({
+      anchorBounds,
+      tooltipSize,
+      viewportBounds,
+      preferredSafeTop: 80,
+      preferBlockPlacement: false,
+      gap,
+    });
+    return {
+      result,
+      anchored: isHomeTrainTooltipVerticallyAnchored({
+        anchorBounds,
+        tooltipHeight: tooltipSize.height,
+        gap,
+        result,
+      }),
+    };
+  };
+
+  // 上下停靠直接由车身推出。
+  assert.deepEqual(placeAt(253, { width: 320, height: 416 }), {
+    result: { left: 20, top: 357, placement: "below" },
+    anchored: true,
+  });
+  assert.equal(placeAt(523, { width: 320, height: 416 }).anchored, true);
+  // 侧边居中且未触边时同样由车身推出。
+  assert.deepEqual(placeAt(380, { width: 200, height: 300 }), {
+    result: { left: 65, top: 274, placement: "right" },
+    anchored: true,
+  });
+  // 车身贴近顶部，侧边浮层被 Header 安全区截住，纵坐标不再跟随车身。
+  assert.deepEqual(placeAt(40, { width: 200, height: 300 }), {
+    result: { left: 65, top: 80, placement: "right" },
+    anchored: false,
+  });
 });

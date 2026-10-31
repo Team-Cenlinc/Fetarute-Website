@@ -48,6 +48,15 @@
   }
 }
 
+/*
+ * 锚定列车随文档原生滚动时（首页启始湾、社区到达线与换乘线），浮层改为相对定位容器的绝对定位。
+ * iOS 惯性滚动在合成线程推进，fixed 浮层要等下一帧脚本才跟上，会相对车身来回晃；
+ * 交给同一次原生滚动搬运后两者同步，脚本只修正贴边与弯道姿态。translate 由脚本按容器原点写入。
+ */
+.home-arrival__train-tooltip[data-tooltip-position="document"] {
+  position: absolute;
+}
+
 /* 共用外框与显隐状态，页面只提供章节数据及实际贴车坐标。 */
 .home-arrival__train-tooltip[aria-hidden="false"] {
   opacity: 1;

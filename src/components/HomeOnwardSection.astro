@@ -453,8 +453,11 @@ const titleId = "home-onward-content-title";
     color: var(--palette-text);
   }
 
-  .home-onward__board-navigation button:hover {
-    color: var(--palette-text);
+  /* 触屏点按后 :hover 会一直命中；PIDS 的悬停反馈只给精确指针，避免手机上残留上一次点按的高亮。 */
+  @media (hover: hover) and (pointer: fine) {
+    .home-onward__board-navigation button:hover {
+      color: var(--palette-text);
+    }
   }
 
   .home-onward__board-navigation button:focus-visible {
@@ -533,8 +536,14 @@ const titleId = "home-onward-content-title";
     height: clamp(48px, 5.6svh, 52px);
   }
 
-  .home-onward tbody tr:is(:hover, :focus-within) {
+  .home-onward tbody tr:focus-within {
     background: var(--palette-surface-raised);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .home-onward tbody tr:hover {
+      background: var(--palette-surface-raised);
+    }
   }
 
   .home-onward th:first-child,
@@ -631,12 +640,20 @@ const titleId = "home-onward-content-title";
     place-items: center;
   }
 
-  .home-onward__ticker:hover,
   .home-onward__ticker:focus-visible {
     background: var(--palette-action);
     color: var(--palette-action-text);
     outline: 3px solid var(--palette-text);
     outline-offset: -3px;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .home-onward__ticker:hover {
+      background: var(--palette-action);
+      color: var(--palette-action-text);
+      outline: 3px solid var(--palette-text);
+      outline-offset: -3px;
+    }
   }
 
   .home-onward__ticker-arrow {
@@ -697,12 +714,21 @@ const titleId = "home-onward-content-title";
     text-align: left;
   }
 
-  .home-onward__qq-copy:hover,
   .home-onward__qq-copy:focus-visible {
     background: var(--palette-action);
     color: var(--palette-action-text);
     outline: 3px solid var(--palette-text);
     outline-offset: 3px;
+  }
+
+  /* 手机点按复制后若保留悬停描边，会和复制结果反馈叠在一起。 */
+  @media (hover: hover) and (pointer: fine) {
+    .home-onward__qq-copy:hover {
+      background: var(--palette-action);
+      color: var(--palette-action-text);
+      outline: 3px solid var(--palette-text);
+      outline-offset: 3px;
+    }
   }
 
   .home-onward__qq-copy-icon {
@@ -857,13 +883,24 @@ const titleId = "home-onward-content-title";
       var(--motion-header-standard-spatial);
   }
 
-  a.home-onward__service-link--wiki:is(:hover, :focus-visible) {
+  a.home-onward__service-link--wiki:focus-visible {
     background: transparent;
     color: var(--palette-fetarute-info-text);
   }
 
-  a.home-onward__service-link--wiki:is(:hover, :focus-visible)::before {
+  a.home-onward__service-link--wiki:focus-visible::before {
     transform: scaleX(1);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    a.home-onward__service-link--wiki:hover {
+      background: transparent;
+      color: var(--palette-fetarute-info-text);
+    }
+
+    a.home-onward__service-link--wiki:hover::before {
+      transform: scaleX(1);
+    }
   }
 
   a.home-onward__service-link--wiki:focus-visible {

@@ -14,9 +14,16 @@
   --train-feedback-rest-weight: 100%;
 }
 
-.train-feedback:not(:disabled):is(:hover, :active, :focus-visible),
+.train-feedback:not(:disabled):is(:active, :focus-visible),
 .train-feedback[data-tooltip-open="true"] {
   --train-feedback-rest-weight: 88%;
+}
+
+/* 触屏点按后 :hover 不会自动解除；关闭导览后车身必须回到原车色，故悬停偏色只给精确指针。 */
+@media (hover: hover) and (pointer: fine) {
+  .train-feedback:not(:disabled):hover {
+    --train-feedback-rest-weight: 88%;
+  }
 }
 
 .train-feedback:focus-visible {

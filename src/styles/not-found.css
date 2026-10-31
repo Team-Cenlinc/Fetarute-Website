@@ -265,12 +265,15 @@
   height: auto;
 }
 
-.not-found__suggestion-link:hover {
-  background: color-mix(in srgb, var(--color-surface) 90%, var(--color-text));
-}
+/* 触屏点按后 :hover 会持续生效，底色和箭头前移只给可精确悬停的设备，避免返回本页时仍停在半途。 */
+@media (hover: hover) and (pointer: fine) {
+  .not-found__suggestion-link:hover {
+    background: color-mix(in srgb, var(--color-surface) 90%, var(--color-text));
+  }
 
-.not-found__suggestion-link:hover .not-found__suggestion-arrow {
-  transform: translateX(3px);
+  .not-found__suggestion-link:hover .not-found__suggestion-arrow {
+    transform: translateX(3px);
+  }
 }
 
 .not-found__suggestion-link:focus-visible {
@@ -389,26 +392,28 @@
   color: color-mix(in srgb, var(--fetarute-exit-text) 76%, transparent);
 }
 
-.not-found__transfer:hover {
-  background: color-mix(in srgb, var(--color-surface) 90%, var(--color-text));
-}
+@media (hover: hover) and (pointer: fine) {
+  .not-found__transfer:hover {
+    background: color-mix(in srgb, var(--color-surface) 90%, var(--color-text));
+  }
 
-.not-found__transfer[data-transfer="home"]:hover {
-  background: color-mix(in srgb, var(--fetarute-exit) 88%, var(--color-text));
-}
+  .not-found__transfer[data-transfer="home"]:hover {
+    background: color-mix(in srgb, var(--fetarute-exit) 88%, var(--color-text));
+  }
 
-/* 悬停时箭头沿自己的方向前移一小步，与页尾返回链接的反馈一致。 */
-.not-found__transfer[data-direction="up"]:hover .not-found__transfer-arrow {
-  transform: translateY(-3px);
-}
+  /* 悬停时箭头沿自己的方向前移一小步，与页尾返回链接的反馈一致。 */
+  .not-found__transfer[data-direction="up"]:hover .not-found__transfer-arrow {
+    transform: translateY(-3px);
+  }
 
-.not-found__transfer[data-direction="up-right"]:hover .not-found__transfer-arrow,
-.not-found__transfer[data-direction="external"]:hover .not-found__transfer-arrow {
-  transform: translate(3px, -3px);
-}
+  .not-found__transfer[data-direction="up-right"]:hover .not-found__transfer-arrow,
+  .not-found__transfer[data-direction="external"]:hover .not-found__transfer-arrow {
+    transform: translate(3px, -3px);
+  }
 
-.not-found__transfer[data-direction="right"]:hover .not-found__transfer-arrow {
-  transform: translateX(3px);
+  .not-found__transfer[data-direction="right"]:hover .not-found__transfer-arrow {
+    transform: translateX(3px);
+  }
 }
 
 .not-found__transfer:active .not-found__transfer-copy {

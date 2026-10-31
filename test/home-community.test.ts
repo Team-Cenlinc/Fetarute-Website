@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  attachHomeCommunityPlayerPunctuation,
   getHomeCommunityMainStoryMotionState,
   homeCommunityStories,
   segmentHomeCommunityPlayerText,
@@ -117,6 +118,32 @@ test("主故事原文按出现顺序把玩家名切成可嵌入头像的片段",
       .join(""),
     "Acatine 与 Hot945、Katsuta_Minamoto、LanYuvu、Complex_Colors 共同建设。",
   );
+});
+
+test("署名后的避头标点并入署名，窄屏不会把「、」单独挤到行首", () => {
+  const players = homeCommunityStories.main.players ?? [];
+  const text = "Acatine 与 Hot945、Katsuta_Minamoto、LanYuvu, Complex_Colors。共同建设";
+  const runs = attachHomeCommunityPlayerPunctuation(segmentHomeCommunityPlayerText(text, players));
+
+  assert.deepEqual(
+    runs.flatMap((run) =>
+      run.type === "player" ? [[run.player.name, run.trailingPunctuation]] : [],
+    ),
+    [
+      ["Acatine", ""],
+      ["Hot945", "、"],
+      ["Katsuta_Minamoto", "、"],
+      ["LanYuvu", ","],
+      ["Complex_Colors", "。"],
+    ],
+  );
+  assert.equal(
+    runs
+      .map((run) => (run.type === "player" ? run.player.name + run.trailingPunctuation : run.value))
+      .join(""),
+    text,
+  );
+  assert.ok(runs.every((run) => run.type === "player" || run.value.length > 0));
 });
 
 test("沉浸主故事会收束异常与越界进度", () => {

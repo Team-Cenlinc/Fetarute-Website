@@ -491,14 +491,24 @@ html[data-home-nav-indicator-pattern="double"]
     transition: none;
   }
 
-  .home-nav:hover .home-nav__indicator-dot,
   .home-nav:focus-visible .home-nav__indicator-dot {
     opacity: 0;
     transform: none;
   }
 
-  .home-nav:hover .home-nav__indicator-band,
   .home-nav:focus-visible .home-nav__indicator-band {
+    opacity: 1;
+    transform: translate3d(0, var(--home-nav-indicator-bottom-offset), 0) scaleY(1);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: reduce) {
+  .home-nav:hover .home-nav__indicator-dot {
+    opacity: 0;
+    transform: none;
+  }
+
+  .home-nav:hover .home-nav__indicator-band {
     opacity: 1;
     transform: translate3d(0, var(--home-nav-indicator-bottom-offset), 0) scaleY(1);
   }
@@ -925,10 +935,17 @@ html[data-home-nav-indicator-pattern="double"]
   height: 18px;
 }
 
-.destination-menu__link:hover,
 .destination-menu__link:focus-visible {
   background: color-mix(in srgb, var(--color-exit-text) 18%, transparent);
   color: var(--color-exit-text);
+}
+
+/* 触屏点按后 :hover 会一直保留，菜单项的悬停底色只给可精确悬停的设备。 */
+@media (hover: hover) and (pointer: fine) {
+  .destination-menu__link:hover {
+    background: color-mix(in srgb, var(--color-exit-text) 18%, transparent);
+    color: var(--color-exit-text);
+  }
 }
 
 .destination-menu__link:focus-visible {
@@ -1005,10 +1022,16 @@ html[data-home-nav-indicator-pattern="double"]
   height: 15px;
 }
 
-.destination-menu__map-link:hover,
 .destination-menu__map-link:focus-visible {
   background: color-mix(in srgb, var(--color-exit-text) 22%, transparent);
   color: var(--color-exit-text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .destination-menu__map-link:hover {
+    background: color-mix(in srgb, var(--color-exit-text) 22%, transparent);
+    color: var(--color-exit-text);
+  }
 }
 
 .destination-menu__map-link:focus-visible {
@@ -1061,10 +1084,16 @@ html[data-home-nav-indicator-pattern="double"]
     background-color var(--duration-header-standard-effects) var(--motion-header-standard-effects);
 }
 
-.language-link:hover,
 .language-link:focus-visible {
   background: color-mix(in srgb, var(--color-service-text) 18%, transparent);
   color: var(--color-service-text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .language-link:hover {
+    background: color-mix(in srgb, var(--color-service-text) 18%, transparent);
+    color: var(--color-service-text);
+  }
 }
 
 .language-link:focus-visible {
@@ -1108,10 +1137,17 @@ html[data-home-nav-indicator-pattern="double"]
   height: 20px;
 }
 
-.appearance-choice:hover,
 .appearance-choice:focus-visible {
   background: color-mix(in srgb, var(--color-service-text) 18%, transparent);
   color: var(--color-service-text);
+}
+
+/* 手机上点选外观后不能让上一个选项一直停在悬停底色，与已选状态混淆。 */
+@media (hover: hover) and (pointer: fine) {
+  .appearance-choice:hover {
+    background: color-mix(in srgb, var(--color-service-text) 18%, transparent);
+    color: var(--color-service-text);
+  }
 }
 
 .appearance-choice:focus-visible {

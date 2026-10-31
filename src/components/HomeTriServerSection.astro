@@ -874,9 +874,18 @@ const triServerItems = await Promise.all(
       transform var(--duration-home-tri-server-quick) var(--motion-header-standard-spatial);
   }
 
-  .home-tri-server__map-launch:hover,
   .home-tri-server__map-launch:focus-visible {
     filter: brightness(1.08);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .home-tri-server__map-launch:hover {
+      filter: brightness(1.08);
+    }
+
+    .home-tri-server__map-launch:hover .home-tri-server__map-launch-icon {
+      transform: translateX(1px);
+    }
   }
 
   .home-tri-server__map-launch:active {
@@ -892,10 +901,6 @@ const triServerItems = await Promise.all(
     background: color-mix(in srgb, var(--color-action-text) 14%, transparent);
     transition: transform var(--duration-home-tri-server-standard)
       var(--motion-header-standard-spatial);
-  }
-
-  .home-tri-server__map-launch:hover .home-tri-server__map-launch-icon {
-    transform: translateX(1px);
   }
 
   .home-tri-server__map-launch-icon > span {

@@ -370,9 +370,27 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         departureGate.dataset.state = nextState;
       };
 
+      /**
+       * 把靠近区间换算成根滚动偏移，供滚动驱动动画在合成线程上推进遮罩。
+       * 与 getApproachProgress() 共用跑道位置与 innerHeight，二者在任何地址栏状态下都按同一条公式取值，
+       * 不依赖浏览器对视图时间线视口高度的解释。
+       */
+      const syncApproachScrollRange = () => {
+        const sentinelDocumentTop = window.scrollY + departureSentinel.getBoundingClientRect().top;
+        const start = `${sentinelDocumentTop - window.innerHeight * departureApproachStartViewportFraction}px`;
+        const end = `${sentinelDocumentTop - window.innerHeight * departureSnapViewportFraction}px`;
+        if (departureGate.style.getPropertyValue("--departure-gate-approach-start") !== start) {
+          departureGate.style.setProperty("--departure-gate-approach-start", start);
+        }
+        if (departureGate.style.getPropertyValue("--departure-gate-approach-end") !== end) {
+          departureGate.style.setProperty("--departure-gate-approach-end", end);
+        }
+      };
+
       /** 将首屏滚动进度写入遮罩的视觉变量；范围固定为 0 到 1，避免越界位移。 */
       const setApproachProgress = (progress: number) => {
         const clampedProgress = Math.min(1, Math.max(0, progress));
+        syncApproachScrollRange();
         departureGate.style.setProperty("--departure-gate-approach-progress", String(clampedProgress));
       };
 
@@ -598,11 +616,15 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
 
       /**
        * 由卡片与感应区当前位置绘制一条二次贝塞尔导引线，并让箭头切线准确指向 Validator。
-       * 仅在待机时更新，避免在拖动手势中为不可见装饰重复做布局读取。
+       * 拖动手势中不更新，避免为不可见装饰重复做布局读取。
+       * 遮罩完整到位后（靠近末段与吸附）就先画线：手机惯性滚动停稳并吸附完成前常有一秒多，
+       * 若等 active 才画，读者会看到卡片却迟迟不见引导。坐标相对舞台计算，不受遮罩位移影响；
+       * 手势提示动画与真正的拖动仍等 active 才开始。
        */
       const renderDragGuide = () => {
+        const state = getState();
         if (
-          getState() !== "active" ||
+          (state !== "active" && state !== "approaching" && state !== "snapping") ||
           !stage ||
           !readerHousing ||
           !dragGuide ||
@@ -990,6 +1012,8 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         stopScrollControl();
         setApproachProgress(1);
         setState("snapping");
+        // 停手时遮罩可能尚未到位；导引线随遮罩一起落位，吸附结束即已就绪。
+        queueDragGuideUpdate();
 
         const maximumScrollTop = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
         const targetScrollTop = Math.min(
@@ -1099,6 +1123,8 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
 
         setApproachProgress(approachProgress);
         if (state === "armed") setState("approaching");
+        // 遮罩已完整覆盖视口时先画导引线，不等惯性滚动与吸附结束；已有路径时由 ResizeObserver 维护。
+        if (approachProgress >= 1 && !dragGuidePath?.getAttribute("d")) queueDragGuideUpdate();
         // 减少动态效果时省略滑入路径，在跨过首屏阈值后直接把可操作出发口交给读者。
         if (reducedMotion) {
           activateDepartureGate();

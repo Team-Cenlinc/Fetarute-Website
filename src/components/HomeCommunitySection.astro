@@ -17,6 +17,7 @@ import kitarikuLightrailTrialImage from "@/assets/pages/home/community/shared-ki
 import pulanSouthExtensionTrialImage from "@/assets/pages/home/community/shared-pulan-south-extension-trial.png";
 import surcentralRebuildImage from "@/assets/pages/home/community/surcentral-rebuild.png";
 import {
+  attachHomeCommunityPlayerPunctuation,
   homeCommunityStories,
   segmentHomeCommunityPlayerText,
 } from "@/data/home-community";
@@ -144,13 +145,11 @@ const mainStory = {
   message: communityMessages.featureStoryById[homeCommunityStories.main.id],
 };
 const mainStoryPlayers = mainStory.hasPublicCredit ? (mainStory.players ?? []) : [];
-const mainStoryDescriptionSegments = segmentHomeCommunityPlayerText(
-  mainStory.message.description,
-  mainStoryPlayers,
+const mainStoryDescriptionSegments = attachHomeCommunityPlayerPunctuation(
+  segmentHomeCommunityPlayerText(mainStory.message.description, mainStoryPlayers),
 );
-const mainStoryDetailSegments = segmentHomeCommunityPlayerText(
-  mainStory.message.detail,
-  mainStoryPlayers,
+const mainStoryDetailSegments = attachHomeCommunityPlayerPunctuation(
+  segmentHomeCommunityPlayerText(mainStory.message.detail, mainStoryPlayers),
 );
 const memoryStories = await Promise.all(homeCommunityStories.memory.map(async (story) => {
   const assets = memoryAssetById[story.id];
@@ -252,7 +251,7 @@ const mainStoryTitleId = "home-community-main-story-title";
                       height={128}
                       loading="lazy"
                     />
-                    <strong>{segment.player.name}</strong>
+                    <strong>{segment.player.name}</strong>{segment.trailingPunctuation}
                   </span>
                 ) : (
                   segment.value
@@ -272,7 +271,7 @@ const mainStoryTitleId = "home-community-main-story-title";
                       height={128}
                       loading="lazy"
                     />
-                    <strong>{segment.player.name}</strong>
+                    <strong>{segment.player.name}</strong>{segment.trailingPunctuation}
                   </span>
                 ) : (
                   segment.value

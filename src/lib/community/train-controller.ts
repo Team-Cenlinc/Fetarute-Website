@@ -1,4 +1,7 @@
-import { getHomeTrainTooltipPlacement } from "../../data/home-route-train.ts";
+import {
+  getHomeTrainTooltipPlacement,
+  isHomeTrainTooltipVerticallyAnchored,
+} from "../../data/home-route-train.ts";
 import { bindTrainTooltipInteractions } from "../train-tooltip-interactions.ts";
 import { readTrainTooltipStyle, type TrainTooltipStyle } from "../train-tooltip-layout.ts";
 import { bindTrainJourneyNavigation, selectTrainJourneySection } from "../train-journey.ts";
@@ -32,6 +35,12 @@ interface CommunityTrainFrameSnapshot {
     headerBottom: number;
     size: { width: number; height: number };
     style: TrainTooltipStyle;
+    /**
+     * 锚定列车随文档滚动时，浮层定位容器在本帧的视口原点；为空表示继续使用 fixed 视口坐标。
+     * 到达线与换乘线嵌在正文里，需要与浮层由同一次原生滚动搬运，主线是 sticky 不需要。
+     * 写入阶段还会按是否贴边决定是否真正采用它。
+     */
+    documentOrigin?: { x: number; y: number };
   };
 }
 
@@ -115,6 +124,55 @@ export function setupCommunityTrain(
     if (open) schedule();
   }
 
+  /**
+   * 读取阶段测到的是列车上一帧的位置，而本帧随后才写入新位移；直接用它定位会让 Tooltip
+   * 落后车身一帧，滚动时相对列车来回晃动（WebKit 上可达数十像素）。这里把本帧即将写入的
+   * 位移差直接加到测得的边界上，不为对齐而在写入后再读一次布局。
+   */
+  function getTravelledTriggerBounds(next: {
+    routeOffset: string;
+    arrival: CommunityTrainFrameSnapshot["arrival"];
+    connectionOffset: string | undefined;
+    crossingWidth: number | undefined;
+  }): DOMRect {
+    const bounds = activeTrigger.getBoundingClientRect();
+    const line = triggers.find(({ trigger }) => trigger === activeTrigger)?.line;
+    /** 已写入的内联变量就是当前绘制位置；首帧尚未写入时视为没有位移差。 */
+    const delta = (element: HTMLElement | null, name: string, value: string | undefined) => {
+      const current = Number.parseFloat(element?.style.getPropertyValue(name) ?? "");
+      const target = Number.parseFloat(value ?? "");
+      return Number.isFinite(current) && Number.isFinite(target) ? target - current : 0;
+    };
+    let dx = 0;
+    let dy = 0;
+    if (line === "route") {
+      dy = delta(routeTrain, "--community-route-train-offset", next.routeOffset);
+    } else if (line === "arrival") {
+      dx = delta(arrivalTrain, "--community-arrival-train-x", next.arrival?.x);
+      dy = delta(arrivalTrain, "--community-arrival-train-y", next.arrival?.y);
+    } else if (line === "connection" && next.crossingWidth) {
+      /* PN 列车的 left 是相对换乘段宽度的百分比。 */
+      dx =
+        (delta(connectionTrain, "--community-connection-train-offset", next.connectionOffset) /
+          100) *
+        next.crossingWidth;
+    }
+    return dx || dy
+      ? new DOMRect(bounds.x + dx, bounds.y + dy, bounds.width, bounds.height)
+      : bounds;
+  }
+
+  /** 浮层是社区页定位容器的直接子元素；切到 absolute 时以它为坐标原点。 */
+  const tooltipContainer = panel.parentElement;
+
+  /** 只有随正文滚动的到达线与换乘线需要文档定位；sticky 主线保持视口坐标。 */
+  function getTooltipDocumentOrigin(): { x: number; y: number } | undefined {
+    const line = triggers.find(({ trigger }) => trigger === activeTrigger)?.line;
+    if (!tooltipContainer || (line !== "arrival" && line !== "connection")) return undefined;
+    const bounds = tooltipContainer.getBoundingClientRect();
+    return { x: bounds.left, y: bounds.top };
+  }
+
   /** 将帧内所有窗口、路径和 DOMRect 读取集中在写入前，避免滚动时触发强制回流。 */
   function readFrameSnapshot(): CommunityTrainFrameSnapshot {
     const viewport = window.visualViewport;
@@ -162,8 +220,9 @@ export function setupCommunityTrain(
       }
     }
     let connectionOffset: string | undefined;
+    let crossingBounds: DOMRect | undefined;
     if (crossing) {
-      const crossingBounds = crossing.getBoundingClientRect();
+      crossingBounds = crossing.getBoundingClientRect();
       const crossingProgress = reducedMotion.matches
         ? 0.5
         : clampCommunityTrainProgress(
@@ -172,6 +231,7 @@ export function setupCommunityTrain(
           );
       connectionOffset = `${10 + crossingProgress * 80}%`;
     }
+    const routeOffset = `${Math.round((stableProgress - 0.5) * Math.min(innerHeight * 0.36, 280))}px`;
     let tooltip: CommunityTrainFrameSnapshot["tooltip"];
     if (open) {
       if (styleDirty) {
@@ -179,17 +239,23 @@ export function setupCommunityTrain(
         styleDirty = false;
       }
       tooltip = {
-        anchor: activeTrigger.getBoundingClientRect(),
+        anchor: getTravelledTriggerBounds({
+          routeOffset,
+          arrival,
+          connectionOffset,
+          crossingWidth: crossingBounds?.width,
+        }),
         headerBottom: header?.getBoundingClientRect().bottom ?? top,
         size: { width: panel.offsetWidth, height: panel.offsetHeight },
         style,
+        documentOrigin: getTooltipDocumentOrigin(),
       };
     }
     return {
       viewport: viewportSnapshot,
       rootBottom,
       stops: stopSnapshot,
-      routeOffset: `${Math.round((stableProgress - 0.5) * Math.min(innerHeight * 0.36, 280))}px`,
+      routeOffset,
       arrival,
       connectionOffset,
       tooltip,
@@ -311,7 +377,19 @@ export function setupCommunityTrain(
       edge: 20,
       gap: tooltip.style.anchorGap,
     });
-    const translate = `${placement.left}px ${placement.top}px`;
+    /* 被 Header 或视口底边截住时保持 fixed，否则原生滚动会先把浮层带离安全区再被拉回。 */
+    const followsDocument =
+      tooltip.documentOrigin !== undefined &&
+      isHomeTrainTooltipVerticallyAnchored({
+        anchorBounds: tooltip.anchor,
+        tooltipHeight: tooltip.size.height,
+        gap: tooltip.style.anchorGap,
+        result: placement,
+      });
+    const origin = (followsDocument && tooltip.documentOrigin) || { x: 0, y: 0 };
+    const position = followsDocument ? "document" : "viewport";
+    if (panel.dataset.tooltipPosition !== position) panel.dataset.tooltipPosition = position;
+    const translate = `${placement.left - origin.x}px ${placement.top - origin.y}px`;
     if (panel.style.translate !== translate) panel.style.translate = translate;
     if (panel.dataset.placement !== placement.placement)
       panel.dataset.placement = placement.placement;

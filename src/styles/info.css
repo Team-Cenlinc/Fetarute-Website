@@ -200,9 +200,12 @@
   background: var(--palette-status-error);
   color: var(--palette-status-error-text);
 }
-.info-server-shortcuts a:hover {
-  outline: 2px solid currentColor;
-  outline-offset: 4px;
+/* 触屏点按会让 :hover 一直生效，悬停描边只留给可精确悬停的设备，焦点描边仍由全局样式负责。 */
+@media (hover: hover) and (pointer: fine) {
+  .info-server-shortcuts a:hover {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
+  }
 }
 .info-server {
   display: grid;
@@ -295,10 +298,15 @@
   font-weight: 700;
   cursor: pointer;
 }
-.guide-qq-portal button:hover,
 .guide-qq-portal button:focus-visible {
   background: var(--info-ink);
   color: var(--palette-surface-raised);
+}
+@media (hover: hover) and (pointer: fine) {
+  .guide-qq-portal button:hover {
+    background: var(--info-ink);
+    color: var(--palette-surface-raised);
+  }
 }
 .guide-qq-portal__feedback {
   min-height: 1.5em;
@@ -389,9 +397,11 @@
   opacity: 0.38;
   cursor: default;
 }
-.info-news-slider__controls button:not(:disabled):hover {
-  background: var(--info-ink);
-  color: var(--info-canvas);
+@media (hover: hover) and (pointer: fine) {
+  .info-news-slider__controls button:not(:disabled):hover {
+    background: var(--info-ink);
+    color: var(--info-canvas);
+  }
 }
 .info-news-slider__controls button:focus-visible {
   outline: 3px solid var(--info-ink);
@@ -755,7 +765,7 @@
 #game {
   --info-hover-line: var(--line-surn-pn);
 }
-.info-page :is(.info-news, .info-other-link):is(:hover, :focus-visible) p {
+.info-page :is(.info-news, .info-other-link):focus-visible p {
   color: var(--info-ink);
 }
 #other {
@@ -780,6 +790,9 @@
       .info-article__back
     ):hover::before {
     clip-path: inset(0);
+  }
+  .info-page :is(.info-news, .info-other-link):hover p {
+    color: var(--info-ink);
   }
 }
 .info-page

@@ -201,10 +201,6 @@ const currentYear = new Date().getFullYear();
     transition: transform 180ms var(--motion-header-standard-spatial);
   }
 
-  .home-footer__restart:hover {
-    text-decoration-line: underline;
-  }
-
   .home-footer__restart:focus-visible {
     outline: 2px solid currentColor;
     outline-offset: 4px;
@@ -214,16 +210,23 @@ const currentYear = new Date().getFullYear();
     opacity: 0.72;
   }
 
-  .home-footer__restart[data-direction="left"]:hover .home-footer__restart-icon {
-    transform: translateX(-3px);
-  }
+  /* 触屏点按“回到起点”后 :hover 会保留到下次点按别处，下划线和箭头前移只给精确指针。 */
+  @media (hover: hover) and (pointer: fine) {
+    .home-footer__restart:hover {
+      text-decoration-line: underline;
+    }
 
-  .home-footer__restart[data-direction="up"]:hover .home-footer__restart-icon {
-    transform: translateY(-3px);
-  }
+    .home-footer__restart[data-direction="left"]:hover .home-footer__restart-icon {
+      transform: translateX(-3px);
+    }
 
-  .home-footer__restart[data-direction="right"]:hover .home-footer__restart-icon {
-    transform: translateX(3px);
+    .home-footer__restart[data-direction="up"]:hover .home-footer__restart-icon {
+      transform: translateY(-3px);
+    }
+
+    .home-footer__restart[data-direction="right"]:hover .home-footer__restart-icon {
+      transform: translateX(3px);
+    }
   }
 
   /* 品牌签名独立成行，Logo 与版权共享两端锚点；宽度不足时按内容自然换行。 */

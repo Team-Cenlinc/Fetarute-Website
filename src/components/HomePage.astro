@@ -683,6 +683,7 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
       getHomeTransferTrainVisibility,
       getHomeVerticalTrainBottomCenterY,
       getHomeVerticalTrainRenderGeometry,
+      isHomeTrainTooltipVerticallyAnchored,
       type HomeTrainPathGeometry,
       type HomeTrainPathPoint,
       type HomeTransferTrainVisualOwner,
@@ -1684,11 +1685,31 @@ const [homeLinePrimaryName, homeLineSecondaryName] =
           gap: tooltipGap,
         });
 
+        /*
+         * 启示湾车身已改为文档定位、随原生滚动移动；浮层同步切到同一容器坐标系，
+         * 否则 iOS 惯性滚动时 fixed 浮层要等下一帧脚本才跟上，会相对车身来回晃动。
+         * 被 Header 或视口底边截住时仍保持 fixed，才能稳稳停在安全区内。
+         */
+        const tooltipFollowsDocument =
+          activeTrainTooltipTrigger === homeArrivalTrain &&
+          homeArrivalTrain.dataset.routePosition === "document" &&
+          isHomeTrainTooltipVerticallyAnchored({
+            anchorBounds: trainBounds,
+            tooltipHeight,
+            gap: tooltipGap,
+            result: { left, top, placement },
+          });
+        const tooltipOrigin = tooltipFollowsDocument ? routeTrainPositionOrigin : { x: 0, y: 0 };
+        setDatasetValueIfChanged(
+          homeArrivalTrainTooltip,
+          "tooltipPosition",
+          tooltipFollowsDocument ? "document" : "viewport",
+        );
         /* 不继承的独立位移只更新浮层自身，也不会被开合 transform 过渡拖慢。 */
         setStylePropertyIfChanged(
           homeArrivalTrainTooltip,
           "translate",
-          `${left}px ${top}px`,
+          `${left - tooltipOrigin.x}px ${top - tooltipOrigin.y}px`,
         );
         setDatasetValueIfChanged(homeArrivalTrainTooltip, "placement", placement);
       };

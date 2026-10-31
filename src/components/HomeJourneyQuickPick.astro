@@ -237,8 +237,10 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
       background-color 160ms var(--motion-header-standard-effects);
   }
 
-  .home-journey-quick-pick__close:hover {
-    background: color-mix(in srgb, var(--palette-text) 10%, transparent);
+  @media (hover: hover) and (pointer: fine) {
+    .home-journey-quick-pick__close:hover {
+      background: color-mix(in srgb, var(--palette-text) 10%, transparent);
+    }
   }
 
   .home-journey-quick-pick__close:focus-visible {

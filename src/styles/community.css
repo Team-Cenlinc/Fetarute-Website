@@ -461,10 +461,12 @@
   --community-arrival-train-y: -200px;
   --community-arrival-train-angle: 45deg;
   position: absolute;
-  left: var(--community-arrival-train-x);
-  top: var(--community-arrival-train-y);
-  transform: translate(-50%, -50%) rotate(var(--community-arrival-train-angle));
-  will-change: left, top, transform;
+  /* 坐标经 transform 消费而非 left/top：滚动时每帧只需合成，不必为车体重新布局，低端手机上更跟手。 */
+  left: 0;
+  top: 0;
+  transform: translate(var(--community-arrival-train-x), var(--community-arrival-train-y))
+    translate(-50%, -50%) rotate(var(--community-arrival-train-angle));
+  will-change: transform;
 }
 .community-train--connection {
   /* PN 列车横向穿过换乘线，旋转后的实际按钮边界仍是 Tooltip 的定位锚点。 */
@@ -714,11 +716,20 @@
   display: flex;
   transition: transform 150ms ease;
 }
-.community-profile__footer a:is(:hover, :focus-visible) .community-profile__external-label::after {
+.community-profile__footer a:focus-visible .community-profile__external-label::after {
   transform: scaleX(1);
 }
-.community-profile__footer a:is(:hover, :focus-visible) .community-profile__external-arrow {
+.community-profile__footer a:focus-visible .community-profile__external-arrow {
   transform: translate(3px, -3px);
+}
+/* 触屏点按后浏览器会保留 :hover，只在可精确悬停的设备上播放外链引导，避免下划线和箭头停在半途。 */
+@media (hover: hover) and (pointer: fine) {
+  .community-profile__footer a:hover .community-profile__external-label::after {
+    transform: scaleX(1);
+  }
+  .community-profile__footer a:hover .community-profile__external-arrow {
+    transform: translate(3px, -3px);
+  }
 }
 .community-profile__footer svg {
   width: 20px;
@@ -756,9 +767,13 @@
 }
 .community-media-dialog::backdrop {
   background: var(--palette-gallery-scrim);
+  /* iOS/macOS Safari 17 及更早只识别带前缀的写法，缺少它时遮罩会失去模糊。 */
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   transition:
     background var(--community-media-enter-duration) var(--community-media-motion-easing),
+    -webkit-backdrop-filter var(--community-media-enter-duration)
+      var(--community-media-motion-easing),
     backdrop-filter var(--community-media-enter-duration) var(--community-media-motion-easing);
 }
 .community-media-dialog__surface {
@@ -782,8 +797,10 @@
   color: inherit;
   cursor: pointer;
 }
-.community-media-dialog__close:hover {
-  background: var(--community-plot);
+@media (hover: hover) and (pointer: fine) {
+  .community-media-dialog__close:hover {
+    background: var(--community-plot);
+  }
 }
 .community-media-dialog__close:active {
   transform: translateY(1px);
@@ -813,6 +830,7 @@
 .community-media-dialog[data-community-media-motion="enter"]::backdrop,
 .community-media-dialog[data-community-media-motion="exit"]::backdrop {
   background: transparent;
+  -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
 .community-media-motion-proxy {
@@ -827,6 +845,7 @@
 }
 @media (prefers-reduced-transparency: reduce) {
   .community-media-dialog::backdrop {
+    -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
 }
@@ -902,9 +921,11 @@
   width: 18px;
   height: 18px;
 }
-.community-contact__copy:hover {
-  color: color-mix(in srgb, var(--community-text) 84%, var(--community-route));
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .community-contact__copy:hover {
+    color: color-mix(in srgb, var(--community-text) 84%, var(--community-route));
+    text-decoration: underline;
+  }
 }
 .community-contact__copy:active {
   opacity: 0.72;

@@ -265,6 +265,9 @@ h3 {
   --departure-gate-visible-height: var(--departure-gate-coverage-height);
   /* 由滚动进度写入 0 到 1；靠近阶段只派生遮罩位置，保持不透明以隔离尚未抵达的正文。 */
   --departure-gate-approach-progress: 0;
+  /* 滚动驱动动画的起止滚动偏移：跑道顶边到达 0.4 屏与 0.1 屏时的 scrollY，由脚本在靠近前写入。 */
+  --departure-gate-approach-start: 0px;
+  --departure-gate-approach-end: 0px;
   /* 回退时由真实 scrollY 派生 0 到 1；不使用第二条独立的 CSS 位移动画。 */
   --departure-gate-return-progress: 0;
   /* 移动端上划略过时由指针距离写入；只移动整片 Guard，不影响行程卡自身的拖动 transform。 */
@@ -343,6 +346,41 @@ html[data-departure-gating] .departure-gate__scene {
   );
   will-change: transform;
   transition: none;
+}
+
+/*
+ * 靠近阶段遮罩以约 3.3 倍滚动速度滑入；脚本逐帧写进度在 iOS 上会落后合成线程的原生滚动，
+ * 惯性滚动时一顿一顿。支持滚动驱动动画的浏览器改由根滚动时间线直接推进同一条位移；
+ * 区间端点由脚本按 getApproachProgress() 的同一公式换算成滚动偏移写入，
+ * 不用视图时间线的视口百分比，避免 Safari 地址栏伸缩时大/小/动态视口高度不一致导致错位。
+ * 状态机、吸附与验票仍由脚本负责；不支持的浏览器继续消费 --departure-gate-approach-progress。
+ */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /*
+     * 吸附阶段原生平滑滚动的终点正是跑道顶边 0.1 屏，即时间线 100%；继续由时间线驱动，
+     * 遮罩就随这次滚动在合成线程上落位。移除滚动驱动动画时浏览器不会从动画值起始过渡，
+     * 若在吸附时改回 420ms transition，遮罩会先瞬间跳到终点。
+     * 只写分属性：压缩器会把完整的一组合并成 animation 简写，而简写不能携带时间线。
+     */
+    .departure-gate:is([data-state="approaching"], [data-state="snapping"]) {
+      animation-name: departure-gate-approach;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll(root block);
+      animation-range: var(--departure-gate-approach-start) var(--departure-gate-approach-end);
+    }
+  }
+}
+
+@keyframes departure-gate-approach {
+  from {
+    transform: translateY(var(--departure-gate-coverage-height));
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 /* 局部归位期间显式关闭全站 smooth，确保 rAF 是唯一的 scrollY writer。 */
@@ -1395,11 +1433,19 @@ html[data-launching] .launch-sequence {
     opacity 180ms var(--motion-launch-enter);
 }
 
-.launch-sequence__skip:hover,
 .launch-sequence__skip:focus-visible {
   color: var(--color-text);
   outline: 2px solid var(--color-action);
   outline-offset: 3px;
+}
+
+/* 触屏点按跳过后不应在退场动画里残留悬停描边。 */
+@media (hover: hover) and (pointer: fine) {
+  .launch-sequence__skip:hover {
+    color: var(--color-text);
+    outline: 2px solid var(--color-action);
+    outline-offset: 3px;
+  }
 }
 
 .launch-sequence__skip:active {

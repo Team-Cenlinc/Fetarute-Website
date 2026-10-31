@@ -144,6 +144,59 @@ export function segmentHomeCommunityPlayerText<Player extends HomeCommunityPlaye
 }
 
 /**
+ * 玩家署名后紧跟的避头标点。头像署名是 inline-block，浏览器会在它和后续标点之间断行，
+ * 窄屏上「、」「，」会被单独挤到下一行行首；这些字符需要和署名一起成为不可拆开的整体。
+ */
+const homeCommunityTrailingPunctuationPattern = /^[、，。；：！？）」』》〉,.;:!?)]+/u;
+
+/** 玩家片段附带的紧随标点；为空时组件不额外包裹，保持原有 DOM。 */
+export type HomeCommunityPlayerRunSegment<
+  Player extends HomeCommunityPlayer = HomeCommunityPlayer,
+> =
+  | Extract<HomeCommunityPlayerTextSegment<Player>, { type: "text" }>
+  | {
+      /** 玩家片段由组件渲染本地头像和规范玩家名。 */
+      type: "player";
+      /** 与当前正文中玩家名对应的已确认资料。 */
+      player: Player;
+      /** 从下一段文字开头移来的避头标点，与署名一起禁止断行。 */
+      trailingPunctuation: string;
+    };
+
+/**
+ * 把玩家片段后紧随的避头标点并入该玩家片段，供组件渲染为不可断开的署名单元。
+ * 拼回的文字与原始片段完全一致，只改变断行机会，不改变文案。
+ */
+export function attachHomeCommunityPlayerPunctuation<Player extends HomeCommunityPlayer>(
+  segments: readonly HomeCommunityPlayerTextSegment<Player>[],
+): HomeCommunityPlayerRunSegment<Player>[] {
+  const runs: HomeCommunityPlayerRunSegment<Player>[] = [];
+
+  for (const segment of segments) {
+    const previous = runs.at(-1);
+
+    if (segment.type === "player") {
+      runs.push({ ...segment, trailingPunctuation: "" });
+      continue;
+    }
+
+    const punctuation =
+      previous?.type === "player"
+        ? (segment.value.match(homeCommunityTrailingPunctuationPattern)?.[0] ?? "")
+        : "";
+
+    if (previous?.type === "player" && punctuation) {
+      previous.trailingPunctuation = punctuation;
+    }
+
+    const rest = segment.value.slice(punctuation.length);
+    if (rest) runs.push({ type: "text", value: rest });
+  }
+
+  return runs;
+}
+
+/**
  * 首页同岸的故事槽位。
  * main 固定出现；memory 与 presence 每次页面载入各选择一条，完整内容以后由社区页承接。
  */
