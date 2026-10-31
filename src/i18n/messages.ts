@@ -967,7 +967,7 @@ const messages: Record<Locale, SiteMessages> = {
       lobbyMap: "Lobby",
     },
     onwardDestinationLabels: {
-      putangBridge: "Putang Bridge",
+      putangBridge: "Pyutocor",
       lobbyMap: "Lobby world",
       creativeMap: "Creative world",
     },
