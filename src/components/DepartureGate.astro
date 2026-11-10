@@ -222,12 +222,20 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
     const departureApproachStartViewportFraction = 0.4;
     /** Guard 的文档锚点停在视口十分之一处，使滑入完成前保留一小段空间层次。 */
     const departureSnapViewportFraction = 0.1;
-    /** 验票成功后保留一秒结果屏，让绿色状态有足够时间被读者确认再进入下一段。 */
-    const departureValidationHoldDuration = 1000;
+    /**
+     * 验票成功后结果屏的停留时长。绿色结果在拍卡瞬间就已亮起，
+     * 卡片归位（280ms 过渡）与让位都结束后再留约 0.2 秒确认即可；停满一秒会让人觉得页面在等什么。
+     */
+    const departureValidationHoldDuration = 720;
     /** 成功后先在感应区停留的时长，模拟真实拍卡完成的确认瞬间，再让卡片为结果屏让位。 */
-    const departureValidationDockDelay = reducedMotion ? 0 : 320;
+    const departureValidationDockDelay = reducedMotion ? 0 : 240;
     /** Landing 跨过六成后等待原生惯性停止的短窗口；与 Portal 的滚动结算一致，不在输入中争夺 scrollY。 */
     const departureSettleIdleDuration = 160;
+    /**
+     * 桌面滚轮停在滑入途中时的静默窗口。滚轮与触控板的事件间隔远短于 100ms，
+     * 不必像触屏那样为惯性多等；遮罩半露着不动的时间越短，越像一次连贯的落位。
+     */
+    const departureDesktopSettleIdleDuration = 100;
     /** 只在桌面精确指针环境启用“自由回退后归位”，移动版保留既有手势语义。 */
     const departureDesktopScrollMediaQuery = "(min-width: 761px) and (pointer: fine)";
     /** 回退超过相邻两站距离的十分之一，才视为读者确认要离开 Validator。 */
@@ -996,9 +1004,36 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         return (approachStartLine - sentinelTop) / (approachStartLine - snapLine);
       };
 
+      /** 出发口锚点的文档滚动位置：跑道顶边停在视口十分之一处，同时受文档可滚动范围约束。 */
+      const getDepartureAnchorScrollTop = () => {
+        const maximumScrollTop = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+
+        return Math.min(
+          maximumScrollTop,
+          Math.max(
+            0,
+            window.scrollY + departureSentinel.getBoundingClientRect().top - window.innerHeight * departureSnapViewportFraction,
+          ),
+        );
+      };
+
+      /**
+       * 遮罩已经完整盖住视口时直接落位并激活。
+       * 这时回到锚点的滚动完全被不透明遮罩挡住，读者看不见；若仍用平滑滚动回去，
+       * 就是一段卡片已在眼前却点不动的空等。瞬时对齐后在同一任务里激活，中间不会多画一帧。
+       */
+      const activateCoveredDepartureGate = () => {
+        const anchorScrollTop = getDepartureAnchorScrollTop();
+        if (Math.abs(window.scrollY - anchorScrollTop) > 1) {
+          window.scrollTo({ left: window.scrollX, top: anchorScrollTop, behavior: "instant" });
+        }
+        activateDepartureGate();
+      };
+
       /**
        * 将最后一小段滚动收束至出发口锚点；只完成这一次局部定点，不把后续章节变成强制分页。
-       * 已在锚点时直接激活；移动过程中检查实际到达位置，超时只用于被打断后的恢复。
+       * 已到或越过锚点时遮罩已完整显示，直接激活；尚未到位才平滑滚完剩余路程，
+       * 移动过程中检查实际到达位置，超时只用于被打断后的恢复。
        */
       const beginDepartureSnap = () => {
         if (hasDeparted || getState() !== "approaching") return;
@@ -1009,25 +1044,19 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         }
 
         clearDepartureSettleWait();
+
+        const targetScrollTop = getDepartureAnchorScrollTop();
+        // 已到或越过锚点（手机惯性滚动几乎总会越过）：遮罩早已盖满，不再等一次看不见的回滚。
+        if (window.scrollY >= targetScrollTop - 4) {
+          activateCoveredDepartureGate();
+          return;
+        }
+
         stopScrollControl();
         setApproachProgress(1);
         setState("snapping");
-        // 停手时遮罩可能尚未到位；导引线随遮罩一起落位，吸附结束即已就绪。
+        // 停手时遮罩尚未到位；导引线随遮罩一起落位，吸附结束即已就绪。
         queueDragGuideUpdate();
-
-        const maximumScrollTop = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-        const targetScrollTop = Math.min(
-          maximumScrollTop,
-          Math.max(
-            0,
-            window.scrollY + departureSentinel.getBoundingClientRect().top - window.innerHeight * departureSnapViewportFraction,
-          ),
-        );
-        // 无位移的 scrollTo 不会产生 scrollend；不能让已完整显示的设备空等兜底计时。
-        if (Math.abs(window.scrollY - targetScrollTop) <= 4) {
-          activateDepartureGate();
-          return;
-        }
         let snapFinished = false;
 
         finishDepartureSnap = () => {
@@ -1087,7 +1116,10 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         };
 
         window.addEventListener("scrollend", finishDepartureSettle, { once: true });
-        departureSettleTimeoutId = window.setTimeout(finishDepartureSettle, departureSettleIdleDuration);
+        departureSettleTimeoutId = window.setTimeout(
+          finishDepartureSettle,
+          usesDesktopGateScroll() ? departureDesktopSettleIdleDuration : departureSettleIdleDuration,
+        );
       };
 
       /** 将滚动事件压缩到动画帧；回退时只由真实 scrollY 派生画面，静默后才开始局部归位。 */
@@ -1128,6 +1160,12 @@ const shouldPersistDepartureSeen = import.meta.env.PROD;
         // 减少动态效果时省略滑入路径，在跨过首屏阈值后直接把可操作出发口交给读者。
         if (reducedMotion) {
           activateDepartureGate();
+          return;
+        }
+        // 桌面滚轮没有需要让路的触摸惯性：遮罩盖满的这一帧就交出卡片，不再等静默窗口。
+        // 触屏仍等原生惯性停稳，避免在惯性途中改写滚动位置。
+        if (approachProgress >= 1 && usesDesktopGateScroll()) {
+          activateCoveredDepartureGate();
           return;
         }
         scheduleDepartureSettle();

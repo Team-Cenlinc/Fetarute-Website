@@ -2011,8 +2011,11 @@ html[data-launching] .launch-sequence {
   .launch-stop,
   .launch-sequence__track,
   .launch-sequence__train-track {
-    /* 窄屏将轨道色带收为 36px，避免单线路色块压过站名的视觉重量。 */
-    grid-template-rows: minmax(0, 3fr) min(5.75dvh, 36px) minmax(0, 2fr);
+    /*
+     * 窄屏的轨道色带随屏宽收细：手机上约 24px，接近断点时回到 36px。
+     * 固定 36px 在 375px 宽的屏幕上几乎占宽度的一成，比例是桌面的近三倍，会压过站名。
+     */
+    grid-template-rows: minmax(0, 3fr) min(5.75dvh, clamp(20px, 6.4vw, 36px)) minmax(0, 2fr);
   }
 
   /* 列车仅比变薄后的色带高 8px，维持经过轨道的轮廓感而不显得臃肿。 */
