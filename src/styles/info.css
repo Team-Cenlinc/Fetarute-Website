@@ -464,9 +464,30 @@
   height: 100%;
 }
 .info-resources {
+  /* 地图与指南两栏的宽度比例；工具分组里并排的链接复用它，才能和上一行的栏边对齐。 */
+  --info-resource-columns: 1.2fr 1fr;
+  /* 两栏之间的横向间距；与栏宽一同复用，避免工具链接与上方分组错位。 */
+  --info-resource-column-gap: clamp(40px, 6vw, 116px);
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: clamp(40px, 6vw, 116px);
+  grid-template-columns: var(--info-resource-columns);
+  gap: clamp(56px, 5vw, 88px) var(--info-resource-column-gap);
+}
+/* 工具分组横跨两栏，自成第二行：它们是地图与指南之外的附属工具，不与任何一栏并列。 */
+.info-resource-group--tools {
+  grid-column: 1 / -1;
+}
+/* 两个工具链接各占一栏，左右分别对齐上方的地图栏与指南栏。 */
+.info-resource-links--paired {
+  display: grid;
+  grid-template-columns: var(--info-resource-columns);
+  column-gap: var(--info-resource-column-gap);
+}
+/*
+ * 只有最后一行需要底线：末项已由通用的 :last-child 规则补上，这里补同一行左栏的那一项。
+ * 其余各行靠下一行的顶线分隔，工具增加到三个以上时不会出现两条线叠成的粗线。
+ */
+.info-resource-links--paired > .info-resource-link:nth-last-child(2):nth-child(odd) {
+  border-bottom: 1px solid var(--info-rule);
 }
 .info-resource-group > h3 {
   font-size: clamp(26px, 2.1vw, 36px);
@@ -709,8 +730,12 @@
     height: 28px;
   }
   .info-resources {
-    grid-template-columns: 1fr;
+    --info-resource-columns: 1fr;
     gap: 48px;
+  }
+  /* 单栏时工具链接上下相邻，只留末项的底线；选择器与桌面规则同权重，靠后出现才能覆盖它。 */
+  .info-resource-links--paired > .info-resource-link:nth-last-child(2):nth-child(odd) {
+    border-bottom: 0;
   }
   .info-article {
     padding-top: 128px;
@@ -835,15 +860,16 @@
   margin-bottom: 36px;
   border-bottom: 1px solid var(--info-rule);
 }
-.info-status-link__copy {
+/* 状态站与工具链接都是「名称 + 一行说明」的两行牌面，共用同一组字号。 */
+:is(.info-status-link__copy, .info-resource-link__copy) {
   display: grid;
   gap: 8px;
 }
-.info-status-link__copy strong {
+:is(.info-status-link__copy, .info-resource-link__copy) strong {
   font-size: clamp(20px, 1.5vw, 28px);
   font-weight: 650;
 }
-.info-status-link__copy > span {
+:is(.info-status-link__copy, .info-resource-link__copy) > span {
   font-size: 16px;
   font-weight: 450;
 }

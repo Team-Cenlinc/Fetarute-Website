@@ -1,7 +1,7 @@
 import { defineConfig, fontProviders } from "astro/config";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
-import { isIndexablePublicUrl } from "./src/data/discovery";
+import { isIndexablePublicUrl } from "./src/data/indexable-pages";
 import { siteInfo } from "./src/data/site";
 import { defaultLocale, localeMetadata, locales } from "./src/i18n/config";
 

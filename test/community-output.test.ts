@@ -14,7 +14,7 @@ test("三语社区原型静态输出完整成员、概念地图和原生降级�
     for (const entity of communityEntities) assert.ok(html.includes(`id="${entity.id}"`));
     assert.equal((html.match(/data-community-entity=/g) ?? []).length, communityEntities.length);
     assert.match(html, /<noscript>/);
-    assert.match(html, /<meta name="robots" content="noindex, follow"/);
+    assert.match(html, /<meta name="robots" content="index, follow, max-image-preview:large"/);
     assert.match(html, /id="community-district"/);
     assert.match(html, /data-community-copy="517248890"/);
     assert.ok(

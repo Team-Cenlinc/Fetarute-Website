@@ -73,6 +73,22 @@ export interface ExternalDestinationMenu {
   maps: readonly ExternalDestination[];
 }
 
+/** 玩家工具的稳定身份键；资讯页按它取本地化用途说明，产品改名或换地址都不影响文案归属。 */
+export type PlayerToolKey = "trainLink" | "fesGen";
+
+/**
+ * 资讯页「地图与工具」中列出的独立玩家工具。
+ * 它们是查车、做牌子时顺手打开的附属工具，不是官网的一部分，因此只保存身份、产品名与跳转地址。
+ */
+export interface PlayerTool {
+  /** 供 i18n 用途说明与测试长期引用的稳定键。 */
+  key: PlayerToolKey;
+  /** 产品名是不随语言翻译的专有名词，三种语言共用同一写法。 */
+  name: string;
+  /** 工具当前的公开访问地址；工具迁移域名时只需要改这里。 */
+  href: string;
+}
+
 /** 续行出发厅已经确认并可公开使用的加入入口。 */
 export interface OnwardEntryPoints {
   /** QQ 门户群的公开群号；续行帮助牌与复制交互必须消费同一事实来源。 */
@@ -179,6 +195,15 @@ export const externalDestinations: ExternalDestinationMenu = {
     { key: "creativeMap", href: "https://map.creative.fetarute.org", icon: "map" },
   ],
 };
+
+/**
+ * 资讯页列出的玩家工具，顺序即页面展示顺序：先是出发前查车的 TrainLink，再是建设时做牌子的 FesGen。
+ * FesGen 尚未配置独立域名，直接使用它的 GitHub Pages 地址。
+ */
+export const playerTools: readonly PlayerTool[] = [
+  { key: "trainLink", name: "TrainLink", href: "https://trainlink.fetarute.info/" },
+  { key: "fesGen", name: "FesGen", href: "https://team-cenlinc.github.io/FesGen/" },
+];
 
 /**
  * 续行 PIDS 优先展示真实站名；蒲塘桥使用 BlueMap 可分享坐标直达。

@@ -1,50 +1,41 @@
-import { locales, localeMetadata, type Locale } from "../i18n/config.ts";
+import { communityMessages } from "../i18n/community.ts";
+import { localeMetadata } from "../i18n/config.ts";
+import { infoMessages } from "../i18n/info.ts";
 import { getMessages } from "../i18n/messages.ts";
-import { externalDestinations, siteInfo } from "./site.ts";
+import {
+  getIndexablePageUrl,
+  indexablePageKeys,
+  indexablePages,
+  type IndexablePage,
+} from "./indexable-pages.ts";
+import { externalDestinations, playerTools, siteInfo } from "./site.ts";
 
-/** 已经具备完整正文、可向搜索引擎和 AI 工具公开引用的静态页面。 */
-export interface IndexablePage {
-  /** 该页面实际生成所在的语言目录。 */
-  locale: Locale;
-  /** 不带查询参数的公开路径；同时是 sitemap 的唯一收录判断依据。 */
-  path: string;
-}
-
-/**
- * 当前公开页面的唯一收录白名单。
- * 根路径只是 noindex 跳转页，内容集合也尚未有对应的公开路由，因此都不能因为文件存在而被 sitemap 或 llms.txt 提前发现。
- */
-export const indexablePages: readonly IndexablePage[] = locales.map((locale) => ({
-  locale,
-  path: `/${locale}/`,
-}));
+// 收录白名单本身在 indexable-pages.ts；这里转出同一组符号，让读取 discovery 输出的调用方只需认识一个入口。
+export {
+  getIndexablePageUrl,
+  indexablePages,
+  isIndexablePublicUrl,
+  type IndexablePage,
+  type IndexablePageKey,
+} from "./indexable-pages.ts";
 
 /**
- * 生成静态页面的规范绝对 URL。
- * 此处只接受白名单中的站内路径，确保 robots、llms 和 sitemap 始终从同一个站点 origin 派生。
+ * 取页面在指定语言下自己的标题与描述。
+ * 与各页面写进 `<title>` 和 meta description 的是同一份文案，保证 llms.txt 与页面本身的说法一致。
  */
-export function getIndexablePageUrl(page: IndexablePage): string {
-  return new URL(page.path, siteInfo.url).toString();
-}
-
-/**
- * 判断构建器提供的 URL 是否属于已公开的规范页面。
- * `@astrojs/sitemap` 会枚举所有静态产物；这个边界防止根路径跳转页、文本端点和将来的未发布路由进入搜索索引。
- */
-export function isIndexablePublicUrl(url: string): boolean {
-  let pageUrl: URL;
-
-  try {
-    pageUrl = new URL(url);
-  } catch {
-    return false;
+function getIndexablePageCopy(page: IndexablePage): { title: string; description: string } {
+  if (page.key === "community") {
+    const { title, description } = communityMessages[page.locale];
+    return { title, description };
   }
 
-  const siteOrigin = new URL(siteInfo.url).origin;
+  if (page.key === "info") {
+    const { title, description } = infoMessages[page.locale];
+    return { title, description };
+  }
 
-  return (
-    pageUrl.origin === siteOrigin && indexablePages.some((page) => page.path === pageUrl.pathname)
-  );
+  const messages = getMessages(page.locale);
+  return { title: messages.navigation.home, description: messages.description };
 }
 
 /**
@@ -59,14 +50,14 @@ export function createRobotsTxt(): string {
 
 /**
  * 生成根目录 llms.txt。
- * 内容只复述已发布首页已经公开的站点事实，并为每种语言提供 canonical URL；服务器地址等未确认资料不在这里猜测或泄露占位值。
+ * 内容只复述已开放收录的页面已经公开的站点事实，并为每种语言提供 canonical URL；服务器地址等未确认资料不在这里猜测或泄露占位值。
  */
 export function createLlmsTxt(): string {
   const canonicalPageLines = indexablePages.map((page) => {
-    const messages = getMessages(page.locale);
+    const { title, description } = getIndexablePageCopy(page);
     const localeLabel = localeMetadata[page.locale].label;
 
-    return `- [${messages.navigation.home} (${localeLabel})](${getIndexablePageUrl(page)}): ${messages.description}`;
+    return `- [${title} (${localeLabel})](${getIndexablePageUrl(page)}): ${description}`;
   });
 
   return [
@@ -84,7 +75,7 @@ export function createLlmsTxt(): string {
     "",
     "## Notes",
     "",
-    "- This directory intentionally excludes placeholder server-address, join, and unpublished-content details.",
+    "- This directory intentionally excludes placeholder server addresses and unpublished content. The Player info pages listed above are the official source for how to join.",
     "- Crawling permissions and the sitemap entry are published separately in robots.txt.",
     "",
   ].join("\n");
@@ -92,16 +83,22 @@ export function createLlmsTxt(): string {
 
 /**
  * 生成供生成式搜索检索与引用的扩展纯文本资料。
- * 只说明首页和正式出口已经公开的事实，并明确权威边界，避免模型把视觉叙事或占位配置当成服务承诺。
+ * 只说明已开放收录的页面和正式出口已经公开的事实，并明确权威边界，避免模型把视觉叙事或占位配置当成服务承诺。
  */
 export function createLlmsFullTxt(): string {
-  const canonicalPages = indexablePages.map((page) => {
-    const localeLabel = localeMetadata[page.locale].label;
-    return `- ${localeLabel}: ${getIndexablePageUrl(page)}`;
-  });
+  // 该文件整体以英文书写，分组小标题直接取各页面自己的英文标题，页面改名时不会留下另一份旧名。
+  const canonicalPages = indexablePageKeys.flatMap((key) => [
+    `### ${getIndexablePageCopy({ key, locale: "en", path: "" }).title}`,
+    "",
+    ...indexablePages
+      .filter((page) => page.key === key)
+      .map((page) => `- ${localeMetadata[page.locale].label}: ${getIndexablePageUrl(page)}`),
+    "",
+  ]);
   const maps = externalDestinations.maps.map(
     (destination) => `- ${destination.key}: ${destination.href}`,
   );
+  const tools = playerTools.map((tool) => `- ${tool.name}: ${tool.href}`);
 
   return [
     "# Fetarute: Full Site Context",
@@ -115,8 +112,7 @@ export function createLlmsFullTxt(): string {
     "## Official Website Pages",
     "",
     ...canonicalPages,
-    "",
-    "The three URLs above are localized versions of the same homepage. Use the page whose language best matches the reader. The site root selects a language and is not a canonical content page.",
+    "Each page above is published in three localized versions. Use the version whose language best matches the reader. The site root selects a language and is not a canonical content page.",
     "",
     "## Official Knowledge and Exploration Resources",
     "",
@@ -124,6 +120,12 @@ export function createLlmsFullTxt(): string {
     ...maps,
     "",
     "The maps are interactive views of the corresponding Fetarute worlds. The Wiki is the separate knowledge-base destination linked by the official website.",
+    "",
+    "## Official Player Tools",
+    "",
+    ...tools,
+    "",
+    "TrainLink is the passenger web app for Fetarute railways: departures, trip planning, and line status. FesGen generates railway signs and map art for builders. Both are separate tools linked from the Player info page.",
     "",
     "## Citation Guidance",
     "",

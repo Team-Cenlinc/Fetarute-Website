@@ -19,11 +19,16 @@ export interface NotFoundSuggestion {
   readonly segment: string;
   /** 推荐前往的资讯页章节；它同时是资讯页锚点，并决定导视色块与图标。 */
   readonly category: Extract<InfoCategory, "news" | "game">;
+  /**
+   * 章节里更贴近读者意图的分组；有值时建议文案显示该分组的名称，而不是章节标题。
+   * 指南落在「地图与工具」章节的「游戏指南」分组里，只写章节标题会让找指南的读者看不出关联。
+   */
+  readonly resourceGroup?: "wiki";
 }
 
 /** 指南与公告两个内容路由各自对应资讯页里的同名章节。 */
 export const notFoundSuggestions: readonly NotFoundSuggestion[] = [
-  { segment: "guides", category: "game" },
+  { segment: "guides", category: "game", resourceGroup: "wiki" },
   { segment: "news", category: "news" },
 ];
 

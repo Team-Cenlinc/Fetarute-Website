@@ -1,3 +1,4 @@
+import type { PlayerToolKey } from "@/data/site";
 import type { Locale } from "@/i18n/config";
 
 /** Info navigation and reading copy; operational facts come from content and site data. */
@@ -40,6 +41,12 @@ interface InfoMessages {
   wiki: string;
   wikiNote: string;
   openWiki: string;
+  /** 「地图与工具」里玩家工具分组的标题；工具本身的产品名不翻译，来自 site.ts。 */
+  tools: string;
+  /** 工具分组标题下的一句引导，说明这些工具分别在出行与建设时用得上。 */
+  toolsNote: string;
+  /** 每个工具链接里产品名下方的用途说明；按稳定身份键取用，保证新增工具时三种语言不会漏写。 */
+  toolNotes: Record<PlayerToolKey, string>;
   otherNote: string;
   join: string;
   joinNote: string;
@@ -72,9 +79,10 @@ export const infoMessages: Record<Locale, InfoMessages> = {
       serverNames: { creative: "创造", lobby: "大厅", survival: "生存" },
     },
     title: "玩家资讯",
-    description: "查看 Fetarute 联机状态与最新公告，打开世界地图，查找游戏指南和加入方式。",
+    description:
+      "查看 Fetarute 联机状态与最新公告，打开世界地图、TrainLink 与 FesGen，查找游戏指南和加入方式。",
     navigation: "浏览玩家资讯",
-    sections: { status: "联机状态", news: "最新公告", game: "地图与指南", other: "加入与探索" },
+    sections: { status: "联机状态", news: "最新公告", game: "地图与工具", other: "加入与探索" },
     statusNote: "出发前，看看这里的联机情况。每 5 分钟自动更新。",
     statusDashboard: "查看服务状态",
     unavailable: "暂时无法查看",
@@ -95,6 +103,12 @@ export const infoMessages: Record<Locale, InfoMessages> = {
     wiki: "游戏指南",
     wikiNote: "想了解玩法，或查阅建设记录？到 Wiki 找找答案。",
     openWiki: "浏览 Wiki",
+    tools: "玩家工具",
+    toolsNote: "出发前查查列车，建设时做块导视牌。",
+    toolNotes: {
+      trainLink: "发车时刻、行程规划与运行状态",
+      fesGen: "导视牌生成与地图画",
+    },
     otherNote: "第一次来？从这里认识 Fetarute，找到加入的方式。",
     join: "加入 Fetarute",
     joinNote: "查看如何加入，以及在哪里联系我们。",
@@ -125,9 +139,10 @@ export const infoMessages: Record<Locale, InfoMessages> = {
       serverNames: { creative: "創造", lobby: "大廳", survival: "生存" },
     },
     title: "玩家資訊",
-    description: "查看 Fetarute 連線狀態與最新公告，開啟世界地圖，查找遊戲指南和加入方式。",
+    description:
+      "查看 Fetarute 連線狀態與最新公告，開啟世界地圖、TrainLink 與 FesGen，查找遊戲指南和加入方式。",
     navigation: "瀏覽玩家資訊",
-    sections: { status: "連線狀態", news: "最新公告", game: "地圖與指南", other: "加入與探索" },
+    sections: { status: "連線狀態", news: "最新公告", game: "地圖與工具", other: "加入與探索" },
     statusNote: "出發前，看看這裡的連線情況。每 5 分鐘自動更新。",
     statusDashboard: "查看服務狀態",
     unavailable: "暫時無法查看",
@@ -148,6 +163,12 @@ export const infoMessages: Record<Locale, InfoMessages> = {
     wiki: "遊戲指南",
     wikiNote: "想了解玩法，或查閱建設紀錄？到 Wiki 找找答案。",
     openWiki: "瀏覽 Wiki",
+    tools: "玩家工具",
+    toolsNote: "出發前查查列車，建設時做塊導視牌。",
+    toolNotes: {
+      trainLink: "發車時刻、行程規劃與營運狀態",
+      fesGen: "導視牌產生與地圖畫",
+    },
     otherNote: "第一次來？從這裡認識 Fetarute，找到加入的方式。",
     join: "加入 Fetarute",
     joinNote: "查看如何加入，以及在哪裡聯絡我們。",
@@ -180,12 +201,12 @@ export const infoMessages: Record<Locale, InfoMessages> = {
     },
     title: "Player info",
     description:
-      "Check Fetarute network status and announcements, explore the world maps, and find game guides and ways to join.",
+      "Check Fetarute network status and announcements, open the world maps, TrainLink, and FesGen, and find game guides and ways to join.",
     navigation: "Browse player info",
     sections: {
       status: "Network status",
       news: "Announcements",
-      game: "Maps & guides",
+      game: "Maps & tools",
       other: "Join & explore",
     },
     statusNote: "Check in before you set off. Status updates every 5 minutes.",
@@ -208,6 +229,12 @@ export const infoMessages: Record<Locale, InfoMessages> = {
     wiki: "Game guides",
     wikiNote: "Looking for game guides or building records? Start with the Wiki.",
     openWiki: "Browse the Wiki",
+    tools: "Player tools",
+    toolsNote: "Check the trains before you set off, or make a sign for your next build.",
+    toolNotes: {
+      trainLink: "Departures, trip planning, and line status",
+      fesGen: "Sign generator and map art",
+    },
     otherNote: "New here? Get to know Fetarute and find your way in.",
     join: "Join Fetarute",
     joinNote: "Find out how to join and where to get in touch.",

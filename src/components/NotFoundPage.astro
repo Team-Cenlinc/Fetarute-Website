@@ -192,7 +192,9 @@ const transferSigns = notFoundTransferKeys.map((key) => transferSignByKey[key]);
 const suggestionLinks: SuggestionLink[] = notFoundSuggestions.map((suggestion) => ({
   ...suggestion,
   href: getLocalizedRelativeUrl(locale, infoNavItem.pagePath, suggestion.category),
-  label: infoMessages[locale].sections[suggestion.category],
+  label: suggestion.resourceGroup
+    ? infoMessages[locale][suggestion.resourceGroup]
+    : infoMessages[locale].sections[suggestion.category],
   tileStyle: getInfoMarkerStyle(suggestion.category),
   icon: suggestionIcons[suggestion.category],
 }));

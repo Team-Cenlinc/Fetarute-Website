@@ -4,7 +4,7 @@ import { getInfoMarkerStyle } from "@/data/info-palette";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import InfoMarker from "@/components/info/InfoMarker.astro";
 import InfoFooter from "@/components/info/InfoFooter.astro";
-import { externalDestinations, statusDashboardUrl } from "@/data/site";
+import { externalDestinations, playerTools, statusDashboardUrl } from "@/data/site";
 import type { Locale } from "@/i18n/config";
 import { getLocalizedNews } from "@/i18n/content";
 import { infoMessages } from "@/i18n/info";
@@ -37,7 +37,6 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
   description={copy.description}
   pagePath="info/"
   fullBleedMain
-  indexable={false}
 >
   <div class:list={["info-page", { "info-page--en": locale === "en" }]} id="top">
     <header class="info-hero">
@@ -77,7 +76,8 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
           ))}
         </nav>
       </div>
-      <div class="info-section__body" data-minecraft-status data-locale={locale} data-copy={JSON.stringify({ ...copy.statusCopy, unavailable: copy.unavailable, playersUnavailable: copy.playersUnavailable })}>
+      {/* 真实状态由脚本在浏览器里填入；静态 HTML 中的「暂时无法查看」只是占位，标记 data-nosnippet 避免搜索摘要把它当成服务器不可用。 */}
+      <div class="info-section__body" data-nosnippet data-minecraft-status data-locale={locale} data-copy={JSON.stringify({ ...copy.statusCopy, unavailable: copy.unavailable, playersUnavailable: copy.playersUnavailable })}>
         <p class="info-section__intro">{copy.statusNote}</p>
         <p class="info-status-feedback" data-status-feedback role="status">{copy.unavailable}</p>
         <article class="info-server info-entry">
@@ -201,6 +201,21 @@ const dateFormat = new Intl.DateTimeFormat(locale, {
             <span>{copy.openWiki}</span>
             <InfoArrow class="info-link-arrow" direction="up-right" />
           </a>
+        </div>
+        <div class="info-resource-group info-resource-group--tools">
+          <h3>{copy.tools}</h3>
+          <p>{copy.toolsNote}</p>
+          <div class="info-resource-links info-resource-links--paired">
+            {playerTools.map((tool) => (
+              <a class="info-resource-link" href={tool.href} data-info-tool={tool.key}>
+                <span class="info-resource-link__copy">
+                  <strong>{tool.name}</strong>
+                  <span>{copy.toolNotes[tool.key]}</span>
+                </span>
+                <InfoArrow class="info-link-arrow" direction="up-right" />
+              </a>
+            ))}
+          </div>
         </div>
       </div>
     </section>

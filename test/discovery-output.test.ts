@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { externalDestinations } from "../src/data/site.ts";
+import { externalDestinations, playerTools } from "../src/data/site.ts";
 import type { Locale } from "../src/i18n/config.ts";
 import { getMessages } from "../src/i18n/messages.ts";
 
@@ -59,5 +59,9 @@ test("构建后的 llms-full.txt 保留正式资源与服务器接入事实边�
 
   for (const map of externalDestinations.maps) {
     assert.match(llmsFullTxt, new RegExp(map.href.replaceAll("/", "\\/")));
+  }
+
+  for (const tool of playerTools) {
+    assert.ok(llmsFullTxt.includes(`- ${tool.name}: ${tool.href}`), `应列出 ${tool.name}`);
   }
 });

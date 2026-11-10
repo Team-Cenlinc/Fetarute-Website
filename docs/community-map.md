@@ -12,9 +12,9 @@ Line（SURC/DS）、浦蓝线（SURC/WS）和 PN（SURN/PN）。橙色斜线用�
 
 三种语言共用
 `CommunityPage.astro`、静态数据与原生 TypeScript 控制器，没有新增框架或 island。直达地址是
-`/zh-Hans/community/`、`/zh-Hant/community/`、`/en/community/`。原型标记
-`noindex, follow`，Header 在首页旁并列「社区 ↗」主导航牌，手机更多菜单保留社区入口，桌面出口仅含外部服务。保留同页语言切换；暂不加入 sitemap，也不改动首页续行的施工中方向牌。`noindex`
-不是访问控制。
+`/zh-Hans/community/`、`/zh-Hant/community/`、`/en/community/`。页面已开放收录，并登记在
+`src/data/indexable-pages.ts` 的收录白名单中，随 sitemap 与 `llms.txt`
+一同公开。Header 在首页旁并列「社区 ↗」主导航牌，手机更多菜单保留社区入口，桌面出口仅含外部服务。保留同页语言切换，不改动首页续行的施工中方向牌。
 
 ## 资料边界
 

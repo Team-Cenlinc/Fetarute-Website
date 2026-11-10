@@ -3,8 +3,9 @@ import { existsSync, readFileSync } from "node:fs";
 import { Buffer } from "node:buffer";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
-import { externalDestinations, siteInfo } from "../src/data/site.ts";
+import { externalDestinations, playerTools, siteInfo } from "../src/data/site.ts";
 import { defaultLocale, localeMetadata, type Locale } from "../src/i18n/config.ts";
+import { infoMessages } from "../src/i18n/info.ts";
 import { getMessages } from "../src/i18n/messages.ts";
 import {
   notFoundMessages,
@@ -212,6 +213,25 @@ test("Info and Markdown announcements preserve localized navigation in the stati
     for (const section of ["status", "news", "game", "other"]) {
       assert.ok(info.includes(`href="#${section}"`));
       assert.ok(info.includes(`id="${section}"`));
+    }
+    // 资讯页已开放收录；公告正文仍保持 noindex。
+    assert.match(info, /name="robots" content="index, follow, max-image-preview:large"/);
+    assert.match(article, /name="robots" content="noindex, follow"/);
+    // 玩家工具是「地图与工具」里的直达链接：地址与产品名来自 site.ts，用途说明随语言变化。
+    assert.deepEqual(
+      [...info.matchAll(/<a\b[^>]*\sdata-info-tool="[^>]*>/g)].map(([tag]) => ({
+        key: getAttribute(tag, "data-info-tool"),
+        href: getAttribute(tag, "href"),
+      })),
+      playerTools.map(({ key, href }) => ({ key, href })),
+      `${locale} 资讯页应按 site.ts 的顺序输出玩家工具链接`,
+    );
+    for (const tool of playerTools) {
+      assert.ok(info.includes(`<strong>${tool.name}</strong>`), `${locale} 应输出 ${tool.name}`);
+      assert.ok(
+        info.includes(infoMessages[locale].toolNotes[tool.key]),
+        `${locale} 应输出 ${tool.name} 的用途说明`,
+      );
     }
     for (const html of [info, article]) {
       const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]);
@@ -693,9 +713,13 @@ test("构建后的 discovery 文件只公开正式页面与正式描述", () => 
   assert.doesNotMatch(llmsTxt, /play\.fetarute\.example/);
 
   for (const locale of publicHomeLocales) {
-    const canonicalUrl = `${siteInfo.url}/${locale}/`;
-    assert.match(llmsTxt, new RegExp(canonicalUrl.replaceAll("/", "\\/")));
-    assert.match(sitemap, new RegExp(`<loc>${canonicalUrl.replaceAll("/", "\\/")}</loc>`));
+    for (const pagePath of ["", "community/", "info/"]) {
+      const canonicalUrl = `${siteInfo.url}/${locale}/${pagePath}`;
+      assert.match(llmsTxt, new RegExp(`\\(${canonicalUrl.replaceAll("/", "\\/")}\\)`));
+      assert.match(sitemap, new RegExp(`<loc>${canonicalUrl.replaceAll("/", "\\/")}</loc>`));
+    }
+    // 公告与指南正文尚未开放收录，不能被静态构建器自动写进 sitemap。
+    assert.doesNotMatch(sitemap, new RegExp(`/${locale}/(?:news|guides)/`));
   }
 });
 

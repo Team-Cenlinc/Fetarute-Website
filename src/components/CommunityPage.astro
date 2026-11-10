@@ -115,7 +115,7 @@ const paletteStyle = Object.entries(communityMapPalette)
 const chapters = getCommunityJourneyStops(locale);
 ---
 
-<BaseLayout locale={locale} title={copy.title} description={copy.description} pagePath="community/" fullBleedMain noindex>
+<BaseLayout locale={locale} title={copy.title} description={copy.description} pagePath="community/" fullBleedMain>
   <div class="community-page" style={paletteStyle} data-community-page data-community-arrival-ready>
     <script is:inline>
       // JS 页面先撤销静态后备标记，避免尚未按实际视口计算的到达线参与首帧绘制。

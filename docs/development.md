@@ -46,7 +46,8 @@ git diff --check
 - 已覆盖：公开概览、三语 Home / Community /
   Info 页面、Wiki、三张地图与服务状态面板 URL，以及公告与指南的目录检索。
 - 未覆盖：玩家人数与名单、可加入的服务器地址、QQ 群号、版本兼容性承诺。
-- `llms.txt` / sitemap 是独立的爬虫收录边界，目前仅收录首页；WebMCP 页面白名单不改变这些设置。
+- `llms.txt` / sitemap 是独立的爬虫收录边界，目前收录三语首页、社区页与资讯页，白名单在
+  `src/data/indexable-pages.ts`；公告与指南正文仍为 `noindex`。WebMCP 页面白名单不改变这些设置。
 
 ### 公告与指南检索
 
@@ -242,10 +243,14 @@ Info 结构预览位于 `/zh-Hans/info`、`/zh-Hant/info` 和
 `src/styles/info.css`。服务器状态和玩家名单尚未接入数据源，页面明确显示暂不可用，不将未知状态当作离线或零人。加入帮助链接返回首页续行章节；地图和 Wiki 地址复用
 `src/data/site.ts`。
 
+「地图与工具」章节在地图与指南之下另列玩家工具（TrainLink、FesGen）。它们是独立工具，官网只提供直达链接：产品名与地址维护在
+`src/data/site.ts` 的 `playerTools`，每个工具的一行用途说明在 `src/i18n/info.ts` 的
+`toolNotes`。新增工具时在这两处各加一项即可，页面按 `playerTools` 的顺序输出。
+
 公告继续使用 `src/content/news/<locale>/*.md`，构建时生成
 `/<locale>/news/<translationKey>`。同一公告的翻译应使用相同的
-`translationKey`，语言菜单只显示实际存在的翻译。列表优先显示置顶公告，再按发布日期降序显示最近三条；正文由 Markdown 渲染。结构预览和公告页暂设
-`noindex`，不加入 sitemap 与发现白名单；内容准备完成后再统一开放收录。
+`translationKey`，语言菜单只显示实际存在的翻译。列表优先显示置顶公告，再按发布日期降序显示最近三条；正文由 Markdown 渲染。资讯页本身已开放收录并进入 sitemap 与发现白名单；公告与指南的正文页暂设
+`noindex`，内容准备完成后再开放收录。
 
 ## 图片与字体资产
 
@@ -328,8 +333,7 @@ GitHub Pages 只能提供静态文件，不能针对 `/` 读取 `Accept-Language
 ## 目录结构
 
 社区页原型通过 `/zh-Hans/community/`、`/zh-Hant/community/` 和 `/en/community/`
-访问，也已注册为 Header 的并列社区主导航牌及手机更多菜单入口，桌面出口仅含外部服务。占位资料确认前仍使用
-`noindex`；地图资料、布局约定和浏览器验证方法见[社区地图原型](community-map.md)。
+访问，也已注册为 Header 的并列社区主导航牌及手机更多菜单入口，桌面出口仅含外部服务。社区页已开放收录并进入 sitemap；地图资料、布局约定和浏览器验证方法见[社区地图原型](community-map.md)。
 
 ```text
 public/                 浏览器图标、Web App Manifest 与构建生成的社交分享卡等需原样发布的品牌文件
