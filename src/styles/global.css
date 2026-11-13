@@ -1323,6 +1323,14 @@ html[data-home-nav-indicator-pattern="double"]
       min-height var(--duration-header-layout-contract) var(--motion-header-layout-contract);
   }
 
+  /*
+   * 紧凑网格固定为五列，第二列留给这枚占位元素。中等宽度与英文版在完整态会把它隐藏，
+   * 紧凑态若不恢复，后面的色点和两个功能格都会前移一列，右端空出一格 56px 的白底。
+   */
+  html[data-header-compact]:not([data-header-hover-expanded]) .site-header__spacer {
+    display: block;
+  }
+
   html[data-header-compact]:not([data-header-hover-expanded]) .brand {
     padding-inline: 18px;
   }

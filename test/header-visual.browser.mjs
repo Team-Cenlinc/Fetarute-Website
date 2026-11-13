@@ -292,3 +292,43 @@ test("英文窄桌面在服务台和出口图标展开后仍落在 Header 边框
     await page.close();
   }
 });
+
+/*
+ * 紧凑网格固定五列，第二列属于占位元素；完整态在中等宽度和英文版会把占位隐藏。
+ * 紧凑态没有恢复它时，后面的格子整体前移一列，右端会空出一格白底。
+ */
+for (const [width, locale] of [
+  [827, "zh-Hans"],
+  [1000, "zh-Hant"],
+  [900, "en"],
+  [1100, "en"],
+  [1440, "zh-Hans"],
+]) {
+  test(`${width}px ${locale}: 紧凑 Header 的出口格贴齐右缘，不留空列`, async () => {
+    const page = await browser.newPage({ viewport: { width, height: 900 } });
+    try {
+      await page.goto(`${baseUrl}/${locale}/#shared-shore`, { waitUntil: "networkidle" });
+      // 深链落点之后若有内容加载把页面往上顶，Header 会按「上滚」展开；主动下滚一段，确定地进入紧凑态。
+      await page.evaluate(() => scrollBy({ top: 400, behavior: "instant" }));
+      await page.waitForFunction(
+        () =>
+          document.documentElement.hasAttribute("data-header-compact") &&
+          !document.documentElement.hasAttribute("data-header-hover-expanded"),
+      );
+      // 等收束过渡结束后再量，避免量到宽度仍在变化的中间帧。
+      await page.waitForTimeout(600);
+      const edges = await page.evaluate(() => {
+        const header = document.querySelector(".site-header").getBoundingClientRect();
+        const exit = document.querySelector(".compact-exit-menu").getBoundingClientRect();
+        return { header: header.right, exit: exit.right, exitWidth: exit.width };
+      });
+      assert.ok(edges.exitWidth > 0, "紧凑出口格应可见");
+      assert.ok(
+        Math.abs(edges.header - edges.exit) <= 1,
+        `紧凑出口格应贴齐 Header 右缘：${JSON.stringify(edges)}`,
+      );
+    } finally {
+      await page.close();
+    }
+  });
+}
