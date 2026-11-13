@@ -222,8 +222,12 @@ const quickPickRouteStyle = `--home-journey-current-line-color: ${currentSection
 
   .home-journey-quick-pick__close {
     position: absolute;
-    top: 14px;
-    right: 14px;
+    /*
+     * 44px 的触控区贴近右上角，让居中的 24px 叉号距上、右两边各 14px，与标题文字的左边距一致。
+     * 触控区再往里收时，叉号会悬在标题区中间，像一块独立的按钮而不是站牌的一角。
+     */
+    top: 4px;
+    right: 4px;
     display: grid;
     width: 44px;
     height: 44px;

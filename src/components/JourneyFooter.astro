@@ -101,10 +101,21 @@ const currentYear = new Date().getFullYear();
 
   /* Footer 外框贴齐 Header 后，正文仍在右侧轨道前留出净空，避免返回入口和版权穿过线路；首页与 404 共用这套几何。 */
   .home-footer--header-framed {
+    /*
+     * 正文右缘与轨道左缘之间的间距。列车比轨道宽，停在页尾时两侧各探出最多约 20px，
+     * 这段间距必须容得下探出的车身再留出呼吸空间，否则版权和返回入口会被车身盖住。
+     */
+    --home-footer-track-content-gap: clamp(56px, 5.5vw, 104px);
+    /*
+     * 正文为避开右侧轨道需要额外收窄的宽度。
+     * 这里的 100% 取正文内容盒的宽度，加上左内边距才是轨道坐标所在的页尾左缘起算宽度；
+     * 少加这一项时间距会随屏宽缩小，在 2560px 宽的屏幕上只剩 12px。
+     */
     --home-footer-track-content-clearance: max(
       0px,
       calc(
-        var(--site-header-inline-end) - (100% - var(--home-footer-right-track-x)) + 12px
+        100% + var(--journey-footer-copy-x, var(--site-header-inline-start)) -
+          var(--home-footer-right-track-x) + var(--home-footer-track-content-gap)
       )
     );
   }
@@ -276,6 +287,11 @@ const currentYear = new Date().getFullYear();
 
     .home-footer__track {
       left: var(--journey-footer-track-x, 7vw);
+    }
+
+    /* 小屏轨道改在左侧，正文右边没有需要避让的线路；保留桌面的净空只会把标题挤成窄栏。 */
+    .home-footer--header-framed {
+      --home-footer-track-content-clearance: 0px;
     }
 
     .home-footer__content {

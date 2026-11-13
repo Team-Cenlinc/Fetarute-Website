@@ -11,6 +11,11 @@ const browser = await (engine === "webkit" ? webkit : chromium).launch({
 });
 after(() => browser.close());
 const baseUrl = process.env.FETARUTE_HOME_TEST_URL ?? "http://127.0.0.1:4323";
+/*
+ * 页尾文案与右侧轨道之间至少要留的距离。列车比轨道宽，停在页尾时两侧各探出最多约 20px；
+ * 只按轨道留 8px 时，版权和返回入口会被车身盖住，因此按探出的车身再加约 20px 余量检查。
+ */
+const footerTrainClearance = 40;
 
 /* 覆盖桌面短屏、断点两侧、三种语言以及减少动态，检查实际布局而不是 CSS 字面值。 */
 for (const [width, height, locale, reducedMotion] of [
@@ -57,8 +62,8 @@ for (const [width, height, locale, reducedMotion] of [
         }
         for (const content of [footerAlignment.restart, footerAlignment.legal]) {
           assert.ok(
-            content.right <= footerAlignment.track.left - 8,
-            `Footer 文案不能穿过右侧连续轨道：${JSON.stringify(footerAlignment)}`,
+            content.right <= footerAlignment.track.left - footerTrainClearance,
+            `Footer 文案应避开右侧轨道与停靠的列车：${JSON.stringify(footerAlignment)}`,
           );
         }
       }
@@ -337,3 +342,33 @@ test("全部英文短故事在窄屏和桌面断点内完整覆盖照片", async
     await page.close();
   }
 });
+
+/* 超宽屏曾让页尾净空缩到 12px：正文右缘贴着轨道，停靠的列车正好盖住版权和返回入口。 */
+for (const width of [2560, 3440]) {
+  test(`${width}px 宽：页尾文案仍避开右侧轨道与停靠的列车`, async () => {
+    const page = await browser.newPage({ viewport: { width, height: 1200 } });
+    try {
+      await page.goto(`${baseUrl}/zh-Hans/#onward`, { waitUntil: "networkidle" });
+      const edges = await page.evaluate(() => {
+        const getEdges = (selector) => {
+          const { left, right } = document.querySelector(selector).getBoundingClientRect();
+          return { left, right };
+        };
+
+        return {
+          restart: getEdges(".home-footer__restart"),
+          legal: getEdges(".home-footer__legal"),
+          track: getEdges(".home-footer__track"),
+        };
+      });
+      for (const content of [edges.restart, edges.legal]) {
+        assert.ok(
+          content.right <= edges.track.left - footerTrainClearance,
+          `Footer 文案应避开右侧轨道与停靠的列车：${JSON.stringify(edges)}`,
+        );
+      }
+    } finally {
+      await page.close();
+    }
+  });
+}
