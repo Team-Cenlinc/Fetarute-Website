@@ -31,7 +31,7 @@ export const indexablePageKeys = Object.keys(indexablePagePaths) as readonly Ind
 
 /**
  * 当前公开页面的唯一收录白名单：三种语言的首页、社区页与资讯页。
- * 根路径只是 noindex 跳转页，公告与指南正文也尚未开放，因此都不能因为文件存在而被 sitemap 或 llms.txt 提前发现。
+ * 根路径只是 canonical 指向默认语言首页的跳转页，公告与指南正文也尚未开放，因此都不能因为文件存在而被 sitemap 或 llms.txt 提前发现。
  */
 export const indexablePages: readonly IndexablePage[] = indexablePageKeys.flatMap((key) =>
   locales.map((locale) => ({

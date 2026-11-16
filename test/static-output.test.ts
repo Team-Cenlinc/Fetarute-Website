@@ -529,8 +529,9 @@ test("三语言静态首页输出完整且一致的可索引元数据", () => {
       );
       assert.equal(getAttribute(alternate ?? "", "href"), `${siteInfo.url}/${alternateLocale}/`);
     }
+    // x-default 必须指向可收录的默认语言首页，而不是只做跳转的根入口，否则整组 hreflang 会被搜索引擎忽略。
     const defaultAlternate = findHeadTag(html, "link", "hreflang", "x-default");
-    assert.equal(getAttribute(defaultAlternate ?? "", "href"), `${siteInfo.url}/`);
+    assert.equal(getAttribute(defaultAlternate ?? "", "href"), `${siteInfo.url}/${defaultLocale}/`);
 
     const structuredDataMarkup = html.match(
       /<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/i,
@@ -631,24 +632,21 @@ test("根入口按浏览器语言推断三种公开路由并保留查询与深�
   }
 });
 
-test("根入口保持 noindex、完整 hreflang 与无脚本默认回退", () => {
+test("根入口把 canonical 交给默认语言首页并保留无脚本默认回退", () => {
   const html = readStaticRootHtml();
   const robotsTag = findHeadTag(html, "meta", "name", "robots");
   const canonicalTag = findHeadTag(html, "link", "rel", "canonical");
 
-  assert.equal(getAttribute(robotsTag ?? "", "content"), "noindex, follow");
-  assert.equal(getAttribute(canonicalTag ?? "", "href"), `${siteInfo.url}/`);
+  // 根入口没有正文；noindex 与自指 canonical 会互相矛盾，统一把信号交给默认语言首页。
+  assert.equal(robotsTag, undefined);
+  assert.equal(getAttribute(canonicalTag ?? "", "href"), `${siteInfo.url}/${defaultLocale}/`);
   assert.match(
     html,
     /<noscript>\s*<meta\s+http-equiv="refresh"\s+content="0;url=\/zh-Hans\/"\s*\/?>(?:\s*)<\/noscript>/i,
   );
 
-  for (const locale of publicHomeLocales) {
-    const alternate = findHeadTag(html, "link", "hreflang", localeMetadata[locale].languageTag);
-    assert.equal(getAttribute(alternate ?? "", "href"), `${siteInfo.url}/${locale}/`);
-  }
-  const defaultAlternate = findHeadTag(html, "link", "hreflang", "x-default");
-  assert.equal(getAttribute(defaultAlternate ?? "", "href"), `${siteInfo.url}/`);
+  // 非 canonical 页面上的 hreflang 会被忽略，语言对应关系只由三个语言首页声明。
+  assert.doesNotMatch(html, /<link\b[^>]*\bhreflang=/i);
 });
 
 test("根入口为不执行语言跳转的分享抓取器输出站点级预览", () => {

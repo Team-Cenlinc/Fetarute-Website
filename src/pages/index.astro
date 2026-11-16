@@ -7,6 +7,12 @@ import { getMessages } from "@/i18n/messages";
 // GitHub Pages 不能读取 Accept-Language 或设置 Vary；根路径只承担客户端首帧推断与无脚本回退。
 const defaultLocaleHref = rootLanguageEntry.defaultPath;
 const siteHomeUrl = new URL("/", siteInfo.url).toString();
+/**
+ * 根入口的 canonical 指向默认语言首页。
+ * 根路径只做语言跳转、没有自己的正文；把权重和品牌词搜索统一归到 `/zh-Hans/`，
+ * 避免根域名同时声明 noindex 与自指 canonical 这类互相矛盾的信号。
+ */
+const defaultLocaleCanonicalUrl = new URL(rootLanguageEntry.defaultPath, siteInfo.url).toString();
 const defaultMessages = getMessages(defaultLocale);
 const socialImageUrl = new URL(siteInfo.socialImage, siteInfo.url).toString();
 /** 根入口可跳转的完整白名单；脚本只从这里取路径，不能把浏览器语言直接拼进 URL。 */
@@ -18,23 +24,16 @@ const localeHrefs = rootLanguageEntry.localizedPaths;
   <head>
     <meta charset="UTF-8" />
     <meta name="description" content={defaultMessages.description} />
-    <meta name="robots" content="noindex, follow" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <link rel="canonical" href={siteHomeUrl} />
-    {
-      locales.map((locale) => (
-        <link
-          rel="alternate"
-          hreflang={localeMetadata[locale].languageTag}
-          href={new URL(localeHrefs[locale], siteInfo.url)}
-        />
-      ))
-    }
-    <link rel="alternate" hreflang="x-default" href={siteHomeUrl} />
+    <!--
+      根入口不输出 robots noindex 和 hreflang：它不是独立内容页，canonical 已把信号交给默认语言首页，
+      语言对应关系与 x-default 由三个语言首页自己声明。
+    -->
+    <link rel="canonical" href={defaultLocaleCanonicalUrl} />
 
     <!--
       分享抓取器通常不会执行下方的客户端语言跳转，因此根入口也必须提供完整的站点级分享信息。
-      canonical 仍保留在 x-default 根地址，实际浏览器再按偏好进入对应语言首页。
+      og:url 仍保留根地址作为分享对象，实际浏览器再按偏好进入对应语言首页。
     -->
     <meta property="og:type" content="website" />
     <meta property="og:locale" content={localeMetadata[defaultLocale].openGraphLocale} />

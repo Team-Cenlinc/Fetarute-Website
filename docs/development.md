@@ -324,6 +324,10 @@ GitHub Pages 只能提供静态文件，不能针对 `/` 读取 `Accept-Language
 `src/data/hosting.ts` 维护。它不会把首次语言选择写成 HTTP 301 或 308，未知语言与无脚本访问都进入
 `/zh-Hans/`；语言首页仍可由读者主动切换。
 
+根入口本身不承载正文，因此不输出 robots `noindex` 和 hreflang，canonical 直接指向
+`/zh-Hans/`；三个语言首页的 `hreflang="x-default"` 同样指向
+`/zh-Hans/`。这样根域名的外链权重与品牌词搜索都归到可收录的默认语言首页，不会出现 x-default 指向不可收录页面、导致整组 hreflang 失效的情况。
+
 若迁移到支持请求头规则的平台，根路径应改为只允许 `/zh-Hans/`、`/zh-Hant/` 或 `/en/` 的
 `307 Temporary Redirect`，并同时返回 `Vary: Accept-Language` 与
 `Cache-Control: private, no-store`。该规则必须以真实生产响应验证后，才能删除静态入口回退；当前
