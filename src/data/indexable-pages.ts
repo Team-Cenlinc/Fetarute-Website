@@ -18,7 +18,7 @@ export interface IndexablePage {
 
 /**
  * 开放收录的页面在语言目录之后的路径。
- * 公告与指南的正文页仍保持 noindex，因此不在这里登记。
+ * 公告与指南的正文页由 Content Collection 生成，不在这里登记；已开放的指南见 indexableGuideKeys。
  */
 const indexablePagePaths: Readonly<Record<IndexablePageKey, string>> = {
   home: "",
@@ -31,7 +31,8 @@ export const indexablePageKeys = Object.keys(indexablePagePaths) as readonly Ind
 
 /**
  * 当前公开页面的唯一收录白名单：三种语言的首页、社区页与资讯页。
- * 根路径只是 canonical 指向默认语言首页的跳转页，公告与指南正文也尚未开放，因此都不能因为文件存在而被 sitemap 或 llms.txt 提前发现。
+ * 根路径只是 canonical 指向默认语言首页的跳转页，公告正文也尚未开放，因此都不能因为文件存在而被 sitemap 或 llms.txt 提前发现。
+ * 已开放的指南另外登记在 indexableGuideKeys，只进入 sitemap，不列进 llms 页面目录。
  */
 export const indexablePages: readonly IndexablePage[] = indexablePageKeys.flatMap((key) =>
   locales.map((locale) => ({
@@ -40,6 +41,30 @@ export const indexablePages: readonly IndexablePage[] = indexablePageKeys.flatMa
     path: `/${locale}/${indexablePagePaths[key]}`,
   })),
 );
+
+/**
+ * 已开放收录的指南 translationKey。
+ * 指南正文由 Content Collection 生成，不进入 llms 页面目录；登记在这里只决定它的各语言版本输出 index 并进入 sitemap。
+ * 「申请加入」能直接回答「怎么加入 Fetarute」这类搜索，因此最先开放；公告正文仍保持 noindex。
+ */
+export const indexableGuideKeys: readonly string[] = ["join"];
+
+/**
+ * 所有可收录的站内路径：白名单页面加上已开放的指南在每种语言下的地址。
+ * 指南的某个语言版本若尚未发布，对应地址不会出现在构建产物里，sitemap 也就不会列出它。
+ */
+const indexablePublicPaths: ReadonlySet<string> = new Set([
+  ...indexablePages.map((page) => page.path),
+  ...indexableGuideKeys.flatMap((key) => locales.map((locale) => `/${locale}/guides/${key}/`)),
+]);
+
+/**
+ * 判断不带查询参数的站内路径是否开放收录。
+ * 页面模板用它决定 robots 输出，sitemap 过滤器用它决定列出哪些地址，两边共用同一份白名单而不会各说各话。
+ */
+export function isIndexablePublicPath(path: string): boolean {
+  return indexablePublicPaths.has(path);
+}
 
 /**
  * 生成静态页面的规范绝对 URL。
@@ -64,7 +89,5 @@ export function isIndexablePublicUrl(url: string): boolean {
 
   const siteOrigin = new URL(siteInfo.url).origin;
 
-  return (
-    pageUrl.origin === siteOrigin && indexablePages.some((page) => page.path === pageUrl.pathname)
-  );
+  return pageUrl.origin === siteOrigin && isIndexablePublicPath(pageUrl.pathname);
 }

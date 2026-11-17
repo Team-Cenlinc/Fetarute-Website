@@ -47,7 +47,9 @@ git diff --check
   Info 页面、Wiki、三张地图与服务状态面板 URL，以及公告与指南的目录检索。
 - 未覆盖：玩家人数与名单、可加入的服务器地址、QQ 群号、版本兼容性承诺。
 - `llms.txt` / sitemap 是独立的爬虫收录边界，目前收录三语首页、社区页与资讯页，白名单在
-  `src/data/indexable-pages.ts`；公告与指南正文仍为 `noindex`。WebMCP 页面白名单不改变这些设置。
+  `src/data/indexable-pages.ts`；已开放的指南登记在同文件的
+  `indexableGuideKeys`（目前是「申请加入」），只进入 sitemap、不列进 llms 页面目录；公告正文仍为
+  `noindex`。WebMCP 页面白名单不改变这些设置。
 
 ### 公告与指南检索
 
@@ -249,8 +251,9 @@ Info 结构预览位于 `/zh-Hans/info`、`/zh-Hant/info` 和
 
 公告继续使用 `src/content/news/<locale>/*.md`，构建时生成
 `/<locale>/news/<translationKey>`。同一公告的翻译应使用相同的
-`translationKey`，语言菜单只显示实际存在的翻译。列表优先显示置顶公告，再按发布日期降序显示最近三条；正文由 Markdown 渲染。资讯页本身已开放收录并进入 sitemap 与发现白名单；公告与指南的正文页暂设
-`noindex`，内容准备完成后再开放收录。
+`translationKey`，语言菜单只显示实际存在的翻译。列表优先显示置顶公告，再按发布日期降序显示最近三条；正文由 Markdown 渲染。资讯页本身已开放收录并进入 sitemap 与发现白名单；公告正文页暂设
+`noindex`。指南正文默认同样不收录，内容准备完成后把它的 translationKey 加进
+`src/data/indexable-pages.ts` 的 `indexableGuideKeys`，页面 robots 与 sitemap 会一起开放。
 
 ## 图片与字体资产
 

@@ -859,7 +859,8 @@ html[data-home-nav-indicator-pattern="double"]
   gap: 6px;
 }
 
-.destination-menu__heading p {
+/* 菜单标签与说明都是 <p>：说明用独立类名，避免后代选择器盖过标签自己的字号和字重。 */
+.destination-menu__hint {
   margin: 0;
   color: color-mix(in srgb, currentColor 78%, transparent);
   font-size: 12px;

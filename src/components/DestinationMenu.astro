@@ -54,10 +54,10 @@ const externalDestinationIcons = {
 {
   includePrimaryNavigation && (
     <div class="destination-menu__heading">
-      <h2 id={headingId} class="destination-menu__heading-label">
+      <p id={headingId} class="destination-menu__heading-label">
         {messages.moreMenuLabel}
-      </h2>
-      <p>{messages.moreMenuHint}</p>
+      </p>
+      <p class="destination-menu__hint">{messages.moreMenuHint}</p>
     </div>
   )
 }
@@ -91,9 +91,9 @@ const externalDestinationIcons = {
 <div class:list={{ "destination-menu__external-group": includePrimaryNavigation }}>
   {
     includePrimaryNavigation && (
-      <h3 id={externalHeadingId} class="destination-menu__group-heading">
+      <p id={externalHeadingId} class="destination-menu__group-heading">
         {messages.exitMenuLabel}
-      </h3>
+      </p>
     )
   }
   <div class="destination-menu__external-services">
@@ -121,10 +121,10 @@ const externalDestinationIcons = {
     </a>
 
     <section class="destination-menu__map-group" aria-labelledby={mapHeadingId}>
-      <h3 id={mapHeadingId} class="destination-menu__map-heading">
+      <p id={mapHeadingId} class="destination-menu__map-heading">
         <span class="destination-menu__link-icon" aria-hidden="true" set:html={mapTrifoldIcon}></span>
         <span>{messages.onlineMapLabel}</span>
-      </h3>
+      </p>
       <nav class="destination-menu__map-links" aria-label={messages.onlineMapLabel}>
         {
           externalDestinations.maps.map((destination) => {

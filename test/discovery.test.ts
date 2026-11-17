@@ -7,7 +7,7 @@ import {
   isIndexablePublicUrl,
 } from "../src/data/discovery.ts";
 
-test("只把三语首页、社区页与资讯页暴露给 discovery 输出", () => {
+test("只把三语首页、社区页、资讯页与已开放的指南暴露给 discovery 输出", () => {
   const publishedUrls = ["zh-Hans", "zh-Hant", "en"].flatMap((locale) =>
     ["", "community/", "info/"].map((path) => `https://fetarute.org/${locale}/${path}`),
   );
@@ -18,8 +18,11 @@ test("只把三语首页、社区页与资讯页暴露给 discovery 输出", () 
 
   assert.equal(isIndexablePublicUrl("https://fetarute.org/"), false);
   assert.equal(isIndexablePublicUrl("https://fetarute.org/zh-Hans/join/"), false);
-  // 公告与指南正文仍是 noindex，不能随资讯页一起进入 sitemap。
-  assert.equal(isIndexablePublicUrl("https://fetarute.org/zh-Hans/guides/join/"), false);
+  // 「申请加入」指南已开放收录，三种语言都进入 sitemap；公告正文仍是 noindex。
+  for (const locale of ["zh-Hans", "zh-Hant", "en"]) {
+    assert.equal(isIndexablePublicUrl(`https://fetarute.org/${locale}/guides/join/`), true);
+  }
+  assert.equal(isIndexablePublicUrl("https://fetarute.org/zh-Hans/guides/unlisted/"), false);
   assert.equal(isIndexablePublicUrl("https://fetarute.org/zh-Hans/news/site-foundation/"), false);
 });
 

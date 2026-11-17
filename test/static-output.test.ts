@@ -336,6 +336,8 @@ test("WebMCP 返回的所有语言页面实际存在并加载工具注册脚本"
           "utf8",
         );
         assert.match(guide, /<h1\b/);
+        // 指南已开放收录：页面自己的 robots 必须与 sitemap 白名单一致。
+        assert.match(guide, /name="robots" content="index, follow, max-image-preview:large"/);
       }
     }
   }
@@ -716,8 +718,9 @@ test("构建后的 discovery 文件只公开正式页面与正式描述", () => 
       assert.match(llmsTxt, new RegExp(`\\(${canonicalUrl.replaceAll("/", "\\/")}\\)`));
       assert.match(sitemap, new RegExp(`<loc>${canonicalUrl.replaceAll("/", "\\/")}</loc>`));
     }
-    // 公告与指南正文尚未开放收录，不能被静态构建器自动写进 sitemap。
-    assert.doesNotMatch(sitemap, new RegExp(`/${locale}/(?:news|guides)/`));
+    // 「申请加入」指南已开放收录，进入 sitemap 但不列进 llms 页面目录；公告正文仍不能被构建器写进 sitemap。
+    assert.ok(sitemap.includes(`<loc>${siteInfo.url}/${locale}/guides/join/</loc>`));
+    assert.doesNotMatch(sitemap, new RegExp(`/${locale}/news/`));
   }
 });
 

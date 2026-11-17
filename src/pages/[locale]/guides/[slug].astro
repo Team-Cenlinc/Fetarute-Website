@@ -7,6 +7,7 @@ import InfoFooter from "@/components/info/InfoFooter.astro";
 import InfoMarker from "@/components/info/InfoMarker.astro";
 import type { Locale } from "@/i18n/config";
 import { infoMessages } from "@/i18n/info";
+import { isIndexablePublicPath } from "@/data/indexable-pages";
 import { getLocalizedRelativeUrl } from "@/i18n/links";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import "@/styles/info.css";
@@ -22,8 +23,10 @@ const { entry, availableLocales } = Astro.props;
 const { locale, title, description, authors, cover, coverAlt, translationKey } = entry.data;
 const copy = infoMessages[locale];
 const { Content } = await render(entry);
+/** 只有登记在收录白名单里的指南才输出 index，其余指南保持可访问但不收录。 */
+const indexable = isIndexablePublicPath(`/${locale}/guides/${translationKey}/`);
 ---
-<BaseLayout locale={locale} title={title} description={description} pagePath={`guides/${translationKey}`} availableLocales={availableLocales} fullBleedMain indexable={false}>
+<BaseLayout locale={locale} title={title} description={description} pagePath={`guides/${translationKey}`} availableLocales={availableLocales} fullBleedMain indexable={indexable}>
   <div class="info-page info-article info-article--guide" id="top">
     <a class="info-article__back" href={getLocalizedRelativeUrl(locale, "info", "other")}><InfoArrow direction="left" /> {copy.backInfo}</a>
     <article>
